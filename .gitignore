@@ -1,27 +1,17 @@
-# Entorno de Python y Caché
+# Entorno virtual y Python
 .venv/
 venv/
 __pycache__/
 *.pyc
 
-# Archivos de Desarrollo y Base de Datos (No necesarios en GitHub Pages)
-CALTEC.xlsx
+# Archivos de desarrollo original (Excel, BD sqlite, mapas crudos)
 caltec.db
+CALTEC.xlsx
+CATLEC.xlsx
 Mapas vectoriales/
 Fotos/
 log_props.txt
 
-# Scripts de Generación/Desarrollo Backend
-export_static_data.py
-export_geo_data.py
-make_static_html.py
-simplify_*.py
-consolidate.py
-prueba_inspect.py
-app/prueba.py
-app/migrate_to_sqlite.py
-app/templates/
-
-# Archivos temporales de sistema
+# Archivos del sistema operativo
 .DS_Store
 Thumbs.db
