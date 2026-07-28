@@ -1,0 +1,3230 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CALTEC - Plataforma Concesiones de Chile</title>
+    <!-- Leaflet mapping library -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- CSS Custom stylesheet -->
+    <link rel="stylesheet" href="static/css/styles.css">
+    <!-- Chart.js for premium chart renders -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Datos estáticos pre-generados -->
+    <script src="static/data/contracts_data.js"></script>
+    <script src="static/data/regions_data.js"></script>
+    <script src="static/data/dgc_data.js"></script>
+</head>
+
+<body class="light-theme">
+    <div class="app-container">
+        <!-- Top Navigation Banner -->
+        <header class="top-navbar">
+            <div class="top-navbar-left">
+                <span class="top-navbar-brand">CONCESIONES</span>
+                <span class="top-navbar-divider"></span>
+                <span class="top-navbar-proto">Prototipo en desarrollo: Mapa de Proyectos Concesiones Chile</span>
+            </div>
+            <div class="top-navbar-right">
+                <span class="top-navbar-author">Desarrollado por Vicente Pérez</span>
+            </div>
+        </header>
+
+        <!-- Main Content (Single Screen) -->
+        <main class="dashboard-content">
+            <div class="dashboard-grid">
+                <!-- Left Panel: Search, Filters & Analytics Chart -->
+                <section class="left-panel">
+                    <!-- Search & Filter Card -->
+                    <div class="panel-card panel-card-filters" style="padding: 0.85rem; gap: 0.65rem;">
+                        <div
+                            style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.4rem;">
+                            <h2 class="panel-title" style="border: none; padding: 0; margin: 0; font-size: 0.85rem;">
+                                <i data-lucide="sliders-horizontal" style="width: 15px; height: 15px;"></i>
+                                Filtros & Búsqueda
+                            </h2>
+                        </div>
+
+                        <!-- General Search -->
+                        <div class="form-group" style="gap: 0.25rem;">
+                            <label class="form-label" for="search-input" style="font-size: 0.72rem;">Buscar
+                                Concesión</label>
+                            <div class="search-wrapper">
+                                <i data-lucide="search" style="width: 14px; height: 14px;"></i>
+                                <input type="text" id="search-input" class="form-input" placeholder="Nombre"
+                                    style="padding: 0.4rem 0.6rem 0.4rem 2rem; font-size: 0.8rem;">
+                            </div>
+                        </div>
+
+                        <!-- Region Geographic Multi-Select Filter -->
+                        <div class="form-group" style="gap: 0.25rem; position: relative; z-index: 50;">
+                            <label class="form-label" style="font-size: 0.72rem;">Región Geográfica</label>
+                            <div class="custom-multiselect" id="region-multiselect-container">
+                                <button type="button" class="form-input multiselect-trigger" id="region-multiselect-btn"
+                                    style="padding: 0.4rem 0.6rem; font-size: 0.8rem;">
+                                    <span id="region-multiselect-text">Todas las regiones</span>
+                                    <i data-lucide="chevron-down"
+                                        style="width: 14px; height: 14px; margin-left: 0.35rem;"></i>
+                                </button>
+
+                                <div class="multiselect-dropdown" id="region-multiselect-dropdown"
+                                    style="display: none;">
+                                    <div class="multiselect-actions">
+                                        <label class="multiselect-option select-all-option"
+                                            style="padding: 0.2rem 0; font-weight: 700;">
+                                            <input type="checkbox" id="region-check-all">
+                                            <span>(Seleccionar Todas)</span>
+                                        </label>
+                                    </div>
+                                    <div class="multiselect-options-list" id="region-options-list">
+                                        <!-- Checkboxes dynamic list -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sector Multi-Select Filter -->
+                        <div class="form-group" style="gap: 0.25rem; position: relative; z-index: 40;">
+                            <label class="form-label" style="font-size: 0.72rem;">Sector del Proyecto</label>
+                            <div class="custom-multiselect" id="sector-multiselect-container">
+                                <button type="button" class="form-input multiselect-trigger" id="sector-multiselect-btn"
+                                    style="padding: 0.4rem 0.6rem; font-size: 0.8rem;">
+                                    <span id="sector-multiselect-text">Todos los sectores</span>
+                                    <i data-lucide="chevron-down"
+                                        style="width: 14px; height: 14px; margin-left: 0.35rem;"></i>
+                                </button>
+
+                                <div class="multiselect-dropdown" id="sector-multiselect-dropdown"
+                                    style="display: none;">
+                                    <div class="multiselect-actions">
+                                        <label class="multiselect-option select-all-option"
+                                            style="padding: 0.2rem 0; font-weight: 700;">
+                                            <input type="checkbox" id="sector-check-all">
+                                            <span>(Seleccionar Todos)</span>
+                                        </label>
+                                    </div>
+                                    <div class="multiselect-options-list" id="sector-options-list">
+                                        <!-- Checkboxes dynamic list -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Reset Buttons -->
+                        <button class="btn-reset" id="btn-reset"
+                            style="padding: 0.35rem; font-size: 0.75rem; justify-content: center; width: 100%;">
+                            <i data-lucide="rotate-ccw" style="width: 13px; height: 13px;"></i>
+                            Restablecer Filtros
+                        </button>
+                    </div>
+
+                    <!-- Analytics Charts Card (Dual Charts Displayed Simultaneously) -->
+                    <div class="panel-card panel-card-analytics"
+                        style="padding: 0.75rem 0.85rem; gap: 0.4rem; flex: 1; min-height: 0; display: flex; flex-direction: column;">
+                        <h2 class="panel-title"
+                            style="font-size: 0.82rem; padding-bottom: 0.25rem; border-bottom: 1px solid var(--border-color); margin-bottom: 0.15rem;">
+                            <i data-lucide="pie-chart" style="width: 14px; height: 14px;"></i>
+                            Análisis
+                        </h2>
+
+                        <!-- Chart 1: Sectors -->
+                        <div style="flex: 1.1; min-height: 0; display: flex; flex-direction: column; gap: 0.2rem;">
+                            <div
+                                style="font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: flex; align-items: center; gap: 0.3rem;">
+                                <i data-lucide="pie-chart"
+                                    style="width: 12px; height: 12px; color: var(--primary);"></i>
+                                Sectores
+                            </div>
+                            <div
+                                style="flex: 1; min-height: 0; display: flex; align-items: center; gap: 0.4rem; position: relative;">
+                                <div
+                                    style="width: 90px; height: 90px; min-width: 90px; flex-shrink: 0; position: relative; margin: auto 0;">
+                                    <canvas id="sectorChart"></canvas>
+                                </div>
+                                <div id="sectorChartLegend"
+                                    style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; overflow: visible;">
+                                    <!-- Populated dynamically -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chart 2: Status / Hitos -->
+                        <div
+                            style="flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 0.2rem; border-top: 1px solid var(--border-color); padding-top: 0.35rem;">
+                            <div
+                                style="font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: flex; align-items: center; gap: 0.3rem;">
+                                <i data-lucide="bar-chart-2"
+                                    style="width: 12px; height: 12px; color: var(--primary);"></i>
+                                Estados
+                            </div>
+                            <div class="chart-container"
+                                style="flex: 1; min-height: 0; height: 100%; position: relative;">
+                                <canvas id="statusChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Center Panel: Fullscreen Leaflet Map (Dominant Feature) -->
+                <section class="center-panel map-panel">
+                    <!-- Leaflet map container -->
+                    <div id="leaflet-map" style="width: 100%; height: 100%;"></div>
+
+                    <!-- Floating Reset Map Button -->
+                    <button id="btn-reset-map" class="btn-floating-map">
+                        <i data-lucide="maximize-2" style="width: 13px; height: 13px;"></i>
+                        Restablecer Mapa
+                    </button>
+
+                    <!-- Floating Icon Legend Overlay -->
+                    <div id="map-legend" class="map-legend-overlay">
+                        <div class="map-legend-title">Leyenda</div>
+                        <div class="map-legend-item">
+                            <span class="map-legend-icon-badge" style="background-color: #d97706;">
+                                <svg viewBox="0 0 24 24" stroke="white" stroke-width="2.5" fill="none"
+                                    stroke-linecap="round" stroke-linejoin="round"
+                                    style="width: 10px; height: 10px; display: block;">
+                                    <line x1="6" y1="3" x2="6" y2="21"></line>
+                                    <line x1="18" y1="3" x2="18" y2="21"></line>
+                                    <line x1="12" y1="3" x2="12" y2="7"></line>
+                                    <line x1="12" y1="11" x2="12" y2="15"></line>
+                                    <line x1="12" y1="19" x2="12" y2="21"></line>
+                                </svg>
+                            </span>
+                            Vial interurbana
+                        </div>
+                        <div class="map-legend-item">
+                            <span class="map-legend-icon-badge" style="background-color: #c2410c;">
+                                <svg viewBox="0 0 24 24" stroke="white" stroke-width="2.5" fill="none"
+                                    stroke-linecap="round" stroke-linejoin="round"
+                                    style="width: 10px; height: 10px; display: block;">
+                                    <path d="M4 21L9 3M20 21L15 3M12 3v4M12 11v4M12 19v2" />
+                                </svg>
+                            </span>
+                            Vial urbana
+                        </div>
+                        <div class="map-legend-item">
+                            <span class="map-legend-icon-badge" style="background-color: #0284c7;">
+                                <svg viewBox="0 0 24 24" fill="white"
+                                    style="width: 10px; height: 10px; display: block;">
+                                    <path
+                                        d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L14 19v-5.5z" />
+                                </svg>
+                            </span>
+                            Aeroportuaria
+                        </div>
+                        <div class="map-legend-item">
+                            <span class="map-legend-icon-badge" style="background-color: #059669;">
+                                <svg viewBox="0 0 24 24" stroke="white" stroke-width="3" fill="none"
+                                    stroke-linecap="round" stroke-linejoin="round"
+                                    style="width: 10px; height: 10px; display: block;">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                            </span>
+                            Hospitalaria
+                        </div>
+                        <div class="map-legend-item">
+                            <span class="map-legend-icon-badge" style="background-color: #6366f1;">
+                                <svg viewBox="0 0 24 24" stroke="white" stroke-width="2.2" fill="none"
+                                    stroke-linecap="round" stroke-linejoin="round"
+                                    style="width: 10px; height: 10px; display: block;">
+                                    <path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h2M13 10h2M9 14h2M13 14h2" />
+                                </svg>
+                            </span>
+                            Edificación pública
+                        </div>
+                        <div class="map-legend-item">
+                            <span class="map-legend-icon-badge" style="background-color: #0891b2;">
+                                <svg viewBox="0 0 24 24" fill="white"
+                                    style="width: 10px; height: 10px; display: block;">
+                                    <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+                                </svg>
+                            </span>
+                            Soluciones hídricas
+                        </div>
+                        <div class="map-legend-item">
+                            <span class="map-legend-icon-badge" style="background-color: #475569;">
+                                <svg viewBox="0 0 24 24" stroke="white" stroke-width="2.2" fill="none"
+                                    stroke-linecap="round" stroke-linejoin="round"
+                                    style="width: 10px; height: 10px; display: block;">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                </svg>
+                            </span>
+                            Penitenciaria
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Right Panel: Compact KPIs & Search Table List -->
+                <section class="right-panel results-panel">
+                    <!-- KPI Counters Grid (Compact 2x2) -->
+                    <section class="kpi-grid" aria-label="Indicadores Clave">
+                        <div class="card-kpi card-kpi--interactive" id="kpi-total-card"
+                            title="Ver línea de tiempo de proyectos">
+                            <div class="kpi-icon"><i data-lucide="file-text"></i></div>
+                            <div class="kpi-val-container">
+                                <span class="kpi-label">Contratos totales</span>
+                                <span class="kpi-value" id="kpi-total">-</span>
+                            </div>
+                            <i data-lucide="gantt-chart" class="kpi-timeline-hint"></i>
+                        </div>
+
+                        <div class="card-kpi">
+                            <div class="kpi-icon"><i data-lucide="trending-up"></i></div>
+                            <div class="kpi-val-container">
+                                <span class="kpi-label">Inversión (UF)</span>
+                                <span class="kpi-value" id="kpi-investment" style="font-size: 0.95rem;">-</span>
+                            </div>
+                        </div>
+
+                        <div class="card-kpi">
+                            <div class="kpi-icon"><i data-lucide="check-circle"></i></div>
+                            <div class="kpi-val-container">
+                                <span class="kpi-label">Proyectos activos</span>
+                                <span class="kpi-value" id="kpi-active-projects">-</span>
+                            </div>
+                        </div>
+
+                        <div class="card-kpi">
+                            <div class="kpi-icon"><i data-lucide="users"></i></div>
+                            <div class="kpi-val-container">
+                                <span class="kpi-label">Participaciones de oferentes</span>
+                                <span class="kpi-value" id="kpi-bidders">-</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Table Container View (Shown by default) -->
+                    <div id="table-container-view"
+                        style="display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 0.4rem;">
+                        <div class="results-header" style="padding: 0 0.2rem;">
+                            <div class="results-count" style="font-size: 0.78rem;">
+                                Resultados: <span id="count-loaded">0</span> de <span id="count-total">0</span>
+                                contratos
+                            </div>
+                        </div>
+
+                        <!-- Responsive Search Table List -->
+                        <div class="table-responsive">
+                            <div class="table-header-wrapper">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="sortable" data-sort="Nombre de uso común">Nombre Concesión</th>
+                                            <th class="sortable" data-sort="Región geográfica">Región</th>
+                                            <th class="sortable asc" data-sort="Fecha inicio del contrato de concesión">
+                                                Inicio Contrato</th>
+                                            <th class="sortable" data-sort="ESTADO">Estado</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                            <div class="table-body-wrapper">
+                                <table class="data-table" id="contracts-table">
+                                    <tbody id="table-body">
+                                        <!-- Dynamic rows inserted here -->
+                                    </tbody>
+                                </table>
+
+                                <!-- Empty state representation (hidden by default) -->
+                                <div class="empty-state" id="empty-state" style="display: none; padding: 1.5rem 1rem;">
+                                    <i data-lucide="folder-search" style="width: 28px; height: 28px;"></i>
+                                    <h3 style="font-size: 0.9rem;">No se encontraron proyectos</h3>
+                                    <p style="font-size: 0.75rem;">Prueba ajustando los filtros.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pagination Controls -->
+                        <div class="pagination-container" style="padding: 0.35rem 0.5rem; gap: 0.5rem;">
+                            <div id="pagination-info" style="font-size: 0.72rem;">0-0 de 0</div>
+                            <div class="pagination-controls">
+                                <button class="btn-paged" id="btn-prev" disabled
+                                    style="padding: 0.25rem 0.5rem; font-size: 0.72rem;">
+                                    <i data-lucide="chevron-left" style="width: 12px; height: 12px;"></i> Anterior
+                                </button>
+                                <button class="btn-paged" id="btn-next" disabled
+                                    style="padding: 0.25rem 0.5rem; font-size: 0.72rem;">
+                                    Siguiente <i data-lucide="chevron-right" style="width: 12px; height: 12px;"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dedicated Project Detail View (Shown when a contract is selected) -->
+                    <div id="project-detail-view" class="project-detail-view" style="display: none;">
+                        <div class="detail-view-header">
+                            <button id="btn-back-to-list" class="btn-reset"
+                                style="font-size: 0.75rem; padding: 0.35rem 0.65rem;">
+                                <i data-lucide="arrow-left" style="width: 13px; height: 13px;"></i>
+                                Volver a la Lista
+                            </button>
+
+                            <div class="detail-nav-controls"
+                                style="display: flex; align-items: center; gap: 0.35rem; margin-left: auto;">
+                                <button id="btn-detail-prev" class="btn-reset"
+                                    style="font-size: 0.75rem; padding: 0.35rem 0.65rem;" title="Concesión anterior">
+                                    <i data-lucide="chevron-left" style="width: 13px; height: 13px;"></i> Anterior
+                                </button>
+                                <button id="btn-detail-next" class="btn-reset"
+                                    style="font-size: 0.75rem; padding: 0.35rem 0.65rem;" title="Siguiente concesión">
+                                    Siguiente <i data-lucide="chevron-right" style="width: 13px; height: 13px;"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="detail-view-body" class="detail-view-body">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Full-Width Timeline Panel (replaces center + right panels) -->
+                <div id="timeline-full-panel" class="timeline-full-panel" style="display:none; grid-column: 2 / -1;">
+                    <!-- Timeline Header -->
+                    <div class="timeline-header">
+                        <div class="timeline-header-left">
+                            <button id="btn-close-timeline" class="btn-reset timeline-back-btn">
+                                <i data-lucide="arrow-left" style="width:13px;height:13px;"></i>
+                                Volver al Mapa
+                            </button>
+                            <span class="timeline-header-divider"></span>
+                            <i data-lucide="gantt-chart" style="width:14px;height:14px;color:var(--primary);"></i>
+                            <h2 class="timeline-header-title">Línea de Tiempo de Concesiones</h2>
+                            <span id="timeline-count-badge" class="timeline-count-badge">0 Proyectos</span>
+                        </div>
+                        <div class="timeline-header-right">
+                            <span class="timeline-legend-item">
+                                <span class="tl-legend-dot" style="background:#2563eb;"></span>1ª Licitación
+                            </span>
+                            <span class="timeline-legend-item">
+                                <span class="tl-legend-dot" style="background:#059669;"></span>2ª Relicitación
+                            </span>
+                            <span class="timeline-legend-item">
+                                <span class="tl-legend-dot" style="background:#d97706;"></span>3ª+
+                            </span>
+                            <span class="timeline-legend-item">
+                                <span
+                                    style="display:inline-block;width:2px;height:12px;background:#ef4444;border-radius:1px;"></span>
+                                Hoy
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Year Axis (sticky) -->
+                    <div class="timeline-axis-wrapper">
+                        <div class="timeline-label-col"
+                            style="display: flex; align-items: center; padding-left: 12px; font-family: var(--font-heading); font-weight: 600; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">
+                            Infraestructura
+                        </div>
+                        <div class="timeline-axis-scroll" id="timeline-axis-scroll">
+                            <svg id="timeline-axis-svg" style="display:block;"></svg>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Rows (scrollable) -->
+                    <div class="timeline-body" id="timeline-body">
+                        <div class="timeline-rows-wrapper">
+                            <div class="timeline-label-col" id="timeline-label-col"></div>
+                            <div class="timeline-bars-scroll" id="timeline-bars-scroll">
+                                <svg id="timeline-bars-svg" style="display:block;"></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Client Application Logic -->
+    <script>
+
+        // State variables
+        let appState = {
+            search: '',
+            selectedRegions: [],
+            selectedSectors: [],
+            page: 1,
+            sortBy: 'Fecha inicio del contrato de concesión',
+            sortOrder: 'asc',
+            lastMapProjects: [], // cache for map render on lazy tab switch
+            selectedProjectCode: null, // track selected project for dimming
+            hoveredProjectCode: null,  // track hovered project code
+            timelineOpen: false        // timeline panel visibility flag
+        };
+
+        // Chart references
+        let sectorChartInstance = null;
+        let statusChartInstance = null;
+        let availableRegionsList = [];
+        let availableSectorsList = [];
+
+        // Leaflet Map state and layers
+        let leafletMap = null;
+        let tileLayer = null;
+        let activeMapCodes = new Set();
+        let projectMetadata = {};
+        let shapeToProjectCodes = {};    // shape COD -> Set of project codes
+        let shapeGeometries = {};        // shape COD -> array of GeoJSON layer objects
+        let projectMarkersMap = {};      // project code -> Leaflet marker instance
+        let activeClusterMarkers = [];   // array of active cluster markers
+        let activeSpiderLegs = [];       // array of spider leg connector lines
+        let spiderfiedClusterGroupKey = null; // key of currently expanded cluster group
+        let layers = {
+            regions: null,
+            dgc: null
+        };
+
+
+        // Colors configurations for premium aesthetic
+        const chartColors = {
+            dark: {
+                grid: 'rgba(255,255,255,0.06)',
+                text: '#94a3b8',
+                palette: [
+                    '#3b82f6', '#8b5cf6', '#10b981', '#f59e0b',
+                    '#0ea5e9', '#ec4899', '#f43f5e', '#14b8a6'
+                ]
+            },
+            light: {
+                grid: 'rgba(0,0,0,0.05)',
+                text: '#4b5563',
+                palette: [
+                    '#2563eb', '#7c3aed', '#059669', '#d97706',
+                    '#0284c7', '#db2777', '#e11d48', '#0d9488'
+                ]
+            }
+        };
+
+        // DOM elements
+        const searchInput = document.getElementById('search-input');
+
+        const regionMultiselectContainer = document.getElementById('region-multiselect-container');
+        const regionMultiselectBtn = document.getElementById('region-multiselect-btn');
+        const regionMultiselectDropdown = document.getElementById('region-multiselect-dropdown');
+        const regionMultiselectText = document.getElementById('region-multiselect-text');
+        const regionCheckAll = document.getElementById('region-check-all');
+        const regionOptionsList = document.getElementById('region-options-list');
+
+        const sectorMultiselectContainer = document.getElementById('sector-multiselect-container');
+        const sectorMultiselectBtn = document.getElementById('sector-multiselect-btn');
+        const sectorMultiselectDropdown = document.getElementById('sector-multiselect-dropdown');
+        const sectorMultiselectText = document.getElementById('sector-multiselect-text');
+        const sectorCheckAll = document.getElementById('sector-check-all');
+        const sectorOptionsList = document.getElementById('sector-options-list');
+
+        const btnReset = document.getElementById('btn-reset');
+        const tableBody = document.getElementById('table-body');
+        const emptyState = document.getElementById('empty-state');
+        const countLoaded = document.getElementById('count-loaded');
+        const countTotal = document.getElementById('count-total');
+
+        const kpiTotal = document.getElementById('kpi-total');
+        const kpiInvestment = document.getElementById('kpi-investment');
+        const kpiActiveProjects = document.getElementById('kpi-active-projects');
+        const kpiBidders = document.getElementById('kpi-bidders');
+
+        const btnPrev = document.getElementById('btn-prev');
+        const btnNext = document.getElementById('btn-next');
+        const paginationInfo = document.getElementById('pagination-info');
+
+
+
+        const mapStatsBadge = document.getElementById('map-stats-badge');
+        const btnResetMap = document.getElementById('btn-reset-map');
+
+        const tableContainerView = document.getElementById('table-container-view');
+        const projectDetailView = document.getElementById('project-detail-view');
+        const btnBackToList = document.getElementById('btn-back-to-list');
+        const detailViewBody = document.getElementById('detail-view-body');
+        const detailViewSectorBadge = document.getElementById('detail-view-sector-badge');
+
+        let allLoadedContractsMap = {};
+
+        // Document initialized
+        document.addEventListener('DOMContentLoaded', () => {
+
+            if (btnBackToList) {
+                btnBackToList.addEventListener('click', () => {
+                    showTableListView();
+                    appState.selectedProjectCode = null;
+                    updateMapStyles();
+                    if (leafletMap) leafletMap.closePopup();
+                });
+            }
+
+            // Region Multi-Select Handlers
+            if (regionMultiselectBtn && regionMultiselectDropdown) {
+                regionMultiselectBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (sectorMultiselectDropdown) sectorMultiselectDropdown.style.display = 'none';
+                    const isVisible = regionMultiselectDropdown.style.display === 'flex';
+                    regionMultiselectDropdown.style.display = isVisible ? 'none' : 'flex';
+                });
+            }
+
+            if (regionCheckAll) {
+                regionCheckAll.addEventListener('change', () => {
+                    const isChecked = regionCheckAll.checked;
+                    document.querySelectorAll('.region-checkbox').forEach(cb => {
+                        cb.checked = isChecked;
+                    });
+                    updateSelectedRegions();
+                });
+            }
+
+            // Sector Multi-Select Handlers
+            if (sectorMultiselectBtn && sectorMultiselectDropdown) {
+                sectorMultiselectBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (regionMultiselectDropdown) regionMultiselectDropdown.style.display = 'none';
+                    const isVisible = sectorMultiselectDropdown.style.display === 'flex';
+                    sectorMultiselectDropdown.style.display = isVisible ? 'none' : 'flex';
+                });
+            }
+
+            if (sectorCheckAll) {
+                sectorCheckAll.addEventListener('change', () => {
+                    const isChecked = sectorCheckAll.checked;
+                    document.querySelectorAll('.sector-checkbox').forEach(cb => {
+                        cb.checked = isChecked;
+                    });
+                    updateSelectedSectors();
+                });
+            }
+
+            // Close dropdowns on outside click
+            document.addEventListener('click', (e) => {
+                if (regionMultiselectContainer && !regionMultiselectContainer.contains(e.target)) {
+                    if (regionMultiselectDropdown) regionMultiselectDropdown.style.display = 'none';
+                }
+                if (sectorMultiselectContainer && !sectorMultiselectContainer.contains(e.target)) {
+                    if (sectorMultiselectDropdown) sectorMultiselectDropdown.style.display = 'none';
+                }
+            });
+
+            // Load initial filters and initial data load
+            loadFilters().then(() => {
+                fetchData();
+            });
+
+            // Bind search filter
+            searchInput.addEventListener('input', debounce(() => {
+                appState.search = searchInput.value;
+                appState.page = 1;
+                fetchData();
+            }, 300));
+
+            btnReset.addEventListener('click', () => {
+                searchInput.value = '';
+                appState.search = '';
+                appState.selectedRegions = [];
+                appState.selectedSectors = [];
+                appState.selectedProjectCode = null;
+                appState.sortBy = 'Fecha inicio del contrato de concesión';
+                appState.sortOrder = 'asc';
+
+                document.querySelectorAll('.data-table th.sortable').forEach(el => {
+                    el.classList.remove('asc', 'desc');
+                    if (el.getAttribute('data-sort') === appState.sortBy) {
+                        el.classList.add(appState.sortOrder);
+                    }
+                });
+
+                document.querySelectorAll('.region-checkbox').forEach(cb => cb.checked = false);
+                document.querySelectorAll('.sector-checkbox').forEach(cb => cb.checked = false);
+                if (regionCheckAll) regionCheckAll.checked = false;
+                if (sectorCheckAll) sectorCheckAll.checked = false;
+                if (regionMultiselectText) regionMultiselectText.textContent = 'Todas las regiones';
+                if (sectorMultiselectText) sectorMultiselectText.textContent = 'Todos los sectores';
+                if (layers.regions) layers.regions.setStyle(getRegionStyle);
+
+                showTableListView();
+                fetchData();
+            });
+
+            btnResetMap.addEventListener('click', () => {
+                if (leafletMap) {
+                    leafletMap.setView([-35.6751, -71.5430], 4.5);
+                }
+                appState.selectedProjectCode = null;
+                showTableListView();
+                updateMapStyles();
+            });
+
+            // Bind Pagination
+            btnPrev.addEventListener('click', () => {
+                if (appState.page > 1) {
+                    appState.page--;
+                    fetchData();
+                }
+            });
+
+            btnNext.addEventListener('click', () => {
+                appState.page++;
+                fetchData();
+            });
+
+            // Bind Table Sorters
+            document.querySelectorAll('.data-table th.sortable').forEach(th => {
+                th.addEventListener('click', () => {
+                    const sortCol = th.getAttribute('data-sort');
+
+                    if (appState.sortBy === sortCol) {
+                        appState.sortOrder = appState.sortOrder === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        appState.sortBy = sortCol;
+                        appState.sortOrder = 'asc';
+                    }
+
+                    // CSS indicators
+                    document.querySelectorAll('.data-table th.sortable').forEach(el => {
+                        el.classList.remove('asc', 'desc');
+                    });
+                    th.classList.add(appState.sortOrder);
+
+                    fetchData();
+                });
+            });
+
+
+
+            // Initialize Leaflet Map
+            initLeafletMap();
+
+            // Setup initial icons
+            lucide.createIcons();
+
+            // Initialize Timeline view events
+            initTimelineEvents();
+        });
+
+        // Toggle visual styling for visual tabs
+        function toggleChartTabStyles() {
+            if (appState.chartType === 'sector') {
+                btnChartSector.style.backgroundColor = 'var(--primary)';
+                btnChartSector.style.color = '#ffffff';
+                btnChartSector.style.borderColor = 'var(--primary)';
+                btnChartStatus.style.backgroundColor = 'var(--bg-card)';
+                btnChartStatus.style.color = 'var(--text-secondary)';
+                btnChartStatus.style.borderColor = 'var(--border-color)';
+            } else {
+                btnChartStatus.style.backgroundColor = 'var(--primary)';
+                btnChartStatus.style.color = '#ffffff';
+                btnChartStatus.style.borderColor = 'var(--primary)';
+                btnChartSector.style.backgroundColor = 'var(--bg-card)';
+                btnChartSector.style.color = 'var(--text-secondary)';
+                btnChartSector.style.borderColor = 'var(--border-color)';
+            }
+        }
+
+        function updateSelectedRegions() {
+            const checkedCbs = Array.from(document.querySelectorAll('.region-checkbox:checked'));
+            appState.selectedRegions = checkedCbs.map(cb => cb.value);
+
+            const totalCount = availableRegionsList.length;
+            const checkedCount = appState.selectedRegions.length;
+
+            if (regionCheckAll) {
+                regionCheckAll.checked = (checkedCount === totalCount && totalCount > 0);
+            }
+
+            if (regionMultiselectText) {
+                if (checkedCount === 0 || checkedCount === totalCount) {
+                    regionMultiselectText.textContent = 'Todas las regiones';
+                } else if (checkedCount === 1) {
+                    regionMultiselectText.textContent = appState.selectedRegions[0];
+                } else {
+                    regionMultiselectText.textContent = `${checkedCount} regiones seleccionadas`;
+                }
+            }
+
+            appState.page = 1;
+            appState.selectedProjectCode = null;
+            if (layers.regions) layers.regions.setStyle(getRegionStyle);
+            fetchData();
+        }
+
+        function updateSelectedSectors() {
+            const checkedCbs = Array.from(document.querySelectorAll('.sector-checkbox:checked'));
+            appState.selectedSectors = checkedCbs.map(cb => cb.value);
+
+            const totalCount = availableSectorsList.length;
+            const checkedCount = appState.selectedSectors.length;
+
+            if (sectorCheckAll) {
+                sectorCheckAll.checked = (checkedCount === totalCount && totalCount > 0);
+            }
+
+            if (sectorMultiselectText) {
+                if (checkedCount === 0 || checkedCount === totalCount) {
+                    sectorMultiselectText.textContent = 'Todos los sectores';
+                } else if (checkedCount === 1) {
+                    sectorMultiselectText.textContent = appState.selectedSectors[0];
+                } else {
+                    sectorMultiselectText.textContent = `${checkedCount} sectores seleccionados`;
+                }
+            }
+
+            appState.page = 1;
+            appState.selectedProjectCode = null;
+            fetchData();
+        }
+
+        // Carga estática de filtros desde window.STATIC_DATA
+        async function loadFilters() {
+            const data = window.STATIC_DATA || {};
+
+            availableRegionsList = data.regions || [];
+            availableSectorsList = data.sectors || [];
+
+            // Populate region checkboxes
+            if (regionOptionsList) {
+                regionOptionsList.innerHTML = '';
+                availableRegionsList.forEach(reg => {
+                    const label = document.createElement('label');
+                    label.className = 'multiselect-option';
+                    label.innerHTML = `
+                        <input type="checkbox" class="region-checkbox" value="${reg}">
+                        <span>${reg}</span>
+                    `;
+                    regionOptionsList.appendChild(label);
+                });
+
+                document.querySelectorAll('.region-checkbox').forEach(cb => {
+                    cb.addEventListener('change', updateSelectedRegions);
+                });
+            }
+
+            // Populate sector checkboxes
+            if (sectorOptionsList) {
+                sectorOptionsList.innerHTML = '';
+                availableSectorsList.forEach(sec => {
+                    const label = document.createElement('label');
+                    label.className = 'multiselect-option';
+                    label.innerHTML = `
+                        <input type="checkbox" class="sector-checkbox" value="${sec}">
+                        <span>${sec}</span>
+                    `;
+                    sectorOptionsList.appendChild(label);
+                });
+
+                document.querySelectorAll('.sector-checkbox').forEach(cb => {
+                    cb.addEventListener('change', updateSelectedSectors);
+                });
+            }
+        }
+
+
+        // ── MOTOR DE BÚSQUEDA CLIENTE (versión estática) ─────────────────────────────
+        function _normalizeStr(s) {
+            if (!s) return '';
+            return String(s).toLowerCase()
+                .normalize('NFD').replace(/[̀-ͯ]/g, '');
+        }
+
+        function _parseRegionsFromVal(regionStr) {
+            if (!regionStr) return [];
+            const str = String(regionStr).replace(/&nbsp;/g, ' ').replace(/ /g, ' ');
+            return str.split(/[;,]/).map(p => {
+                p = p.trim();
+                if (p === 'Metropolitana') return 'Metropolitana de Santiago';
+                if (p === 'Araucanía' || p === 'Araucania') return 'La Araucanía';
+                return p;
+            }).filter(Boolean);
+        }
+
+        function staticFetchData(params) {
+            const allData = (window.STATIC_DATA && window.STATIC_DATA.data) || [];
+            const searchRaw = params.get('search') || '';
+            const regionRaw = params.get('region') || '';
+            const sectorRaw = params.get('sector') || '';
+            const sortBy = params.get('sort_by') || 'Fecha inicio del contrato de concesión';
+            const sortOrder = params.get('sort_order') || 'asc';
+            const page = parseInt(params.get('page') || '1', 10);
+
+            const PAGE_SIZE = 50;
+
+            const searchNorm = _normalizeStr(searchRaw);
+            const selRegions = regionRaw ? regionRaw.split(',').map(r => r.trim()).filter(Boolean) : [];
+            const selSectors = sectorRaw ? sectorRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+            let filtered = allData.filter(item => {
+                if (selRegions.length > 0) {
+                    const rowRegions = _parseRegionsFromVal(item['Región geográfica']);
+                    const match = selRegions.some(sr => rowRegions.includes(sr));
+                    if (!match) return false;
+                }
+                if (selSectors.length > 0) {
+                    const sec = item['Sector del proyecto'] || '';
+                    if (!selSectors.includes(sec)) return false;
+                }
+                if (searchNorm) {
+                    const code = _normalizeStr(item['Código proyecto']);
+                    const name1 = _normalizeStr(item['Nombre de la Concesión ']);
+                    const name2 = _normalizeStr(item['Nombre de uso común']);
+                    const desc = _normalizeStr(item['Descripción ']);
+                    const soc = _normalizeStr(item['Nombre sociedad concesionaria']);
+                    const reg = _normalizeStr(item['Región geográfica']);
+                    const sec = _normalizeStr(item['Sector del proyecto']);
+                    const bidders = (item.bidders || []).map(b => _normalizeStr(b.name + ' ' + b.code)).join(' ');
+                    const haystack = [code, name1, name2, desc, soc, reg, sec, bidders].join(' ');
+                    if (!haystack.includes(searchNorm)) return false;
+                }
+                return true;
+            });
+
+            const countFiltered = filtered.length;
+            const totalDB = allData.length;
+
+            let totalInv = 0;
+            let totalBidders = 0;
+            const hitos = { 'operación': 0, 'construcción': 0, 'comb_const_oper': 0, 'finalizado': 0, 'activos': 0 };
+            const sectorStats = {}, statusStats = {};
+
+            filtered.forEach(item => {
+                totalInv += parseFloat(item['Inversión Materializada estimada'] || 0) || 0;
+                totalBidders += (item.bidders || []).length;
+                const st = item['ESTADO'] || '';
+                if (st) {
+                    statusStats[st] = (statusStats[st] || 0) + 1;
+                    if (st === 'Operación') { hitos['operación']++; hitos['activos']++; }
+                    else if (st === 'Construcción') hitos['construcción']++;
+                    else if (st === 'Construcción y Operación') { hitos['comb_const_oper']++; hitos['activos']++; }
+                    else if (st === 'Finalizado') hitos['finalizado']++;
+                }
+                const sec = item['Sector del proyecto'] || '';
+                if (sec) sectorStats[sec] = (sectorStats[sec] || 0) + 1;
+            });
+
+            filtered.sort((a, b) => {
+                const va = a[sortBy] != null ? String(a[sortBy]) : 'zzzzzz';
+                const vb = b[sortBy] != null ? String(b[sortBy]) : 'zzzzzz';
+                return sortOrder === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+            });
+
+            const totalPages = Math.max(1, Math.ceil(countFiltered / PAGE_SIZE));
+            const safePage = Math.min(page, totalPages);
+            const start = (safePage - 1) * PAGE_SIZE;
+            const pageData = filtered.slice(start, start + PAGE_SIZE);
+
+            const mapProjects = filtered.map(item => ({
+                code: item['Código proyecto'],
+                name: item['Nombre de uso común'] || item['Nombre de la Concesión '],
+                common: item['Nombre de uso común'],
+                region: item['Región geográfica'],
+                status: item['ESTADO'],
+                sector: item['Sector del proyecto'],
+                shapes: item.shapes || [],
+                group_timeline: item.group_timeline || []
+            }));
+
+            return {
+                data: pageData,
+                regions: (window.STATIC_DATA && window.STATIC_DATA.regions) || [],
+                sectors: (window.STATIC_DATA && window.STATIC_DATA.sectors) || [],
+                stats: { sectors: sectorStats, status: statusStats },
+                summary: {
+                    count_filtered: countFiltered,
+                    count_total: totalDB,
+                    total_investment_uf: totalInv,
+                    total_bidders: totalBidders,
+                    hitos: hitos
+                },
+                pagination: {
+                    page: safePage,
+                    page_size: PAGE_SIZE,
+                    total_records: countFiltered,
+                    total_pages: totalPages
+                },
+                map_projects: mapProjects
+            };
+        }
+
+        // Main AJAX Fetch data method
+        async function fetchData() {
+            try {
+                const params = new URLSearchParams({
+                    search: appState.search,
+                    region: appState.selectedRegions.join(','),
+                    sector: appState.selectedSectors.join(','),
+                    page: appState.page,
+                    sort_by: appState.sortBy,
+                    sort_order: appState.sortOrder
+                });
+
+                // VERSIÓN ESTÁTICA: filtrar y paginar en el cliente
+                const resData = staticFetchData(params);
+
+                // 1. Update KPI Values
+                if (kpiTotal) kpiTotal.textContent = resData.summary.count_filtered;
+
+                const elTotalSub = document.getElementById('kpi-total-sub');
+                if (elTotalSub) elTotalSub.textContent = `Filtrado de ${resData.summary.count_total} total`;
+
+                // Format investment: commas and UF
+                const rawInv = resData.summary.total_investment_uf;
+                if (kpiInvestment) kpiInvestment.textContent = formatUF(rawInv);
+
+                if (kpiActiveProjects) kpiActiveProjects.textContent = resData.summary.hitos.activos !== undefined ? resData.summary.hitos.activos.toLocaleString('es-CL') : (resData.summary.hitos.operación + resData.summary.hitos.comb_const_oper).toLocaleString('es-CL');
+                if (kpiBidders) kpiBidders.textContent = resData.summary.total_bidders !== undefined ? resData.summary.total_bidders.toLocaleString('es-CL') : '0';
+
+                // Update sub KPI context
+                const elConstSub = document.getElementById('kpi-construction-sub');
+                if (elConstSub) elConstSub.textContent = `Construcción + Operación: ${resData.summary.hitos.comb_const_oper}`;
+
+                // 2. Rendering Table Row Items
+                if (appState.page === 1) {
+                    allLoadedContractsMap = {};
+                }
+                resData.data.forEach(item => {
+                    if (item['Código proyecto']) {
+                        allLoadedContractsMap[item['Código proyecto'].toString().trim()] = item;
+                    }
+                });
+                renderTable(resData.data);
+
+                // 3. Render count values
+                countLoaded.textContent = resData.data.length;
+                countTotal.textContent = resData.pagination.total_records;
+
+                // 4. Manage Pagination Button Elements
+                updatePaginationControls(resData.pagination);
+
+                // 5. Redraw Chart Analytics visual elements
+                renderChart(resData.stats, document.body.classList.contains('light-theme') ? 'light' : 'dark');
+
+                // 6. Refresh Map Visualizer Markers Map elements
+                appState.lastMapProjects = resData.map_projects;
+                activeMapCodes.clear();
+                shapeToProjectCodes = {};
+                resData.map_projects.forEach(p => {
+                    activeMapCodes.add(p.code);
+                    projectMetadata[p.code] = p;
+                    if (p.shapes && Array.isArray(p.shapes)) {
+                        p.shapes.forEach(shapeId => {
+                            const sid = shapeId.toString().trim();
+                            if (sid) {
+                                if (!shapeToProjectCodes[sid]) {
+                                    shapeToProjectCodes[sid] = new Set();
+                                }
+                                shapeToProjectCodes[sid].add(p.code);
+                            }
+                        });
+                    }
+                });
+                updateMapStyles();
+                renderProjectMarkersOnMap(appState.lastMapProjects);
+
+                // 7. If timeline is open, re-render with updated data (all filtered projects)
+                if (appState.timelineOpen) {
+                    renderTimeline(resData.map_projects);
+                }
+
+                // Trigger Lucide refreshes
+                lucide.createIcons();
+            } catch (err) {
+                console.error("Error al obtener los datos de la API:", err);
+            }
+        }
+
+        let currentFilteredContractsList = [];
+
+        function updateDetailNavButtons(code) {
+            if (!code) return;
+            const cleanCode = code.toString().trim();
+            const list = currentFilteredContractsList.length > 0 ? currentFilteredContractsList : Object.values(allLoadedContractsMap);
+            const index = list.findIndex(c => (c['Código proyecto'] && c['Código proyecto'].toString().trim() === cleanCode) || (c.code && c.code.toString().trim() === cleanCode));
+
+            const btnDetailPrev = document.getElementById('btn-detail-prev');
+            const btnDetailNext = document.getElementById('btn-detail-next');
+
+            if (!btnDetailPrev || !btnDetailNext) return;
+
+            if (index > 0) {
+                btnDetailPrev.disabled = false;
+                btnDetailPrev.style.opacity = '1';
+                btnDetailPrev.style.cursor = 'pointer';
+                btnDetailPrev.style.pointerEvents = 'auto';
+                const prevItem = list[index - 1];
+                const prevCode = prevItem['Código proyecto'] || prevItem.code;
+                btnDetailPrev.onclick = (e) => {
+                    e.stopPropagation();
+                    if (prevCode) zoomToProjectCode(prevCode);
+                };
+            } else {
+                btnDetailPrev.disabled = true;
+                btnDetailPrev.style.opacity = '0.35';
+                btnDetailPrev.style.cursor = 'not-allowed';
+                btnDetailPrev.style.pointerEvents = 'none';
+                btnDetailPrev.onclick = null;
+            }
+
+            if (index >= 0 && index < list.length - 1) {
+                btnDetailNext.disabled = false;
+                btnDetailNext.style.opacity = '1';
+                btnDetailNext.style.cursor = 'pointer';
+                btnDetailNext.style.pointerEvents = 'auto';
+                const nextItem = list[index + 1];
+                const nextCode = nextItem['Código proyecto'] || nextItem.code;
+                btnDetailNext.onclick = (e) => {
+                    e.stopPropagation();
+                    if (nextCode) zoomToProjectCode(nextCode);
+                };
+            } else {
+                btnDetailNext.disabled = true;
+                btnDetailNext.style.opacity = '0.35';
+                btnDetailNext.style.cursor = 'not-allowed';
+                btnDetailNext.style.pointerEvents = 'none';
+                btnDetailNext.onclick = null;
+            }
+        }
+
+        // Render table list elements
+        function renderTable(contracts) {
+            currentFilteredContractsList = contracts || [];
+            tableBody.innerHTML = '';
+
+            if (contracts.length === 0) {
+                emptyState.style.display = 'flex';
+                return;
+            }
+            emptyState.style.display = 'none';
+
+            contracts.forEach((item, index) => {
+                let badgeClass = 'badge-neutral';
+                const status = item['ESTADO'] || '';
+                if (status === 'Operación') badgeClass = 'badge-success';
+                else if (status === 'Construcción') badgeClass = 'badge-info';
+                else if (status === 'Construcción y Operación') badgeClass = 'badge-warning';
+                else if (status === 'Finalizado') badgeClass = 'badge-neutral';
+
+                const tr = document.createElement('tr');
+                tr.className = 'row-main';
+                tr.id = `row-${index}`;
+                tr.style.cursor = 'pointer';
+                tr.innerHTML = `
+                    <td><strong>${item['Nombre de uso común'] || item['Nombre de la Concesión '] || 'Sin nombre'}</strong></td>
+                    <td>${item['Región geográfica'] || 'N/A'}</td>
+                    <td>${item ? formatDate(item['Fecha inicio del contrato de concesión']) : 'N/A'}</td>
+                    <td><span class="badge ${badgeClass}">${status}</span></td>
+                `;
+
+                tr.addEventListener('click', () => {
+                    if (item['Código proyecto']) {
+                        zoomToProjectCode(item['Código proyecto']);
+                    }
+                });
+
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function showTableListView() {
+            if (projectDetailView) projectDetailView.style.display = 'none';
+            if (tableContainerView) tableContainerView.style.display = 'flex';
+        }
+
+        async function showProjectDetailView(code) {
+            if (!code) return;
+            const cleanCode = code.toString().trim();
+
+            if (tableContainerView) tableContainerView.style.display = 'none';
+            if (projectDetailView) projectDetailView.style.display = 'flex';
+
+            updateDetailNavButtons(cleanCode);
+
+            let item = allLoadedContractsMap[cleanCode];
+
+            // If detail is not cached or bidders missing, fetch on-demand from API
+            if (!item || !item.bidders) {
+                if (detailViewBody) {
+                    detailViewBody.innerHTML = `
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem 1rem; color: var(--text-secondary); gap: 0.75rem; font-size: 0.8rem; text-align: center;">
+                            <i data-lucide="loader-2" class="spin" style="width: 22px; height: 22px; color: var(--primary); animation: spin 1s linear infinite;"></i>
+                            <span>Cargando detalle del proyecto...</span>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                }
+                try {
+                    // VERSIÓN ESTÁTICA: buscar en datos pre-cargados
+                    const allData = (window.STATIC_DATA && window.STATIC_DATA.data) || [];
+                    const found = allData.find(r => {
+                        const c = r['Código proyecto'] || r['Codigo proyecto'] || '';
+                        return c.toString().trim() === cleanCode;
+                    });
+                    if (found) {
+                        item = found;
+                        allLoadedContractsMap[cleanCode] = item;
+                    }
+                } catch (err) {
+                    console.error("Error al cargar detalle del proyecto:", err);
+                }
+            }
+
+            renderProjectDetailBody(cleanCode, item);
+        }
+
+        function renderProjectDetailBody(cleanCode, item) {
+            const sector = item ? item['Sector del proyecto'] : (projectMetadata[cleanCode] ? projectMetadata[cleanCode].sector : '');
+            const status = item ? item['ESTADO'] : (projectMetadata[cleanCode] ? projectMetadata[cleanCode].status : '');
+            const secCfg = getSectorConfig(sector);
+
+            let badgeClass = 'badge-neutral';
+            if (status === 'Operación') badgeClass = 'badge-success';
+            else if (status === 'Construcción') badgeClass = 'badge-info';
+            else if (status === 'Construcción y Operación') badgeClass = 'badge-warning';
+
+            const titleName = (item && item['Nombre de uso común']) || (item && item['Nombre de la Concesión ']) || (projectMetadata[cleanCode] && projectMetadata[cleanCode].name) || 'Concesión';
+
+            const timelineBtnHTML = `
+                <div style="margin-top: 0.1rem; margin-bottom: 0.1rem;">
+                    <button id="btn-view-in-timeline" class="btn-action-link" style="width: 100%; justify-content: center; padding: 0.45rem 0.75rem; font-size: 0.76rem; font-weight: 600; background: linear-gradient(135deg, rgba(37,99,235,0.1), rgba(37,99,235,0.04)); border: 1px solid rgba(37,99,235,0.3); color: var(--primary); border-radius: 8px; cursor: pointer; transition: all 0.2s ease; gap: 0.4rem;">
+                        <i data-lucide="gantt-chart" style="width: 15px; height: 15px;"></i>
+                        Ver en línea de tiempo
+                    </button>
+                </div>
+            `;
+
+            const linkCMF = item && item['Link a CMF de SC'] && item['Link a CMF de SC'] !== 'SIN' && item['Link a CMF de SC'] !== 'Sin informar'
+                ? `<a href="${item['Link a CMF de SC']}" target="_blank" class="btn-action-link" style="font-size: 0.72rem; padding: 0.3rem 0.6rem;"><i data-lucide="external-link"></i> Perfil CMF</a>`
+                : '';
+
+            const linkMap = item && item['Link a mapa página web'] && item['Link a mapa página web'] !== 'Sitio en construcción'
+                ? `<a href="${item['Link a mapa página web']}" target="_blank" class="btn-action-link" style="font-size: 0.72rem; padding: 0.3rem 0.6rem;"><i data-lucide="map-pin"></i> Mapa Virtual</a>`
+                : '';
+
+            const linkMOP = item && item['Link pagina web concesiones'] && item['Link pagina web concesiones'] !== 'SIN'
+                ? `<a href="${item['Link pagina web concesiones']}" target="_blank" class="btn-action-link" style="font-size: 0.72rem; padding: 0.3rem 0.6rem;"><i data-lucide="globe"></i> Ficha MOP</a>`
+                : '';
+
+            // Build bidders HTML section
+            const biddersList = (item && item.bidders) || (projectMetadata[cleanCode] && projectMetadata[cleanCode].bidders) || [];
+            let biddersHTML = '';
+            if (biddersList && biddersList.length > 0) {
+                const bidderItems = biddersList.map(b => {
+                    const isAwarded = b.adjudicado || (b.adjudicado_raw && b.adjudicado_raw.toUpperCase().startsWith('S'));
+                    const badge = isAwarded
+                        ? `<span class="badge badge-success" style="font-size: 0.64rem; padding: 0.1rem 0.35rem; font-weight: 600; flex-shrink: 0;"><i data-lucide="award" style="width: 10px; height: 10px; margin-right: 2px;"></i>Adjudicado</span>`
+                        : '';
+                    return `
+                        <li style="padding: 0.35rem 0.5rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.74rem; display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; margin-bottom: 0.3rem;">
+                            <span style="font-weight: 600; color: var(--text-primary); word-break: break-word;">${b.name}</span>
+                            ${badge}
+                        </li>
+                    `;
+                }).join('');
+
+                biddersHTML = `
+                    <div class="detail-section" style="margin-top: 0.65rem;">
+                        <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.4rem; display: flex; align-items: center; justify-content: space-between;">
+                            <span style="display: flex; align-items: center; gap: 0.35rem;">
+                                <i data-lucide="users" style="width: 14px; height: 14px; color: var(--primary);"></i>
+                                Oferentes / Licitantes
+                            </span>
+                            <span class="badge" style="font-size: 0.68rem; background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 0.1rem 0.4rem;">${biddersList.length}</span>
+                        </h4>
+                        <ul style="list-style: none; padding: 0; margin: 0; max-height: 180px; overflow-y: auto;">
+                            ${bidderItems}
+                        </ul>
+                    </div>
+                `;
+            } else {
+                biddersHTML = `
+                    <div class="detail-section" style="margin-top: 0.65rem;">
+                        <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.35rem;">
+                            <i data-lucide="users" style="width: 14px; height: 14px; color: var(--text-muted);"></i>
+                            Oferentes / Licitantes
+                        </h4>
+                        <p class="detail-desc" style="font-size: 0.75rem; color: var(--text-muted); font-style: italic; background: rgba(255, 255, 255, 0.02); padding: 0.4rem 0.5rem; border-radius: 6px; border: 1px dashed var(--border-color);">No se detectan licitantes en la base de datos para este proyecto.</p>
+                    </div>
+                `;
+            }
+
+            // Build relicitation navigation bar (shown only when group has > 1 concession)
+            let relicitNavHTML = '';
+            const groupNodes = (item && item.group_timeline) ? item.group_timeline : [];
+            // Sort by seq ascending (1=primera, 2=segunda, ...)
+            const sortedNodes = [...groupNodes].sort((a, b) => a.seq - b.seq);
+            if (sortedNodes.length > 1) {
+                const currentSeq = sortedNodes.find(n => n.code === cleanCode);
+                const currentIdx = sortedNodes.indexOf(currentSeq);
+                const prevNode = currentIdx > 0 ? sortedNodes[currentIdx - 1] : null;
+                const nextNode = currentIdx < sortedNodes.length - 1 ? sortedNodes[currentIdx + 1] : null;
+
+                const seqWords = ['Primera', 'Segunda', 'Tercera', 'Cuarta', 'Quinta', 'Sexta', 'Séptima', 'Octava'];
+                const seqLabel = (seq) => (seqWords[seq - 1] || `N°${seq}`) + ' Licitación';
+
+                const pills = sortedNodes.map((node, idx) => {
+                    const isActive = node.code === cleanCode;
+                    const statusColors = {
+                        'Operación': '#059669',
+                        'Construcción': '#0284c7',
+                        'Construcción y Operación': '#d97706'
+                    };
+                    const dotColor = statusColors[node.status] || '#64748b';
+                    return `<button
+                        onclick="zoomToProjectCode('${node.code}')"
+                        title="${seqLabel(node.seq)}: ${node.name || node.code}"
+                        style="
+                            display: inline-flex; align-items: center; gap: 0.3rem;
+                            font-size: 0.68rem; font-weight: ${isActive ? '700' : '500'};
+                            padding: 0.2rem 0.5rem; border-radius: 20px; border: 1.5px solid ${isActive ? secCfg.color : 'var(--border-color)'};
+                            background: ${isActive ? secCfg.color + '22' : 'transparent'};
+                            color: ${isActive ? secCfg.color : 'var(--text-secondary)'};
+                            cursor: ${isActive ? 'default' : 'pointer'};
+                            transition: all 0.2s ease;
+                            white-space: nowrap;
+                        "
+                        ${isActive ? 'disabled' : ''}
+                    >
+                        <span style="width: 6px; height: 6px; border-radius: 50%; background: ${dotColor}; flex-shrink: 0;"></span>
+                        ${node.seq}ª
+                    </button>`;
+                }).join('');
+
+                const prevBtn = prevNode
+                    ? `<button onclick="zoomToProjectCode('${prevNode.code}')" title="Ir a ${seqLabel(prevNode.seq)}"
+                        style="display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.72rem; font-weight: 600; padding: 0.25rem 0.55rem; border-radius: 8px; border: 1.5px solid var(--border-color); background: transparent; color: var(--text-secondary); cursor: pointer; transition: all 0.2s ease;"
+                        onmouseover="this.style.borderColor='${secCfg.color}';this.style.color='${secCfg.color}'"
+                        onmouseout="this.style.borderColor='var(--border-color)';this.style.color='var(--text-secondary)'"
+                      ><i data-lucide="chevron-left" style="width: 12px; height: 12px;"></i> Anterior</button>`
+                    : `<button disabled style="display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.72rem; font-weight: 600; padding: 0.25rem 0.55rem; border-radius: 8px; border: 1.5px solid transparent; background: transparent; color: transparent; cursor: default; visibility: hidden;"><i style="width: 12px; height: 12px;"></i> Anterior</button>`;
+
+                const nextBtn = nextNode
+                    ? `<button onclick="zoomToProjectCode('${nextNode.code}')" title="Ir a ${seqLabel(nextNode.seq)}"
+                        style="display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.72rem; font-weight: 600; padding: 0.25rem 0.55rem; border-radius: 8px; border: 1.5px solid var(--border-color); background: transparent; color: var(--text-secondary); cursor: pointer; transition: all 0.2s ease;"
+                        onmouseover="this.style.borderColor='${secCfg.color}';this.style.color='${secCfg.color}'"
+                        onmouseout="this.style.borderColor='var(--border-color)';this.style.color='var(--text-secondary)'"
+                      >Siguiente <i data-lucide="chevron-right" style="width: 12px; height: 12px;"></i></button>`
+                    : `<button disabled style="display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.72rem; font-weight: 600; padding: 0.25rem 0.55rem; border-radius: 8px; border: 1.5px solid transparent; background: transparent; color: transparent; cursor: default; visibility: hidden;">Siguiente <i style="width: 12px; height: 12px;"></i></button>`;
+
+                relicitNavHTML = `
+                    <div style="
+                        margin-top: 0.1rem;
+                        padding: 0.55rem 0.7rem;
+                        background: linear-gradient(135deg, ${secCfg.color}08, ${secCfg.color}12);
+                        border: 1px solid ${secCfg.color}30;
+                        border-radius: 10px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 0.5rem;
+                        flex-wrap: wrap;
+                    ">
+                        <div style="display: flex; align-items: center; gap: 0.3rem; flex-shrink: 0;">
+                            <i data-lucide="git-branch" style="width: 13px; height: 13px; color: ${secCfg.color};"></i>
+                            <span style="font-size: 0.68rem; font-weight: 700; color: ${secCfg.color}; text-transform: uppercase; letter-spacing: 0.04em;">${sortedNodes.length} Licitaciones</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap; flex: 1; justify-content: center;">
+                            ${pills}
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.3rem; flex-shrink: 0;">
+                            ${prevBtn}
+                            ${nextBtn}
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (detailViewBody) {
+                detailViewBody.innerHTML = `
+                    <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.1rem;">
+                        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
+                            <h3 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--text-primary); line-height: 1.35; font-family: var(--font-heading); flex: 1; min-width: 0;">${titleName}</h3>
+                            <span class="badge ${badgeClass}" style="flex-shrink: 0; font-size: 0.7rem; padding: 0.2rem 0.5rem; white-space: nowrap; margin-top: 2px;">${status || sector}</span>
+                        </div>
+                        <div style="font-size: 0.75rem; color: ${secCfg.color}; font-weight: 600; margin-top: 0.25rem;">${sector}</div>
+                    </div>
+
+                    ${relicitNavHTML}
+
+                    ${timelineBtnHTML}
+
+                    <div class="detail-section">
+                        <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.35rem;">Descripción</h4>
+                        <p class="detail-desc" style="font-size: 0.76rem; line-height: 1.45;">${(item && item['Descripción ']) || 'No se registra descripción en la base de datos.'}</p>
+                    </div>
+
+                    ${biddersHTML}
+
+                    <div class="detail-section">
+                        <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.4rem;">Datos Contractuales</h4>
+                        <div class="detail-grid" style="grid-template-columns: 110px 1fr; gap: 0.3rem; font-size: 0.74rem;">
+                            <span class="detail-label">Sociedad:</span>
+                            <span class="detail-value">${(item && item['Nombre sociedad concesionaria']) || 'N/A'}</span>
+
+                            <span class="detail-label">Región:</span>
+                            <span class="detail-value">${(item && item['Región geográfica']) || 'N/A'}</span>
+
+                            <span class="detail-label">Inversión:</span>
+                            <span class="detail-value">${item ? formatUFComplete(item['Inversión Materializada estimada']) + ' UF' : 'N/A'}</span>
+
+                            <span class="detail-label">Plazo:</span>
+                            <span class="detail-value">${(item && item['Plazo fijo / variable ']) || 'Indefinido'}</span>
+
+                            <span class="detail-label">Adjudicación:</span>
+                            <span class="detail-value">${item ? formatDate(item['Fecha decreto adjudicación']) : 'N/A'}</span>
+
+                            <span class="detail-label">Inicio Contrato:</span>
+                            <span class="detail-value">${item ? formatDate(item['Fecha inicio del contrato de concesión']) : 'N/A'}</span>
+
+                            <span class="detail-label">Término Contrato:</span>
+                            <span class="detail-value">${item ? formatDate(item['Fecha término de la concesión']) : 'N/A'}</span>
+
+                            <span class="detail-label">Avance Obras:</span>
+                            <span class="detail-value"><strong>${item ? formatProgress(item['% Avance obras físicas']) : 'N/A'}</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="detail-actions" style="margin-top: 0.5rem; gap: 0.4rem;">
+                        ${linkMap}
+                        ${linkCMF}
+                        ${linkMOP}
+                    </div>
+                `;
+            }
+
+            const btnViewTl = document.getElementById('btn-view-in-timeline');
+            if (btnViewTl) {
+                btnViewTl.addEventListener('click', () => {
+                    showTimelineView();
+                    renderTimeline(appState.lastMapProjects || [], cleanCode);
+                });
+            }
+
+            lucide.createIcons();
+        }
+
+        // Handle Pagination State and updates
+        function updatePaginationControls(pInfo) {
+            appState.page = pInfo.page;
+            const paginationContainer = document.querySelector('.pagination-container');
+
+            if (pInfo.total_pages <= 1) {
+                if (paginationContainer) paginationContainer.style.display = 'none';
+            } else {
+                if (paginationContainer) paginationContainer.style.display = 'flex';
+                const startRecord = (pInfo.page - 1) * pInfo.page_size + 1;
+                const endRecord = Math.min(pInfo.page * pInfo.page_size, pInfo.total_records);
+
+                if (pInfo.total_records === 0) {
+                    paginationInfo.textContent = 'Mostrando 0 de 0 filtrados';
+                    btnPrev.disabled = true;
+                    btnNext.disabled = true;
+                } else {
+                    paginationInfo.textContent = `Mostrando ${startRecord}-${endRecord} de ${pInfo.total_records} contratos`;
+                    btnPrev.disabled = (pInfo.page <= 1);
+                    btnNext.disabled = (pInfo.page >= pInfo.total_pages);
+                }
+            }
+        }
+
+        function getStatusColor(statusName) {
+            const s = (statusName || '').toLowerCase();
+            if (s.includes('operac') && s.includes('construc')) return '#d97706';
+            if (s.includes('operac')) return '#059669';
+            if (s.includes('construc')) return '#0284c7';
+            return '#64748b';
+        }
+
+        // Generate Chart.js display (Dual charts displayed simultaneously)
+        function renderChart(statsData, currentThemeMode) {
+            const sectorCanvas = document.getElementById('sectorChart');
+            const statusCanvas = document.getElementById('statusChart');
+            const sectorLegendEl = document.getElementById('sectorChartLegend');
+            if (!sectorCanvas || !statusCanvas) return;
+
+            const themeConfig = chartColors[currentThemeMode];
+
+            if (sectorChartInstance) {
+                sectorChartInstance.destroy();
+                sectorChartInstance = null;
+            }
+            if (statusChartInstance) {
+                statusChartInstance.destroy();
+                statusChartInstance = null;
+            }
+
+            // 1. Sector Doughnut Chart (Sorted descending by count: mayor a menor)
+            const sectorEntries = Object.entries(statsData.sectors || {});
+            sectorEntries.sort((a, b) => b[1] - a[1]);
+
+            const sectorLabels = sectorEntries.map(e => e[0]);
+            const sectorCounts = sectorEntries.map(e => e[1]);
+            const sectorColorsList = sectorLabels.map(secName => getSectorConfig(secName).color);
+
+            sectorChartInstance = new Chart(sectorCanvas.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: sectorLabels,
+                    datasets: [{
+                        label: 'Contratos',
+                        data: sectorCounts,
+                        backgroundColor: sectorColorsList,
+                        borderColor: currentThemeMode === 'dark' ? '#0f1626' : '#ffffff',
+                        borderWidth: 2,
+                        hoverOffset: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '68%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            bodyFont: { size: 9 },
+                            titleFont: { size: 9 }
+                        }
+                    }
+                }
+            });
+
+            // Populate custom HTML Legend for Sector Chart (Non-scrollable, all visible)
+            if (sectorLegendEl) {
+                sectorLegendEl.innerHTML = '';
+                sectorLabels.forEach((label, i) => {
+                    const count = sectorCounts[i];
+                    const secCfg = getSectorConfig(label);
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'sector-legend-item';
+                    itemEl.style.cssText = 'display: flex; align-items: center; justify-content: space-between; font-size: 0.66rem; color: var(--text-primary); cursor: pointer; gap: 0.2rem; padding: 0.05rem 0.1rem; border-radius: 3px; line-height: 1.15;';
+                    itemEl.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 0.3rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            <span style="width: 7px; height: 7px; border-radius: 50%; background-color: ${secCfg.color}; flex-shrink: 0;"></span>
+                            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.66rem;">${label}</span>
+                        </div>
+                        <span style="font-weight: 700; color: var(--text-secondary); flex-shrink: 0; font-size: 0.66rem;">${count}</span>
+                    `;
+
+                    itemEl.addEventListener('mouseenter', () => {
+                        if (sectorChartInstance) {
+                            sectorChartInstance.setActiveElements([{ datasetIndex: 0, index: i }]);
+                            sectorChartInstance.update();
+                        }
+                    });
+                    itemEl.addEventListener('mouseleave', () => {
+                        if (sectorChartInstance) {
+                            sectorChartInstance.setActiveElements([]);
+                            sectorChartInstance.update();
+                        }
+                    });
+
+                    sectorLegendEl.appendChild(itemEl);
+                });
+            }
+
+            // 2. Status Bar Chart (Uniform single color for all bars)
+            const statusLabels = Object.keys(statsData.status || {});
+            const statusCounts = Object.values(statsData.status || {});
+            const uniformBarColor = currentThemeMode === 'dark' ? '#3b82f6' : '#2563eb';
+
+            statusChartInstance = new Chart(statusCanvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: statusLabels,
+                    datasets: [{
+                        label: 'Contratos',
+                        data: statusCounts,
+                        backgroundColor: uniformBarColor,
+                        borderColor: 'transparent',
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            bodyFont: { size: 9 },
+                            titleFont: { size: 9 }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: themeConfig.text,
+                                font: { size: 7.5 }
+                            }
+                        },
+                        y: {
+                            grid: { color: themeConfig.grid },
+                            ticks: {
+                                color: themeConfig.text,
+                                font: { size: 8 },
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Formatting utilities
+        function formatUF(val) {
+            if (val === null || val === undefined || isNaN(val)) return '0 UF';
+
+            // Format millions
+            const millions = val / 1000000;
+            if (millions >= 1) {
+                return `${millions.toFixed(1).replace(/\.0$/, '')}M UF`;
+            }
+            if (val >= 1000) {
+                return `${(val / 1000).toFixed(1).replace(/\.0$/, '')}k UF`;
+            }
+            return `${val.toLocaleString('es-CL')} UF`;
+        }
+
+        function formatUFComplete(val) {
+            if (val === null || val === undefined || isNaN(val)) return 'SIN DATO';
+            return Math.round(val).toLocaleString('es-CL');
+        }
+
+        function formatDate(val) {
+            if (val === null || val === undefined || val === 'NaT' || val === 'NaT 00:00:00') return 'N/A';
+            if (typeof val === 'string') {
+                if (val.trim() === '' || val.startsWith('SD') || val.startsWith('sin')) return 'N/A';
+                // Try clean up date format
+                const tIndex = val.indexOf(' ');
+                return tIndex > 0 ? val.substring(0, tIndex) : val;
+            }
+            return val;
+        }
+
+        function formatProgress(val) {
+            if (val === null || val === undefined) return 'No registra';
+            if (typeof val === 'string') {
+                if (val.trim() === 'No aplica' || val.trim() === 'SD') return val;
+                return val;
+            }
+            // If it is a float between 0 and 1, represent as percentage
+            if (val <= 1.0) {
+                return `${Math.round(val * 100)}%`;
+            }
+            return `${val}%`;
+        }
+
+        // De-bouncer for keystrokes
+        function debounce(func, delay) {
+            let timeoutId;
+            return function (...args) {
+                if (timeoutId) clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => {
+                    func.apply(this, args);
+                }, delay);
+            };
+        }
+
+        // --- SECTOR-BASED DESIGN SYSTEM & COLOR STRATEGY ---
+        function getSectorConfig(sector) {
+
+            const secLower = (sector || '').toLowerCase();
+            if (secLower.includes('aerop')) {
+                return {
+                    name: 'Aeroportuaria',
+                    color: '#0284c7',
+                    svg: `<svg viewBox="0 0 24 24" fill="white" style="width: 13px; height: 13px; display: block;"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L14 19v-5.5z"/></svg>`
+                };
+            } else if (secLower.includes('hosp') || secLower.includes('salud')) {
+                return {
+                    name: 'Hospitalaria',
+                    color: '#059669',
+                    svg: `<svg viewBox="0 0 24 24" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; display: block;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`
+                };
+            } else if (secLower.includes('vial urbana')) {
+                return {
+                    name: 'Vial urbana',
+                    color: '#c2410c',
+                    svg: `<svg viewBox="0 0 24 24" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px; display: block;"><path d="M4 21L9 3M20 21L15 3M12 3v4M12 11v4M12 19v2"/></svg>`
+                };
+            } else if (secLower.includes('vial interurbana') || secLower.includes('vial') || secLower.includes('camino') || secLower.includes('ruta') || secLower.includes('autop')) {
+                return {
+                    name: 'Vial interurbana',
+                    color: '#d97706',
+                    svg: `<svg viewBox="0 0 24 24" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px; display: block;"><line x1="6" y1="3" x2="6" y2="21"></line><line x1="18" y1="3" x2="18" y2="21"></line><line x1="12" y1="3" x2="12" y2="7"></line><line x1="12" y1="11" x2="12" y2="15"></line><line x1="12" y1="19" x2="12" y2="21"></line></svg>`
+                };
+            } else if (secLower.includes('edificaci') || secLower.includes('equipamiento')) {
+                return {
+                    name: 'Edificación pública',
+                    color: '#6366f1',
+                    svg: `<svg viewBox="0 0 24 24" stroke="white" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; display: block;"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h2M13 10h2M9 14h2M13 14h2"/></svg>`
+                };
+            } else if (secLower.includes('penitenciaria') || secLower.includes('carcel')) {
+                return {
+                    name: 'Penitenciaria',
+                    color: '#475569',
+                    svg: `<svg viewBox="0 0 24 24" stroke="white" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; display: block;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`
+                };
+            } else if (secLower.includes('hidrica') || secLower.includes('hídrica') || secLower.includes('agua')) {
+                return {
+                    name: 'Soluciones hídricas',
+                    color: '#0891b2',
+                    svg: `<svg viewBox="0 0 24 24" fill="white" style="width: 12px; height: 12px; display: block;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>`
+                };
+            } else {
+                return {
+                    name: sector || 'Diversos',
+                    color: '#8b5cf6',
+                    svg: `<svg viewBox="0 0 24 24" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; display: block;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`
+                };
+            }
+        }
+
+        // --- MAP INITIALIZATION AND STYLE LOGIC ---
+        function initLeafletMap() {
+            // Center map on Chile's geographical center
+            leafletMap = L.map('leaflet-map', {
+                zoomControl: true,
+                minZoom: 3,
+                maxZoom: 18,
+                zoomSnap: 0.5
+            }).setView([-35.6751, -71.5430], 4.5);
+
+            // Set initial theme tile layer
+            updateMapTileLayer();
+
+            // Load map layers asynchronously
+            loadMapLayers();
+
+            // Clear selected project selection when clicking on the map background
+            leafletMap.on('click', () => {
+                appState.selectedProjectCode = null;
+                collapseSpiderLegs();
+                updateMapStyles();
+                showTableListView();
+            });
+
+            // Collapse spider legs when zoom changes
+            leafletMap.on('zoomstart', () => {
+                collapseSpiderLegs();
+            });
+        }
+
+        function updateMapTileLayer() {
+            if (tileLayer) {
+                leafletMap.removeLayer(tileLayer);
+            }
+
+            const isLight = document.body.classList.contains('light-theme');
+            const url = isLight
+                ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+                : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+
+            tileLayer = L.tileLayer(url, {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 20
+            }).addTo(leafletMap);
+        }
+
+        function mapGeojsonRegionToDbRegion(geojsonName) {
+            if (!geojsonName) return '';
+
+            const name = geojsonName.trim();
+            const lowerName = name.toLowerCase();
+
+            if (lowerName.includes('bío-bío') || lowerName.includes('biobío') || lowerName.includes('del bío')) {
+                return 'Biobío';
+            }
+            if (lowerName.includes('magallanes')) {
+                return 'Magallanes y de la Antártica Chilena';
+            }
+            if (lowerName.includes('aysén') || lowerName.includes('aysen') || lowerName.includes('ibáñez') || lowerName.includes('ibañez')) {
+                const found = availableRegionsList.find(reg => reg.toLowerCase().includes('aysén') || reg.toLowerCase().includes('aysen'));
+                if (found) return found;
+            }
+
+            const cleanGeo = name.toLowerCase()
+                .replace(/región de |región del |región metropolitana de /g, '')
+                .replace(/ del gral\.ibañez del campo/g, '')
+                .replace(/libertador bernardo o['’]higgins/g, "o'higgins")
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/-/g, '')
+                .trim();
+
+            for (let regVal of availableRegionsList) {
+                if (!regVal) continue;
+                const cleanOpt = regVal.toLowerCase().trim()
+                    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                    .replace(/-/g, '');
+
+                if (cleanOpt.includes(cleanGeo) || cleanGeo.includes(cleanOpt)) {
+                    return regVal;
+                }
+            }
+            return '';
+        }
+
+        function getRegionStyle(feature) {
+            const regionName = feature.properties ? feature.properties.Region : '';
+            const dbRegionValue = mapGeojsonRegionToDbRegion(regionName);
+            const isSelected = appState.selectedRegions && appState.selectedRegions.length > 0 && dbRegionValue && appState.selectedRegions.includes(dbRegionValue);
+
+            return {
+                className: 'region-boundary',
+                color: 'var(--primary)',
+                weight: isSelected ? 2.5 : 0.8,
+                opacity: isSelected ? 0.95 : 0.25,
+                fillColor: isSelected ? 'var(--primary)' : 'var(--bg-card)',
+                fillOpacity: isSelected ? 0.32 : 0.08
+            };
+        }
+
+        function getFeatureStyle(feature, sector) {
+            const code = feature.properties && feature.properties.COD ? feature.properties.COD.toString().trim() : '';
+            const projCodesSet = shapeToProjectCodes[code];
+            let isActive = false;
+            let activeProj = null;
+
+            if (projCodesSet) {
+                const activeCodesList = Array.from(projCodesSet).filter(pc => activeMapCodes.has(pc));
+                if (activeCodesList.length > 0) {
+                    isActive = true;
+                    activeCodesList.sort((a, b) => {
+                        const dateA = (projectMetadata[a] && projectMetadata[a].tender_date) || '';
+                        const dateB = (projectMetadata[b] && projectMetadata[b].tender_date) || '';
+                        if (dateA && !dateB) return -1;
+                        if (!dateA && dateB) return 1;
+                        return dateB.localeCompare(dateA);
+                    });
+                    activeProj = projectMetadata[activeCodesList[0]];
+                }
+            }
+
+            if (!isActive) {
+                return {
+                    color: 'transparent',
+                    weight: 0,
+                    opacity: 0,
+                    fillColor: 'transparent',
+                    fillOpacity: 0
+                };
+            }
+
+            const actualSector = (activeProj && activeProj.sector) ? activeProj.sector : (sector || (feature.properties && feature.properties.Sector_DGC) || 'Diversos');
+
+            const selectedCode = appState.selectedProjectCode;
+            const hoveredCode = appState.hoveredProjectCode;
+
+            const selectedProj = selectedCode ? projectMetadata[selectedCode] : null;
+            const selectedShapes = (selectedProj && selectedProj.shapes) ? selectedProj.shapes.map(s => s.toString().trim()) : [];
+            const isSelected = selectedCode && selectedShapes.includes(code);
+
+            const hoveredProj = hoveredCode ? projectMetadata[hoveredCode] : null;
+            const hoveredShapes = (hoveredProj && hoveredProj.shapes) ? hoveredProj.shapes.map(s => s.toString().trim()) : [];
+            const isHovered = hoveredCode && hoveredShapes.includes(code);
+
+            const secCfg = getSectorConfig(actualSector);
+            const color = secCfg.color;
+
+            const isLineGeom = feature.geometry && feature.geometry.type && feature.geometry.type.toLowerCase().includes('line');
+
+            let opacity = 0.85;
+            let fillOpacity = isLineGeom ? 0 : 0.45;
+            let weight = isLineGeom ? 4.5 : 2.2;
+
+            if (isSelected || isHovered) {
+                opacity = 1.0;
+                fillOpacity = isLineGeom ? 0 : 0.8;
+                weight = isLineGeom ? 8.0 : 4.0;
+            } else if (selectedCode !== null) {
+                opacity = 0.20;
+                fillOpacity = isLineGeom ? 0 : 0.05;
+                weight = isLineGeom ? 1.5 : 1.0;
+            }
+
+            return {
+                color: color,
+                weight: weight,
+                opacity: opacity,
+                fillColor: color,
+                fillOpacity: fillOpacity
+            };
+        }
+
+        function onEachRegionFeature(feature, layer) {
+            let clickTimeout = null;
+
+            layer.on({
+                mouseover: (e) => {
+                    const l = e.target;
+                    const regionName = feature.properties ? feature.properties.Region : '';
+                    const dbRegionValue = mapGeojsonRegionToDbRegion(regionName);
+                    const isSelected = appState.selectedRegions && appState.selectedRegions.length > 0 && dbRegionValue && appState.selectedRegions.includes(dbRegionValue);
+
+                    l.setStyle({
+                        fillOpacity: isSelected ? 0.38 : 0.25,
+                        strokeOpacity: 0.85,
+                        weight: isSelected ? 2.5 : 1.5
+                    });
+                },
+                mouseout: (e) => {
+                    const l = e.target;
+                    l.setStyle(getRegionStyle(feature));
+                },
+                click: (e) => {
+                    const regionName = feature.properties ? feature.properties.Region : '';
+                    const dbRegionValue = mapGeojsonRegionToDbRegion(regionName);
+
+                    if (dbRegionValue) {
+                        if (clickTimeout) {
+                            clearTimeout(clickTimeout);
+                            clickTimeout = null;
+                            return;
+                        }
+
+                        clickTimeout = setTimeout(() => {
+                            clickTimeout = null;
+                            const cb = document.querySelector(`.region-checkbox[value="${dbRegionValue}"]`);
+                            if (cb) {
+                                cb.checked = !cb.checked;
+                                updateSelectedRegions();
+                            }
+                        }, 250);
+                    }
+                },
+                dblclick: (e) => {
+                    L.DomEvent.stopPropagation(e);
+                    if (e.originalEvent) {
+                        e.originalEvent.preventDefault();
+                    }
+                    if (clickTimeout) {
+                        clearTimeout(clickTimeout);
+                        clickTimeout = null;
+                    }
+
+                    const regionName = feature.properties ? feature.properties.Region : '';
+                    const dbRegionValue = mapGeojsonRegionToDbRegion(regionName);
+
+                    if (dbRegionValue) {
+                        const cb = document.querySelector(`.region-checkbox[value="${dbRegionValue}"]`);
+                        if (cb && !cb.checked) {
+                            cb.checked = true;
+                            updateSelectedRegions();
+                        }
+
+                        fetchData().then(() => {
+                            let groupBounds = L.latLngBounds();
+                            const isValparaiso = dbRegionValue && dbRegionValue.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("valparaiso");
+
+                            if (isValparaiso) {
+                                function traverseLatLngs(latlngs) {
+                                    if (Array.isArray(latlngs)) {
+                                        if (latlngs.length > 0 && latlngs[0] instanceof L.LatLng) {
+                                            latlngs.forEach(ll => {
+                                                if (ll.lng >= -75.0) {
+                                                    groupBounds.extend(ll);
+                                                }
+                                            });
+                                        } else {
+                                            latlngs.forEach(item => traverseLatLngs(item));
+                                        }
+                                    }
+                                }
+                                if (layer.getLatLngs) {
+                                    traverseLatLngs(layer.getLatLngs());
+                                }
+                                if (!groupBounds.isValid() && layer.getBounds) {
+                                    groupBounds = L.latLngBounds(layer.getBounds());
+                                }
+                            } else {
+                                groupBounds = layer.getBounds ? L.latLngBounds(layer.getBounds()) : L.latLngBounds();
+                            }
+
+                            if (layers.dgc) {
+                                layers.dgc.eachLayer(l => {
+                                    const lCode = l.feature && l.feature.properties && l.feature.properties.COD
+                                        ? l.feature.properties.COD.toString().trim()
+                                        : '';
+                                    const projCodesSet = shapeToProjectCodes[lCode];
+                                    let isActive = false;
+                                    if (projCodesSet) {
+                                        for (let pc of projCodesSet) {
+                                            if (activeMapCodes.has(pc)) {
+                                                isActive = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if (isActive) {
+                                        if (l.getBounds) {
+                                            groupBounds.extend(l.getBounds());
+                                        } else if (l.getLatLng) {
+                                            groupBounds.extend(l.getLatLng());
+                                        }
+                                    }
+                                });
+                            }
+
+                            if (groupBounds.isValid()) {
+                                leafletMap.flyToBounds(groupBounds, {
+                                    animate: true,
+                                    duration: 1.5,
+                                    padding: [60, 60]
+                                });
+                            }
+                        });
+                    }
+                }
+            });
+
+            if (feature.properties && feature.properties.Region) {
+                layer.bindTooltip(`<b>${feature.properties.Region}</b>`, {
+                    sticky: true,
+                    className: 'custom-tooltip'
+                });
+            }
+        }
+
+        function getProjectPopupContent(code, sector) {
+            const cleanCode = code ? code.toString().trim() : '';
+            const proj = projectMetadata[cleanCode];
+
+            if (proj) {
+                const investmentFormatted = formatUFComplete(proj.investment);
+                const secCfg = getSectorConfig(proj.sector);
+                return `
+                    <div style="font-family: var(--font-sans); min-width: 220px;">
+                        <h3 style="margin: 0 0 6px 0; font-size: 0.9rem; font-weight: 600; color: var(--text-primary); line-height: 1.35; font-family: var(--font-heading);">${proj.name}</h3>
+                        <div style="font-size: 0.76rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.35rem; border-top: 1px solid var(--border-color); padding-top: 6px;">
+                            <div><b>Estado:</b> <span class="badge ${proj.status === 'Operación' ? 'badge-success' : proj.status === 'Construcción' ? 'badge-info' : 'badge-warning'}" style="font-size: 0.68rem; padding: 0.1rem 0.35rem;">${proj.status}</span></div>
+                            <div><b>Región:</b> ${proj.region}</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div style="font-family: var(--font-sans); min-width: 180px;">
+                        <h3 style="margin: 0 0 6px 0; font-size: 0.85rem; font-weight: 600; color: var(--text-primary); font-family: var(--font-heading);">Capa: ${sector}</h3>
+                        <p style="font-size: 0.72rem; color: var(--text-muted); margin: 0; border-top: 1px solid var(--border-color); padding-top: 6px;">No se encontró información detallada en los contratos activos / filtrados.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function onEachProjectFeature(feature, layer, sector) {
+            const code = feature.properties && feature.properties.COD ? feature.properties.COD.toString().trim() : '';
+
+            // Index feature geometry by shape COD
+            if (code) {
+                if (!shapeGeometries[code]) {
+                    shapeGeometries[code] = [];
+                }
+                shapeGeometries[code].push(layer);
+            }
+
+            // Vector geometry click handler
+            layer.on('click', (e) => {
+                L.DomEvent.stopPropagation(e);
+                const projSet = shapeToProjectCodes[code];
+                if (!projSet || projSet.size === 0) return;
+
+                const activeCodesList = Array.from(projSet).filter(pc => activeMapCodes.has(pc));
+                if (activeCodesList.length === 0) return;
+
+                // Sort candidate project codes by tender_date descending (most recent first)
+                activeCodesList.sort((a, b) => {
+                    const dateA = (projectMetadata[a] && projectMetadata[a].tender_date) || '';
+                    const dateB = (projectMetadata[b] && projectMetadata[b].tender_date) || '';
+                    if (dateA && !dateB) return -1;
+                    if (!dateA && dateB) return 1;
+                    return dateB.localeCompare(dateA);
+                });
+
+                zoomToProjectCode(activeCodesList[0]);
+            });
+
+            // Vector geometry hover highlight
+            layer.on('mouseover', (e) => {
+                const projSet = shapeToProjectCodes[code];
+                if (!projSet || projSet.size === 0) return;
+                const activeCodesList = Array.from(projSet).filter(pc => activeMapCodes.has(pc));
+                if (activeCodesList.length === 0) return;
+
+                activeCodesList.sort((a, b) => {
+                    const dateA = (projectMetadata[a] && projectMetadata[a].tender_date) || '';
+                    const dateB = (projectMetadata[b] && projectMetadata[b].tender_date) || '';
+                    if (dateA && !dateB) return -1;
+                    if (!dateA && dateB) return 1;
+                    return dateB.localeCompare(dateA);
+                });
+
+                const firstProj = activeCodesList[0];
+                if (appState.hoveredProjectCode === firstProj) return;
+                appState.hoveredProjectCode = firstProj;
+                updateMapStyles();
+            });
+
+            layer.on('mouseout', (e) => {
+                if (appState.hoveredProjectCode === null) return;
+                appState.hoveredProjectCode = null;
+                updateMapStyles();
+            });
+        }
+
+        // Custom Principal Shapes mapping for multi-point concessions
+        const PRINCIPAL_SHAPES = {
+            '050_ETTT1': '71' // Alameda - Exposición (Santiago/Estación Central)
+        };
+
+        async function loadMapLayers() {
+            try {
+                shapeGeometries = {};
+
+                // Regions (VERSIÓN ESTÁTICA)
+                const dataRegions = window.REGIONS_DATA || { type: 'FeatureCollection', features: [] };
+                layers.regions = L.geoJSON(dataRegions, {
+                    style: getRegionStyle,
+                    onEachFeature: onEachRegionFeature
+                }).addTo(leafletMap);
+
+                // Consolidated DGC Layers (VERSIÓN ESTÁTICA)
+                const dataDGC = window.DGC_DATA || { type: 'FeatureCollection', features: [] };
+                layers.dgc = L.geoJSON(dataDGC, {
+                    style: (f) => getFeatureStyle(f, f.properties.Sector_DGC),
+                    pointToLayer: (feature, latlng) => {
+                        const code = feature.properties && feature.properties.COD ? feature.properties.COD.toString().trim() : '';
+                        const projSet = shapeToProjectCodes[code];
+                        let sector = feature.properties ? feature.properties.Sector_DGC : '';
+                        let isMiniDot = false;
+
+                        if (projSet && projSet.size > 0) {
+                            const firstCode = Array.from(projSet)[0];
+                            const proj = projectMetadata[firstCode];
+                            if (proj) {
+                                if (proj.sector) sector = proj.sector;
+                                if (proj.shapes && proj.shapes.length > 5) {
+                                    const principalShape = PRINCIPAL_SHAPES[proj.code] || proj.shapes[0].toString().trim();
+                                    if (code !== principalShape) {
+                                        isMiniDot = true;
+                                    }
+                                }
+                            }
+                        }
+
+                        const secCfg = getSectorConfig(sector);
+                        let iconHtml = '';
+
+                        if (isMiniDot) {
+                            iconHtml = `<div class="centroid-marker-pulse mini-dot-marker" style="background-color: ${secCfg.color}; width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid #ffffff; box-shadow: 0 0 4px rgba(0,0,0,0.4); margin: 7px;"></div>`;
+                        } else {
+                            iconHtml = `<div class="centroid-marker-pulse" style="background-color: ${secCfg.color};">${secCfg.svg}</div>`;
+                        }
+
+                        const customIcon = L.divIcon({
+                            className: 'polygon-centroid-marker dgc-point-marker',
+                            html: iconHtml,
+                            iconSize: [24, 24],
+                            iconAnchor: [12, 12]
+                        });
+                        return L.marker(latlng, { icon: customIcon });
+                    },
+                    onEachFeature: (f, l) => onEachProjectFeature(f, l, f.properties.Sector_DGC)
+                }).addTo(leafletMap);
+
+                updateMapStyles();
+                if (appState.lastMapProjects && appState.lastMapProjects.length > 0) {
+                    renderProjectMarkersOnMap(appState.lastMapProjects);
+                }
+
+            } catch (err) {
+                console.error("Error al cargar capas del mapa:", err);
+            }
+        }
+
+        // --- MIDPOINT CALCULATOR FOR LINES (50% DISTANCE ALONG THE PATH) ---
+        function getLineMidpoint(matchedLayers) {
+            if (!matchedLayers || matchedLayers.length === 0) return null;
+
+            let allSegments = [];
+            matchedLayers.forEach(l => {
+                if (l.getLatLngs) {
+                    const rawLatLngs = l.getLatLngs();
+                    function extractSegments(arr) {
+                        if (!Array.isArray(arr) || arr.length === 0) return;
+                        if (arr[0] instanceof L.LatLng || (arr[0] && typeof arr[0].lat === 'number')) {
+                            if (arr.length >= 2) {
+                                allSegments.push(arr);
+                            }
+                        } else {
+                            arr.forEach(sub => extractSegments(sub));
+                        }
+                    }
+                    extractSegments(rawLatLngs);
+                }
+            });
+
+            if (allSegments.length === 0) return null;
+
+            let totalLength = 0;
+            allSegments.forEach(seg => {
+                for (let i = 0; i < seg.length - 1; i++) {
+                    totalLength += seg[i].distanceTo(seg[i + 1]);
+                }
+            });
+
+            if (totalLength === 0) {
+                return allSegments[0][0];
+            }
+
+            const halfDistance = totalLength / 2;
+            let accumulated = 0;
+
+            for (let s = 0; s < allSegments.length; s++) {
+                const seg = allSegments[s];
+                for (let i = 0; i < seg.length - 1; i++) {
+                    const p1 = seg[i];
+                    const p2 = seg[i + 1];
+                    const dist = p1.distanceTo(p2);
+                    if (accumulated + dist >= halfDistance) {
+                        const needed = halfDistance - accumulated;
+                        const ratio = dist > 0 ? (needed / dist) : 0;
+                        const lat = p1.lat + (p2.lat - p1.lat) * ratio;
+                        const lng = p1.lng + (p2.lng - p1.lng) * ratio;
+                        return L.latLng(lat, lng);
+                    }
+                    accumulated += dist;
+                }
+            }
+
+            return allSegments[0][Math.floor(allSegments[0].length / 2)];
+        }
+
+        function getProjectCentroid(proj) {
+            if (!proj || !proj.shapes || !Array.isArray(proj.shapes) || proj.shapes.length === 0) {
+                return null;
+            }
+            let totalLat = 0;
+            let totalLng = 0;
+            let count = 0;
+
+            proj.shapes.forEach(shapeId => {
+                const sid = shapeId.toString().trim();
+                const matchedLayers = shapeGeometries[sid];
+                if (matchedLayers && matchedLayers.length > 0) {
+                    matchedLayers.forEach(l => {
+                        if (l.getBounds) {
+                            const center = l.getBounds().getCenter();
+                            totalLat += center.lat;
+                            totalLng += center.lng;
+                            count++;
+                        } else if (l.getLatLng) {
+                            const center = l.getLatLng();
+                            totalLat += center.lat;
+                            totalLng += center.lng;
+                            count++;
+                        }
+                    });
+                }
+            });
+
+            if (count > 0) {
+                return L.latLng(totalLat / count, totalLng / count);
+            }
+            return null;
+        }
+
+        function clearAllProjectMarkers() {
+            Object.values(projectMarkersMap).forEach(markersArr => {
+                if (Array.isArray(markersArr)) {
+                    markersArr.forEach(m => {
+                        if (m && leafletMap) leafletMap.removeLayer(m);
+                    });
+                } else if (markersArr && leafletMap) {
+                    leafletMap.removeLayer(markersArr);
+                }
+            });
+            projectMarkersMap = {};
+
+            activeClusterMarkers.forEach(m => {
+                if (m && leafletMap) leafletMap.removeLayer(m);
+            });
+            activeClusterMarkers = [];
+
+            collapseSpiderLegs();
+        }
+
+        function collapseSpiderLegs() {
+            activeSpiderLegs.forEach(obj => {
+                if (obj && leafletMap) leafletMap.removeLayer(obj);
+            });
+            activeSpiderLegs = [];
+            spiderfiedClusterGroupKey = null;
+        }
+
+        function createSingleProjectMarker(proj, latLng, isSpiderfied = false, isMiniDot = false) {
+            const secCfg = getSectorConfig(proj.sector);
+            const isSelected = proj.code === appState.selectedProjectCode;
+
+            let iconHtml = '';
+            if (isMiniDot) {
+                iconHtml = `<div class="centroid-marker-pulse mini-dot-marker ${isSelected ? 'active-selected' : ''}" style="background-color: ${secCfg.color}; width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid #ffffff; box-shadow: 0 0 4px rgba(0,0,0,0.4); margin: 7px;"></div>`;
+            } else {
+                iconHtml = `<div class="centroid-marker-pulse ${isSelected ? 'active-selected' : ''}" style="background-color: ${secCfg.color};">${secCfg.svg}</div>`;
+            }
+
+            const customIcon = L.divIcon({
+                className: 'polygon-centroid-marker',
+                html: iconHtml,
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
+            });
+
+            const marker = L.marker(latLng, { icon: customIcon });
+            marker.projectCode = proj.code;
+            marker.projectSector = proj.sector;
+            marker.isSpiderfied = isSpiderfied;
+            marker.isMiniDot = isMiniDot;
+
+            marker.on('click', (e) => {
+                L.DomEvent.stopPropagation(e);
+                zoomToProjectCode(proj.code);
+            });
+
+            marker.on('mouseover', () => {
+                if (appState.hoveredProjectCode === proj.code) return;
+                appState.hoveredProjectCode = proj.code;
+                updateMapStyles();
+            });
+
+            marker.on('mouseout', () => {
+                if (appState.hoveredProjectCode === null) return;
+                appState.hoveredProjectCode = null;
+                updateMapStyles();
+            });
+
+            return marker;
+        }
+
+        function renderProjectMarkersOnMap(mapProjects) {
+            if (!leafletMap) return;
+
+            clearAllProjectMarkers();
+
+            if (!mapProjects || mapProjects.length === 0) return;
+
+            let candidateEntries = [];
+
+            mapProjects.forEach(proj => {
+                if (!proj.shapes || !Array.isArray(proj.shapes) || proj.shapes.length === 0) return;
+
+                let matchedLayers = [];
+                proj.shapes.forEach(shapeId => {
+                    const sid = shapeId.toString().trim();
+                    const layersForShape = shapeGeometries[sid];
+                    if (layersForShape) {
+                        matchedLayers.push(...layersForShape);
+                    }
+                });
+
+                if (matchedLayers.length === 0) return;
+
+                // Check if concession is LINE type
+                const isLine = matchedLayers.some(l => {
+                    if (l.feature && l.feature.geometry && l.feature.geometry.type) {
+                        return l.feature.geometry.type.toLowerCase().includes('line');
+                    }
+                    return (l instanceof L.Polyline) && !(l instanceof L.Polygon);
+                });
+
+                if (isLine) {
+                    // Condition 1: Single icon on the midpoint of the line
+                    const midpoint = getLineMidpoint(matchedLayers);
+                    if (midpoint) {
+                        candidateEntries.push({
+                            latLng: midpoint,
+                            proj: proj,
+                            shapeId: 'line',
+                            isMiniDot: false
+                        });
+                    }
+                } else {
+                    // Condition 2: Point / Polygon -> 1 icon per EACH shape/polygon/point
+                    const isManyPoints = proj.shapes.length > 5;
+                    const principalShape = PRINCIPAL_SHAPES[proj.code] || (proj.shapes[0] ? proj.shapes[0].toString().trim() : '');
+
+                    proj.shapes.forEach((shapeId, idx) => {
+                        const sid = shapeId.toString().trim();
+                        const layersForShape = shapeGeometries[sid];
+                        if (layersForShape && layersForShape.length > 0) {
+                            layersForShape.forEach(l => {
+                                let center = null;
+                                if (l.getBounds) {
+                                    center = l.getBounds().getCenter();
+                                } else if (l.getLatLng) {
+                                    center = l.getLatLng();
+                                }
+                                if (center) {
+                                    const isMini = isManyPoints && (sid !== principalShape);
+                                    candidateEntries.push({
+                                        latLng: center,
+                                        proj: proj,
+                                        shapeId: sid,
+                                        isMiniDot: isMini
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
+            // Group candidate entries by location key
+            // Condition 4 & Request: No spiderfy legs/clusters. Pick ONLY the entry with most recent tender_date.
+            const locationMap = {};
+
+            candidateEntries.forEach(entry => {
+                const key = `${entry.latLng.lat.toFixed(4)},${entry.latLng.lng.toFixed(4)}`;
+                if (!locationMap[key]) {
+                    locationMap[key] = [];
+                }
+                locationMap[key].push(entry);
+            });
+
+            Object.keys(locationMap).forEach(groupKey => {
+                const group = locationMap[groupKey];
+
+                // Sort by tender_date descending (most recent first)
+                group.sort((a, b) => {
+                    const dateA = a.proj.tender_date || '';
+                    const dateB = b.proj.tender_date || '';
+                    if (dateA && !dateB) return -1;
+                    if (!dateA && dateB) return 1;
+                    return dateB.localeCompare(dateA);
+                });
+
+                // Render ONLY the most recent concession marker, but associate with all shared project codes
+                const bestEntry = group[0];
+                const proj = bestEntry.proj;
+                const marker = createSingleProjectMarker(proj, bestEntry.latLng, false, bestEntry.isMiniDot);
+
+                if (marker) {
+                    marker.addTo(leafletMap);
+                    marker.associatedProjectCodes = group.map(g => g.proj.code);
+
+                    group.forEach(entry => {
+                        const code = entry.proj.code;
+                        if (!projectMarkersMap[code]) {
+                            projectMarkersMap[code] = [];
+                        }
+                        if (!projectMarkersMap[code].includes(marker)) {
+                            projectMarkersMap[code].push(marker);
+                        }
+                    });
+                }
+            });
+
+            updateMapStyles();
+        }
+
+        function updateMapStyles() {
+            if (layers.regions) {
+                layers.regions.setStyle(getRegionStyle);
+            }
+
+            if (layers.dgc) {
+                layers.dgc.setStyle((f) => getFeatureStyle(f, f.properties.Sector_DGC));
+
+                layers.dgc.eachLayer(l => {
+                    if (l.feature) {
+                        const code = l.feature.properties && l.feature.properties.COD ? l.feature.properties.COD.toString().trim() : '';
+                        const projSet = shapeToProjectCodes[code];
+                        if (projSet) {
+                            const activeCodesList = Array.from(projSet).filter(pc => activeMapCodes.has(pc));
+                            if (activeCodesList.length > 0) {
+                                const isHovered = activeCodesList.includes(appState.hoveredProjectCode);
+                                const isSelected = activeCodesList.includes(appState.selectedProjectCode);
+                                if ((isHovered || isSelected) && l.bringToFront && !(l instanceof L.Marker)) {
+                                    l.bringToFront();
+                                }
+                            }
+                        }
+                    }
+
+                    if (l instanceof L.Marker && l.feature) {
+                        const code = l.feature.properties && l.feature.properties.COD ? l.feature.properties.COD.toString().trim() : '';
+                        const projSet = shapeToProjectCodes[code];
+                        let isActive = false;
+                        let activeProj = null;
+                        if (projSet) {
+                            for (let pc of projSet) {
+                                if (activeMapCodes.has(pc)) {
+                                    isActive = true;
+                                    activeProj = projectMetadata[pc];
+                                    break;
+                                }
+                            }
+                        }
+                        const selectedCode = appState.selectedProjectCode;
+                        const isSelected = activeProj && activeProj.code === selectedCode;
+                        const isHovered = activeProj && activeProj.code === appState.hoveredProjectCode;
+
+                        if (!isActive) {
+                            l.setOpacity(0);
+                            l.setZIndexOffset(-1000);
+                            if (l.getElement()) {
+                                l.getElement().style.pointerEvents = 'none';
+                            }
+                        } else {
+                            if (l.getElement()) {
+                                l.getElement().style.pointerEvents = 'auto';
+                            }
+                            if (selectedCode) {
+                                const isTarget = isSelected || isHovered;
+                                l.setOpacity(isTarget ? 1.0 : 0.35);
+                                l.setZIndexOffset(isTarget ? 1000 : 0);
+                            } else {
+                                l.setOpacity(1.0);
+                                l.setZIndexOffset(100);
+                            }
+
+                            const sector = (activeProj && activeProj.sector) || l.feature.properties.Sector_DGC;
+                            const secCfg = getSectorConfig(sector);
+
+                            if (l.getElement()) {
+                                const el = l.getElement().querySelector('.centroid-marker-pulse');
+                                if (el) {
+                                    el.style.backgroundColor = secCfg.color;
+                                    if (isSelected) {
+                                        el.classList.add('active-selected');
+                                        el.style.transform = 'scale(1.35)';
+                                    } else if (isHovered) {
+                                        el.classList.remove('active-selected');
+                                        el.style.transform = 'scale(1.25)';
+                                    } else {
+                                        el.classList.remove('active-selected');
+                                        el.style.transform = '';
+                                    }
+                                }
+                            }
+                        }
+                    } else if (l.feature && !(l instanceof L.Marker)) {
+                        const code = l.feature.properties && l.feature.properties.COD ? l.feature.properties.COD.toString().trim() : '';
+                        const projSet = shapeToProjectCodes[code];
+                        let isActive = false;
+                        if (projSet) {
+                            for (let pc of projSet) {
+                                if (activeMapCodes.has(pc)) {
+                                    isActive = true;
+                                    break;
+                                }
+                            }
+                        }
+                        const isLayerActive = isActive;
+
+                        if (l.getElement()) {
+                            l.getElement().style.pointerEvents = isLayerActive ? 'auto' : 'none';
+                        }
+                    }
+                });
+            }
+
+            const selectedCode = appState.selectedProjectCode;
+            const hoveredCode = appState.hoveredProjectCode;
+
+            // Collect all unique marker instances
+            const allUniqueMarkers = new Set();
+            Object.values(projectMarkersMap).forEach(arr => {
+                const list = Array.isArray(arr) ? arr : [arr];
+                list.forEach(m => {
+                    if (m) allUniqueMarkers.add(m);
+                });
+            });
+
+            allUniqueMarkers.forEach(marker => {
+                if (!marker || !marker.getElement()) return;
+
+                const codes = marker.associatedProjectCodes || [marker.projectCode];
+                const isActiveInFilter = codes.some(c => activeMapCodes.has(c));
+                const isSelected = codes.includes(selectedCode);
+                const isHovered = codes.includes(hoveredCode);
+
+                if (!isActiveInFilter) {
+                    marker.setOpacity(0);
+                    marker.setZIndexOffset(-1000);
+                    marker.getElement().style.pointerEvents = 'none';
+                } else {
+                    marker.getElement().style.pointerEvents = 'auto';
+
+                    if (selectedCode) {
+                        const isTarget = isSelected || isHovered;
+                        marker.setOpacity(isTarget ? 1.0 : 0.35);
+                        marker.setZIndexOffset(isTarget ? 1000 : 100);
+                    } else {
+                        marker.setOpacity(1.0);
+                        marker.setZIndexOffset(100);
+                    }
+
+                    const el = marker.getElement().querySelector('.centroid-marker-pulse');
+
+                    if (el) {
+                        const secCfg = getSectorConfig(marker.projectSector);
+                        if (isSelected) {
+                            el.classList.add('active-selected');
+                            el.style.transform = marker.isMiniDot ? 'scale(2.2)' : 'scale(1.35)';
+                            if (marker.isMiniDot) el.style.boxShadow = `0 0 8px ${secCfg.color}`;
+                        } else if (isHovered) {
+                            el.classList.remove('active-selected');
+                            el.style.transform = marker.isMiniDot ? 'scale(1.8)' : 'scale(1.25)';
+                            if (marker.isMiniDot) el.style.boxShadow = `0 0 6px ${secCfg.color}`;
+                        } else {
+                            el.classList.remove('active-selected');
+                            el.style.transform = '';
+                            if (marker.isMiniDot) el.style.boxShadow = '';
+                        }
+                    }
+                }
+            });
+
+            if (mapStatsBadge) {
+                mapStatsBadge.textContent = `${activeMapCodes.size} contratos (${allUniqueMarkers.size} íconos)`;
+            }
+        }
+
+        function zoomToProjectCode(code) {
+            if (!leafletMap || !code) return;
+
+            const cleanCode = code.toString().trim();
+            const proj = projectMetadata[cleanCode];
+            if (!proj) return;
+
+            appState.selectedProjectCode = cleanCode;
+            updateMapStyles();
+            showProjectDetailView(cleanCode);
+
+            let targetMarkers = projectMarkersMap[cleanCode];
+            let targetMarker = (Array.isArray(targetMarkers) && targetMarkers.length > 0) ? targetMarkers[0] : (targetMarkers && !Array.isArray(targetMarkers) ? targetMarkers : null);
+            let targetLatLng = targetMarker ? targetMarker.getLatLng() : getProjectCentroid(proj);
+
+            let matchedLayers = [];
+            let foundSector = proj.sector;
+
+            if (layers.dgc && proj.shapes) {
+                proj.shapes.forEach(shapeId => {
+                    const sid = shapeId.toString().trim();
+                    const layersForShape = shapeGeometries[sid];
+                    if (layersForShape) {
+                        matchedLayers.push(...layersForShape);
+                    }
+                });
+            }
+
+            if (matchedLayers.length > 0) {
+                let combinedBounds = L.latLngBounds();
+
+                matchedLayers.forEach(l => {
+                    if (l.getBounds) {
+                        combinedBounds.extend(l.getBounds());
+                    } else if (l.getLatLng) {
+                        combinedBounds.extend(l.getLatLng());
+                    }
+                });
+
+                if (combinedBounds.isValid()) {
+                    leafletMap.flyToBounds(combinedBounds, {
+                        animate: true,
+                        duration: 1.2,
+                        padding: [50, 50],
+                        maxZoom: 12
+                    });
+
+                    leafletMap.closePopup();
+
+                    setTimeout(() => {
+                        const content = getProjectPopupContent(cleanCode, foundSector);
+                        const popupAnchorLatLng = targetLatLng || combinedBounds.getCenter();
+                        L.popup({ offset: L.point(0, -12) })
+                            .setLatLng(popupAnchorLatLng)
+                            .setContent(content)
+                            .openOn(leafletMap);
+                    }, 1000);
+                }
+            } else if (targetLatLng) {
+                leafletMap.flyTo(targetLatLng, 11, { animate: true, duration: 1.2 });
+                leafletMap.closePopup();
+                setTimeout(() => {
+                    const content = getProjectPopupContent(cleanCode, foundSector);
+                    L.popup({ offset: L.point(0, -12) })
+                        .setLatLng(targetLatLng)
+                        .setContent(content)
+                        .openOn(leafletMap);
+                }, 1000);
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // TIMELINE VIEW — Gantt-style horizontal timeline
+        // ─────────────────────────────────────────────────────────────────────
+
+        const BAR_COLORS = ['#2563eb', '#059669', '#d97706', '#7c3aed', '#0891b2'];
+        const ROW_H = 38;       // px per project row
+        const AXIS_H = 36;      // px for year axis
+        const LABEL_W = 210;    // px for label column
+        const BAR_PAD = 7;      // vertical padding inside row
+        const MILESTONE_R = 4;  // radius of milestone circles
+
+        function wrapTimelineText(text, maxCharsPerLine = 27) {
+            if (!text) return ['—'];
+            const words = text.toString().split(' ');
+            const lines = [];
+            let currentLine = '';
+
+            words.forEach(w => {
+                if ((currentLine + (currentLine ? ' ' : '') + w).length <= maxCharsPerLine) {
+                    currentLine += (currentLine ? ' ' : '') + w;
+                } else {
+                    if (currentLine) lines.push(currentLine);
+                    currentLine = w;
+                }
+            });
+            if (currentLine) lines.push(currentLine);
+            return lines.length > 0 ? lines : [text];
+        }
+
+        // ── Show / Hide timeline ──────────────────────────────────────────────
+        function showTimelineView() {
+            appState.timelineOpen = true;
+            const grid = document.querySelector('.dashboard-grid');
+            const centerPanel = document.querySelector('.center-panel');
+            const rightPanel = document.querySelector('.right-panel');
+            const tlPanel = document.getElementById('timeline-full-panel');
+            if (grid) { grid.style.gridTemplateColumns = '240px 1fr'; }
+            if (centerPanel) { centerPanel.style.display = 'none'; }
+            if (rightPanel) { rightPanel.style.display = 'none'; }
+            if (tlPanel) { tlPanel.style.display = 'flex'; }
+            const kpiCard = document.getElementById('kpi-total-card');
+            if (kpiCard) kpiCard.classList.add('timeline-active');
+        }
+
+        function hideTimelineView() {
+            appState.timelineOpen = false;
+            const grid = document.querySelector('.dashboard-grid');
+            const centerPanel = document.querySelector('.center-panel');
+            const rightPanel = document.querySelector('.right-panel');
+            const tlPanel = document.getElementById('timeline-full-panel');
+            if (grid) { grid.style.gridTemplateColumns = '240px 1fr 500px'; }
+            if (centerPanel) { centerPanel.style.display = ''; }
+            if (rightPanel) { rightPanel.style.display = ''; }
+            if (tlPanel) { tlPanel.style.display = 'none'; }
+            const kpiCard = document.getElementById('kpi-total-card');
+            if (kpiCard) kpiCard.classList.remove('timeline-active');
+        }
+
+        // ── Parse date string → fractional year number ────────────────────────
+        function dateToYear(str) {
+            if (!str) return null;
+            const d = new Date(str);
+            if (isNaN(d.getTime())) return null;
+            const y = d.getFullYear();
+            const start = new Date(y, 0, 1);
+            const end = new Date(y + 1, 0, 1);
+            return y + (d - start) / (end - start);
+        }
+
+        function getGroupEarliestStartDate(g) {
+            if (!g || !g.segments || !g.segments.length) return Infinity;
+            let earliest = Infinity;
+            g.segments.forEach(seg => {
+                if (seg.start_date) {
+                    const y = dateToYear(seg.start_date);
+                    if (y !== null && y < earliest) {
+                        earliest = y;
+                    }
+                }
+            });
+            return earliest;
+        }
+
+        // ── Group data by concession family (relicitaciones) ─────────────────
+        function buildTimelineGroups(data) {
+            const seen = new Map();  // canonicalKey → group object
+
+            data.forEach(item => {
+                const tl = item['group_timeline'];
+                if (!tl || !tl.length) return;
+
+                // Canonical key: sorted codes joined
+                const key = tl.map(t => t.code).sort().join('|');
+                if (seen.has(key)) return;
+
+                // Display name: use "Nombre de la Concesión " of df_contracts
+                const sorted = [...tl].sort((a, b) => a.seq - b.seq);
+                const displayName = item['Nombre de la Concesión '] ||
+                    (sorted[0] && sorted[0].concession_name) ||
+                    (sorted[0] && sorted[0].name) ||
+                    item['Nombre de uso común'] ||
+                    (sorted[0] && sorted[0].code) ||
+                    'Sin nombre';
+
+                seen.set(key, { name: displayName, segments: sorted });
+            });
+
+            const groupsList = Array.from(seen.values());
+
+            // ALWAYS sort from oldest to newest based on contract start date
+            groupsList.sort((a, b) => {
+                const yearA = getGroupEarliestStartDate(a);
+                const yearB = getGroupEarliestStartDate(b);
+                return yearA - yearB;
+            });
+
+            return groupsList;
+        }
+
+        // ── SVG helper: create element with attributes ────────────────────────
+        function svgEl(tag, attrs = {}) {
+            const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+            Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+            return el;
+        }
+
+        // ── Main render function ──────────────────────────────────────────────
+        function renderTimeline(data, highlightCode = null) {
+            const groups = buildTimelineGroups(data);
+            const badge = document.getElementById('timeline-count-badge');
+            if (badge) badge.textContent = `${groups.length} proyecto${groups.length !== 1 ? 's' : ''}`;
+
+            // Layout constants
+            const SUBLANE_H = 11;  // height of each individual bar
+            const SUBLANE_GAP = 4;   // gap between lanes in the same row
+            const ROW_PAD_V = 6;   // top/bottom padding within each row
+
+            // Per-group row metrics (variable heights with multiline text wrapping)
+            const rowMetrics = groups.map(g => {
+                const n = g.segments.length;
+                const lines = wrapTimelineText(g.name, 27);
+                const textH = lines.length * 13;
+                const barLanesH = n * SUBLANE_H + Math.max(0, n - 1) * SUBLANE_GAP;
+                const height = Math.max(ROW_PAD_V * 2 + barLanesH, textH + ROW_PAD_V * 2);
+
+                const startLaneY = (height - barLanesH) / 2;
+                const laneYs = g.segments.map((_, si) =>
+                    startLaneY + si * (SUBLANE_H + SUBLANE_GAP)
+                );
+                return { height, laneYs, lines };
+            });
+
+            // Cumulative row Y positions
+            const rowYOffsets = [];
+            let cumY = 0;
+            rowMetrics.forEach(m => { rowYOffsets.push(cumY); cumY += m.height; });
+            const totalH = cumY;
+
+            // Track index of highlighted row for auto-scrolling
+            let highlightedRowIdx = -1;
+
+            // Compute global year range
+            let minYear = Infinity, maxYear = -Infinity;
+            const todayYear = dateToYear(new Date().toISOString().slice(0, 10));
+
+            groups.forEach(g => {
+                g.segments.forEach(seg => {
+                    [seg.start_date, seg.end_date,
+                    seg.resolution_date, seg.adjudication_date].forEach(d => {
+                        const y = dateToYear(d);
+                        if (y !== null) {
+                            if (y < minYear) minYear = y;
+                            if (y > maxYear) maxYear = y;
+                        }
+                    });
+                });
+            });
+
+            if (!isFinite(minYear)) { minYear = 1990; maxYear = 2070; }
+            minYear = Math.floor((minYear - 1) / 5) * 5;
+            maxYear = Math.ceil((maxYear + 1) / 5) * 5;
+
+            // DOM references
+            const barsEl = document.getElementById('timeline-bars-scroll');
+            const labelEl = document.getElementById('timeline-label-col');
+            const barsSvg = document.getElementById('timeline-bars-svg');
+            const axisSvg = document.getElementById('timeline-axis-svg');
+
+            // Chart dimensions
+            const availW = (barsEl.parentElement.parentElement.offsetWidth || 900) - LABEL_W - 2;
+            const chartW = Math.max(availW, 100);  // never zero, fills container
+            const yearRange = maxYear - minYear;
+            function toPx(y) { return ((y - minYear) / yearRange) * chartW; }
+
+            const isLight = document.body.classList.contains('light-theme');
+            const textColor = isLight ? '#374151' : '#94a3b8';
+            const gridColor = isLight ? 'rgba(0,0,0,0.055)' : 'rgba(255,255,255,0.055)';
+            const rowAltColor = isLight ? 'rgba(241,245,249,0.7)' : 'rgba(255,255,255,0.018)';
+            const labelBg = isLight ? '#f8fafc' : '#0f1626';
+            const labelColor = isLight ? '#1e293b' : '#e2e8f0';
+            const sepColor = isLight ? 'rgba(0,0,0,0.09)' : 'rgba(255,255,255,0.07)';
+
+            const cleanHighlight = highlightCode ? highlightCode.toString().trim() : null;
+
+            // BUILD LABELS
+            labelEl.innerHTML = '';
+            const labelSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            labelSvg.setAttribute('width', LABEL_W);
+            labelSvg.setAttribute('height', totalH);
+            labelSvg.style.display = 'block';
+
+            groups.forEach((g, i) => {
+                const rowY = rowYOffsets[i];
+                const rowH = rowMetrics[i].height;
+                const isHighlighted = cleanHighlight && g.segments.some(s => s.code && s.code.toString().trim() === cleanHighlight);
+
+                if (isHighlighted) {
+                    highlightedRowIdx = i;
+                }
+
+                const rowBg = isHighlighted
+                    ? (isLight ? 'rgba(37, 99, 235, 0.18)' : 'rgba(37, 99, 235, 0.30)')
+                    : (i % 2 === 0 ? rowAltColor : 'transparent');
+
+                labelSvg.appendChild(svgEl('rect', {
+                    x: 0, y: rowY, width: LABEL_W, height: rowH, fill: rowBg
+                }));
+
+                if (isHighlighted) {
+                    labelSvg.appendChild(svgEl('rect', {
+                        x: 0, y: rowY, width: 4, height: rowH, fill: 'var(--primary)'
+                    }));
+                }
+
+                labelSvg.appendChild(svgEl('line', {
+                    x1: 0, y1: rowY + rowH, x2: LABEL_W, y2: rowY + rowH,
+                    stroke: isHighlighted ? 'rgba(37, 99, 235, 0.3)' : sepColor, 'stroke-width': 1
+                }));
+
+                const lines = rowMetrics[i].lines;
+                const lineCount = lines.length;
+
+                const txt = svgEl('text', {
+                    x: 12,
+                    y: rowY + rowH / 2,
+                    'text-anchor': 'start',
+                    'dominant-baseline': 'middle',
+                    fill: isHighlighted ? 'var(--primary)' : labelColor,
+                    'font-family': "'Plus Jakarta Sans', sans-serif",
+                    'font-size': '10',
+                    'font-weight': isHighlighted ? '700' : '500'
+                });
+
+                const lineHeight = 13;
+                const startDY = -((lineCount - 1) * lineHeight) / 2;
+
+                lines.forEach((lineStr, lineIdx) => {
+                    const tspan = svgEl('tspan', {
+                        x: 12,
+                        dy: lineIdx === 0 ? startDY : lineHeight
+                    });
+                    tspan.textContent = lineStr;
+                    txt.appendChild(tspan);
+                });
+
+                const ttl = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+                ttl.textContent = g.name || '\u2014';
+                txt.appendChild(ttl);
+                labelSvg.appendChild(txt);
+            });
+            labelEl.appendChild(labelSvg);
+
+            // BUILD AXIS
+            axisSvg.setAttribute('width', chartW);
+            axisSvg.setAttribute('height', AXIS_H);
+            axisSvg.innerHTML = '';
+
+            axisSvg.appendChild(svgEl('rect', {
+                x: 0, y: 0, width: chartW, height: AXIS_H, fill: labelBg
+            }));
+
+            for (let yr = minYear; yr <= maxYear; yr += 5) {
+                const x = toPx(yr);
+                axisSvg.appendChild(svgEl('line', {
+                    x1: x, y1: AXIS_H - 8, x2: x, y2: AXIS_H,
+                    stroke: isLight ? '#cbd5e1' : '#334155', 'stroke-width': 1
+                }));
+                const lbl = svgEl('text', {
+                    x: x, y: AXIS_H - 12, 'text-anchor': 'middle',
+                    fill: textColor,
+                    'font-family': "'Plus Jakarta Sans', sans-serif",
+                    'font-size': '10', 'font-weight': '500'
+                });
+                lbl.textContent = yr;
+                axisSvg.appendChild(lbl);
+            }
+
+            if (todayYear >= minYear && todayYear <= maxYear) {
+                const tx = toPx(todayYear);
+                axisSvg.appendChild(svgEl('line', {
+                    x1: tx, y1: 0, x2: tx, y2: AXIS_H,
+                    stroke: '#ef4444', 'stroke-width': 1.5, 'stroke-dasharray': '3,3'
+                }));
+                const todayLbl = svgEl('text', {
+                    x: tx + 3, y: 12, fill: '#ef4444',
+                    'font-family': "'Plus Jakarta Sans', sans-serif",
+                    'font-size': '9', 'font-weight': '700'
+                });
+                todayLbl.textContent = 'Hoy';
+                axisSvg.appendChild(todayLbl);
+            }
+
+            axisSvg.appendChild(svgEl('line', {
+                x1: 0, y1: AXIS_H - 1, x2: chartW, y2: AXIS_H - 1,
+                stroke: isLight ? '#e2e8f0' : '#1e293b', 'stroke-width': 1
+            }));
+
+            // BUILD BARS
+            barsSvg.setAttribute('width', chartW);
+            barsSvg.setAttribute('height', totalH || 1);
+            barsSvg.innerHTML = '';
+
+            groups.forEach((g, i) => {
+                const rowY = rowYOffsets[i];
+                const rowH = rowMetrics[i].height;
+                const isHighlighted = cleanHighlight && g.segments.some(s => s.code && s.code.toString().trim() === cleanHighlight);
+
+                const rowBg = isHighlighted
+                    ? (isLight ? 'rgba(37, 99, 235, 0.12)' : 'rgba(37, 99, 235, 0.22)')
+                    : (i % 2 === 0 ? rowAltColor : 'transparent');
+
+                barsSvg.appendChild(svgEl('rect', {
+                    x: 0, y: rowY, width: chartW, height: rowH, fill: rowBg
+                }));
+
+                barsSvg.appendChild(svgEl('line', {
+                    x1: 0, y1: rowY + rowH, x2: chartW, y2: rowY + rowH,
+                    stroke: isHighlighted ? 'rgba(37, 99, 235, 0.3)' : sepColor, 'stroke-width': 1
+                }));
+
+                for (let yr = minYear; yr <= maxYear; yr += 5) {
+                    barsSvg.appendChild(svgEl('line', {
+                        x1: toPx(yr), y1: rowY, x2: toPx(yr), y2: rowY + rowH,
+                        stroke: gridColor, 'stroke-width': 1
+                    }));
+                }
+
+                // "Hoy" full-row vertical line
+                if (todayYear >= minYear && todayYear <= maxYear) {
+                    barsSvg.appendChild(svgEl('line', {
+                        x1: toPx(todayYear), y1: rowY,
+                        x2: toPx(todayYear), y2: rowY + rowH,
+                        stroke: '#ef4444', 'stroke-width': 1.2,
+                        'stroke-dasharray': '3,3', 'pointer-events': 'none'
+                    }));
+                }
+
+                // Segments: each in its own sub-lane
+                g.segments.forEach((seg, si) => {
+                    const color = BAR_COLORS[Math.min(si, BAR_COLORS.length - 1)];
+                    const laneY = rowY + rowMetrics[i].laneYs[si];
+                    const startY = dateToYear(seg.start_date);
+                    const endY = dateToYear(seg.end_date);
+                    const isCurrentSeg = cleanHighlight && seg.code && seg.code.toString().trim() === cleanHighlight;
+
+                    if (startY !== null && endY !== null) {
+                        const bx = toPx(startY);
+                        const bw = Math.max(toPx(endY) - bx, 2);
+                        const by = laneY;
+                        const bh = SUBLANE_H;
+
+                        const rect = svgEl('rect', {
+                            x: bx, y: by, width: bw, height: bh,
+                            rx: 3, ry: 3, fill: color,
+                            opacity: isCurrentSeg ? 1 : 0.82
+                        });
+                        rect.style.cursor = 'pointer';
+
+                        if (isCurrentSeg) {
+                            rect.setAttribute('stroke', '#ffffff');
+                            rect.setAttribute('stroke-width', '1.5');
+                            rect.setAttribute('filter', 'drop-shadow(0 0 6px ' + color + ')');
+                        }
+
+                        rect.addEventListener('mouseenter', (e) => {
+                            rect.setAttribute('opacity', '1');
+                            rect.setAttribute('filter', 'drop-shadow(0 2px 5px rgba(0,0,0,0.22))');
+                            showTimelineTooltip(e, seg, si + 1, color);
+                        });
+                        rect.addEventListener('mousemove', (e) => moveTimelineTooltip(e));
+                        rect.addEventListener('mouseleave', () => {
+                            rect.setAttribute('opacity', isCurrentSeg ? '1' : '0.82');
+                            if (!isCurrentSeg) rect.removeAttribute('filter');
+                            else rect.setAttribute('filter', 'drop-shadow(0 0 6px ' + color + ')');
+                            hideTimelineTooltip();
+                        });
+                        rect.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            hideTimelineTooltip();
+                            hideTimelineView();
+                            if (seg.code) {
+                                zoomToProjectCode(seg.code);
+                            }
+                        });
+
+                        barsSvg.appendChild(rect);
+
+                        if (bw > 20) {
+                            const seqTxt = svgEl('text', {
+                                x: bx + 4, y: by + bh / 2 + 0.5,
+                                'dominant-baseline': 'middle',
+                                fill: '#ffffff',
+                                'font-family': "'Plus Jakarta Sans', sans-serif",
+                                'font-size': '8', 'font-weight': '700',
+                                'pointer-events': 'none'
+                            });
+                            seqTxt.textContent = `${seg.seq}\u00ba`;
+                            barsSvg.appendChild(seqTxt);
+                        }
+                    }
+
+                    // Milestone diamond: adjudication_date
+                    const adjY = dateToYear(seg.adjudication_date);
+                    if (adjY !== null && adjY >= minYear && adjY <= maxYear) {
+                        const mx = toPx(adjY);
+                        const my = laneY + SUBLANE_H / 2;
+                        const d = MILESTONE_R;
+                        barsSvg.appendChild(svgEl('polygon', {
+                            points: `${mx},${my - d} ${mx + d},${my} ${mx},${my + d} ${mx - d},${my}`,
+                            fill: '#7c3aed', stroke: '#ffffff', 'stroke-width': 1,
+                            'pointer-events': 'none'
+                        }));
+                    }
+
+                    // Milestone circle: resolution_date
+                    const resY = dateToYear(seg.resolution_date);
+                    if (resY !== null && resY >= minYear && resY <= maxYear) {
+                        barsSvg.appendChild(svgEl('circle', {
+                            cx: toPx(resY), cy: laneY - 2,
+                            r: MILESTONE_R - 1,
+                            fill: '#f59e0b', stroke: '#ffffff', 'stroke-width': 1,
+                            'pointer-events': 'none'
+                        }));
+                    }
+                });
+            });
+
+            // Sync vertical scroll from bars container to label column
+            //const barsScrollEl = document.getElementById('timeline-bars-scroll');
+            //const labelColEl = document.getElementById('timeline-label-col');
+            //if (barsScrollEl && labelColEl) {
+            //barsScrollEl.onscroll = () => {
+            //labelColEl.scrollTop = barsScrollEl.scrollTop;
+            //};
+            //}
+
+            // Auto-scroll to highlighted row if specified
+            const rowsWrapperEl = document.querySelector('.timeline-rows-wrapper');
+            if (highlightedRowIdx !== -1 && rowYOffsets[highlightedRowIdx] !== undefined && rowsWrapperEl) {
+                setTimeout(() => {
+                    const rowY = rowYOffsets[highlightedRowIdx];
+                    const rowH = rowMetrics[highlightedRowIdx].height;
+                    const targetScroll = Math.max(0, rowY - (rowsWrapperEl.clientHeight / 2) + (rowH / 2));
+                    rowsWrapperEl.scrollTo({ top: targetScroll, behavior: 'smooth' });
+                }, 60);
+            }
+        }
+
+
+        // 
+        // ── Tooltip helpers ───────────────────────────────────────────
+        function showTimelineTooltip(e, seg, licitNum, color) {
+            const tip = document.getElementById('timeline-tooltip');
+            if (!tip) return;
+            const fmt = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('es-CL', { year: 'numeric', month: 'short' }) : '—';
+            tip.innerHTML = `
+                <span class="timeline-tooltip-name" style="color:${color};">${seg.common_name || seg.name || '—'}</span>
+                <div class="timeline-tooltip-row">
+                    <span class="timeline-tooltip-label">Licitación</span>
+                    <span class="timeline-tooltip-val">${licitNum}ª</span>
+                </div>
+                <div class="timeline-tooltip-row">
+                    <span class="timeline-tooltip-label">Estado</span>
+                    <span class="timeline-tooltip-val">${seg.status || '—'}</span>
+                </div>
+                <div class="timeline-tooltip-row">
+                    <span class="timeline-tooltip-label">Inicio</span>
+                    <span class="timeline-tooltip-val">${fmt(seg.start_date)}</span>
+                </div>
+                <div class="timeline-tooltip-row">
+                    <span class="timeline-tooltip-label">Término</span>
+                    <span class="timeline-tooltip-val">${fmt(seg.end_date)}</span>
+                </div>
+                ${seg.adj ? `<div class="timeline-tooltip-row">
+                    <span class="timeline-tooltip-label">Adjudicación</span>
+                    <span class="timeline-tooltip-val">${fmt(seg.adj)}</span>
+                </div>` : ''}
+            `;
+            tip.style.display = 'block';
+            moveTimelineTooltip(e);
+        }
+
+        function moveTimelineTooltip(e) {
+            const tip = document.getElementById('timeline-tooltip');
+            if (!tip || tip.style.display === 'none') return;
+            const tw = tip.offsetWidth;
+            const th = tip.offsetHeight;
+            let tx = e.clientX + 12;
+            let ty = e.clientY - 12;
+
+            if (tx + tw + 10 > window.innerWidth) {
+                tx = e.clientX - tw - 12;
+            }
+            if (ty + th + 10 > window.innerHeight) {
+                ty = window.innerHeight - th - 10;
+            }
+            if (ty < 10) ty = 10;
+
+            tip.style.left = tx + 'px';
+            tip.style.top = ty + 'px';
+        }
+
+        function hideTimelineTooltip() {
+            const tip = document.getElementById('timeline-tooltip');
+            if (tip) tip.style.display = 'none';
+        }
+
+        // ── Wire up events (called from DOMContentLoaded) ─────────────
+        function initTimelineEvents() {
+            const kpiCard = document.getElementById('kpi-total-card');
+            if (kpiCard) {
+                kpiCard.addEventListener('click', () => {
+                    if (appState.timelineOpen) {
+                        hideTimelineView();
+                    } else {
+                        showTimelineView();
+                        renderTimeline(appState.lastMapProjects || []);
+                    }
+                });
+            }
+
+            const closeBtn = document.getElementById('btn-close-timeline');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => hideTimelineView());
+            }
+
+            // Forward wheel events from the label column to the bars scroller.
+            // The label col has overflow-y:hidden so the browser won't scroll it
+            // natively — we intercept wheel events and delegate to barsScrollEl,
+            // which in turn syncs the label position via its onscroll handler.
+            //const labelCol = document.getElementById('timeline-label-col');
+            //if (labelCol) {
+            //labelCol.addEventListener('wheel', (e) => {
+            //e.preventDefault();
+            //const barsScroll = document.getElementById('timeline-bars-scroll');
+            //if (barsScroll) barsScroll.scrollTop += e.deltaY;
+            //}, { passive: false });
+            //}
+        }
+    </script>
+    <div id="timeline-tooltip" class="timeline-tooltip" style="display:none;"></div>
+</body>
+
+</html>
