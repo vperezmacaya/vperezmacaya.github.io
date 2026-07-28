@@ -2095,41 +2095,12 @@
                 layers.dgc = L.geoJSON(dataDGC, {
                     style: (f) => getFeatureStyle(f, f.properties.Sector_DGC),
                     pointToLayer: (feature, latlng) => {
-                        const code = feature.properties && feature.properties.COD ? feature.properties.COD.toString().trim() : '';
-                        const projSet = shapeToProjectCodes[code];
-                        let sector = feature.properties ? feature.properties.Sector_DGC : '';
-                        let isMiniDot = false;
-
-                        if (projSet && projSet.size > 0) {
-                            const firstCode = Array.from(projSet)[0];
-                            const proj = projectMetadata[firstCode];
-                            if (proj) {
-                                if (proj.sector) sector = proj.sector;
-                                if (proj.shapes && proj.shapes.length > 5) {
-                                    const principalShape = PRINCIPAL_SHAPES[proj.code] || proj.shapes[0].toString().trim();
-                                    if (code !== principalShape) {
-                                        isMiniDot = true;
-                                    }
-                                }
-                            }
-                        }
-
-                        const secCfg = getSectorConfig(sector);
-                        let iconHtml = '';
-
-                        if (isMiniDot) {
-                            iconHtml = `<div class="centroid-marker-pulse mini-dot-marker" style="background-color: ${secCfg.color}; width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid #ffffff; box-shadow: 0 0 4px rgba(0,0,0,0.4); margin: 7px;"></div>`;
-                        } else {
-                            iconHtml = `<div class="centroid-marker-pulse" style="background-color: ${secCfg.color};">${secCfg.svg}</div>`;
-                        }
-
-                        const customIcon = L.divIcon({
-                            className: 'polygon-centroid-marker dgc-point-marker',
-                            html: iconHtml,
-                            iconSize: [24, 24],
-                            iconAnchor: [12, 12]
+                        const invisibleIcon = L.divIcon({
+                            className: 'dgc-hidden-point-marker',
+                            html: '',
+                            iconSize: [0, 0]
                         });
-                        return L.marker(latlng, { icon: customIcon });
+                        return L.marker(latlng, { icon: invisibleIcon, opacity: 0, interactive: false });
                     },
                     onEachFeature: (f, l) => onEachProjectFeature(f, l, f.properties.Sector_DGC)
                 }).addTo(leafletMap);
