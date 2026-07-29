@@ -40,35 +40,35 @@
                 <!-- Left Panel: Search, Filters & Analytics Chart -->
                 <section class="left-panel">
                     <!-- Search & Filter Card -->
-                    <div class="panel-card panel-card-filters" style="padding: 0.85rem; gap: 0.65rem;">
+                    <div class="panel-card panel-card-filters" style="padding: 0.55rem 0.75rem; gap: 0.35rem;">
                         <div
-                            style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.4rem;">
-                            <h2 class="panel-title" style="border: none; padding: 0; margin: 0; font-size: 0.85rem;">
-                                <i data-lucide="sliders-horizontal" style="width: 15px; height: 15px;"></i>
+                            style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem;">
+                            <h2 class="panel-title" style="border: none; padding: 0; margin: 0; font-size: 0.8rem;">
+                                <i data-lucide="sliders-horizontal" style="width: 14px; height: 14px;"></i>
                                 Filtros & Búsqueda
                             </h2>
                         </div>
 
                         <!-- General Search -->
-                        <div class="form-group" style="gap: 0.25rem;">
-                            <label class="form-label" for="search-input" style="font-size: 0.72rem;">Buscar
+                        <div class="form-group" style="gap: 0.15rem;">
+                            <label class="form-label" for="search-input" style="font-size: 0.7rem;">Buscar
                                 Concesión</label>
                             <div class="search-wrapper">
-                                <i data-lucide="search" style="width: 14px; height: 14px;"></i>
+                                <i data-lucide="search" style="width: 13px; height: 13px;"></i>
                                 <input type="text" id="search-input" class="form-input" placeholder="Nombre"
-                                    style="padding: 0.4rem 0.6rem 0.4rem 2rem; font-size: 0.8rem;">
+                                    style="padding: 0.3rem 0.55rem 0.3rem 1.8rem; font-size: 0.76rem;">
                             </div>
                         </div>
 
                         <!-- Region Geographic Multi-Select Filter -->
-                        <div class="form-group" style="gap: 0.25rem; position: relative; z-index: 50;">
-                            <label class="form-label" style="font-size: 0.72rem;">Región Geográfica</label>
+                        <div class="form-group" style="gap: 0.15rem; position: relative; z-index: 50;">
+                            <label class="form-label" style="font-size: 0.7rem;">Región Geográfica</label>
                             <div class="custom-multiselect" id="region-multiselect-container">
                                 <button type="button" class="form-input multiselect-trigger" id="region-multiselect-btn"
-                                    style="padding: 0.4rem 0.6rem; font-size: 0.8rem;">
+                                    style="padding: 0.3rem 0.55rem; font-size: 0.76rem;">
                                     <span id="region-multiselect-text">Todas las regiones</span>
                                     <i data-lucide="chevron-down"
-                                        style="width: 14px; height: 14px; margin-left: 0.35rem;"></i>
+                                        style="width: 13px; height: 13px; margin-left: 0.35rem;"></i>
                                 </button>
 
                                 <div class="multiselect-dropdown" id="region-multiselect-dropdown"
@@ -88,14 +88,14 @@
                         </div>
 
                         <!-- Sector Multi-Select Filter -->
-                        <div class="form-group" style="gap: 0.25rem; position: relative; z-index: 40;">
-                            <label class="form-label" style="font-size: 0.72rem;">Sector del Proyecto</label>
+                        <div class="form-group" style="gap: 0.15rem; position: relative; z-index: 40;">
+                            <label class="form-label" style="font-size: 0.7rem;">Sector del Proyecto</label>
                             <div class="custom-multiselect" id="sector-multiselect-container">
                                 <button type="button" class="form-input multiselect-trigger" id="sector-multiselect-btn"
-                                    style="padding: 0.4rem 0.6rem; font-size: 0.8rem;">
+                                    style="padding: 0.3rem 0.55rem; font-size: 0.76rem;">
                                     <span id="sector-multiselect-text">Todos los sectores</span>
                                     <i data-lucide="chevron-down"
-                                        style="width: 14px; height: 14px; margin-left: 0.35rem;"></i>
+                                        style="width: 13px; height: 13px; margin-left: 0.35rem;"></i>
                                 </button>
 
                                 <div class="multiselect-dropdown" id="sector-multiselect-dropdown"
@@ -114,17 +114,44 @@
                             </div>
                         </div>
 
+                        <!-- Status Multi-Select Filter -->
+                        <div class="form-group" style="gap: 0.15rem; position: relative; z-index: 30;">
+                            <label class="form-label" style="font-size: 0.7rem;">Estado de la Concesión</label>
+                            <div class="custom-multiselect" id="status-multiselect-container">
+                                <button type="button" class="form-input multiselect-trigger" id="status-multiselect-btn"
+                                    style="padding: 0.3rem 0.55rem; font-size: 0.76rem;">
+                                    <span id="status-multiselect-text">Todos los estados</span>
+                                    <i data-lucide="chevron-down"
+                                        style="width: 13px; height: 13px; margin-left: 0.35rem;"></i>
+                                </button>
+
+                                <div class="multiselect-dropdown" id="status-multiselect-dropdown"
+                                    style="display: none;">
+                                    <div class="multiselect-actions">
+                                        <label class="multiselect-option select-all-option"
+                                            style="padding: 0.2rem 0; font-weight: 700;">
+                                            <input type="checkbox" id="status-check-all">
+                                            <span>(Seleccionar Todos)</span>
+                                        </label>
+                                    </div>
+                                    <div class="multiselect-options-list" id="status-options-list">
+                                        <!-- Checkboxes dynamic list -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Reset Buttons -->
                         <button class="btn-reset" id="btn-reset"
-                            style="padding: 0.35rem; font-size: 0.75rem; justify-content: center; width: 100%;">
-                            <i data-lucide="rotate-ccw" style="width: 13px; height: 13px;"></i>
+                            style="padding: 0.28rem 0.4rem; font-size: 0.72rem; justify-content: center; width: 100%;">
+                            <i data-lucide="rotate-ccw" style="width: 12px; height: 12px;"></i>
                             Restablecer Filtros
                         </button>
                     </div>
 
                     <!-- Analytics Charts Card (Dual Charts Displayed Simultaneously) -->
                     <div class="panel-card panel-card-analytics"
-                        style="padding: 0.75rem 0.85rem; gap: 0.4rem; flex: 1; min-height: 0; display: flex; flex-direction: column;">
+                        style="padding: 0.55rem 0.75rem; gap: 0.3rem; flex: 1; min-height: 0; height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
                         <h2 class="panel-title"
                             style="font-size: 0.82rem; padding-bottom: 0.25rem; border-bottom: 1px solid var(--border-color); margin-bottom: 0.15rem;">
                             <i data-lucide="pie-chart" style="width: 14px; height: 14px;"></i>
@@ -265,21 +292,23 @@
                     <!-- KPI Counters Grid (Compact 2x2) -->
                     <section class="kpi-grid" aria-label="Indicadores Clave">
                         <div class="card-kpi card-kpi--interactive" id="kpi-total-card"
-                            title="Ver línea de tiempo de proyectos">
+                            title="Haz clic para ver la Línea de Tiempo de proyectos">
                             <div class="kpi-icon"><i data-lucide="file-text"></i></div>
                             <div class="kpi-val-container">
                                 <span class="kpi-label">Contratos totales</span>
                                 <span class="kpi-value" id="kpi-total">-</span>
                             </div>
-                            <i data-lucide="gantt-chart" class="kpi-timeline-hint"></i>
+                            <i data-lucide="plus" class="kpi-interactive-hint"></i>
                         </div>
 
-                        <div class="card-kpi">
+                        <div class="card-kpi card-kpi--interactive" id="kpi-investment-card"
+                            title="Haz clic para ver el Análisis de Inversión y Estadísticas Regionales">
                             <div class="kpi-icon"><i data-lucide="trending-up"></i></div>
                             <div class="kpi-val-container">
                                 <span class="kpi-label">Inversión (UF)</span>
                                 <span class="kpi-value" id="kpi-investment" style="font-size: 0.95rem;">-</span>
                             </div>
+                            <i data-lucide="plus" class="kpi-interactive-hint"></i>
                         </div>
 
                         <div class="card-kpi">
@@ -384,6 +413,183 @@
                 </section>
 
                 <!-- Full-Width Timeline Panel (replaces center + right panels) -->
+                <!-- Full-Width Investment Analytics Panel (replaces center + right panels - Single Page No Scroll) -->
+                <div id="investment-full-panel" class="investment-full-panel"
+                    style="display:none; grid-column: 2 / -1; flex-direction: column; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; height: calc(100vh - 4.2rem);">
+
+                    <!-- Header Principal con KPI de Inversión Total y Promedio -->
+                    <div class="timeline-header"
+                        style="display: flex; align-items: center; justify-content: space-between; padding: 0.45rem 0.85rem; border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.02); flex-shrink: 0; gap: 0.5rem; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <button id="btn-close-investment" class="btn-reset timeline-back-btn"
+                                style="display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; padding: 0.28rem 0.55rem; border-radius: 6px; border: 1px solid var(--border-color); background: transparent; cursor: pointer; color: var(--text-primary);">
+                                <i data-lucide="arrow-left" style="width:13px;height:13px;"></i>
+                                Volver al Mapa
+                            </button>
+                            <span class="timeline-header-divider"
+                                style="width: 1px; height: 16px; background: var(--border-color);"></span>
+                            <i data-lucide="trending-up" style="width:16px;height:16px;color:var(--primary);"></i>
+                            <div>
+                                <h2
+                                    style="font-size: 0.85rem; font-weight: 700; margin: 0; color: var(--text-primary); line-height: 1.2;">
+                                    Análisis de Inversión y Estadísticas Regionales</h2>
+                                <span style="font-size: 0.65rem; color: var(--text-secondary);">Reparto proporcional por
+                                    región y evolución temporal</span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Single Page Body Grid (Banner KPI Prominente + 2 filas de gráficos) -->
+                    <div class="investment-body"
+                        style="flex: 1; overflow: hidden; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.45rem; height: 100%;">
+
+                        <!-- BANNER KPI DESTACADO SUPERIOR -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; flex-shrink: 0;">
+                            <div class="card-kpi"
+                                style="padding: 0.45rem 0.75rem; gap: 0.6rem; border-left: 3.5px solid var(--primary); background: var(--bg-card);">
+                                <div class="kpi-icon"
+                                    style="width: 32px; height: 32px; font-size: 0.9rem; background: rgba(37,99,235,0.12); color: var(--primary);">
+                                    <i data-lucide="trending-up"></i></div>
+                                <div class="kpi-val-container">
+                                    <span class="kpi-label"
+                                        style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase;">Inversión
+                                        total</span>
+                                    <span class="kpi-value" id="kpi-panel-total-inv"
+                                        style="font-size: 0.95rem; color: var(--primary); font-weight: 800;">-</span>
+                                </div>
+                            </div>
+
+                            <div class="card-kpi"
+                                style="padding: 0.45rem 0.75rem; gap: 0.6rem; border-left: 3.5px solid #059669; background: var(--bg-card);">
+                                <div class="kpi-icon"
+                                    style="width: 32px; height: 32px; font-size: 0.9rem; background: rgba(5,150,105,0.12); color: #059669;">
+                                    <i data-lucide="calculator"></i></div>
+                                <div class="kpi-val-container">
+                                    <span class="kpi-label"
+                                        style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase;">Promedio
+                                        inversión / contrato</span>
+                                    <span class="kpi-value" id="kpi-panel-avg-inv"
+                                        style="font-size: 0.95rem; color: #059669; font-weight: 800;">-</span>
+                                </div>
+                            </div>
+
+                            <div class="card-kpi"
+                                style="padding: 0.45rem 0.75rem; gap: 0.6rem; border-left: 3.5px solid #d97706; background: var(--bg-card);">
+                                <div class="kpi-icon"
+                                    style="width: 32px; height: 32px; font-size: 0.9rem; background: rgba(217,119,6,0.12); color: #d97706;">
+                                    <i data-lucide="file-text"></i></div>
+                                <div class="kpi-val-container">
+                                    <span class="kpi-label"
+                                        style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase;">Contratos
+                                        en Muestra</span>
+                                    <span class="kpi-value" id="investment-panel-badge"
+                                        style="font-size: 0.95rem; color: #d97706; font-weight: 800;">- contratos</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fila 1 (Arriba: 3 Gráficos Regionales) -->
+                        <div
+                            style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; height: 100%; min-height: 0;">
+                            <!-- Gráfico 1: Inversión por Región -->
+                            <div class="panel-card"
+                                style="padding: 0.5rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
+                                <div
+                                    style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem; margin-bottom: 0.35rem; flex-shrink: 0;">
+                                    <h3
+                                        style="font-size: 0.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
+                                        <i data-lucide="bar-chart-horizontal"
+                                            style="width: 13px; height: 13px; color: var(--primary);"></i>
+                                        1) Inversión por Región (UF)
+                                    </h3>
+                                    <span style="font-size: 0.6rem; color: var(--text-muted);">Proporcional</span>
+                                </div>
+                                <div style="flex: 1; position: relative; min-height: 0; height: 100%;">
+                                    <canvas id="chartInvByRegion"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Gráfico 2: Contratos por Región -->
+                            <div class="panel-card"
+                                style="padding: 0.5rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
+                                <div
+                                    style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem; margin-bottom: 0.35rem; flex-shrink: 0;">
+                                    <h3
+                                        style="font-size: 0.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
+                                        <i data-lucide="layers" style="width: 13px; height: 13px; color: #059669;"></i>
+                                        2) Contratos por Región
+                                    </h3>
+                                    <span style="font-size: 0.6rem; color: var(--text-muted);">(1/N multiregión)</span>
+                                </div>
+                                <div style="flex: 1; position: relative; min-height: 0; height: 100%;">
+                                    <canvas id="chartContractsByRegion"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Gráfico 3: Pie Chart % Inversión por Región -->
+                            <div class="panel-card"
+                                style="padding: 0.5rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
+                                <div
+                                    style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem; margin-bottom: 0.35rem; flex-shrink: 0;">
+                                    <h3
+                                        style="font-size: 0.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
+                                        <i data-lucide="pie-chart"
+                                            style="width: 13px; height: 13px; color: #d97706;"></i>
+                                        3) Inversión por Sector (%)
+                                    </h3>
+                                </div>
+                                <div
+                                    style="flex: 1; position: relative; min-height: 0; height: 100%; display: flex; align-items: center; justify-content: center;">
+                                    <canvas id="chartInvShareRegion"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fila 2 (Abajo: 2 Histogramas Temporales) -->
+                        <div
+                            style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; height: 100%; min-height: 0;">
+                            <!-- Gráfico 4: Contratos Vigentes por Año -->
+                            <div class="panel-card"
+                                style="padding: 0.5rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
+                                <div
+                                    style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem; margin-bottom: 0.35rem; flex-shrink: 0;">
+                                    <h3
+                                        style="font-size: 0.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
+                                        <i data-lucide="calendar"
+                                            style="width: 13px; height: 13px; color: #3b82f6;"></i>
+                                        4) Contratos Vigentes por Año (Histograma)
+                                    </h3>
+                                    <span style="font-size: 0.6rem; color: var(--text-muted);">Inicio-término</span>
+                                </div>
+                                <div style="flex: 1; position: relative; min-height: 0; height: 100%;">
+                                    <canvas id="chartActiveContractsYear"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Gráfico 5: Inversión Activa por Año -->
+                            <div class="panel-card"
+                                style="padding: 0.5rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
+                                <div
+                                    style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem; margin-bottom: 0.35rem; flex-shrink: 0;">
+                                    <h3
+                                        style="font-size: 0.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
+                                        <i data-lucide="activity"
+                                            style="width: 13px; height: 13px; color: #8b5cf6;"></i>
+                                        5) Inversión Activa en el Tiempo por Año (Histograma)
+                                    </h3>
+                                    <span style="font-size: 0.6rem; color: var(--text-muted);">Inversión
+                                        acumulada</span>
+                                </div>
+                                <div style="flex: 1; position: relative; min-height: 0; height: 100%;">
+                                    <canvas id="chartActiveInvYear"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
                 <div id="timeline-full-panel" class="timeline-full-panel" style="display:none; grid-column: 2 / -1;">
                     <!-- Timeline Header -->
                     <div class="timeline-header">
@@ -451,6 +657,7 @@
             search: '',
             selectedRegions: [],
             selectedSectors: [],
+            selectedStatuses: [],
             page: 1,
             sortBy: 'Fecha inicio del contrato de concesión',
             sortOrder: 'asc',
@@ -465,6 +672,7 @@
         let statusChartInstance = null;
         let availableRegionsList = [];
         let availableSectorsList = [];
+        let availableStatusesList = ['Construcción', 'Construcción y Operación', 'Finalizado', 'Operación'];
 
         // Leaflet Map state and layers
         let leafletMap = null;
@@ -519,6 +727,13 @@
         const sectorMultiselectText = document.getElementById('sector-multiselect-text');
         const sectorCheckAll = document.getElementById('sector-check-all');
         const sectorOptionsList = document.getElementById('sector-options-list');
+
+        const statusMultiselectContainer = document.getElementById('status-multiselect-container');
+        const statusMultiselectBtn = document.getElementById('status-multiselect-btn');
+        const statusMultiselectDropdown = document.getElementById('status-multiselect-dropdown');
+        const statusMultiselectText = document.getElementById('status-multiselect-text');
+        const statusCheckAll = document.getElementById('status-check-all');
+        const statusOptionsList = document.getElementById('status-options-list');
 
         const btnReset = document.getElementById('btn-reset');
         const tableBody = document.getElementById('table-body');
@@ -585,6 +800,7 @@
                 sectorMultiselectBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (regionMultiselectDropdown) regionMultiselectDropdown.style.display = 'none';
+                    if (statusMultiselectDropdown) statusMultiselectDropdown.style.display = 'none';
                     const isVisible = sectorMultiselectDropdown.style.display === 'flex';
                     sectorMultiselectDropdown.style.display = isVisible ? 'none' : 'flex';
                 });
@@ -600,6 +816,27 @@
                 });
             }
 
+            // Status Multi-Select Handlers
+            if (statusMultiselectBtn && statusMultiselectDropdown) {
+                statusMultiselectBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (regionMultiselectDropdown) regionMultiselectDropdown.style.display = 'none';
+                    if (sectorMultiselectDropdown) sectorMultiselectDropdown.style.display = 'none';
+                    const isVisible = statusMultiselectDropdown.style.display === 'flex';
+                    statusMultiselectDropdown.style.display = isVisible ? 'none' : 'flex';
+                });
+            }
+
+            if (statusCheckAll) {
+                statusCheckAll.addEventListener('change', () => {
+                    const isChecked = statusCheckAll.checked;
+                    document.querySelectorAll('.status-checkbox').forEach(cb => {
+                        cb.checked = isChecked;
+                    });
+                    updateSelectedStatuses();
+                });
+            }
+
             // Close dropdowns on outside click
             document.addEventListener('click', (e) => {
                 if (regionMultiselectContainer && !regionMultiselectContainer.contains(e.target)) {
@@ -607,6 +844,9 @@
                 }
                 if (sectorMultiselectContainer && !sectorMultiselectContainer.contains(e.target)) {
                     if (sectorMultiselectDropdown) sectorMultiselectDropdown.style.display = 'none';
+                }
+                if (statusMultiselectContainer && !statusMultiselectContainer.contains(e.target)) {
+                    if (statusMultiselectDropdown) statusMultiselectDropdown.style.display = 'none';
                 }
             });
 
@@ -627,6 +867,7 @@
                 appState.search = '';
                 appState.selectedRegions = [];
                 appState.selectedSectors = [];
+                appState.selectedStatuses = [];
                 appState.selectedProjectCode = null;
                 appState.sortBy = 'Fecha inicio del contrato de concesión';
                 appState.sortOrder = 'asc';
@@ -640,10 +881,13 @@
 
                 document.querySelectorAll('.region-checkbox').forEach(cb => cb.checked = false);
                 document.querySelectorAll('.sector-checkbox').forEach(cb => cb.checked = false);
+                document.querySelectorAll('.status-checkbox').forEach(cb => cb.checked = false);
                 if (regionCheckAll) regionCheckAll.checked = false;
                 if (sectorCheckAll) sectorCheckAll.checked = false;
+                if (statusCheckAll) statusCheckAll.checked = false;
                 if (regionMultiselectText) regionMultiselectText.textContent = 'Todas las regiones';
                 if (sectorMultiselectText) sectorMultiselectText.textContent = 'Todos los sectores';
+                if (statusMultiselectText) statusMultiselectText.textContent = 'Todos los estados';
                 if (layers.regions) layers.regions.setStyle(getRegionStyle);
 
                 showTableListView();
@@ -704,6 +948,7 @@
 
             // Initialize Timeline view events
             initTimelineEvents();
+            initInvestmentEvents();
         });
 
         // Toggle visual styling for visual tabs
@@ -778,6 +1023,32 @@
             fetchData();
         }
 
+        function updateSelectedStatuses() {
+            const checkedCbs = Array.from(document.querySelectorAll('.status-checkbox:checked'));
+            appState.selectedStatuses = checkedCbs.map(cb => cb.value);
+
+            const totalCount = availableStatusesList.length;
+            const checkedCount = appState.selectedStatuses.length;
+
+            if (statusCheckAll) {
+                statusCheckAll.checked = (checkedCount === totalCount && totalCount > 0);
+            }
+
+            if (statusMultiselectText) {
+                if (checkedCount === 0 || checkedCount === totalCount) {
+                    statusMultiselectText.textContent = 'Todos los estados';
+                } else if (checkedCount === 1) {
+                    statusMultiselectText.textContent = appState.selectedStatuses[0];
+                } else {
+                    statusMultiselectText.textContent = `${checkedCount} estados seleccionados`;
+                }
+            }
+
+            appState.page = 1;
+            appState.selectedProjectCode = null;
+            fetchData();
+        }
+
         // Carga estática de filtros desde window.STATIC_DATA
         async function loadFilters() {
             const data = window.STATIC_DATA || {};
@@ -820,6 +1091,24 @@
                     cb.addEventListener('change', updateSelectedSectors);
                 });
             }
+
+            // Populate status checkboxes
+            if (statusOptionsList) {
+                statusOptionsList.innerHTML = '';
+                availableStatusesList.forEach(st => {
+                    const label = document.createElement('label');
+                    label.className = 'multiselect-option';
+                    label.innerHTML = `
+                        <input type="checkbox" class="status-checkbox" value="${st}">
+                        <span>${st}</span>
+                    `;
+                    statusOptionsList.appendChild(label);
+                });
+
+                document.querySelectorAll('.status-checkbox').forEach(cb => {
+                    cb.addEventListener('change', updateSelectedStatuses);
+                });
+            }
         }
 
 
@@ -832,7 +1121,7 @@
 
         function _parseRegionsFromVal(regionStr) {
             if (!regionStr) return [];
-            const str = String(regionStr).replace(/&nbsp;/g,' ').replace(/ /g,' ');
+            const str = String(regionStr).replace(/&nbsp;/g, ' ').replace(/ /g, ' ');
             return str.split(/[;,]/).map(p => {
                 p = p.trim();
                 if (p === 'Metropolitana') return 'Metropolitana de Santiago';
@@ -842,19 +1131,21 @@
         }
 
         function staticFetchData(params) {
-            const allData      = (window.STATIC_DATA && window.STATIC_DATA.data) || [];
-            const searchRaw    = params.get('search') || '';
-            const regionRaw    = params.get('region') || '';
-            const sectorRaw    = params.get('sector') || '';
-            const sortBy       = params.get('sort_by') || 'Fecha inicio del contrato de concesión';
-            const sortOrder    = params.get('sort_order') || 'asc';
-            const page         = parseInt(params.get('page') || '1', 10);
+            const allData = (window.STATIC_DATA && window.STATIC_DATA.data) || [];
+            const searchRaw = params.get('search') || '';
+            const regionRaw = params.get('region') || '';
+            const sectorRaw = params.get('sector') || '';
+            const statusRaw = params.get('status') || '';
+            const sortBy = params.get('sort_by') || 'Fecha inicio del contrato de concesión';
+            const sortOrder = params.get('sort_order') || 'asc';
+            const page = parseInt(params.get('page') || '1', 10);
 
             const PAGE_SIZE = 50;
 
-            const searchNorm   = _normalizeStr(searchRaw);
-            const selRegions   = regionRaw ? regionRaw.split(',').map(r => r.trim()).filter(Boolean) : [];
-            const selSectors   = sectorRaw ? sectorRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+            const searchNorm = _normalizeStr(searchRaw);
+            const selRegions = regionRaw ? regionRaw.split(',').map(r => r.trim()).filter(Boolean) : [];
+            const selSectors = sectorRaw ? sectorRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+            const selStatuses = statusRaw ? statusRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
 
             let filtered = allData.filter(item => {
                 if (selRegions.length > 0) {
@@ -866,14 +1157,18 @@
                     const sec = item['Sector del proyecto'] || '';
                     if (!selSectors.includes(sec)) return false;
                 }
+                if (selStatuses.length > 0) {
+                    const st = item['ESTADO'] || '';
+                    if (!selStatuses.includes(st)) return false;
+                }
                 if (searchNorm) {
-                    const code    = _normalizeStr(item['Código proyecto']);
-                    const name1   = _normalizeStr(item['Nombre de la Concesión ']);
-                    const name2   = _normalizeStr(item['Nombre de uso común']);
-                    const desc    = _normalizeStr(item['Descripción ']);
-                    const soc     = _normalizeStr(item['Nombre sociedad concesionaria']);
-                    const reg     = _normalizeStr(item['Región geográfica']);
-                    const sec     = _normalizeStr(item['Sector del proyecto']);
+                    const code = _normalizeStr(item['Código proyecto']);
+                    const name1 = _normalizeStr(item['Nombre de la Concesión ']);
+                    const name2 = _normalizeStr(item['Nombre de uso común']);
+                    const desc = _normalizeStr(item['Descripción ']);
+                    const soc = _normalizeStr(item['Nombre sociedad concesionaria']);
+                    const reg = _normalizeStr(item['Región geográfica']);
+                    const sec = _normalizeStr(item['Sector del proyecto']);
                     const bidders = (item.bidders || []).map(b => _normalizeStr(b.name + ' ' + b.code)).join(' ');
                     const haystack = [code, name1, name2, desc, soc, reg, sec, bidders].join(' ');
                     if (!haystack.includes(searchNorm)) return false;
@@ -911,38 +1206,39 @@
             });
 
             const totalPages = Math.max(1, Math.ceil(countFiltered / PAGE_SIZE));
-            const safePage   = Math.min(page, totalPages);
-            const start      = (safePage - 1) * PAGE_SIZE;
-            const pageData   = filtered.slice(start, start + PAGE_SIZE);
+            const safePage = Math.min(page, totalPages);
+            const start = (safePage - 1) * PAGE_SIZE;
+            const pageData = filtered.slice(start, start + PAGE_SIZE);
 
             const mapProjects = filtered.map(item => ({
-                code:           item['Código proyecto'],
-                name:           item['Nombre de uso común'] || item['Nombre de la Concesión '],
-                common:         item['Nombre de uso común'],
-                region:         item['Región geográfica'],
-                status:         item['ESTADO'],
-                sector:         item['Sector del proyecto'],
-                shapes:         item.shapes || [],
+                code: item['Código proyecto'],
+                name: item['Nombre de uso común'] || item['Nombre de la Concesión '],
+                common: item['Nombre de uso común'],
+                region: item['Región geográfica'],
+                status: item['ESTADO'],
+                sector: item['Sector del proyecto'],
+                shapes: item.shapes || [],
                 group_timeline: item.group_timeline || []
             }));
 
             return {
-                data:    pageData,
+                data: pageData,
+                full_filtered: filtered,
                 regions: (window.STATIC_DATA && window.STATIC_DATA.regions) || [],
                 sectors: (window.STATIC_DATA && window.STATIC_DATA.sectors) || [],
-                stats:   { sectors: sectorStats, status: statusStats },
+                stats: { sectors: sectorStats, status: statusStats },
                 summary: {
-                    count_filtered:      countFiltered,
-                    count_total:         totalDB,
+                    count_filtered: countFiltered,
+                    count_total: totalDB,
                     total_investment_uf: totalInv,
-                    total_bidders:       totalBidders,
-                    hitos:               hitos
+                    total_bidders: totalBidders,
+                    hitos: hitos
                 },
                 pagination: {
-                    page:          safePage,
-                    page_size:     PAGE_SIZE,
+                    page: safePage,
+                    page_size: PAGE_SIZE,
                     total_records: countFiltered,
-                    total_pages:   totalPages
+                    total_pages: totalPages
                 },
                 map_projects: mapProjects
             };
@@ -955,6 +1251,7 @@
                     search: appState.search,
                     region: appState.selectedRegions.join(','),
                     sector: appState.selectedSectors.join(','),
+                    status: appState.selectedStatuses.join(','),
                     page: appState.page,
                     sort_by: appState.sortBy,
                     sort_order: appState.sortOrder
@@ -962,6 +1259,11 @@
 
                 // VERSIÓN ESTÁTICA: filtrar y paginar en el cliente
                 const resData = staticFetchData(params);
+
+                // Si el panel de análisis de inversión está abierto, re-renderizar los 5 gráficos en tiempo real
+                if (appState.investmentOpen) {
+                    renderInvestmentAnalytics(resData.full_filtered || resData.data);
+                }
 
                 // 1. Update KPI Values
                 if (kpiTotal) kpiTotal.textContent = resData.summary.count_filtered;
@@ -989,6 +1291,7 @@
                         allLoadedContractsMap[item['Código proyecto'].toString().trim()] = item;
                     }
                 });
+                currentFilteredContractsList = resData.full_filtered || (window.STATIC_DATA ? window.STATIC_DATA.data : []);
                 renderTable(resData.data);
 
                 // 3. Render count values
@@ -1089,7 +1392,6 @@
 
         // Render table list elements
         function renderTable(contracts) {
-            currentFilteredContractsList = contracts || [];
             tableBody.innerHTML = '';
 
             if (contracts.length === 0) {
@@ -1205,6 +1507,43 @@
             const linkMOP = item && item['Link pagina web concesiones'] && item['Link pagina web concesiones'] !== 'SIN'
                 ? `<a href="${item['Link pagina web concesiones']}" target="_blank" class="btn-action-link" style="font-size: 0.72rem; padding: 0.3rem 0.6rem;"><i data-lucide="globe"></i> Ficha MOP</a>`
                 : '';
+
+            // Build Street View HTML section
+            let streetViewHTML = '';
+            let rawSvVal = null;
+            if (item) {
+                for (let k of Object.keys(item)) {
+                    if (k.toLowerCase().replace(/[\s_]/g, '') === 'streetview') {
+                        rawSvVal = item[k];
+                        break;
+                    }
+                }
+            }
+            let svUrl = rawSvVal ? String(rawSvVal).trim() : '';
+
+            if (svUrl.includes('<iframe') && svUrl.includes('src=')) {
+                const match = svUrl.match(/src=["']([^"']+)["']/);
+                if (match) svUrl = match[1];
+            }
+
+            // Muestra el iframe ÚNICAMENTE si existe una URL de Street View en la columna del Excel
+            if (svUrl && svUrl.startsWith('http')) {
+                streetViewHTML = `
+                    <div class="detail-section" style="margin-top: 0.65rem;">
+                        <div style="position: relative; width: 100%; height: 250px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); background: var(--bg-card);">
+                            <iframe
+                                src="${svUrl}"
+                                width="100%"
+                                height="250"
+                                style="border:0; display: block;"
+                                allowfullscreen=""
+                                loading="lazy"
+                                referrerpolicy="no-referrer-when-downgrade">
+                            </iframe>
+                        </div>
+                    </div>
+                `;
+            }
 
             // Build bidders HTML section
             const biddersList = (item && item.bidders) || (projectMetadata[cleanCode] && projectMetadata[cleanCode].bidders) || [];
@@ -1353,6 +1692,8 @@
                         <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.35rem;">Descripción</h4>
                         <p class="detail-desc" style="font-size: 0.76rem; line-height: 1.45;">${(item && item['Descripción ']) || 'No se registra descripción en la base de datos.'}</p>
                     </div>
+
+                    ${streetViewHTML}
 
                     ${biddersHTML}
 
@@ -2685,7 +3026,7 @@
             const centerPanel = document.querySelector('.center-panel');
             const rightPanel = document.querySelector('.right-panel');
             const tlPanel = document.getElementById('timeline-full-panel');
-            if (grid) { grid.style.gridTemplateColumns = '240px 1fr 500px'; }
+            if (grid) { grid.style.gridTemplateColumns = ''; }
             if (centerPanel) { centerPanel.style.display = ''; }
             if (rightPanel) { rightPanel.style.display = ''; }
             if (tlPanel) { tlPanel.style.display = 'none'; }
@@ -3163,6 +3504,404 @@
         }
 
         // ── Wire up events (called from DOMContentLoaded) ─────────────
+        // ── MOTOR DE ANÁLISIS DE INVERSIÓN Y ESTADÍSTICAS REGIONALES ─────────────────
+        let chartInvByRegionInstance = null;
+        let chartContractsByRegionInstance = null;
+        let chartInvShareRegionInstance = null;
+        let chartActiveContractsYearInstance = null;
+        let chartActiveInvYearInstance = null;
+
+        function showInvestmentView() {
+            if (appState.timelineOpen) hideTimelineView();
+            appState.investmentOpen = true;
+            const grid = document.querySelector('.dashboard-grid');
+            const centerPanel = document.querySelector('.center-panel');
+            const rightPanel = document.querySelector('.right-panel');
+            const invPanel = document.getElementById('investment-full-panel');
+
+            if (grid) grid.style.gridTemplateColumns = '240px 1fr';
+            if (centerPanel) centerPanel.style.display = 'none';
+            if (rightPanel) rightPanel.style.display = 'none';
+            if (invPanel) invPanel.style.display = 'flex';
+
+            const kpiInvCard = document.getElementById('kpi-investment-card');
+            if (kpiInvCard) kpiInvCard.classList.add('timeline-active');
+
+            // Renderizar gráficos siempre con la lista completa de contratos filtrados (todos los 127 al inicio)
+            const currentList = (currentFilteredContractsList && currentFilteredContractsList.length > 0)
+                ? currentFilteredContractsList
+                : (window.STATIC_DATA && window.STATIC_DATA.data ? window.STATIC_DATA.data : []);
+            renderInvestmentAnalytics(currentList);
+        }
+
+        function hideInvestmentView() {
+            appState.investmentOpen = false;
+            const grid = document.querySelector('.dashboard-grid');
+            const centerPanel = document.querySelector('.center-panel');
+            const rightPanel = document.querySelector('.right-panel');
+            const invPanel = document.getElementById('investment-full-panel');
+
+            if (grid) grid.style.gridTemplateColumns = '';
+            if (centerPanel) centerPanel.style.display = 'flex';
+            if (rightPanel) rightPanel.style.display = 'flex';
+            if (invPanel) invPanel.style.display = 'none';
+
+            const kpiInvCard = document.getElementById('kpi-investment-card');
+            if (kpiInvCard) kpiInvCard.classList.remove('timeline-active');
+
+            if (typeof leafletMap !== 'undefined' && leafletMap) {
+                setTimeout(() => { leafletMap.invalidateSize(); }, 100);
+            }
+        }
+
+        // Plugin para dibujar la línea vertical de "Hoy" en los histogramas temporales
+        const todayLineChartPlugin = {
+            id: 'todayLineChartPlugin',
+            afterDraw: (chart) => {
+                const currentYear = new Date().getFullYear();
+                const labels = chart.data.labels || [];
+                const index = labels.indexOf(currentYear);
+                if (index !== -1) {
+                    const xAxis = chart.scales.x;
+                    const yAxis = chart.scales.y;
+                    const x = xAxis.getPixelForValue(index);
+                    const ctx = chart.ctx;
+
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.setLineDash([4, 3]);
+                    ctx.lineWidth = 1.8;
+                    ctx.strokeStyle = '#ef4444';
+                    ctx.moveTo(x, yAxis.top);
+                    ctx.lineTo(x, yAxis.bottom);
+                    ctx.stroke();
+
+                    // Etiqueta "Hoy" en la parte superior
+                    ctx.fillStyle = '#ef4444';
+                    ctx.font = 'bold 8.5px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`Hoy (${currentYear})`, x, Math.max(10, yAxis.top - 3));
+                    ctx.restore();
+                }
+            }
+        };
+
+        function renderInvestmentAnalytics(contractsList) {
+            if (!contractsList) return;
+
+            const isDark = document.body.classList.contains('dark-theme');
+            const textColor = isDark ? '#94a3b8' : '#374151';
+            const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+
+            // 1. REPARTO PROPORCIONAL POR REGIÓN
+            const invByRegion = {};
+            const contractsByRegion = {};
+            let totalSampleInv = 0;
+
+            contractsList.forEach(item => {
+                const regs = _parseRegionsFromVal(item['Región geográfica']);
+                const inv = parseFloat(item['Inversión Materializada estimada'] || 0) || 0;
+                totalSampleInv += inv;
+                const n = regs.length;
+
+                if (n > 0) {
+                    const invPart = inv / n;
+                    const cntPart = 1.0 / n;
+                    regs.forEach(r => {
+                        invByRegion[r] = (invByRegion[r] || 0) + invPart;
+                        contractsByRegion[r] = (contractsByRegion[r] || 0) + cntPart;
+                    });
+                } else {
+                    invByRegion['Sin región'] = (invByRegion['Sin región'] || 0) + inv;
+                    contractsByRegion['Sin región'] = (contractsByRegion['Sin región'] || 0) + 1;
+                }
+            });
+
+            // Actualizar KPI Header Principal
+            const kpiTotalEl = document.getElementById('kpi-panel-total-inv');
+            const kpiAvgEl = document.getElementById('kpi-panel-avg-inv');
+            const badgeEl = document.getElementById('investment-panel-badge');
+
+            const avgInv = totalSampleInv / (contractsList.length || 1);
+
+            if (kpiTotalEl) kpiTotalEl.textContent = formatUFComplete(totalSampleInv) + ' UF';
+            if (kpiAvgEl) kpiAvgEl.textContent = formatUF(avgInv);
+            if (badgeEl) badgeEl.textContent = `${contractsList.length} contratos`;
+
+            // 1) Gráfico 1: Inversión por Región (Barras Horizontales)
+            const sortedInvRegions = Object.entries(invByRegion).sort((a, b) => b[1] - a[1]);
+            const invLabels = sortedInvRegions.map(e => e[0]);
+            const invValues = sortedInvRegions.map(e => e[1]);
+
+            const canvasInv = document.getElementById('chartInvByRegion');
+            if (canvasInv) {
+                if (chartInvByRegionInstance) chartInvByRegionInstance.destroy();
+                chartInvByRegionInstance = new Chart(canvasInv.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: invLabels,
+                        datasets: [{
+                            label: 'Inversión (UF)',
+                            data: invValues,
+                            backgroundColor: '#2563eb',
+                            borderRadius: 3
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: (ctx) => ` Inversión: ${formatUFComplete(ctx.raw)} UF (${((ctx.raw / (totalSampleInv || 1)) * 100).toFixed(1)}%)`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: gridColor },
+                                ticks: {
+                                    color: textColor,
+                                    font: { size: 8.5 },
+                                    callback: (val) => formatUF(val)
+                                }
+                            },
+                            y: {
+                                grid: { display: false },
+                                ticks: { color: textColor, font: { size: 8.5 } }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 2) Gráfico 2: Contratos por Región (Barras Horizontales Proporcionales)
+            const sortedCntRegions = Object.entries(contractsByRegion).sort((a, b) => b[1] - a[1]);
+            const cntLabels = sortedCntRegions.map(e => e[0]);
+            const cntValues = sortedCntRegions.map(e => e[1]);
+
+            const canvasCnt = document.getElementById('chartContractsByRegion');
+            if (canvasCnt) {
+                if (chartContractsByRegionInstance) chartContractsByRegionInstance.destroy();
+                chartContractsByRegionInstance = new Chart(canvasCnt.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: cntLabels,
+                        datasets: [{
+                            label: 'Contratos (Proporcional)',
+                            data: cntValues,
+                            backgroundColor: '#059669',
+                            borderRadius: 3
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: (ctx) => ` Contratos: ${ctx.raw.toFixed(2)} (${((ctx.raw / (contractsList.length || 1)) * 100).toFixed(1)}%)`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: gridColor },
+                                ticks: { color: textColor, font: { size: 8.5 } }
+                            },
+                            y: {
+                                grid: { display: false },
+                                ticks: { color: textColor, font: { size: 8.5 } }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 3) Gráfico 3: Pie / Donut Chart (% Inversión por Sector del Proyecto)
+            const invBySector = {};
+            contractsList.forEach(item => {
+                const sec = item['Sector del proyecto'] || 'Sin sector';
+                const inv = parseFloat(item['Inversión Materializada estimada'] || 0) || 0;
+                invBySector[sec] = (invBySector[sec] || 0) + inv;
+            });
+
+            const sortedSec = Object.entries(invBySector).sort((a, b) => b[1] - a[1]);
+            const secLabels = sortedSec.map(e => e[0]);
+            const secValues = sortedSec.map(e => e[1]);
+            const secColors = secLabels.map(s => getSectorConfig(s).color);
+
+            const canvasShare = document.getElementById('chartInvShareRegion');
+            if (canvasShare) {
+                if (chartInvShareRegionInstance) chartInvShareRegionInstance.destroy();
+                chartInvShareRegionInstance = new Chart(canvasShare.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: secLabels,
+                        datasets: [{
+                            data: secValues,
+                            backgroundColor: secColors,
+                            borderColor: isDark ? '#0f172a' : '#ffffff',
+                            borderWidth: 1.5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '55%',
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    color: textColor,
+                                    font: { size: 8.5 },
+                                    boxWidth: 9,
+                                    padding: 5
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: (ctx) => ` ${ctx.label}: ${((ctx.raw / (totalSampleInv || 1)) * 100).toFixed(1)}% (${formatUF(ctx.raw)})`
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 4. CÁLCULO HISTOGRAMAS TEMPORALES (Contratos e Inversión Activa por Año)
+            const yearlyContracts = {};
+            const yearlyInvestment = {};
+
+            const parseYear = (dStr) => {
+                if (!dStr) return null;
+                const m = String(dStr).match(/(\d{4})/);
+                return m ? parseInt(m[1], 10) : null;
+            };
+
+            contractsList.forEach(c => {
+                const startY = parseYear(c['Fecha inicio del contrato de concesión']) || parseYear(c['Fecha decreto adjudicación']);
+                const endY = parseYear(c['Fecha término de la concesión']) || 2050;
+                const inv = parseFloat(c['Inversión Materializada estimada'] || 0) || 0;
+
+                if (startY) {
+                    const s = Math.max(1993, startY);
+                    const e = Math.min(2055, endY);
+                    for (let y = s; y <= e; y++) {
+                        yearlyContracts[y] = (yearlyContracts[y] || 0) + 1;
+                        yearlyInvestment[y] = (yearlyInvestment[y] || 0) + inv;
+                    }
+                }
+            });
+
+            const yearsArr = [];
+            for (let y = 1995; y <= 2045; y++) { yearsArr.push(y); }
+
+            const activeCntData = yearsArr.map(y => yearlyContracts[y] || 0);
+            const activeInvData = yearsArr.map(y => yearlyInvestment[y] || 0);
+
+            // 4) Gráfico 4: Contratos Vigentes por Año (Histograma)
+            const canvasActiveCnt = document.getElementById('chartActiveContractsYear');
+            if (canvasActiveCnt) {
+                if (chartActiveContractsYearInstance) chartActiveContractsYearInstance.destroy();
+                chartActiveContractsYearInstance = new Chart(canvasActiveCnt.getContext('2d'), {
+                    type: 'bar',
+                    plugins: [todayLineChartPlugin],
+                    data: {
+                        labels: yearsArr,
+                        datasets: [{
+                            label: 'Contratos Vigentes',
+                            data: activeCntData,
+                            backgroundColor: '#3b82f6',
+                            borderRadius: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: (ctx) => ` Año ${ctx.label}: ${ctx.raw} contratos vigentes`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { grid: { display: false }, ticks: { color: textColor, font: { size: 8 }, maxTicksLimit: 14 } },
+                            y: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 8 } } }
+                        }
+                    }
+                });
+            }
+
+            // 5) Gráfico 5: Inversión Activa por Año (Histograma)
+            const canvasActiveInv = document.getElementById('chartActiveInvYear');
+            if (canvasActiveInv) {
+                if (chartActiveInvYearInstance) chartActiveInvYearInstance.destroy();
+                chartActiveInvYearInstance = new Chart(canvasActiveInv.getContext('2d'), {
+                    type: 'bar',
+                    plugins: [todayLineChartPlugin],
+                    data: {
+                        labels: yearsArr,
+                        datasets: [{
+                            label: 'Inversión Activa (UF)',
+                            data: activeInvData,
+                            backgroundColor: '#8b5cf6',
+                            borderRadius: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: (ctx) => ` Año ${ctx.label}: ${formatUFComplete(ctx.raw)} UF activas`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { grid: { display: false }, ticks: { color: textColor, font: { size: 8 }, maxTicksLimit: 14 } },
+                            y: {
+                                grid: { color: gridColor },
+                                ticks: {
+                                    color: textColor,
+                                    font: { size: 8 },
+                                    callback: (val) => formatUF(val)
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            lucide.createIcons();
+        }
+
+        function initInvestmentEvents() {
+            const kpiInvCard = document.getElementById('kpi-investment-card');
+            if (kpiInvCard) {
+                kpiInvCard.addEventListener('click', () => {
+                    if (appState.investmentOpen) {
+                        hideInvestmentView();
+                    } else {
+                        showInvestmentView();
+                    }
+                });
+            }
+
+            const btnClose = document.getElementById('btn-close-investment');
+            if (btnClose) {
+                btnClose.addEventListener('click', () => hideInvestmentView());
+            }
+        }
+
         function initTimelineEvents() {
             const kpiCard = document.getElementById('kpi-total-card');
             if (kpiCard) {
