@@ -290,3 +290,55 @@ with open(out_js, 'w', encoding='utf-8') as f:
 size_mb = os.path.getsize(out_js) / 1024 / 1024
 print(f"OK Generado: {out_js} ({size_mb:.2f} MB)")
 print(f"   Contratos exportados: {count_total}")
+
+# ── EFE: Exportar datos de proyectos ferroviarios ──────────────────────────────
+print("\nProcesando hoja EFE...")
+
+try:
+    df_efe = pd.read_excel(EXCEL_PATH, sheet_name='EFE')
+    print(f"  -> {len(df_efe)} filas cargadas en hoja 'EFE'")
+
+    efe_projects = []
+    for _, row in df_efe.iterrows():
+        proyecto = sanitize_value(row.get('Proyecto'))
+        if not proyecto:
+            continue
+
+        region_raw = sanitize_value(row.get('region'))
+        region = region_raw if region_raw else None
+
+        inv_raw = row.get('Inversion (USD) ')
+        try:
+            inv = float(inv_raw) if inv_raw is not None and str(inv_raw).replace('.', '', 1).isdigit() else None
+        except Exception:
+            inv = None
+
+        shapes_val = row.get('Shapes')
+        shapes = parse_shapes_list(shapes_val)
+
+        descripcion = sanitize_value(row.get('Descripcion'))
+        fuente = sanitize_value(row.get('Fuente  de inf'))
+
+        efe_projects.append({
+            'name': str(proyecto),
+            'region': region,
+            'investment_usd': inv,
+            'shapes': shapes,
+            'description': descripcion,
+            'source': fuente,
+        })
+
+    efe_payload = {'data': efe_projects}
+    out_efe_js = os.path.join(OUT_DIR, 'efe_data.js')
+    efe_json_str = json.dumps(efe_payload, ensure_ascii=False, indent=None, separators=(',', ':'))
+    with open(out_efe_js, 'w', encoding='utf-8') as f:
+        f.write(f'window.EFE_DATA = {efe_json_str};')
+
+    size_efe_mb = os.path.getsize(out_efe_js) / 1024 / 1024
+    print(f"OK EFE Generado: {out_efe_js} ({size_efe_mb:.3f} MB)")
+    print(f"   Proyectos EFE exportados: {len(efe_projects)}")
+
+except Exception as e:
+    print(f"⚠ Error al exportar datos EFE: {e}")
+    import traceback; traceback.print_exc()
+

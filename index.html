@@ -30,6 +30,24 @@
                 <span class="top-navbar-proto">Prototipo en desarrollo: Mapa de Proyectos Concesiones Chile</span>
             </div>
             <div class="top-navbar-right">
+                <!-- Navigation Menu -->
+                <div class="nav-menu" id="nav-menu">
+                    <button class="nav-menu-btn" id="nav-menu-btn" aria-haspopup="true" aria-expanded="false">
+                        <i data-lucide="layers" style="width:13px;height:13px;"></i>
+                        Seleccionar Base de Datos
+                        <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
+                    </button>
+                    <div class="nav-menu-dropdown" id="nav-menu-dropdown">
+                        <a class="nav-menu-item active" href="index.html">
+                            <i data-lucide="building-2" style="width:13px;height:13px;"></i>
+                            Dirección General de Concesiones (DGC)
+                        </a>
+                        <a class="nav-menu-item" href="EFE.html">
+                            <i data-lucide="train-front" style="width:13px;height:13px;"></i>
+                            Empresa de Ferrocarriles del Estado (EFE)
+                        </a>
+                    </div>
+                </div>
                 <span class="top-navbar-author">Autores: José Oliveros, Vicente Pérez</span>
             </div>
         </header>
@@ -40,7 +58,7 @@
                 <!-- Left Panel: Search, Filters & Analytics Chart -->
                 <section class="left-panel">
                     <!-- Search & Filter Card -->
-                    <div class="panel-card panel-card-filters" style="padding: 0.55rem 0.75rem; gap: 0.35rem;">
+                    <div class="panel-card panel-card-filters" style="padding: 0.55rem 0.75rem; gap: 0.35rem; position: relative; z-index: 50; overflow: visible;">
                         <div
                             style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem;">
                             <h2 class="panel-title" style="border: none; padding: 0; margin: 0; font-size: 0.8rem;">
@@ -667,15 +685,107 @@
 
     <!-- Client Application Logic -->
     <!-- Módulos JavaScript de la Aplicación -->
-    <script src="static/js/state.js"></script>
-    <script src="static/js/utils.js"></script>
-    <script src="static/js/map.js"></script>
-    <script src="static/js/timeline.js"></script>
-    <script src="static/js/investment.js"></script>
-    <script src="static/js/filters.js"></script>
-    <script src="static/js/ui.js"></script>
+    <script src="static/js/DGC/state.js"></script>
+    <script src="static/js/DGC/utils.js"></script>
+    <script src="static/js/DGC/map.js"></script>
+    <script src="static/js/DGC/timeline.js"></script>
+    <script src="static/js/DGC/investment.js"></script>
+    <script src="static/js/DGC/filters.js"></script>
+    <script src="static/js/DGC/ui.js"></script>
 
     <div id="timeline-tooltip" class="timeline-tooltip" style="display:none;"></div>
+
+    <!-- Nav Menu CSS (inline for portability) -->
+    <style>
+        .nav-menu {
+            position: relative;
+            display: flex;
+            align-items: center;
+            margin-right: 0.5rem;
+        }
+
+        .nav-menu-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            border-radius: 8px;
+            color: #93c5fd;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 500;
+            padding: 0.2rem 0.6rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .nav-menu-btn:hover {
+            background: rgba(59, 130, 246, 0.18);
+            border-color: rgba(59, 130, 246, 0.4);
+        }
+
+        .nav-menu-dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            background: #0f1626;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            min-width: 180px;
+            z-index: 500;
+            overflow: hidden;
+        }
+
+        .nav-menu-dropdown.open {
+            display: block;
+        }
+
+        .nav-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.85rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #94a3b8;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .nav-menu-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #f8fafc;
+        }
+
+        .nav-menu-item.active {
+            color: #3b82f6;
+            background: rgba(59, 130, 246, 0.08);
+        }
+    </style>
+
+    <!-- Nav Menu JS -->
+    <script>
+        (function () {
+            const navBtn = document.getElementById('nav-menu-btn');
+            const navDropdown = document.getElementById('nav-menu-dropdown');
+            if (navBtn && navDropdown) {
+                navBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    navDropdown.classList.toggle('open');
+                    navBtn.setAttribute('aria-expanded', navDropdown.classList.contains('open'));
+                });
+                document.addEventListener('click', function () {
+                    navDropdown.classList.remove('open');
+                });
+                navDropdown.addEventListener('click', function (e) { e.stopPropagation(); });
+            }
+        })();
+    </script>
 </body>
+
 
 </html>

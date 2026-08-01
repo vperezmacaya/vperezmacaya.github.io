@@ -1,12 +1,13 @@
 """
 export_geo_data.py
 -------------------
-Exporta las capas GeoJSON del mapa (Regiones y DGC) como archivos JS estáticos
+Exporta las capas GeoJSON del mapa (Regiones, DGC y EFE) como archivos JS estáticos
 con coordenadas optimizadas a 5 decimales (~1m de precisión).
 
 Genera:
   static/data/regions_data.js -> window.REGIONS_DATA
   static/data/dgc_data.js     -> window.DGC_DATA
+  static/data/efe_geo.js      -> window.EFE_GEO_DATA
 """
 
 import os
@@ -74,4 +75,38 @@ with open(out_dgc_js, 'w', encoding='utf-8') as f:
 size_dgc_mb = os.path.getsize(out_dgc_js) / 1024 / 1024
 print(f"OK DGC exportado: {out_dgc_js} ({size_dgc_mb:.2f} MB)")
 print(f"Total features DGC: {len(dgc_fc['features'])}")
+
+# 3. Cargar y optimizar capas EFE (líneas y puntos)
+EFE_DIR = os.path.join(MAPS_DIR, 'EFE')
+efe_fc = {"type": "FeatureCollection", "features": []}
+efe_filenames = ['EFE_line.json', 'EFE_point.json']
+
+for fname in efe_filenames:
+    fpath = os.path.join(EFE_DIR, fname)
+    if os.path.exists(fpath):
+        print(f"Procesando EFE {fname}...")
+        try:
+            with open(fpath, 'r', encoding='utf-8') as f:
+                raw_efe = json.load(f)
+                features = raw_efe.get('features', [])
+                for ft in features:
+                    geom = ft.get('geometry')
+                    if not geom or not geom.get('coordinates'):
+                        continue  # skip features with null/empty geometry
+                    ft['geometry']['coordinates'] = round_coords(ft['geometry']['coordinates'])
+                    efe_fc['features'].append(ft)
+        except Exception as e:
+            print(f"⚠ Error al leer {fname}: {e}")
+    else:
+        print(f"⚠ Advertencia: No existe {fpath}")
+
+out_efe_js = os.path.join(OUT_DIR, 'efe_geo.js')
+with open(out_efe_js, 'w', encoding='utf-8') as f:
+    f.write('window.EFE_GEO_DATA = ' + json.dumps(efe_fc, ensure_ascii=False, separators=(',', ':')) + ';')
+
+size_efe_mb = os.path.getsize(out_efe_js) / 1024 / 1024
+print(f"OK EFE geo exportado: {out_efe_js} ({size_efe_mb:.2f} MB)")
+print(f"Total features EFE: {len(efe_fc['features'])}")
+
 print("\nExportación geográfica completada exitosamente.")
+

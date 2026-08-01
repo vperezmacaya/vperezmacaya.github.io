@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CATLEC - Proyectos EFE Chile</title>
+    <meta name="description" content="Plataforma de proyectos ferroviarios EFE Chile — CATLEC">
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- EFE Custom Stylesheet -->
+    <link rel="stylesheet" href="static/css/efe_styles.css">
+
+    <!-- Static Data -->
+    <script src="static/data/efe_data.js"></script>
+    <script src="static/data/efe_geo.js"></script>
+    <script src="static/data/regions_data.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+
+        <!-- Top Navigation Banner -->
+        <header class="top-navbar">
+            <div class="top-navbar-left">
+                <span class="top-navbar-brand">CONCESIONES</span>
+                <span class="top-navbar-divider"></span>
+                <span class="top-navbar-proto">Proyectos Ferroviarios EFE Chile</span>
+            </div>
+            <div class="top-navbar-right">
+                <!-- Navigation Menu -->
+                <div class="nav-menu" id="nav-menu">
+                    <button class="nav-menu-btn" id="nav-menu-btn" aria-haspopup="true" aria-expanded="false">
+                        <i data-lucide="layers" style="width:13px;height:13px;"></i>
+                        Seleccionar Base de Datos
+                        <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
+                    </button>
+                    <div class="nav-menu-dropdown" id="nav-menu-dropdown">
+                        <a class="nav-menu-item" href="index.html">
+                            <i data-lucide="building-2" style="width:13px;height:13px;"></i>
+                            Dirección General de Concesiones (DGC)
+                        </a>
+                        <a class="nav-menu-item active" href="EFE.html">
+                            <i data-lucide="train-front" style="width:13px;height:13px;"></i>
+                            Empresas de Ferrocarriles del Estado (EFE)
+                        </a>
+                    </div>
+                </div>
+                <span class="top-navbar-author">Autores: José Oliveros, Vicente Pérez</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="dashboard-content">
+            <div class="efe-dashboard-grid">
+
+                <!-- Left Panel: Filters + Table -->
+                <section class="left-panel">
+
+                    <!-- Filters Card -->
+                    <div class="panel-card"
+                        style="padding: 0.55rem 0.75rem; gap: 0.35rem; flex-shrink: 0; position: relative; z-index: 50; overflow: visible;">
+                        <div
+                            style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border-color);padding-bottom:0.25rem;">
+                            <h2 class="panel-title" style="border:none;padding:0;margin:0;font-size:0.8rem;">
+                                <i data-lucide="sliders-horizontal" style="width:14px;height:14px;"></i>
+                                Filtros & Búsqueda
+                            </h2>
+                        </div>
+
+                        <!-- Search -->
+                        <div class="form-group" style="gap:0.15rem;">
+                            <label class="form-label" for="efe-search-input" style="font-size:0.7rem;">Buscar
+                                proyecto</label>
+                            <div class="search-wrapper">
+                                <i data-lucide="search" style="width:13px;height:13px;"></i>
+                                <input type="text" id="efe-search-input" class="form-input"
+                                    placeholder="Nombre, región..."
+                                    style="padding:0.3rem 0.55rem 0.3rem 1.8rem;font-size:0.76rem;">
+                            </div>
+                        </div>
+
+                        <!-- Region Filter -->
+                        <div class="form-group" style="gap:0.15rem; position:relative; z-index:100;">
+                            <label class="form-label" style="font-size:0.7rem;">Región</label>
+                            <div class="multiselect-container" id="efe-region-multiselect-container">
+                                <button class="multiselect-btn" id="efe-region-multiselect-btn">
+                                    <span id="efe-region-multiselect-text">Todas las regiones</span>
+                                    <i data-lucide="chevron-down" style="width:12px;height:12px;flex-shrink:0;"></i>
+                                </button>
+                                <div class="multiselect-dropdown" id="efe-region-multiselect-dropdown">
+                                    <label class="multiselect-check-all">
+                                        <input type="checkbox" id="efe-region-check-all">
+                                        <span>Todas las regiones</span>
+                                    </label>
+                                    <div id="efe-region-options-list"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Reset button -->
+                        <div style="display:flex;gap:0.4rem;margin-top:0.1rem;">
+                            <button class="btn btn-ghost" id="efe-btn-reset"
+                                style="flex:1;font-size:0.72rem;padding:0.28rem 0.5rem;">
+                                <i data-lucide="rotate-ccw" style="width:12px;height:12px;"></i>
+                                Restablecer
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Table Card -->
+                    <div class="panel-card"
+                        style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;position:relative;z-index:1;">
+
+                        <!-- 1. Table List View (Shown by default) -->
+                        <div id="efe-table-container-view"
+                            style="display:flex;flex-direction:column;flex:1;min-height:0;">
+                            <!-- Table header -->
+                            <div
+                                style="padding:0.4rem 0.65rem 0.3rem;border-bottom:1px solid var(--border-color);flex-shrink:0;">
+                                <div style="display:flex;align-items:center;justify-content:space-between;">
+                                    <h2 class="panel-title" style="border:none;padding:0;font-size:0.78rem;">
+                                        <i data-lucide="train-front" style="width:13px;height:13px;"></i>
+                                        Proyectos EFE
+                                    </h2>
+                                    <span class="efe-count-badge">
+                                        <strong id="efe-count-loaded">—</strong> / <span id="efe-count-total">—</span>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Table -->
+                            <div class="efe-table-container">
+                                <table class="efe-data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre Proyecto</th>
+                                            <th>Región</th>
+                                            <th>Inversión (USD)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="efe-table-body"></tbody>
+                                </table>
+                                <div id="efe-empty-state" class="efe-empty-state">
+                                    <i data-lucide="search-x" style="width:28px;height:28px;opacity:0.4;"></i>
+                                    <span>No se encontraron proyectos</span>
+                                </div>
+                            </div>
+
+                            <!-- Pagination -->
+                            <div class="efe-pagination">
+                                <span class="efe-pagination-info" id="efe-pagination-info">—</span>
+                                <div class="efe-pagination-btns">
+                                    <button class="efe-page-btn" id="efe-btn-prev" disabled>
+                                        <i data-lucide="chevron-left" style="width:13px;height:13px;"></i>
+                                    </button>
+                                    <button class="efe-page-btn" id="efe-btn-next">
+                                        <i data-lucide="chevron-right" style="width:13px;height:13px;"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Project Detail View (Replaces table when project is selected) -->
+                        <div id="efe-project-detail-view"
+                            style="display:none;flex-direction:column;flex:1;min-height:0;padding:0.6rem;gap:0.5rem;overflow-y:auto;">
+                            <!-- Header actions -->
+                            <div
+                                style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border-color);padding-bottom:0.4rem;flex-shrink:0;">
+                                <button id="efe-btn-back-to-table" class="btn btn-ghost"
+                                    style="font-size:0.72rem;padding:0.25rem 0.5rem;display:flex;align-items:center;gap:0.3rem;">
+                                    <i data-lucide="arrow-left" style="width:13px;height:13px;"></i>
+                                    <span>Volver a la lista</span>
+                                </button>
+                                <div style="display:flex;gap:0.25rem;">
+                                    <button id="efe-btn-detail-prev" class="efe-page-btn" title="Proyecto anterior"
+                                        style="padding:0.2rem 0.4rem;">
+                                        <i data-lucide="chevron-left" style="width:13px;height:13px;"></i>
+                                    </button>
+                                    <button id="efe-btn-detail-next" class="efe-page-btn" title="Proyecto siguiente"
+                                        style="padding:0.2rem 0.4rem;">
+                                        <i data-lucide="chevron-right" style="width:13px;height:13px;"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Detail Content Body -->
+                            <div id="efe-detail-view-body"
+                                style="flex:1;display:flex;flex-direction:column;gap:0.6rem;">
+                                <!-- Dynamic detail content inserted here -->
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- Center Panel: Map -->
+                <div class="center-panel">
+                    <!-- Map toolbar -->
+                    <div class="efe-map-toolbar">
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <i data-lucide="map" style="width:14px;height:14px;color:var(--primary);"></i>
+                            <span style="font-size:0.75rem;font-weight:600;color:var(--text-primary);">
+                                Mapa Ferroviario EFE
+                            </span>
+                            <span class="efe-map-badge" id="efe-map-stats-badge">—</span>
+                        </div>
+                        <button class="btn btn-ghost" id="efe-btn-reset-map"
+                            style="font-size:0.7rem;padding:0.2rem 0.5rem;">
+                            <i data-lucide="compass" style="width:12px;height:12px;"></i>
+                            Restablecer mapa
+                        </button>
+                    </div>
+                    <!-- Map container -->
+                    <div id="efe-map"></div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <div class="app-footer-left">
+            <span class="app-footer-brand">CATLEC</span>
+            <span class="app-footer-divider"></span>
+            <span class="app-footer-text">Proyecto ANID XXXX</span>
+        </div>
+        <div class="app-footer-right">
+            <span class="app-footer-text">Universidad de Concepción &nbsp;·&nbsp; Facultad de Ingeniería</span>
+        </div>
+    </footer>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- EFE App Logic -->
+    <script src="static/js/EFE/state.js"></script>
+    <script src="static/js/EFE/map.js"></script>
+    <script src="static/js/EFE/filters.js"></script>
+    <script src="static/js/EFE/ui.js"></script>
+
+    <!-- Nav Menu toggle -->
+    <script>
+        const navBtn = document.getElementById('nav-menu-btn');
+        const navDropdown = document.getElementById('nav-menu-dropdown');
+        if (navBtn && navDropdown) {
+            navBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                navDropdown.classList.toggle('open');
+                navBtn.setAttribute('aria-expanded', navDropdown.classList.contains('open'));
+            });
+            document.addEventListener('click', () => navDropdown.classList.remove('open'));
+            navDropdown.addEventListener('click', e => e.stopPropagation());
+        }
+    </script>
+</body>
+
+</html>
