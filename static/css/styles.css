@@ -84,6 +84,8 @@ body {
     line-height: 1.4;
     -webkit-font-smoothing: antialiased;
     transition: background-color var(--transition-normal), color var(--transition-normal);
+    display: flex;
+    flex-direction: column;
 }
 
 h1,
@@ -120,7 +122,8 @@ h6 {
 .app-container {
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    flex: 1;
+    min-height: 0;
     width: 100vw;
     padding: 0;
     overflow: hidden;
@@ -238,18 +241,13 @@ body.light-theme .top-navbar {
     font-style: italic;
 }
 
-/* Adjust the dashboard wrapper to account for navbar */
-.dashboard-content {
-    padding: 0.5rem;
-}
-
 
 /* Dashboard Body Wrapper */
 .dashboard-content {
     flex: 1;
-    height: 100%;
     min-height: 0;
     width: 100%;
+    padding: 0.5rem;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -260,7 +258,8 @@ body.light-theme .top-navbar {
     display: grid;
     grid-template-columns: 240px 1fr 500px;
     gap: 0.5rem;
-    height: 100%;
+    flex: 1;
+    min-height: 0;
     width: 100%;
     overflow: hidden;
     align-items: stretch;
@@ -1898,4 +1897,62 @@ body:not(.light-theme) .timeline-tooltip {
 .timeline-tooltip-val {
     font-weight: 600;
     color: var(--text-primary);
+}
+
+/* ─── App Footer ─────────────────────────────────────────────────────────── */
+.app-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.25rem;
+    height: 32px;
+    min-height: 32px;
+    background: linear-gradient(90deg, #0d1a35 0%, #0f1d3d 60%, #101830 100%);
+    border-top: 1px solid rgba(59, 130, 246, 0.15);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 100;
+}
+
+body.light-theme .app-footer {
+    background: linear-gradient(90deg, #1e3a6e 0%, #1a3460 60%, #1b3055 100%);
+    border-top: 1px solid rgba(59, 130, 246, 0.22);
+}
+
+.app-footer-left {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.app-footer-right {
+    display: flex;
+    align-items: center;
+}
+
+.app-footer-brand {
+    font-family: var(--font-heading);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.app-footer-divider {
+    width: 1px;
+    height: 12px;
+    background-color: rgba(255, 255, 255, 0.18);
+    border-radius: 1px;
+}
+
+.app-footer-text {
+    font-family: var(--font-sans);
+    font-size: 0.68rem;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.42);
+    letter-spacing: 0.01em;
 }

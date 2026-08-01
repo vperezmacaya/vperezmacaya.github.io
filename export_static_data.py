@@ -269,6 +269,7 @@ static_payload = {
         'count_total':         count_total,
         'total_investment_uf': total_inv_uf,
         'total_bidders':       total_bidders,
+        'total_infrastructures': len(BASE_GROUPS),
         'hitos':               hitos_status
     },
     'pagination': {
