@@ -80,6 +80,10 @@ function renderInvestmentAnalytics(contractsList) {
     const textColor = isDark ? '#94a3b8' : '#374151';
     const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
 
+    if (typeof Chart !== 'undefined') {
+        Chart.defaults.devicePixelRatio = Math.max(2.5, window.devicePixelRatio || 1);
+    }
+
     // 1. REPARTO PROPORCIONAL POR REGIÓN
     const invByRegion = {};
     const contractsByRegion = {};
@@ -122,46 +126,58 @@ function renderInvestmentAnalytics(contractsList) {
 
     const canvasInv = document.getElementById('chartInvByRegion');
     if (canvasInv) {
-        if (chartInvByRegionInstance) chartInvByRegionInstance.destroy();
-        chartInvByRegionInstance = new Chart(canvasInv.getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: invLabels,
-                datasets: [{
-                    label: 'Inversión (UF)',
-                    data: invValues,
-                    backgroundColor: '#2563eb',
-                    borderRadius: 3
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => ` Inversión: ${formatUFComplete(ctx.raw)} UF (${((ctx.raw / (totalSampleInv || 1)) * 100).toFixed(1)}%)`
-                        }
-                    }
+        if (!chartInvByRegionInstance) {
+            chartInvByRegionInstance = new Chart(canvasInv.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: invLabels,
+                    datasets: [{
+                        label: 'Inversión (UF)',
+                        data: invValues,
+                        backgroundColor: '#2563eb',
+                        borderRadius: 3
+                    }]
                 },
-                scales: {
-                    x: {
-                        grid: { color: gridColor },
-                        ticks: {
-                            color: textColor,
-                            font: { size: 8.5 },
-                            callback: (val) => formatUF(val)
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: { top: 0, bottom: 0, left: 0, right: 0 }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ` Inversión: ${formatUFComplete(ctx.raw)} UF (${((ctx.raw / (totalSampleInv || 1)) * 100).toFixed(1)}%)`
+                            }
                         }
                     },
-                    y: {
-                        grid: { display: false },
-                        ticks: { color: textColor, font: { size: 8.5 } }
+                    scales: {
+                        x: {
+                            grid: { color: gridColor },
+                            ticks: {
+                                color: textColor,
+                                font: { size: 8.5 },
+                                callback: (val) => formatUF(val)
+                            }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { color: textColor, font: { size: 8.5 } }
+                        }
                     }
                 }
-            }
-        });
+            });
+        } else {
+            chartInvByRegionInstance.data.labels = invLabels;
+            chartInvByRegionInstance.data.datasets[0].data = invValues;
+            chartInvByRegionInstance.options.scales.x.grid.color = gridColor;
+            chartInvByRegionInstance.options.scales.x.ticks.color = textColor;
+            chartInvByRegionInstance.options.scales.y.ticks.color = textColor;
+            chartInvByRegionInstance.options.plugins.tooltip.callbacks.label = (ctx) => ` Inversión: ${formatUFComplete(ctx.raw)} UF (${((ctx.raw / (totalSampleInv || 1)) * 100).toFixed(1)}%)`;
+            chartInvByRegionInstance.update();
+        }
     }
 
     // 2) Gráfico 2: Contratos por Región (Barras Horizontales Proporcionales)
@@ -171,42 +187,54 @@ function renderInvestmentAnalytics(contractsList) {
 
     const canvasCnt = document.getElementById('chartContractsByRegion');
     if (canvasCnt) {
-        if (chartContractsByRegionInstance) chartContractsByRegionInstance.destroy();
-        chartContractsByRegionInstance = new Chart(canvasCnt.getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: cntLabels,
-                datasets: [{
-                    label: 'Contratos (Proporcional)',
-                    data: cntValues,
-                    backgroundColor: '#059669',
-                    borderRadius: 3
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => ` Contratos: ${ctx.raw.toFixed(2)} (${((ctx.raw / (contractsList.length || 1)) * 100).toFixed(1)}%)`
+        if (!chartContractsByRegionInstance) {
+            chartContractsByRegionInstance = new Chart(canvasCnt.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: cntLabels,
+                    datasets: [{
+                        label: 'Contratos (Proporcional)',
+                        data: cntValues,
+                        backgroundColor: '#059669',
+                        borderRadius: 3
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: { top: 0, bottom: 0, left: 0, right: 0 }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ` Contratos: ${ctx.raw.toFixed(2)} (${((ctx.raw / (contractsList.length || 1)) * 100).toFixed(1)}%)`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: gridColor },
+                            ticks: { color: textColor, font: { size: 8.5 } }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { color: textColor, font: { size: 8.5 } }
                         }
                     }
-                },
-                scales: {
-                    x: {
-                        grid: { color: gridColor },
-                        ticks: { color: textColor, font: { size: 8.5 } }
-                    },
-                    y: {
-                        grid: { display: false },
-                        ticks: { color: textColor, font: { size: 8.5 } }
-                    }
                 }
-            }
-        });
+            });
+        } else {
+            chartContractsByRegionInstance.data.labels = cntLabels;
+            chartContractsByRegionInstance.data.datasets[0].data = cntValues;
+            chartContractsByRegionInstance.options.scales.x.grid.color = gridColor;
+            chartContractsByRegionInstance.options.scales.x.ticks.color = textColor;
+            chartContractsByRegionInstance.options.scales.y.ticks.color = textColor;
+            chartContractsByRegionInstance.options.plugins.tooltip.callbacks.label = (ctx) => ` Contratos: ${ctx.raw.toFixed(2)} (${((ctx.raw / (contractsList.length || 1)) * 100).toFixed(1)}%)`;
+            chartContractsByRegionInstance.update();
+        }
     }
 
     // 3) Gráfico 3: Pie / Donut Chart (% Inversión por Sector del Proyecto)
@@ -224,39 +252,65 @@ function renderInvestmentAnalytics(contractsList) {
 
     const canvasShare = document.getElementById('chartInvShareRegion');
     if (canvasShare) {
-        if (chartInvShareRegionInstance) chartInvShareRegionInstance.destroy();
-        chartInvShareRegionInstance = new Chart(canvasShare.getContext('2d'), {
-            type: 'doughnut',
-            data: {
-                labels: secLabels,
-                datasets: [{
-                    data: secValues,
-                    backgroundColor: secColors,
-                    borderColor: isDark ? '#0f172a' : '#ffffff',
-                    borderWidth: 1.5
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '55%',
-                plugins: {
-                    legend: {
-                        position: 'right',
-                        labels: {
-                            color: textColor,
-                            font: { size: 8.5 },
-                            boxWidth: 9,
-                            padding: 5
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => ` ${ctx.label}: ${((ctx.raw / (totalSampleInv || 1)) * 100).toFixed(1)}% (${formatUF(ctx.raw)})`
+        if (!chartInvShareRegionInstance) {
+            chartInvShareRegionInstance = new Chart(canvasShare.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: secLabels,
+                    datasets: [{
+                        data: secValues,
+                        backgroundColor: secColors,
+                        borderColor: isDark ? '#0f172a' : '#ffffff',
+                        borderWidth: 1.5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            padding: 5,
+                            titleFont: { size: 8.5 },
+                            bodyFont: { size: 8 },
+                            callbacks: {
+                                label: (ctx) => ` ${((ctx.raw / (totalSampleInv || 1)) * 100).toFixed(1)}% (${formatUF(ctx.raw)})`
+                            }
                         }
                     }
                 }
-            }
+            });
+        } else {
+            chartInvShareRegionInstance.data.labels = secLabels;
+            chartInvShareRegionInstance.data.datasets[0].data = secValues;
+            chartInvShareRegionInstance.data.datasets[0].backgroundColor = secColors;
+            chartInvShareRegionInstance.data.datasets[0].borderColor = isDark ? '#0f172a' : '#ffffff';
+            chartInvShareRegionInstance.options.plugins.tooltip.callbacks.label = (ctx) => ` ${((ctx.raw / (totalSampleInv || 1)) * 100).toFixed(1)}% (${formatUF(ctx.raw)})`;
+            chartInvShareRegionInstance.update();
+        }
+    }
+
+    // Render Custom HTML Legend for Sector Investment Chart (Non-jumpy fixed layout)
+    const legendSecEl = document.getElementById('chartInvShareRegionLegend');
+    if (legendSecEl) {
+        legendSecEl.innerHTML = '';
+        secLabels.forEach((lbl, idx) => {
+            const val = secValues[idx];
+            const pct = totalSampleInv > 0 ? ((val / totalSampleInv) * 100).toFixed(1) : 0;
+            const col = secColors[idx];
+            const itemDiv = document.createElement('div');
+            itemDiv.style.cssText = 'display:flex; align-items:center; justify-content:space-between; font-size:0.65rem; padding:0.06rem 0;';
+            itemDiv.innerHTML = `
+                <div style="display:flex; align-items:center; gap:0.3rem; min-width:0; overflow:hidden;">
+                    <span style="width:7px; height:7px; border-radius:50%; background-color:${col}; flex-shrink:0;"></span>
+                    <span style="color:var(--text-secondary); white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${lbl}</span>
+                </div>
+                <span style="font-weight:700; color:var(--text-primary); font-variant-numeric:tabular-nums; flex-shrink:0; margin-left:0.25rem;">
+                    ${pct}% <span style="font-weight:500; color:var(--text-muted); font-size:0.61rem;">(${formatUF(val)})</span>
+                </span>
+            `;
+            legendSecEl.appendChild(itemDiv);
         });
     }
 
@@ -286,86 +340,102 @@ function renderInvestmentAnalytics(contractsList) {
     });
 
     const yearsArr = [];
-    for (let y = 1995; y <= 2045; y++) { yearsArr.push(y); }
+    for (let y = 1993; y <= 2055; y++) { yearsArr.push(y); }
 
     const activeCntData = yearsArr.map(y => yearlyContracts[y] || 0);
     const activeInvData = yearsArr.map(y => yearlyInvestment[y] || 0);
 
-    // 4) Gráfico 4: Contratos Vigentes por Año (Histograma)
+    // 4) Gráfico 4: Contratos Vigentes por Año 
     const canvasActiveCnt = document.getElementById('chartActiveContractsYear');
     if (canvasActiveCnt) {
-        if (chartActiveContractsYearInstance) chartActiveContractsYearInstance.destroy();
-        chartActiveContractsYearInstance = new Chart(canvasActiveCnt.getContext('2d'), {
-            type: 'bar',
-            plugins: [todayLineChartPlugin],
-            data: {
-                labels: yearsArr,
-                datasets: [{
-                    label: 'Contratos Vigentes',
-                    data: activeCntData,
-                    backgroundColor: '#3b82f6',
-                    borderRadius: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => ` Año ${ctx.label}: ${ctx.raw} contratos vigentes`
-                        }
-                    }
+        if (!chartActiveContractsYearInstance) {
+            chartActiveContractsYearInstance = new Chart(canvasActiveCnt.getContext('2d'), {
+                type: 'bar',
+                plugins: [todayLineChartPlugin],
+                data: {
+                    labels: yearsArr,
+                    datasets: [{
+                        label: 'Contratos Vigentes',
+                        data: activeCntData,
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 2
+                    }]
                 },
-                scales: {
-                    x: { grid: { display: false }, ticks: { color: textColor, font: { size: 8 }, maxTicksLimit: 14 } },
-                    y: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 8 } } }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ` Año ${ctx.label}: ${ctx.raw} contratos vigentes`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: textColor, font: { size: 8 } } },
+                        y: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 8 } } }
+                    }
                 }
-            }
-        });
+            });
+        } else {
+            chartActiveContractsYearInstance.data.labels = yearsArr;
+            chartActiveContractsYearInstance.data.datasets[0].data = activeCntData;
+            chartActiveContractsYearInstance.options.scales.x.ticks.color = textColor;
+            chartActiveContractsYearInstance.options.scales.y.grid.color = gridColor;
+            chartActiveContractsYearInstance.options.scales.y.ticks.color = textColor;
+            chartActiveContractsYearInstance.update();
+        }
     }
 
     // 5) Gráfico 5: Inversión Activa por Año (Histograma)
     const canvasActiveInv = document.getElementById('chartActiveInvYear');
     if (canvasActiveInv) {
-        if (chartActiveInvYearInstance) chartActiveInvYearInstance.destroy();
-        chartActiveInvYearInstance = new Chart(canvasActiveInv.getContext('2d'), {
-            type: 'bar',
-            plugins: [todayLineChartPlugin],
-            data: {
-                labels: yearsArr,
-                datasets: [{
-                    label: 'Inversión Activa (UF)',
-                    data: activeInvData,
-                    backgroundColor: '#8b5cf6',
-                    borderRadius: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => ` Año ${ctx.label}: ${formatUFComplete(ctx.raw)} UF activas`
-                        }
-                    }
+        if (!chartActiveInvYearInstance) {
+            chartActiveInvYearInstance = new Chart(canvasActiveInv.getContext('2d'), {
+                type: 'bar',
+                plugins: [todayLineChartPlugin],
+                data: {
+                    labels: yearsArr,
+                    datasets: [{
+                        label: 'Inversión Activa (UF)',
+                        data: activeInvData,
+                        backgroundColor: '#8b5cf6',
+                        borderRadius: 2
+                    }]
                 },
-                scales: {
-                    x: { grid: { display: false }, ticks: { color: textColor, font: { size: 8 }, maxTicksLimit: 14 } },
-                    y: {
-                        grid: { color: gridColor },
-                        ticks: {
-                            color: textColor,
-                            font: { size: 8 },
-                            callback: (val) => formatUF(val)
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ` Año ${ctx.label}: ${formatUFComplete(ctx.raw)} UF activas`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: textColor, font: { size: 8 } } },
+                        y: {
+                            grid: { color: gridColor },
+                            ticks: {
+                                color: textColor,
+                                font: { size: 8 },
+                                callback: (val) => formatUF(val)
+                            }
                         }
                     }
                 }
-            }
-        });
+            });
+        } else {
+            chartActiveInvYearInstance.data.labels = yearsArr;
+            chartActiveInvYearInstance.data.datasets[0].data = activeInvData;
+            chartActiveInvYearInstance.options.scales.x.ticks.color = textColor;
+            chartActiveInvYearInstance.options.scales.y.grid.color = gridColor;
+            chartActiveInvYearInstance.options.scales.y.ticks.color = textColor;
+            chartActiveInvYearInstance.update();
+        }
     }
 
     lucide.createIcons();

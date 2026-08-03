@@ -319,9 +319,24 @@ try:
         descripcion = sanitize_value(row.get('Descripcion'))
         fuente = sanitize_value(row.get('Fuente  de inf'))
 
+        filial_raw = sanitize_value(row.get('Filial') if 'Filial' in row else row.get('filial'))
+        filial = None
+        if filial_raw and not pd.isna(filial_raw):
+            f_str = str(filial_raw).strip()
+            f_norm = _normalize_col(f_str)
+            if 'valpara' in f_norm:
+                filial = 'EFE Valparaíso'
+            elif 'central' in f_norm:
+                filial = 'EFE Central'
+            elif 'sur' in f_norm:
+                filial = 'EFE Sur'
+            else:
+                filial = f_str
+
         efe_projects.append({
             'name': str(proyecto),
             'region': region,
+            'filial': filial,
             'investment_usd': inv,
             'shapes': shapes,
             'description': descripcion,

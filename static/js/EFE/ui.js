@@ -8,6 +8,23 @@ function efeDebounce(fn, delay) {
     };
 }
 
+function efeFormatRegionCell(regionStr) {
+    if (!regionStr || String(regionStr).trim() === '') {
+        return '<span style="color:var(--text-muted);font-style:italic">Sin región</span>';
+    }
+    const str = String(regionStr).trim();
+    if (str.toLowerCase().includes('nacional')) {
+        return '<span class="efe-region-pill">Nacional</span>';
+    }
+
+    const parts = str.split(/[;,/\n]+/).map(p => p.trim()).filter(p => p.length > 0);
+    if (parts.length > 1) {
+        return `<div class="efe-region-pills-wrap">${parts.map(p => `<span class="efe-region-pill">${p}</span>`).join('')}</div>`;
+    }
+
+    return `<span class="efe-region-text">${str}</span>`;
+}
+
 function efeRenderTable(projects) {
     const selectedName = efeState.selectedProjectName;
     const allProjects = (window.EFE_DATA && window.EFE_DATA.data) ? window.EFE_DATA.data : [];
@@ -37,7 +54,7 @@ function efeRenderTable(projects) {
         tr.className = 'efe-table-row';
         tr.innerHTML = `
             <td class="efe-td efe-td-name" title="${proj.name || ''}">${proj.name || '—'}</td>
-            <td class="efe-td efe-td-region">${proj.region || '<span style="color:var(--text-muted);font-style:italic">Sin región</span>'}</td>
+            <td class="efe-td efe-td-region">${efeFormatRegionCell(proj.region)}</td>
             <td class="efe-td efe-td-inv">${efeFormatUSD(proj.investment_usd)}</td>
         `;
 
@@ -103,11 +120,16 @@ function efeShowProjectDetailView(proj, currentFilteredProjects) {
         </div>
 
         <!-- Meta Details Grid -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; flex-shrink: 0;">
+        <div style="display: grid; grid-template-columns: ${proj.filial ? '1fr 1fr 1fr' : '1fr 1fr'}; gap: 0.5rem; flex-shrink: 0;">
             <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.55rem 0.7rem; display: flex; flex-direction: column; gap: 0.15rem;">
                 <span style="font-size: 0.66rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Región</span>
                 <span style="font-size: 0.78rem; font-weight: 600; color: var(--text-primary);">${proj.region || 'Sin información'}</span>
             </div>
+            ${proj.filial ? `
+            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.55rem 0.7rem; display: flex; flex-direction: column; gap: 0.15rem;">
+                <span style="font-size: 0.66rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Filial</span>
+                <span style="font-size: 0.78rem; font-weight: 600; color: var(--text-primary);">${proj.filial}</span>
+            </div>` : ''}
             <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.55rem 0.7rem; display: flex; flex-direction: column; gap: 0.15rem;">
                 <span style="font-size: 0.66rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Inversión (USD)</span>
                 <span style="font-size: 0.78rem; font-weight: 700; color: #4ade80;">${efeFormatUSD(proj.investment_usd)}</span>
@@ -229,12 +251,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (efeSearchInput) efeSearchInput.value = '';
             efeState.search = '';
             efeState.selectedRegions = [];
+            efeState.selectedFiliales = [];
             efeState.selectedProjectName = null;
             efeState.hoveredProjectName = null;
             efeState.page = 1;
             document.querySelectorAll('.efe-region-checkbox').forEach(cb => cb.checked = false);
             if (efeRegionCheckAll) efeRegionCheckAll.checked = false;
             if (efeRegionMultiselectText) efeRegionMultiselectText.textContent = 'Todas las regiones';
+
+            document.querySelectorAll('.efe-filial-checkbox').forEach(cb => cb.checked = false);
+            if (efeFilialCheckAll) efeFilialCheckAll.checked = false;
+            if (efeFilialMultiselectText) efeFilialMultiselectText.textContent = 'Todas las filiales';
+
             efeFetchData();
             if (typeof efeUpdateMapStyles === 'function') efeUpdateMapStyles();
         });

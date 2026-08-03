@@ -324,8 +324,8 @@ async function fetchData() {
         renderTable(resData.data);
 
         // 3. Render count values
-        countLoaded.textContent = resData.data.length;
-        countTotal.textContent = resData.pagination.total_records;
+        if (countLoaded) countLoaded.textContent = resData.data.length;
+        if (countTotal) countTotal.textContent = resData.pagination.total_records;
 
         // 4. Manage Pagination Button Elements
         updatePaginationControls(resData.pagination);
@@ -378,13 +378,8 @@ function renderChart(statsData, currentThemeMode) {
 
     const themeConfig = chartColors[currentThemeMode];
 
-    if (sectorChartInstance) {
-        sectorChartInstance.destroy();
-        sectorChartInstance = null;
-    }
-    if (statusChartInstance) {
-        statusChartInstance.destroy();
-        statusChartInstance = null;
+    if (typeof Chart !== 'undefined') {
+        Chart.defaults.devicePixelRatio = Math.max(2.5, window.devicePixelRatio || 1);
     }
 
     // 1. Sector Doughnut Chart (Sorted descending by count: mayor a menor)
@@ -395,32 +390,40 @@ function renderChart(statsData, currentThemeMode) {
     const sectorCounts = sectorEntries.map(e => e[1]);
     const sectorColorsList = sectorLabels.map(secName => getSectorConfig(secName).color);
 
-    sectorChartInstance = new Chart(sectorCanvas.getContext('2d'), {
-        type: 'doughnut',
-        data: {
-            labels: sectorLabels,
-            datasets: [{
-                label: 'Contratos',
-                data: sectorCounts,
-                backgroundColor: sectorColorsList,
-                borderColor: currentThemeMode === 'dark' ? '#0f1626' : '#ffffff',
-                borderWidth: 2,
-                hoverOffset: 3
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '68%',
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    bodyFont: { size: 9 },
-                    titleFont: { size: 9 }
+    if (!sectorChartInstance) {
+        sectorChartInstance = new Chart(sectorCanvas.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: sectorLabels,
+                datasets: [{
+                    label: 'Contratos',
+                    data: sectorCounts,
+                    backgroundColor: sectorColorsList,
+                    borderColor: currentThemeMode === 'dark' ? '#0f1626' : '#ffffff',
+                    borderWidth: 2,
+                    hoverOffset: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '68%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        bodyFont: { size: 9 },
+                        titleFont: { size: 9 }
+                    }
                 }
             }
-        }
-    });
+        });
+    } else {
+        sectorChartInstance.data.labels = sectorLabels;
+        sectorChartInstance.data.datasets[0].data = sectorCounts;
+        sectorChartInstance.data.datasets[0].backgroundColor = sectorColorsList;
+        sectorChartInstance.data.datasets[0].borderColor = currentThemeMode === 'dark' ? '#0f1626' : '#ffffff';
+        sectorChartInstance.update();
+    }
 
     // Populate custom HTML Legend for Sector Chart (Non-scrollable, all visible)
     if (sectorLegendEl) {
@@ -461,48 +464,58 @@ function renderChart(statsData, currentThemeMode) {
     const statusCounts = Object.values(statsData.status || {});
     const uniformBarColor = currentThemeMode === 'dark' ? '#3b82f6' : '#2563eb';
 
-    statusChartInstance = new Chart(statusCanvas.getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels: statusLabels,
-            datasets: [{
-                label: 'Contratos',
-                data: statusCounts,
-                backgroundColor: uniformBarColor,
-                borderColor: 'transparent',
-                borderWidth: 0,
-                borderRadius: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    bodyFont: { size: 9 },
-                    titleFont: { size: 9 }
-                }
+    if (!statusChartInstance) {
+        statusChartInstance = new Chart(statusCanvas.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: statusLabels,
+                datasets: [{
+                    label: 'Contratos',
+                    data: statusCounts,
+                    backgroundColor: uniformBarColor,
+                    borderColor: 'transparent',
+                    borderWidth: 0,
+                    borderRadius: 4
+                }]
             },
-            scales: {
-                x: {
-                    grid: { display: false },
-                    ticks: {
-                        color: themeConfig.text,
-                        font: { size: 7.5 }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        bodyFont: { size: 9 },
+                        titleFont: { size: 9 }
                     }
                 },
-                y: {
-                    grid: { color: themeConfig.grid },
-                    ticks: {
-                        color: themeConfig.text,
-                        font: { size: 8 },
-                        precision: 0
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            color: themeConfig.text,
+                            font: { size: 7.5 }
+                        }
+                    },
+                    y: {
+                        grid: { color: themeConfig.grid },
+                        ticks: {
+                            color: themeConfig.text,
+                            font: { size: 8 },
+                            precision: 0
+                        }
                     }
                 }
             }
-        }
-    });
+        });
+    } else {
+        statusChartInstance.data.labels = statusLabels;
+        statusChartInstance.data.datasets[0].data = statusCounts;
+        statusChartInstance.data.datasets[0].backgroundColor = uniformBarColor;
+        statusChartInstance.options.scales.x.ticks.color = themeConfig.text;
+        statusChartInstance.options.scales.y.grid.color = themeConfig.grid;
+        statusChartInstance.options.scales.y.ticks.color = themeConfig.text;
+        statusChartInstance.update();
+    }
 }
 
 // Formatting utilities
