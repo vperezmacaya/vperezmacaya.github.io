@@ -169,6 +169,24 @@ body.light-theme .top-navbar {
     gap: 0.75rem;
 }
 
+.top-navbar-logo {
+    height: 26px;
+    width: auto;
+    display: block;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+    opacity: 0.92;
+}
+
+.top-navbar-title {
+    font-family: var(--font-heading);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.88);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
 .top-navbar-brand {
     font-family: var(--font-heading);
     font-size: 0.88rem;
