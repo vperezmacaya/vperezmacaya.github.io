@@ -1,4 +1,8 @@
 function showInvestmentView() {
+    if (typeof leafletMap !== 'undefined' && leafletMap && leafletMap.getCenter) {
+        appState.savedMapCenter = leafletMap.getCenter();
+        appState.savedMapZoom = leafletMap.getZoom();
+    }
     if (appState.timelineOpen) hideTimelineView();
     appState.investmentOpen = true;
     const grid = document.querySelector('.dashboard-grid');
@@ -11,8 +15,7 @@ function showInvestmentView() {
     if (rightPanel) rightPanel.style.display = 'none';
     if (invPanel) invPanel.style.display = 'flex';
 
-    const kpiInvCard = document.getElementById('kpi-investment-card');
-    if (kpiInvCard) kpiInvCard.classList.add('timeline-active');
+    if (typeof setActiveSubheaderTab === 'function') setActiveSubheaderTab('investment');
 
     // Renderizar gráficos siempre con la lista completa de contratos filtrados (todos los 127 al inicio)
     const currentList = (currentFilteredContractsList && currentFilteredContractsList.length > 0)
@@ -33,11 +36,19 @@ function hideInvestmentView() {
     if (rightPanel) rightPanel.style.display = 'flex';
     if (invPanel) invPanel.style.display = 'none';
 
-    const kpiInvCard = document.getElementById('kpi-investment-card');
-    if (kpiInvCard) kpiInvCard.classList.remove('timeline-active');
+    if (typeof setActiveSubheaderTab === 'function' && !appState.timelineOpen) setActiveSubheaderTab('map');
 
     if (typeof leafletMap !== 'undefined' && leafletMap) {
-        setTimeout(() => { leafletMap.invalidateSize(); }, 100);
+        leafletMap.invalidateSize({ animate: false });
+        if (appState.savedMapCenter) {
+            leafletMap.setView(appState.savedMapCenter, appState.savedMapZoom || 6, { animate: false });
+        }
+        setTimeout(() => {
+            leafletMap.invalidateSize({ animate: false });
+            if (appState.savedMapCenter) {
+                leafletMap.setView(appState.savedMapCenter, appState.savedMapZoom || 6, { animate: false });
+            }
+        }, 0);
     }
 }
 
@@ -72,6 +83,78 @@ const todayLineChartPlugin = {
         }
     }
 };
+
+// Shared external tooltip for all investment panel charts (ensures identical style across all)
+function investmentExternalTooltip(context) {
+    const { chart, tooltip } = context;
+    const tooltipId = 'inv-shared-tooltip';
+    let el = document.getElementById(tooltipId);
+    if (!el) {
+        el = document.createElement('div');
+        el.id = tooltipId;
+        // Match Chart.js native tooltip style exactly
+        el.style.cssText = [
+            'position:fixed',
+            'background:rgba(0,0,0,0.8)',
+            'color:#fff',
+            'border-radius:3px',
+            'padding:6px 8px',
+            'font:12px/1.4 system-ui,sans-serif',
+            'pointer-events:none',
+            'white-space:nowrap',
+            'z-index:9999',
+            'opacity:0'
+        ].join(';');
+        document.body.appendChild(el);
+    }
+
+    if (tooltip.opacity === 0) {
+        // Fade out: slower, ease-in
+        el.style.transition = 'opacity 0.25s ease-in';
+        el.style.opacity = '0';
+        return;
+    }
+
+    const wasVisible = parseFloat(el.style.opacity || '0') > 0.05;
+
+    // Title
+    const title = (tooltip.title || []).join('\n');
+    // Body lines
+    const bodyLines = (tooltip.body || []).flatMap(b => b.lines);
+
+    el.innerHTML = [
+        title ? `<div style="font-weight:700;margin-bottom:3px">${title}</div>` : '',
+        ...bodyLines.map(line => `<div>${line}</div>`)
+    ].join('');
+
+    // Position near caret using page coordinates
+    const canvasRect = chart.canvas.getBoundingClientRect();
+    let left = canvasRect.left + tooltip.caretX + 10;
+    let top = canvasRect.top + tooltip.caretY - 10;
+
+    // Nudge left if overflowing right edge
+    const rect = el.getBoundingClientRect();
+    if (rect.width > 0 && left + rect.width > window.innerWidth - 8) {
+        left = canvasRect.left + tooltip.caretX - rect.width - 10;
+    }
+
+    if (wasVisible) {
+        // Smooth slide transition when moving between slices/bars
+        el.style.transition = 'opacity 0.2s ease-out, left 0.8s cubic-bezier(0.2, 0, 0.2, 1), top 0.8s cubic-bezier(0.2, 0, 0.2, 1)';
+        el.style.left = left + 'px';
+        el.style.top = top + 'px';
+        el.style.opacity = '1';
+    } else {
+        // Instant position placement on initial hover, then fade in
+        el.style.transition = 'none';
+        el.style.left = left + 'px';
+        el.style.top = top + 'px';
+        // Force reflow
+        void el.offsetHeight;
+        el.style.transition = 'opacity 0.2s ease-out';
+        el.style.opacity = '1';
+    }
+}
 
 function renderInvestmentAnalytics(contractsList) {
     if (!contractsList) return;
@@ -135,7 +218,7 @@ function renderInvestmentAnalytics(contractsList) {
                         label: 'Inversión (UF)',
                         data: invValues,
                         backgroundColor: '#2563eb',
-                        borderRadius: 3
+                        borderRadius: 3,
                     }]
                 },
                 options: {
@@ -148,6 +231,8 @@ function renderInvestmentAnalytics(contractsList) {
                     plugins: {
                         legend: { display: false },
                         tooltip: {
+                            enabled: false,
+                            external: investmentExternalTooltip,
                             callbacks: {
                                 label: (ctx) => ` Inversión: ${formatUFComplete(ctx.raw)} UF (${((ctx.raw / (totalSampleInv || 1)) * 100).toFixed(1)}%)`
                             }
@@ -164,7 +249,7 @@ function renderInvestmentAnalytics(contractsList) {
                         },
                         y: {
                             grid: { display: false },
-                            ticks: { color: textColor, font: { size: 8.5 } }
+                            ticks: { color: textColor, font: { size: 8.5 }, autoSkip: false }
                         }
                     }
                 }
@@ -175,6 +260,7 @@ function renderInvestmentAnalytics(contractsList) {
             chartInvByRegionInstance.options.scales.x.grid.color = gridColor;
             chartInvByRegionInstance.options.scales.x.ticks.color = textColor;
             chartInvByRegionInstance.options.scales.y.ticks.color = textColor;
+            chartInvByRegionInstance.options.scales.y.ticks.autoSkip = false;
             chartInvByRegionInstance.options.plugins.tooltip.callbacks.label = (ctx) => ` Inversión: ${formatUFComplete(ctx.raw)} UF (${((ctx.raw / (totalSampleInv || 1)) * 100).toFixed(1)}%)`;
             chartInvByRegionInstance.update();
         }
@@ -196,7 +282,7 @@ function renderInvestmentAnalytics(contractsList) {
                         label: 'Contratos (Proporcional)',
                         data: cntValues,
                         backgroundColor: '#059669',
-                        borderRadius: 3
+                        borderRadius: 3,
                     }]
                 },
                 options: {
@@ -209,6 +295,8 @@ function renderInvestmentAnalytics(contractsList) {
                     plugins: {
                         legend: { display: false },
                         tooltip: {
+                            enabled: false,
+                            external: investmentExternalTooltip,
                             callbacks: {
                                 label: (ctx) => ` Contratos: ${ctx.raw.toFixed(2)} (${((ctx.raw / (contractsList.length || 1)) * 100).toFixed(1)}%)`
                             }
@@ -221,7 +309,7 @@ function renderInvestmentAnalytics(contractsList) {
                         },
                         y: {
                             grid: { display: false },
-                            ticks: { color: textColor, font: { size: 8.5 } }
+                            ticks: { color: textColor, font: { size: 8.5 }, autoSkip: false }
                         }
                     }
                 }
@@ -232,6 +320,7 @@ function renderInvestmentAnalytics(contractsList) {
             chartContractsByRegionInstance.options.scales.x.grid.color = gridColor;
             chartContractsByRegionInstance.options.scales.x.ticks.color = textColor;
             chartContractsByRegionInstance.options.scales.y.ticks.color = textColor;
+            chartContractsByRegionInstance.options.scales.y.ticks.autoSkip = false;
             chartContractsByRegionInstance.options.plugins.tooltip.callbacks.label = (ctx) => ` Contratos: ${ctx.raw.toFixed(2)} (${((ctx.raw / (contractsList.length || 1)) * 100).toFixed(1)}%)`;
             chartContractsByRegionInstance.update();
         }
@@ -271,9 +360,8 @@ function renderInvestmentAnalytics(contractsList) {
                     plugins: {
                         legend: { display: false },
                         tooltip: {
-                            padding: 5,
-                            titleFont: { size: 8.5 },
-                            bodyFont: { size: 8 },
+                            enabled: false,
+                            external: investmentExternalTooltip,
                             callbacks: {
                                 label: (ctx) => ` ${((ctx.raw / (totalSampleInv || 1)) * 100).toFixed(1)}% (${formatUF(ctx.raw)})`
                             }
@@ -300,15 +388,11 @@ function renderInvestmentAnalytics(contractsList) {
             const pct = totalSampleInv > 0 ? ((val / totalSampleInv) * 100).toFixed(1) : 0;
             const col = secColors[idx];
             const itemDiv = document.createElement('div');
-            itemDiv.style.cssText = 'display:flex; align-items:center; justify-content:space-between; font-size:0.65rem; padding:0.06rem 0;';
+            itemDiv.style.cssText = 'display:flex; align-items:center; gap:0.3rem; font-size:0.64rem; padding:0.03rem 0;';
             itemDiv.innerHTML = `
-                <div style="display:flex; align-items:center; gap:0.3rem; min-width:0; overflow:hidden;">
-                    <span style="width:7px; height:7px; border-radius:50%; background-color:${col}; flex-shrink:0;"></span>
-                    <span style="color:var(--text-secondary); white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${lbl}</span>
-                </div>
-                <span style="font-weight:700; color:var(--text-primary); font-variant-numeric:tabular-nums; flex-shrink:0; margin-left:0.25rem;">
-                    ${pct}% <span style="font-weight:500; color:var(--text-muted); font-size:0.61rem;">(${formatUF(val)})</span>
-                </span>
+                <span style="width:7px; height:7px; border-radius:50%; background-color:${col}; flex-shrink:0;"></span>
+                <span style="color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0;">${lbl}</span>
+                <span style="font-weight:700; color:var(--text-primary); flex-shrink:0; white-space:nowrap;">${pct}%</span>
             `;
             legendSecEl.appendChild(itemDiv);
         });
@@ -358,7 +442,8 @@ function renderInvestmentAnalytics(contractsList) {
                         label: 'Contratos Vigentes',
                         data: activeCntData,
                         backgroundColor: '#3b82f6',
-                        borderRadius: 2
+                        borderRadius: 2,
+                        barThickness: 7,
                     }]
                 },
                 options: {
@@ -367,6 +452,8 @@ function renderInvestmentAnalytics(contractsList) {
                     plugins: {
                         legend: { display: false },
                         tooltip: {
+                            enabled: false,
+                            external: investmentExternalTooltip,
                             callbacks: {
                                 label: (ctx) => ` Año ${ctx.label}: ${ctx.raw} contratos vigentes`
                             }
@@ -401,7 +488,8 @@ function renderInvestmentAnalytics(contractsList) {
                         label: 'Inversión Activa (UF)',
                         data: activeInvData,
                         backgroundColor: '#8b5cf6',
-                        borderRadius: 2
+                        borderRadius: 2,
+                        barThickness: 7,
                     }]
                 },
                 options: {
@@ -410,6 +498,8 @@ function renderInvestmentAnalytics(contractsList) {
                     plugins: {
                         legend: { display: false },
                         tooltip: {
+                            enabled: false,
+                            external: investmentExternalTooltip,
                             callbacks: {
                                 label: (ctx) => ` Año ${ctx.label}: ${formatUFComplete(ctx.raw)} UF activas`
                             }
@@ -442,17 +532,6 @@ function renderInvestmentAnalytics(contractsList) {
 }
 
 function initInvestmentEvents() {
-    const kpiInvCard = document.getElementById('kpi-investment-card');
-    if (kpiInvCard) {
-        kpiInvCard.addEventListener('click', () => {
-            if (appState.investmentOpen) {
-                hideInvestmentView();
-            } else {
-                showInvestmentView();
-            }
-        });
-    }
-
     const btnClose = document.getElementById('btn-close-investment');
     if (btnClose) {
         btnClose.addEventListener('click', () => hideInvestmentView());

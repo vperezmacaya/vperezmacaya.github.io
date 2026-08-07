@@ -210,12 +210,15 @@ function staticFetchData(params) {
 
     let totalInv = 0;
     let totalBidders = 0;
+    const uniqueInfraNames = new Set();
     const hitos = { 'operación': 0, 'construcción': 0, 'comb_const_oper': 0, 'finalizado': 0, 'activos': 0 };
     const sectorStats = {}, statusStats = {};
 
     filtered.forEach(item => {
         totalInv += parseFloat(item['Inversión Materializada estimada'] || 0) || 0;
         totalBidders += (item.bidders || []).length;
+        const infraName = item['Nombre de la Concesión '];
+        if (infraName) uniqueInfraNames.add(String(infraName).trim());
         const st = item['ESTADO'] || '';
         if (st) {
             statusStats[st] = (statusStats[st] || 0) + 1;
@@ -261,6 +264,7 @@ function staticFetchData(params) {
             count_total: totalDB,
             total_investment_uf: totalInv,
             total_bidders: totalBidders,
+            total_infrastructures: uniqueInfraNames.size,
             hitos: hitos
         },
         pagination: {
@@ -304,7 +308,7 @@ async function fetchData() {
         const rawInv = resData.summary.total_investment_uf;
         if (kpiInvestment) kpiInvestment.textContent = formatUF(rawInv);
 
-        if (kpiTotalInfras) kpiTotalInfras.textContent = resData.summary.total_infrastructures !== undefined ? resData.summary.total_infrastructures.toLocaleString('es-CL') : window.STATIC_DATA && window.STATIC_DATA.summary && window.STATIC_DATA.summary.total_infrastructures ? window.STATIC_DATA.summary.total_infrastructures.toLocaleString('es-CL') : '—';
+        if (kpiTotalInfras) kpiTotalInfras.textContent = resData.summary.total_infrastructures.toLocaleString('es-CL');
         if (kpiBidders) kpiBidders.textContent = resData.summary.total_bidders !== undefined ? resData.summary.total_bidders.toLocaleString('es-CL') : '0';
 
         // Update sub KPI context
@@ -370,6 +374,69 @@ async function fetchData() {
 let currentFilteredContractsList = [];
 
 
+// Shared external tooltip for DGC analysis panel charts
+function customChartTooltip(context) {
+    const { chart, tooltip } = context;
+    const tooltipId = 'dgc-analysis-tooltip';
+    let el = document.getElementById(tooltipId);
+    if (!el) {
+        el = document.createElement('div');
+        el.id = tooltipId;
+        el.style.cssText = [
+            'position:fixed',
+            'background:rgba(0,0,0,0.8)',
+            'color:#fff',
+            'border-radius:3px',
+            'padding:6px 8px',
+            'font:12px/1.4 system-ui,sans-serif',
+            'pointer-events:none',
+            'white-space:nowrap',
+            'z-index:9999',
+            'opacity:0'
+        ].join(';');
+        document.body.appendChild(el);
+    }
+
+    if (tooltip.opacity === 0) {
+        el.style.transition = 'opacity 0.25s ease-in';
+        el.style.opacity = '0';
+        return;
+    }
+
+    const wasVisible = parseFloat(el.style.opacity || '0') > 0.05;
+
+    const title = (tooltip.title || []).join('\n');
+    const bodyLines = (tooltip.body || []).flatMap(b => b.lines);
+
+    el.innerHTML = [
+        title ? `<div style="font-weight:700;margin-bottom:3px">${title}</div>` : '',
+        ...bodyLines.map(line => `<div>${line}</div>`)
+    ].join('');
+
+    const canvasRect = chart.canvas.getBoundingClientRect();
+    let left = canvasRect.left + tooltip.caretX + 10;
+    let top = canvasRect.top + tooltip.caretY - 10;
+
+    const rect = el.getBoundingClientRect();
+    if (rect.width > 0 && left + rect.width > window.innerWidth - 8) {
+        left = canvasRect.left + tooltip.caretX - rect.width - 10;
+    }
+
+    if (wasVisible) {
+        el.style.transition = 'opacity 0.2s ease-out, left 0.15s cubic-bezier(0.2, 0, 0, 1), top 0.15s cubic-bezier(0.2, 0, 0, 1)';
+        el.style.left = left + 'px';
+        el.style.top = top + 'px';
+        el.style.opacity = '1';
+    } else {
+        el.style.transition = 'none';
+        el.style.left = left + 'px';
+        el.style.top = top + 'px';
+        void el.offsetHeight;
+        el.style.transition = 'opacity 0.2s ease-out';
+        el.style.opacity = '1';
+    }
+}
+
 function renderChart(statsData, currentThemeMode) {
     const sectorCanvas = document.getElementById('sectorChart');
     const statusCanvas = document.getElementById('statusChart');
@@ -411,8 +478,11 @@ function renderChart(statsData, currentThemeMode) {
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        bodyFont: { size: 9 },
-                        titleFont: { size: 9 }
+                        enabled: false,
+                        external: customChartTooltip,
+                        callbacks: {
+                            label: (ctx) => ` ${ctx.label}: ${ctx.raw} contratos`
+                        }
                     }
                 }
             }
@@ -484,8 +554,11 @@ function renderChart(statsData, currentThemeMode) {
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        bodyFont: { size: 9 },
-                        titleFont: { size: 9 }
+                        enabled: false,
+                        external: customChartTooltip,
+                        callbacks: {
+                            label: (ctx) => ` ${ctx.label}: ${ctx.raw} contratos`
+                        }
                     }
                 },
                 scales: {

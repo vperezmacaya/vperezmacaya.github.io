@@ -40,19 +40,55 @@
                         <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
                     </button>
                     <div class="nav-menu-dropdown" id="nav-menu-dropdown">
-                        <a class="nav-menu-item active" href="index.html">
-                            <i data-lucide="building-2" style="width:13px;height:13px;"></i>
-                            Dirección General de Concesiones (DGC)
-                        </a>
+                        <!-- Group DGC with Submenu -->
+                        <div class="nav-menu-group" id="nav-dgc-group">
+                            <div class="nav-menu-item active nav-menu-has-sub">
+                                <div style="display:flex;align-items:center;gap:0.5rem;flex:1;">
+                                    <i data-lucide="building-2" style="width:13px;height:13px;"></i>
+                                    Dirección General de Concesiones (DGC)
+                                </div>
+                                <i data-lucide="chevron-left" style="width:12px;height:12px;opacity:0.7;"></i>
+                            </div>
+                            <div class="nav-submenu" id="nav-dgc-submenu">
+                                <a class="nav-submenu-item" id="nav-sub-map" href="#">
+                                    <i data-lucide="map" style="width:13px;height:13px;"></i>
+                                    Mapa
+                                </a>
+                                <a class="nav-submenu-item" id="nav-sub-timeline" href="#">
+                                    <i data-lucide="clock" style="width:13px;height:13px;"></i>
+                                    Líneas de Tiempo
+                                </a>
+                                <a class="nav-submenu-item" id="nav-sub-investment" href="#">
+                                    <i data-lucide="line-chart" style="width:13px;height:13px;"></i>
+                                    Gráficos de Inversión
+                                </a>
+                            </div>
+                        </div>
                         <a class="nav-menu-item" href="EFE.html">
                             <i data-lucide="train-front" style="width:13px;height:13px;"></i>
-                            Empresa de Ferrocarriles del Estado (EFE)
+                            Empresas de Ferrocarriles del Estado (EFE)
                         </a>
                     </div>
                 </div>
 
             </div>
         </header>
+
+        <!-- Subheader: Rapid View Switcher Bar (3 Large Equal Blue Sections) -->
+        <div class="view-subheader">
+            <button class="view-tab-btn active" id="btn-view-map">
+                <i data-lucide="map" style="width: 14px; height: 14px;"></i>
+                <span>Mapa</span>
+            </button>
+            <button class="view-tab-btn" id="btn-view-timeline">
+                <i data-lucide="clock" style="width: 14px; height: 14px;"></i>
+                <span>Líneas de Tiempo</span>
+            </button>
+            <button class="view-tab-btn" id="btn-view-investment">
+                <i data-lucide="line-chart" style="width: 14px; height: 14px;"></i>
+                <span>Gráficos de Inversión</span>
+            </button>
+        </div>
 
         <!-- Main Content (Single Screen) -->
         <main class="dashboard-content">
@@ -176,7 +212,7 @@
                         <h2 class="panel-title"
                             style="font-size: 0.82rem; padding-bottom: 0.25rem; border-bottom: 1px solid var(--border-color); margin-bottom: 0.15rem;">
                             <i data-lucide="pie-chart" style="width: 14px; height: 14px;"></i>
-                            Análisis
+                            Análisis Rápido
                         </h2>
 
                         <!-- Chart 1: Sectors -->
@@ -312,24 +348,20 @@
                 <section class="right-panel results-panel">
                     <!-- KPI Counters Grid (Compact 2x2) -->
                     <section class="kpi-grid" aria-label="Indicadores Clave">
-                        <div class="card-kpi card-kpi--interactive" id="kpi-total-card"
-                            title="Haz clic para ver la Línea de Tiempo de proyectos">
+                        <div class="card-kpi">
                             <div class="kpi-icon"><i data-lucide="file-text"></i></div>
                             <div class="kpi-val-container">
                                 <span class="kpi-label">Contratos totales</span>
                                 <span class="kpi-value" id="kpi-total">-</span>
                             </div>
-                            <i data-lucide="plus" class="kpi-interactive-hint"></i>
                         </div>
 
-                        <div class="card-kpi card-kpi--interactive" id="kpi-investment-card"
-                            title="Haz clic para ver el Análisis de Inversión y Estadísticas Regionales">
+                        <div class="card-kpi">
                             <div class="kpi-icon"><i data-lucide="trending-up"></i></div>
                             <div class="kpi-val-container">
                                 <span class="kpi-label">Inversión (UF)</span>
                                 <span class="kpi-value" id="kpi-investment" style="font-size: 0.95rem;">-</span>
                             </div>
-                            <i data-lucide="plus" class="kpi-interactive-hint"></i>
                         </div>
 
                         <div class="card-kpi">
@@ -433,33 +465,11 @@
                 <!-- Full-Width Timeline Panel (replaces center + right panels) -->
                 <!-- Full-Width Investment Analytics Panel (replaces center + right panels - Single Page No Scroll) -->
                 <div id="investment-full-panel" class="investment-full-panel"
-                    style="display:none; grid-column: 2 / -1; flex-direction: column; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; height: calc(100vh - 6.2rem);">
-
-                    <!-- Header Principal con KPI de Inversión Total y Promedio -->
-                    <div class="timeline-header"
-                        style="display: flex; align-items: center; justify-content: space-between; padding: 0.45rem 0.85rem; border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.02); flex-shrink: 0; gap: 0.5rem; flex-wrap: wrap;">
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <button id="btn-close-investment" class="btn-reset timeline-back-btn">
-                                <i data-lucide="arrow-left" style="width:13px;height:13px;"></i>
-                                Volver al Mapa
-                            </button>
-                            <span class="timeline-header-divider"
-                                style="width: 1px; height: 16px; background: var(--border-color);"></span>
-                            <i data-lucide="trending-up" style="width:16px;height:16px;color:var(--primary);"></i>
-                            <div>
-                                <h2
-                                    style="font-size: 0.85rem; font-weight: 700; margin: 0; color: var(--text-primary); line-height: 1.2;">
-                                    Análisis de Inversión y Estadísticas Regionales</h2>
-                                <span style="font-size: 0.65rem; color: var(--text-secondary);">Reparto proporcional por
-                                    región y evolución temporal</span>
-                            </div>
-                        </div>
-
-                    </div>
+                    style="display:none; grid-column: 2 / -1; flex-direction: column; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; height: 100%; min-height: 0;">
 
                     <!-- Single Page Body Grid (Banner KPI Prominente + 2 filas de gráficos) -->
                     <div class="investment-body"
-                        style="flex: 1; overflow: hidden; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.45rem; height: 100%;">
+                        style="flex: 1; overflow: hidden; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.45rem; min-height: 0;">
 
                         <!-- BANNER KPI DESTACADO SUPERIOR -->
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; flex-shrink: 0;">
@@ -560,13 +570,13 @@
                                     </h3>
                                 </div>
                                 <div
-                                    style="flex: 1; min-height: 0; display: flex; align-items: center; gap: 0.5rem; position: relative;">
+                                    style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; gap: 1.2rem; padding: 0 0.5rem; position: relative;">
                                     <div
-                                        style="width: 85px; height: 85px; min-width: 85px; flex-shrink: 0; position: relative; margin: auto 0;">
+                                        style="width: 145px; height: 145px; min-width: 145px; flex-shrink: 0; position: relative;">
                                         <canvas id="chartInvShareRegion"></canvas>
                                     </div>
                                     <div id="chartInvShareRegionLegend"
-                                        style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; overflow: hidden;">
+                                        style="width: 200px; min-width: 120px; flex-shrink: 0; display: flex; flex-direction: column; gap: 0.1rem; overflow: hidden; justify-content: center;">
                                     </div>
                                 </div>
                             </div>
@@ -584,7 +594,7 @@
                                         style="font-size: 0.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
                                         <i data-lucide="calendar"
                                             style="width: 13px; height: 13px; color: #3b82f6;"></i>
-                                        Contratos Vigentes por Año (Histograma)
+                                        Contratos Vigentes por Año
                                     </h3>
                                     <span style="font-size: 0.6rem; color: var(--text-muted);">Inicio-término</span>
                                 </div>
@@ -602,7 +612,7 @@
                                         style="font-size: 0.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
                                         <i data-lucide="activity"
                                             style="width: 13px; height: 13px; color: #8b5cf6;"></i>
-                                        Inversión Activa en el Tiempo por Año (Histograma)
+                                        Inversión Activa en el Tiempo por Año
                                     </h3>
                                     <span style="font-size: 0.6rem; color: var(--text-muted);">Inversión
                                         acumulada</span>
@@ -620,24 +630,16 @@
                     <!-- Timeline Header -->
                     <div class="timeline-header">
                         <div class="timeline-header-left">
-                            <button id="btn-close-timeline" class="btn-reset timeline-back-btn">
-                                <i data-lucide="arrow-left" style="width:13px;height:13px;"></i>
-                                Volver al Mapa
-                            </button>
-                            <span class="timeline-header-divider"></span>
                             <i data-lucide="gantt-chart" style="width:14px;height:14px;color:var(--primary);"></i>
                             <h2 class="timeline-header-title">Línea de Tiempo de Concesiones</h2>
                             <span id="timeline-count-badge" class="timeline-count-badge">0 Proyectos</span>
                         </div>
                         <div class="timeline-header-right">
                             <span class="timeline-legend-item">
-                                <span class="tl-legend-dot" style="background:#2563eb;"></span>1ª Licitación
+                                <span class="tl-legend-dot" style="background:#7c3aed; width:8px; height:8px; transform:rotate(45deg); border-radius:1px;"></span>Adjudicación
                             </span>
                             <span class="timeline-legend-item">
-                                <span class="tl-legend-dot" style="background:#059669;"></span>2ª Relicitación
-                            </span>
-                            <span class="timeline-legend-item">
-                                <span class="tl-legend-dot" style="background:#d97706;"></span>3ª+
+                                <span class="tl-legend-dot" style="background:#f59e0b; width:8px; height:8px; border-radius:50%;"></span>Resolución
                             </span>
                             <span class="timeline-legend-item">
                                 <span
@@ -675,11 +677,13 @@
     <!-- Footer -->
     <footer class="app-footer">
         <div class="app-footer-left">
-            <span class="app-footer-brand">CATLEC</span>
+
             <span class="app-footer-divider"></span>
             <span class="app-footer-text">Desarrollado por: Jose Oliveros, Vicente Pérez</span>
         </div>
         <div class="app-footer-right">
+            <img src="logo/Escudo_udec.gif" alt="Escudo UdeC"
+                style="height: 18px; width: auto; margin-right: 0.35rem; vertical-align: middle; display: inline-block;">
             <span class="app-footer-text">Universidad de Concepción &nbsp;·&nbsp; Facultad de Ingeniería</span>
         </div>
     </footer>
@@ -738,13 +742,58 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 8px;
             box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-            min-width: 180px;
+            min-width: 220px;
             z-index: 500;
-            overflow: hidden;
         }
 
         .nav-menu-dropdown.open {
             display: block;
+        }
+
+        .nav-menu-group {
+            position: relative;
+        }
+
+        .nav-menu-has-sub {
+            justify-content: space-between;
+        }
+
+        .nav-submenu {
+            display: none;
+            position: absolute;
+            top: 0;
+            right: calc(100% + 4px);
+            background: #0f1626;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            min-width: 190px;
+            z-index: 520;
+            overflow: hidden;
+            padding: 0.25rem 0;
+        }
+
+        .nav-menu-group:hover .nav-submenu,
+        .nav-menu-group.open .nav-submenu {
+            display: block;
+        }
+
+        .nav-submenu-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.85rem;
+            font-size: 0.74rem;
+            font-weight: 500;
+            color: #94a3b8;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .nav-submenu-item:hover {
+            background: rgba(59, 130, 246, 0.18);
+            color: #ffffff;
         }
 
         .nav-menu-item {
@@ -776,6 +825,7 @@
         (function () {
             const navBtn = document.getElementById('nav-menu-btn');
             const navDropdown = document.getElementById('nav-menu-dropdown');
+            const navDgcGroup = document.getElementById('nav-dgc-group');
             if (navBtn && navDropdown) {
                 navBtn.addEventListener('click', function (e) {
                     e.stopPropagation();
@@ -784,8 +834,55 @@
                 });
                 document.addEventListener('click', function () {
                     navDropdown.classList.remove('open');
+                    if (navDgcGroup) navDgcGroup.classList.remove('open');
                 });
                 navDropdown.addEventListener('click', function (e) { e.stopPropagation(); });
+            }
+
+            if (navDgcGroup) {
+                navDgcGroup.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    navDgcGroup.classList.toggle('open');
+                });
+            }
+
+            const subMap = document.getElementById('nav-sub-map');
+            const subTl = document.getElementById('nav-sub-timeline');
+            const subInv = document.getElementById('nav-sub-investment');
+
+            if (subMap) {
+                subMap.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    if (typeof hideTimelineView === 'function') hideTimelineView();
+                    if (typeof hideInvestmentView === 'function') hideInvestmentView();
+                    if (typeof setActiveSubheaderTab === 'function') setActiveSubheaderTab('map');
+                    if (navDropdown) navDropdown.classList.remove('open');
+                });
+            }
+            if (subTl) {
+                subTl.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    if (typeof hideInvestmentView === 'function') hideInvestmentView();
+                    if (typeof showTimelineView === 'function') showTimelineView();
+                    if (typeof setActiveSubheaderTab === 'function') setActiveSubheaderTab('timeline');
+                    if (navDropdown) navDropdown.classList.remove('open');
+                });
+            }
+            if (subInv) {
+                subInv.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    if (typeof hideTimelineView === 'function') hideTimelineView();
+                    if (typeof showInvestmentView === 'function') showInvestmentView();
+                    if (typeof setActiveSubheaderTab === 'function') setActiveSubheaderTab('investment');
+                    if (navDropdown) navDropdown.classList.remove('open');
+                });
+            }
+
+            // Check URL hash on page load
+            if (window.location.hash === '#timeline') {
+                setTimeout(() => { if (typeof showTimelineView === 'function') showTimelineView(); }, 150);
+            } else if (window.location.hash === '#investment') {
+                setTimeout(() => { if (typeof showInvestmentView === 'function') showInvestmentView(); }, 150);
             }
         })();
     </script>

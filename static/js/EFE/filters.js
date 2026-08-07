@@ -1,5 +1,18 @@
 // ─── EFE Filters & Data Module ───────────────────────────────────────────────
 
+function shortenRegionName(name) {
+    if (!name) return '';
+    let str = String(name).trim();
+    str = str.replace(/^Región\s+(de\s+la\s+|del\s+|de\s+)?/i, '');
+
+    if (/metropolitana/i.test(str)) return 'Metropolitana';
+    if (/ays[eé]n/i.test(str)) return 'Aysén';
+    if (/magallanes/i.test(str)) return 'Magallanes';
+    if (/o'higgins|bernardo/i.test(str)) return "O'Higgins";
+
+    return str;
+}
+
 function efeNormalize(str) {
     return str
         ? str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()

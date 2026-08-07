@@ -4,14 +4,24 @@ function _normalizeStr(s) {
         .normalize('NFD').replace(/[̀-ͯ]/g, '');
 }
 
+function shortenRegionName(name) {
+    if (!name) return '';
+    let str = String(name).trim();
+    str = str.replace(/^Región\s+(de\s+la\s+|del\s+|de\s+)?/i, '');
+
+    if (/metropolitana/i.test(str)) return 'Metropolitana';
+    if (/ays[eé]n/i.test(str)) return 'Aysén';
+    if (/magallanes/i.test(str)) return 'Magallanes';
+    if (/o'higgins|bernardo/i.test(str)) return "O'Higgins";
+
+    return str;
+}
+
 function _parseRegionsFromVal(regionStr) {
     if (!regionStr) return [];
     const str = String(regionStr).replace(/&nbsp;/g, ' ').replace(/ /g, ' ');
-    return str.split(/[;,]/).map(p => {
-        p = p.trim();
-        if (p === 'Metropolitana') return 'Metropolitana de Santiago';
-        if (p === 'Araucanía' || p === 'Araucania') return 'La Araucanía';
-        return p;
+    return str.split(/[;,/]/).map(p => {
+        return shortenRegionName(p.trim());
     }).filter(Boolean);
 }
 

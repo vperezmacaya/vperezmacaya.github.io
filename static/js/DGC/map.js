@@ -5,7 +5,7 @@ function initLeafletMap() {
         minZoom: 3,
         maxZoom: 18,
         zoomSnap: 0.5
-    }).setView([-35.6751, -71.5430], 4.5);
+    }).setView([-37.6751, -71.5430], 4.0);
 
     // Set initial theme tile layer
     tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {

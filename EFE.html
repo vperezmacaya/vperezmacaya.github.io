@@ -44,10 +44,30 @@
                         <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
                     </button>
                     <div class="nav-menu-dropdown" id="nav-menu-dropdown">
-                        <a class="nav-menu-item" href="index.html">
-                            <i data-lucide="building-2" style="width:13px;height:13px;"></i>
-                            Dirección General de Concesiones (DGC)
-                        </a>
+                        <!-- Group DGC with Submenu -->
+                        <div class="nav-menu-group" id="nav-dgc-group">
+                            <div class="nav-menu-item nav-menu-has-sub">
+                                <div style="display:flex;align-items:center;gap:0.5rem;flex:1;">
+                                    <i data-lucide="building-2" style="width:13px;height:13px;"></i>
+                                    Dirección General de Concesiones (DGC)
+                                </div>
+                                <i data-lucide="chevron-left" style="width:12px;height:12px;opacity:0.7;"></i>
+                            </div>
+                            <div class="nav-submenu" id="nav-dgc-submenu">
+                                <a class="nav-submenu-item" href="index.html">
+                                    <i data-lucide="map" style="width:13px;height:13px;"></i>
+                                    Mapa
+                                </a>
+                                <a class="nav-submenu-item" href="index.html#timeline">
+                                    <i data-lucide="clock" style="width:13px;height:13px;"></i>
+                                    Líneas de Tiempo
+                                </a>
+                                <a class="nav-submenu-item" href="index.html#investment">
+                                    <i data-lucide="line-chart" style="width:13px;height:13px;"></i>
+                                    Gráficos de Inversión
+                                </a>
+                            </div>
+                        </div>
                         <a class="nav-menu-item active" href="EFE.html">
                             <i data-lucide="train-front" style="width:13px;height:13px;"></i>
                             Empresas de Ferrocarriles del Estado (EFE)
@@ -333,6 +353,7 @@
             <span class="app-footer-text">Desarrollado por: Jose Oliveros, Vicente Pérez</span>
         </div>
         <div class="app-footer-right">
+            <img src="logo/Escudo_udec.gif" alt="Escudo UdeC" style="height: 18px; width: auto; margin-right: 0.35rem; vertical-align: middle; display: inline-block;">
             <span class="app-footer-text">Universidad de Concepción &nbsp;·&nbsp; Facultad de Ingeniería</span>
         </div>
     </footer>
@@ -349,19 +370,120 @@
     <script src="static/js/EFE/filters.js"></script>
     <script src="static/js/EFE/ui.js"></script>
 
+    <style>
+        .nav-menu-dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            background: #0f1626;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            min-width: 220px;
+            z-index: 500;
+        }
+
+        .nav-menu-dropdown.open {
+            display: block;
+        }
+
+        .nav-menu-group {
+            position: relative;
+        }
+
+        .nav-menu-has-sub {
+            justify-content: space-between;
+        }
+
+        .nav-submenu {
+            display: none;
+            position: absolute;
+            top: 0;
+            right: calc(100% + 4px);
+            background: #0f1626;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            min-width: 190px;
+            z-index: 520;
+            overflow: hidden;
+            padding: 0.25rem 0;
+        }
+
+        .nav-menu-group:hover .nav-submenu,
+        .nav-menu-group.open .nav-submenu {
+            display: block;
+        }
+
+        .nav-submenu-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.85rem;
+            font-size: 0.74rem;
+            font-weight: 500;
+            color: #94a3b8;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .nav-submenu-item:hover {
+            background: rgba(59, 130, 246, 0.18);
+            color: #ffffff;
+        }
+
+        .nav-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.85rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #94a3b8;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .nav-menu-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #f8fafc;
+        }
+
+        .nav-menu-item.active {
+            color: #3b82f6;
+            background: rgba(59, 130, 246, 0.08);
+        }
+    </style>
+
     <!-- Nav Menu toggle -->
     <script>
-        const navBtn = document.getElementById('nav-menu-btn');
-        const navDropdown = document.getElementById('nav-menu-dropdown');
-        if (navBtn && navDropdown) {
-            navBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                navDropdown.classList.toggle('open');
-                navBtn.setAttribute('aria-expanded', navDropdown.classList.contains('open'));
-            });
-            document.addEventListener('click', () => navDropdown.classList.remove('open'));
-            navDropdown.addEventListener('click', e => e.stopPropagation());
-        }
+        (function () {
+            const navBtn = document.getElementById('nav-menu-btn');
+            const navDropdown = document.getElementById('nav-menu-dropdown');
+            const navDgcGroup = document.getElementById('nav-dgc-group');
+            if (navBtn && navDropdown) {
+                navBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    navDropdown.classList.toggle('open');
+                    navBtn.setAttribute('aria-expanded', navDropdown.classList.contains('open'));
+                });
+                document.addEventListener('click', () => {
+                    navDropdown.classList.remove('open');
+                    if (navDgcGroup) navDgcGroup.classList.remove('open');
+                });
+                navDropdown.addEventListener('click', e => e.stopPropagation());
+            }
+
+            if (navDgcGroup) {
+                navDgcGroup.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    navDgcGroup.classList.toggle('open');
+                });
+            }
+        })();
     </script>
 </body>
 

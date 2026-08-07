@@ -17,12 +17,12 @@ function efeFormatRegionCell(regionStr) {
         return '<span class="efe-region-pill">Nacional</span>';
     }
 
-    const parts = str.split(/[;,/\n]+/).map(p => p.trim()).filter(p => p.length > 0);
+    const parts = str.split(/[;,/\n]+/).map(p => shortenRegionName(p.trim())).filter(p => p.length > 0);
     if (parts.length > 1) {
         return `<div class="efe-region-pills-wrap">${parts.map(p => `<span class="efe-region-pill">${p}</span>`).join('')}</div>`;
     }
 
-    return `<span class="efe-region-text">${str}</span>`;
+    return `<span class="efe-region-text">${shortenRegionName(str)}</span>`;
 }
 
 function efeRenderTable(projects) {

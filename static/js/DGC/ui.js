@@ -1,5 +1,45 @@
+function setActiveSubheaderTab(activeId) {
+    const btnMap = document.getElementById('btn-view-map');
+    const btnTl = document.getElementById('btn-view-timeline');
+    const btnInv = document.getElementById('btn-view-investment');
+    if (btnMap) btnMap.classList.toggle('active', activeId === 'map');
+    if (btnTl) btnTl.classList.toggle('active', activeId === 'timeline');
+    if (btnInv) btnInv.classList.toggle('active', activeId === 'investment');
+}
+
+function initSubheaderViewSwitcher() {
+    const btnMap = document.getElementById('btn-view-map');
+    const btnTl = document.getElementById('btn-view-timeline');
+    const btnInv = document.getElementById('btn-view-investment');
+
+    if (btnMap) {
+        btnMap.addEventListener('click', () => {
+            if (typeof hideTimelineView === 'function') hideTimelineView();
+            if (typeof hideInvestmentView === 'function') hideInvestmentView();
+            setActiveSubheaderTab('map');
+        });
+    }
+
+    if (btnTl) {
+        btnTl.addEventListener('click', () => {
+            if (typeof hideInvestmentView === 'function') hideInvestmentView();
+            if (typeof showTimelineView === 'function') showTimelineView();
+            setActiveSubheaderTab('timeline');
+        });
+    }
+
+    if (btnInv) {
+        btnInv.addEventListener('click', () => {
+            if (typeof hideTimelineView === 'function') hideTimelineView();
+            if (typeof showInvestmentView === 'function') showInvestmentView();
+            setActiveSubheaderTab('investment');
+        });
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initDOMReferences();
+    initSubheaderViewSwitcher();
 
     if (btnBackToList) {
         btnBackToList.addEventListener('click', () => {
@@ -131,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnResetMap.addEventListener('click', () => {
         if (leafletMap) {
-            leafletMap.setView([-35.6751, -71.5430], 4.5);
+            leafletMap.setView([-37.6751, -71.5430], 4.0);
         }
         appState.selectedProjectCode = null;
         showTableListView();
@@ -238,6 +278,23 @@ function updateDetailNavButtons(code) {
 
 // Render table list elements
 
+function formatRegionCell(regionStr) {
+    if (!regionStr || String(regionStr).trim() === '' || String(regionStr).trim() === 'N/A') {
+        return '<span style="color:var(--text-muted);font-style:italic">Sin región</span>';
+    }
+    const str = String(regionStr).trim();
+    if (str.toLowerCase().includes('nacional')) {
+        return '<span class="region-pill">Nacional</span>';
+    }
+
+    const parts = str.split(/[;,/\n]+/).map(p => shortenRegionName(p.trim())).filter(p => p.length > 0);
+    if (parts.length > 1) {
+        return `<div class="region-pills-wrap">${parts.map(p => `<span class="region-pill">${p}</span>`).join('')}</div>`;
+    }
+
+    return `<span>${shortenRegionName(str)}</span>`;
+}
+
 function renderTable(contracts) {
     tableBody.innerHTML = '';
 
@@ -261,7 +318,7 @@ function renderTable(contracts) {
         tr.style.cursor = 'pointer';
         tr.innerHTML = `
             <td><strong>${item['Nombre de uso común'] || item['Nombre de la Concesión '] || 'Sin nombre'}</strong></td>
-            <td>${item['Región geográfica'] || 'N/A'}</td>
+            <td>${formatRegionCell(item['Región geográfica'])}</td>
             <td>${item ? formatDate(item['Fecha inicio del contrato de concesión']) : 'N/A'}</td>
             <td><span class="badge ${badgeClass}">${status}</span></td>
         `;
@@ -270,6 +327,18 @@ function renderTable(contracts) {
             if (item['Código proyecto']) {
                 zoomToProjectCode(item['Código proyecto']);
             }
+        });
+
+        tr.addEventListener('mouseenter', () => {
+            if (item['Código proyecto']) {
+                appState.hoveredProjectCode = item['Código proyecto'].toString().trim();
+                if (typeof updateMapStyles === 'function') updateMapStyles();
+            }
+        });
+
+        tr.addEventListener('mouseleave', () => {
+            appState.hoveredProjectCode = null;
+            if (typeof updateMapStyles === 'function') updateMapStyles();
         });
 
         tableBody.appendChild(tr);
@@ -553,7 +622,7 @@ function renderProjectDetailBody(cleanCode, item) {
                     <span class="detail-value">${(item && item['Nombre sociedad concesionaria']) || 'N/A'}</span>
 
                     <span class="detail-label">Región:</span>
-                    <span class="detail-value">${(item && item['Región geográfica']) || 'N/A'}</span>
+                    <span class="detail-value">${formatRegionCell(item && item['Región geográfica'])}</span>
 
                     <span class="detail-label">Inversión:</span>
                     <span class="detail-value">${item ? formatUFComplete(item['Inversión Materializada estimada']) + ' UF' : 'N/A'}</span>

@@ -3,9 +3,14 @@ const ROW_H = 38;       // px per project row
 const AXIS_H = 36;      // px for year axis
 const LABEL_W = 210;    // px for label column
 const BAR_PAD = 7;      // vertical padding inside row
-const MILESTONE_R = 4;  // radius of milestone circles
+const MILESTONE_R = 6.5; // radius of milestone icons (larger hit area)
 
 function showTimelineView() {
+    if (typeof leafletMap !== 'undefined' && leafletMap && leafletMap.getCenter) {
+        appState.savedMapCenter = leafletMap.getCenter();
+        appState.savedMapZoom = leafletMap.getZoom();
+    }
+    if (appState.investmentOpen) hideInvestmentView();
     appState.timelineOpen = true;
     const grid = document.querySelector('.dashboard-grid');
     const centerPanel = document.querySelector('.center-panel');
@@ -15,11 +20,18 @@ function showTimelineView() {
     if (centerPanel) { centerPanel.style.display = 'none'; }
     if (rightPanel) { rightPanel.style.display = 'none'; }
     if (tlPanel) { tlPanel.style.display = 'flex'; }
-    const kpiCard = document.getElementById('kpi-total-card');
-    if (kpiCard) kpiCard.classList.add('timeline-active');
+    if (typeof setActiveSubheaderTab === 'function') setActiveSubheaderTab('timeline');
+
+    // Render timeline data
+    const projects = (appState.lastMapProjects && appState.lastMapProjects.length > 0)
+        ? appState.lastMapProjects
+        : (window.STATIC_DATA && window.STATIC_DATA.data ? window.STATIC_DATA.data : []);
+    if (typeof renderTimeline === 'function') {
+        renderTimeline(projects);
+    }
 }
 
-function hideTimelineView() {
+function hideTimelineView(skipRestoreCenter) {
     appState.timelineOpen = false;
     const grid = document.querySelector('.dashboard-grid');
     const centerPanel = document.querySelector('.center-panel');
@@ -29,8 +41,14 @@ function hideTimelineView() {
     if (centerPanel) { centerPanel.style.display = ''; }
     if (rightPanel) { rightPanel.style.display = ''; }
     if (tlPanel) { tlPanel.style.display = 'none'; }
-    const kpiCard = document.getElementById('kpi-total-card');
-    if (kpiCard) kpiCard.classList.remove('timeline-active');
+    if (typeof setActiveSubheaderTab === 'function' && !appState.investmentOpen) setActiveSubheaderTab('map');
+
+    if (typeof leafletMap !== 'undefined' && leafletMap) {
+        leafletMap.invalidateSize({ animate: false });
+        if (!skipRestoreCenter && appState.savedMapCenter) {
+            leafletMap.setView(appState.savedMapCenter, appState.savedMapZoom || 6, { animate: false });
+        }
+    }
 }
 
 // ── Parse date string → fractional year number ────────────────────────
@@ -359,9 +377,11 @@ function renderTimeline(data, highlightCode = null) {
                 rect.addEventListener('click', (e) => {
                     e.stopPropagation();
                     hideTimelineTooltip();
-                    hideTimelineView();
+                    hideTimelineView(true);
                     if (seg.code) {
-                        zoomToProjectCode(seg.code);
+                        setTimeout(() => {
+                            zoomToProjectCode(seg.code);
+                        }, 50);
                     }
                 });
 
@@ -387,22 +407,70 @@ function renderTimeline(data, highlightCode = null) {
                 const mx = toPx(adjY);
                 const my = laneY + SUBLANE_H / 2;
                 const d = MILESTONE_R;
-                barsSvg.appendChild(svgEl('polygon', {
+                const poly = svgEl('polygon', {
                     points: `${mx},${my - d} ${mx + d},${my} ${mx},${my + d} ${mx - d},${my}`,
-                    fill: '#7c3aed', stroke: '#ffffff', 'stroke-width': 1,
-                    'pointer-events': 'none'
-                }));
+                    fill: '#7c3aed', stroke: '#ffffff', 'stroke-width': 1.5,
+                    style: 'cursor: pointer;'
+                });
+                poly.addEventListener('mouseenter', (e) => {
+                    poly.setAttribute('stroke-width', '2.5');
+                    poly.setAttribute('fill', '#8b5cf6');
+                    showMilestoneTooltip(e, seg.common_name || seg.name, 'Adjudicación', seg.adjudication_date, '#a78bfa');
+                });
+                poly.addEventListener('mousemove', (e) => moveTimelineTooltip(e));
+                poly.addEventListener('mouseleave', () => {
+                    poly.setAttribute('stroke-width', '1.5');
+                    poly.setAttribute('fill', '#7c3aed');
+                    hideTimelineTooltip();
+                });
+                poly.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    hideTimelineTooltip();
+                    hideTimelineView(true);
+                    if (seg.code) {
+                        setTimeout(() => {
+                            zoomToProjectCode(seg.code);
+                        }, 50);
+                    }
+                });
+                barsSvg.appendChild(poly);
             }
 
             // Milestone circle: resolution_date
             const resY = dateToYear(seg.resolution_date);
             if (resY !== null && resY >= minYear && resY <= maxYear) {
-                barsSvg.appendChild(svgEl('circle', {
-                    cx: toPx(resY), cy: laneY - 2,
-                    r: MILESTONE_R - 1,
-                    fill: '#f59e0b', stroke: '#ffffff', 'stroke-width': 1,
-                    'pointer-events': 'none'
-                }));
+                const cx = toPx(resY);
+                const cy = laneY + SUBLANE_H / 2;
+                const circ = svgEl('circle', {
+                    cx: cx, cy: cy,
+                    r: MILESTONE_R,
+                    fill: '#f59e0b', stroke: '#ffffff', 'stroke-width': 1.5,
+                    style: 'cursor: pointer;'
+                });
+                circ.addEventListener('mouseenter', (e) => {
+                    circ.setAttribute('stroke-width', '2.5');
+                    circ.setAttribute('r', (MILESTONE_R + 1.5).toString());
+                    circ.setAttribute('fill', '#fbbf24');
+                    showMilestoneTooltip(e, seg.common_name || seg.name, 'Resolución', seg.resolution_date, '#fbbf24');
+                });
+                circ.addEventListener('mousemove', (e) => moveTimelineTooltip(e));
+                circ.addEventListener('mouseleave', () => {
+                    circ.setAttribute('stroke-width', '1.5');
+                    circ.setAttribute('r', MILESTONE_R.toString());
+                    circ.setAttribute('fill', '#f59e0b');
+                    hideTimelineTooltip();
+                });
+                circ.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    hideTimelineTooltip();
+                    hideTimelineView(true);
+                    if (seg.code) {
+                        setTimeout(() => {
+                            zoomToProjectCode(seg.code);
+                        }, 50);
+                    }
+                });
+                barsSvg.appendChild(circ);
             }
         });
     });
@@ -438,14 +506,6 @@ function showTimelineTooltip(e, seg, licitNum, color) {
     tip.innerHTML = `
         <span class="timeline-tooltip-name" style="color:${color};">${seg.common_name || seg.name || '—'}</span>
         <div class="timeline-tooltip-row">
-            <span class="timeline-tooltip-label">Licitación</span>
-            <span class="timeline-tooltip-val">${licitNum}ª</span>
-        </div>
-        <div class="timeline-tooltip-row">
-            <span class="timeline-tooltip-label">Estado</span>
-            <span class="timeline-tooltip-val">${seg.status || '—'}</span>
-        </div>
-        <div class="timeline-tooltip-row">
             <span class="timeline-tooltip-label">Inicio</span>
             <span class="timeline-tooltip-val">${fmt(seg.start_date)}</span>
         </div>
@@ -453,10 +513,42 @@ function showTimelineTooltip(e, seg, licitNum, color) {
             <span class="timeline-tooltip-label">Término</span>
             <span class="timeline-tooltip-val">${fmt(seg.end_date)}</span>
         </div>
+        <div class="timeline-tooltip-row">
+            <span class="timeline-tooltip-label">Estado</span>
+            <span class="timeline-tooltip-val">${seg.status || '—'}</span>
+        </div>
         ${seg.adj ? `<div class="timeline-tooltip-row">
             <span class="timeline-tooltip-label">Adjudicación</span>
             <span class="timeline-tooltip-val">${fmt(seg.adj)}</span>
         </div>` : ''}
+    `;
+    tip.style.display = 'block';
+    moveTimelineTooltip(e);
+}
+
+function showMilestoneTooltip(e, commonName, milestoneType, dateVal, color) {
+    const tip = document.getElementById('timeline-tooltip');
+    if (!tip) return;
+    const fmt = (d) => {
+        if (!d) return '—';
+        const str = String(d).split('T')[0];
+        const parts = str.split('-');
+        if (parts.length === 3) {
+            const dt = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+            return dt.toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+        return d;
+    };
+    tip.innerHTML = `
+        <span class="timeline-tooltip-name" style="color:${color};">${commonName || '—'}</span>
+        <div class="timeline-tooltip-row">
+            <span class="timeline-tooltip-label">Hito</span>
+            <span class="timeline-tooltip-val" style="color:${color}; font-weight:700;">${milestoneType}</span>
+        </div>
+        <div class="timeline-tooltip-row">
+            <span class="timeline-tooltip-label">Fecha</span>
+            <span class="timeline-tooltip-val">${fmt(dateVal)}</span>
+        </div>
     `;
     tip.style.display = 'block';
     moveTimelineTooltip(e);
@@ -497,18 +589,6 @@ let chartActiveInvYearInstance = null;
 
 
 function initTimelineEvents() {
-    const kpiCard = document.getElementById('kpi-total-card');
-    if (kpiCard) {
-        kpiCard.addEventListener('click', () => {
-            if (appState.timelineOpen) {
-                hideTimelineView();
-            } else {
-                showTimelineView();
-                renderTimeline(appState.lastMapProjects || []);
-            }
-        });
-    }
-
     const closeBtn = document.getElementById('btn-close-timeline');
     if (closeBtn) {
         closeBtn.addEventListener('click', () => hideTimelineView());
