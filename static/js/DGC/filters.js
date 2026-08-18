@@ -298,6 +298,11 @@ async function fetchData() {
             renderInvestmentAnalytics(resData.full_filtered || resData.data);
         }
 
+        // Si el panel de análisis de oferentes está abierto, re-renderizar los gráficos de oferentes
+        if (appState.biddersOpen) {
+            renderBiddersAnalytics(resData.full_filtered || resData.data);
+        }
+
         // 1. Update KPI Values
         if (kpiTotal) kpiTotal.textContent = resData.summary.count_filtered;
 

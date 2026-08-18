@@ -8,6 +8,10 @@ __pycache__/
 caltec.db
 CALTEC.xlsx
 CATLEC.xlsx
+BASE MOP.xlsx
+indicadores_variacion.xlsx
+~$*
+*.xlsx
 Mapas vectoriales/
 Fotos/
 log_props.txt

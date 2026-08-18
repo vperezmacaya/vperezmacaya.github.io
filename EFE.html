@@ -16,6 +16,9 @@
     <!-- EFE Custom Stylesheet -->
     <link rel="stylesheet" href="static/css/efe_styles.css">
 
+    <!-- SheetJS for Client-Side Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
     <!-- Static Data -->
     <script src="static/data/efe_data.js"></script>
     <script src="static/data/efe_geo.js"></script>
@@ -46,12 +49,12 @@
                     <div class="nav-menu-dropdown" id="nav-menu-dropdown">
                         <!-- Group DGC with Submenu -->
                         <div class="nav-menu-group" id="nav-dgc-group">
-                            <div class="nav-menu-item nav-menu-has-sub">
-                                <div style="display:flex;align-items:center;gap:0.5rem;flex:1;">
+                            <div class="nav-menu-item nav-menu-has-sub" id="nav-dgc-parent-item">
+                                <a href="index.html" class="nav-menu-parent-link" style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
                                     <i data-lucide="building-2" style="width:13px;height:13px;"></i>
                                     Dirección General de Concesiones (DGC)
-                                </div>
-                                <i data-lucide="chevron-left" style="width:12px;height:12px;opacity:0.7;"></i>
+                                </a>
+                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon" style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
                             </div>
                             <div class="nav-submenu" id="nav-dgc-submenu">
                                 <a class="nav-submenu-item" href="index.html">
@@ -66,12 +69,37 @@
                                     <i data-lucide="line-chart" style="width:13px;height:13px;"></i>
                                     Gráficos de Inversión
                                 </a>
+                                <a class="nav-submenu-item" href="index.html#bidders">
+                                    <i data-lucide="users" style="width:13px;height:13px;"></i>
+                                    Análisis de Oferentes
+                                </a>
                             </div>
                         </div>
                         <a class="nav-menu-item active" href="EFE.html">
                             <i data-lucide="train-front" style="width:13px;height:13px;"></i>
                             Empresas de Ferrocarriles del Estado (EFE)
                         </a>
+                        <!-- Group MOP with Submenu -->
+                        <div class="nav-menu-group" id="nav-mop-group">
+                            <div class="nav-menu-item nav-menu-has-sub" id="nav-mop-parent-item">
+                                <a href="MOP.html" class="nav-menu-parent-link" style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
+                                    <i data-lucide="hard-hat" style="width:13px;height:13px;"></i>
+                                    Ministerio de Obras Públicas (MOP)
+                                </a>
+                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon" style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
+                            </div>
+                            <div class="nav-submenu" id="nav-mop-submenu">
+                                <a class="nav-submenu-item" href="MOP.html">
+                                    <i data-lucide="layout-dashboard" style="width:13px;height:13px;"></i> Resumen General
+                                </a>
+                                <a class="nav-submenu-item" href="MOP.html#inversion">
+                                    <i data-lucide="bar-chart-2" style="width:13px;height:13px;"></i> Inversión por Región
+                                </a>
+                                <a class="nav-submenu-item" href="MOP.html#programas">
+                                    <i data-lucide="layers" style="width:13px;height:13px;"></i> Programas y Etapas
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -144,12 +172,18 @@
                             </div>
                         </div>
 
-                        <!-- Reset button -->
-                        <div style="display:flex;gap:0.4rem;margin-top:0.1rem;">
+                        <!-- Reset & Export buttons -->
+                        <div style="display:flex;flex-direction:column;gap:0.25rem;margin-top:0.1rem;">
                             <button class="btn btn-ghost" id="efe-btn-reset"
-                                style="flex:1;font-size:0.72rem;padding:0.28rem 0.5rem;">
+                                style="font-size:0.72rem;padding:0.28rem 0.5rem;justify-content:center;width:100%;">
                                 <i data-lucide="rotate-ccw" style="width:12px;height:12px;"></i>
                                 Restablecer
+                            </button>
+                            <button class="btn btn-ghost" id="efe-btn-export-excel"
+                                style="font-size:0.72rem;padding:0.28rem 0.5rem;justify-content:center;width:100%;background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.3);color:#10b981;font-weight:600;cursor:pointer;transition:all 0.15s ease;"
+                                title="Descargar proyectos EFE filtrados o completos en Excel (.xlsx)">
+                                <i data-lucide="file-spreadsheet" style="width:12px;height:12px;"></i>
+                                Exportar a Excel (.xlsx)
                             </button>
                         </div>
                     </div>
@@ -400,19 +434,43 @@
             display: none;
             position: absolute;
             top: 0;
-            right: calc(100% + 4px);
+            right: 100%;
             background: #0f1626;
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 8px;
             box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
-            min-width: 190px;
+            min-width: 200px;
             z-index: 520;
-            overflow: hidden;
+            overflow: visible;
             padding: 0.25rem 0;
         }
 
+        /* Hitbox bridge: invisible safety zone connecting parent item and flyout submenu */
+        .nav-menu-group::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 90%;
+            width: 30px;
+            pointer-events: auto;
+            z-index: 515;
+        }
+
+        .nav-submenu::after {
+            content: '';
+            position: absolute;
+            top: -15px;
+            bottom: -15px;
+            left: -15px;
+            right: -25px;
+            z-index: -1;
+            pointer-events: auto;
+        }
+
         .nav-menu-group:hover .nav-submenu,
-        .nav-menu-group.open .nav-submenu {
+        .nav-menu-group.open .nav-submenu,
+        .nav-menu-group:focus-within .nav-submenu {
             display: block;
         }
 
@@ -464,6 +522,10 @@
             const navBtn = document.getElementById('nav-menu-btn');
             const navDropdown = document.getElementById('nav-menu-dropdown');
             const navDgcGroup = document.getElementById('nav-dgc-group');
+            const navMopGroup = document.getElementById('nav-mop-group');
+            let dgcTimeout = null;
+            let mopTimeout = null;
+
             if (navBtn && navDropdown) {
                 navBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -473,14 +535,50 @@
                 document.addEventListener('click', () => {
                     navDropdown.classList.remove('open');
                     if (navDgcGroup) navDgcGroup.classList.remove('open');
+                    if (navMopGroup) navMopGroup.classList.remove('open');
                 });
                 navDropdown.addEventListener('click', e => e.stopPropagation());
             }
 
             if (navDgcGroup) {
-                navDgcGroup.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    navDgcGroup.classList.toggle('open');
+                const dgcTrigger = navDgcGroup.querySelector('.nav-submenu-trigger-icon');
+                if (dgcTrigger) {
+                    dgcTrigger.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        navDgcGroup.classList.toggle('open');
+                    });
+                }
+
+                navDgcGroup.addEventListener('mouseenter', function () {
+                    if (dgcTimeout) clearTimeout(dgcTimeout);
+                    navDgcGroup.classList.add('open');
+                });
+                navDgcGroup.addEventListener('mouseleave', function () {
+                    dgcTimeout = setTimeout(function () {
+                        navDgcGroup.classList.remove('open');
+                    }, 250);
+                });
+            }
+
+            if (navMopGroup) {
+                const mopTrigger = navMopGroup.querySelector('.nav-submenu-trigger-icon');
+                if (mopTrigger) {
+                    mopTrigger.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        navMopGroup.classList.toggle('open');
+                    });
+                }
+
+                navMopGroup.addEventListener('mouseenter', function () {
+                    if (mopTimeout) clearTimeout(mopTimeout);
+                    navMopGroup.classList.add('open');
+                });
+                navMopGroup.addEventListener('mouseleave', function () {
+                    mopTimeout = setTimeout(function () {
+                        navMopGroup.classList.remove('open');
+                    }, 250);
                 });
             }
         })();

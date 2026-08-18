@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CATLEC - Ministerio de Obras Públicas (MOP)</title>
+    <meta name="description" content="Dashboard de proyectos e inversión del Ministerio de Obras Públicas de Chile - CATLEC">
+    <!-- Shared stylesheet (navbar, footer, panel-card, forms, etc.) -->
+    <link rel="stylesheet" href="static/css/styles.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS for Client-Side Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- MOP static data -->
+    <script src="static/data/mop_data.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* ── Layout overrides for MOP ────────────────────────────────────── */
+        .mop-grid {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 0.6rem;
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+        }
+
+        /* ── KPI Banner ──────────────────────────────────────────────────── */
+        .mop-kpi-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.45rem;
+            flex-shrink: 0;
+        }
+
+        /* ── Panel cards ──────────────────────────────────────────────────── */
+        .mop-card {
+            background: var(--card-bg, rgba(255,255,255,0.85));
+            border: 1px solid var(--border-color, rgba(0,0,0,0.08));
+            border-radius: 12px;
+            padding: 0.65rem 0.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .mop-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.07));
+            padding-bottom: 0.3rem;
+            flex-shrink: 0;
+        }
+
+        .mop-card-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            margin: 0;
+        }
+
+        .mop-badge {
+            font-size: 0.6rem; font-weight: 600;
+            padding: 0.12rem 0.4rem;
+            border-radius: 20px;
+            background: rgba(59,130,246,0.12);
+            color: #3b82f6;
+            border: 1px solid rgba(59,130,246,0.25);
+        }
+
+        /* ── Canvas wrappers ─────────────────────────────────────────────── */
+        .chart-wrap {
+            flex: 1;
+            position: relative;
+            min-height: 0;
+        }
+
+        /* ── Filters ─────────────────────────────────────────────────────── */
+        .mop-form-group { display: flex; flex-direction: column; gap: 0.18rem; }
+        .mop-label { font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); }
+        .mop-input, .mop-select {
+            width: 100%;
+            padding: 0.3rem 0.5rem;
+            background: var(--bg-sidebar, #fff);
+            border: 1px solid var(--border-color, rgba(0,0,0,0.1));
+            border-radius: 7px;
+            color: var(--text-primary);
+            font-size: 0.71rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .mop-input:focus, .mop-select:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
+        }
+
+        /* ── Top projects table ──────────────────────────────────────────── */
+        .top-table { width: 100%; border-collapse: collapse; }
+        .top-table thead th {
+            font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.04em; color: var(--text-muted);
+            padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--border-color);
+            text-align: left;
+        }
+        .top-table tbody tr:hover { background: rgba(59,130,246,0.05); }
+
+        /* ── Right panel scroll ──────────────────────────────────────────── */
+        .right-scroll { flex: 1; overflow-y: auto; min-height: 0; }
+        .right-scroll::-webkit-scrollbar { width: 3px; }
+        .right-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
+
+        /* ── Nav menu (exact inline copy from index.html) ─────────────────── */
+        .nav-menu { position: relative; display: flex; align-items: center; margin-right: 0.5rem; }
+        .nav-menu-btn {
+            display: flex; align-items: center; gap: 0.35rem;
+            background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.25);
+            border-radius: 8px; color: #93c5fd;
+            font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.72rem; font-weight: 500;
+            padding: 0.2rem 0.6rem; cursor: pointer; transition: all 0.15s ease;
+        }
+        .nav-menu-btn:hover { background: rgba(59,130,246,0.18); border-color: rgba(59,130,246,0.4); }
+        .nav-menu-dropdown {
+            display: none; position: absolute; top: calc(100% + 6px); right: 0;
+            background: #0f1626; border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+            min-width: 220px; z-index: 500;
+        }
+        .nav-menu-dropdown.open { display: block; }
+        .nav-menu-group { position: relative; }
+        .nav-menu-has-sub { justify-content: space-between; }
+        .nav-submenu {
+            display: none; position: absolute; top: 0; right: 100%;
+            background: #0f1626; border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+            min-width: 200px; z-index: 520; overflow: visible; padding: 0.25rem 0;
+        }
+        /* Hitbox bridge: invisible safety zone connecting parent item and flyout submenu */
+        .nav-menu-group::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 90%;
+            width: 30px;
+            pointer-events: auto;
+            z-index: 515;
+        }
+        .nav-submenu::after {
+            content: '';
+            position: absolute;
+            top: -15px;
+            bottom: -15px;
+            left: -15px;
+            right: -25px;
+            z-index: -1;
+            pointer-events: auto;
+        }
+        .nav-menu-group:hover .nav-submenu, 
+        .nav-menu-group.open .nav-submenu,
+        .nav-menu-group:focus-within .nav-submenu { 
+            display: block; 
+        }
+        .nav-submenu-item {
+            display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.85rem;
+            font-size: 0.74rem; font-weight: 500; color: #94a3b8;
+            cursor: pointer; text-decoration: none; transition: background 0.15s, color 0.15s;
+        }
+        .nav-submenu-item:hover { background: rgba(59,130,246,0.18); color: #ffffff; }
+        .nav-menu-item {
+            display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.85rem;
+            font-size: 0.75rem; font-weight: 500; color: #94a3b8;
+            cursor: pointer; text-decoration: none; transition: background 0.15s, color 0.15s;
+        }
+        .nav-menu-item:hover { background: rgba(255,255,255,0.05); color: #f8fafc; }
+        .nav-menu-item.active { color: #3b82f6; background: rgba(59,130,246,0.08); }
+
+        /* ── Subheader tab override for 3 tabs ───────────────────────────── */
+        .view-subheader.mop-tabs { grid-template-columns: repeat(3, 1fr); }
+
+        /* ── MOP Data Table (Aligned with EFE.html) ─────────────────────── */
+        .mop-table-container {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+        .mop-data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.72rem;
+        }
+        .mop-data-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: #0f1626;
+            padding: 0.42rem 0.6rem;
+            font-size: 0.66rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            border-bottom: 1px solid var(--border-color);
+            text-align: left;
+            white-space: nowrap;
+            user-select: none;
+        }
+        body.light-theme .mop-data-table thead th {
+            background: #f1f5f9;
+            color: #475569;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .mop-sortable {
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.15s ease, background 0.15s ease;
+        }
+        .mop-sortable:hover {
+            color: var(--text-primary);
+            background: rgba(59, 130, 246, 0.06);
+        }
+        .mop-sortable.active-sort {
+            color: #3b82f6 !important;
+            font-weight: 700;
+        }
+        .mop-sort-icon {
+            font-size: 0.65rem;
+            opacity: 0.5;
+            margin-left: 0.2rem;
+            display: inline-block;
+        }
+        .mop-sortable.active-sort .mop-sort-icon {
+            opacity: 1;
+            color: #3b82f6;
+        }
+        .mop-data-table tbody tr {
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.15s ease;
+            cursor: pointer;
+        }
+        .mop-data-table tbody tr:hover {
+            background: rgba(59, 130, 246, 0.08) !important;
+        }
+        .mop-td {
+            padding: 0.42rem 0.6rem;
+            vertical-align: middle;
+            color: var(--text-primary);
+        }
+        .mop-count-badge {
+            font-size: 0.68rem;
+            font-weight: 600;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .mop-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.35rem 0.75rem;
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-card);
+            flex-shrink: 0;
+            font-size: 0.7rem;
+        }
+
+        /* ── Hidden utility ──────────────────────────────────────────────── */
+        .hidden { display: none !important; }
+    </style>
+</head>
+
+<body class="light-theme">
+    <div class="app-container">
+
+        <!-- ═══════════════════════════════ HEADER (identical to index.html) -->
+        <header class="top-navbar">
+            <div class="top-navbar-left">
+                <img src="logo/cropped-Logo-CATLEC-horizontal-sin-fondo-1.png" alt="Logo CATLEC" class="top-navbar-logo">
+                <span class="top-navbar-title">Plataforma de visualización logística de datos - Cartera de Proyectos MOP</span>
+                <span class="top-navbar-divider"></span>
+                <span class="top-navbar-proto">Prototipo en desarrollo</span>
+            </div>
+            <div class="top-navbar-right">
+                <div class="nav-menu" id="nav-menu">
+                    <button class="nav-menu-btn" id="nav-menu-btn" aria-haspopup="true" aria-expanded="false">
+                        <i data-lucide="layers" style="width:13px;height:13px;"></i>
+                        Seleccionar Base de Datos
+                        <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
+                    </button>
+                    <div class="nav-menu-dropdown" id="nav-menu-dropdown">
+                        <!-- Group DGC -->
+                        <div class="nav-menu-group" id="nav-dgc-group">
+                            <div class="nav-menu-item nav-menu-has-sub" id="nav-dgc-parent-item">
+                                <a href="index.html" class="nav-menu-parent-link" style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
+                                    <i data-lucide="building-2" style="width:13px;height:13px;"></i>
+                                    Dirección General de Concesiones (DGC)
+                                </a>
+                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon" style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
+                            </div>
+                            <div class="nav-submenu" id="nav-dgc-submenu">
+                                <a class="nav-submenu-item" href="index.html">
+                                    <i data-lucide="map" style="width:13px;height:13px;"></i> Mapa
+                                </a>
+                                <a class="nav-submenu-item" href="index.html#timeline">
+                                    <i data-lucide="clock" style="width:13px;height:13px;"></i> Líneas de Tiempo
+                                </a>
+                                <a class="nav-submenu-item" href="index.html#investment">
+                                    <i data-lucide="line-chart" style="width:13px;height:13px;"></i> Gráficos de Inversión
+                                </a>
+                                <a class="nav-submenu-item" href="index.html#bidders">
+                                    <i data-lucide="users" style="width:13px;height:13px;"></i> Análisis de Oferentes
+                                </a>
+                            </div>
+                        </div>
+                        <a class="nav-menu-item" href="EFE.html">
+                            <i data-lucide="train-front" style="width:13px;height:13px;"></i>
+                            Empresas de Ferrocarriles del Estado (EFE)
+                        </a>
+                        <!-- Group MOP -->
+                        <div class="nav-menu-group" id="nav-mop-group">
+                            <div class="nav-menu-item nav-menu-has-sub active" id="nav-mop-parent-item">
+                                <a href="MOP.html" id="nav-mop-main-link" class="nav-menu-parent-link" style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
+                                    <i data-lucide="hard-hat" style="width:13px;height:13px;"></i>
+                                    Ministerio de Obras Públicas (MOP)
+                                </a>
+                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon" style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
+                            </div>
+                            <div class="nav-submenu" id="nav-mop-submenu">
+                                <a class="nav-submenu-item" id="nav-mop-sub-resumen" href="MOP.html#resumen">
+                                    <i data-lucide="layout-dashboard" style="width:13px;height:13px;"></i> Resumen General
+                                </a>
+                                <a class="nav-submenu-item" id="nav-mop-sub-inversion" href="MOP.html#inversion">
+                                    <i data-lucide="bar-chart-2" style="width:13px;height:13px;"></i> Inversión por Región
+                                </a>
+                                <a class="nav-submenu-item" id="nav-mop-sub-programas" href="MOP.html#programas">
+                                    <i data-lucide="layers" style="width:13px;height:13px;"></i> Programas y Etapas
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ═══════════════════════════════ SUBHEADER TABS -->
+        <div class="view-subheader mop-tabs">
+            <button class="view-tab-btn active" data-mop-view="resumen" id="btn-mop-resumen">
+                <i data-lucide="layout-dashboard" style="width:14px;height:14px;"></i>
+                <span>Resumen General</span>
+            </button>
+            <button class="view-tab-btn" data-mop-view="inversion" id="btn-mop-inversion">
+                <i data-lucide="bar-chart-2" style="width:14px;height:14px;"></i>
+                <span>Inversión por Región</span>
+            </button>
+            <button class="view-tab-btn" data-mop-view="programas" id="btn-mop-programas">
+                <i data-lucide="layers" style="width:14px;height:14px;"></i>
+                <span>Programas y Etapas</span>
+            </button>
+        </div>
+
+        <!-- ═══════════════════════════════ MAIN CONTENT -->
+        <main class="dashboard-content">
+
+            <div class="mop-grid">
+
+                <!-- ─── LEFT PANEL: Filters + Dual Donut Service Analytics (PERSISTENT ACROSS ALL VIEWS) ── -->
+                <section style="display:flex;flex-direction:column;gap:0.6rem;height:100%;min-height:0;overflow:hidden;">
+
+                    <!-- Search & Filter Card -->
+                    <div class="panel-card panel-card-filters" style="padding: 0.55rem 0.75rem; gap: 0.35rem; position: relative; z-index: 50; overflow: visible; flex-shrink: 0;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem;">
+                            <h2 class="panel-title" style="border: none; padding: 0; margin: 0; font-size: 0.8rem;">
+                                <i data-lucide="sliders-horizontal" style="width: 14px; height: 14px;"></i>
+                                Filtros & Búsqueda
+                            </h2>
+                        </div>
+
+                        <!-- Buscar -->
+                        <div class="form-group" style="gap: 0.15rem;">
+                            <label class="form-label" for="mop-search-input" style="font-size: 0.7rem;">Buscar Proyecto / Código BIP</label>
+                            <div class="search-wrapper">
+                                <i data-lucide="search" style="width: 13px; height: 13px;"></i>
+                                <input type="text" id="mop-search-input" class="form-input" placeholder="Nombre o código BIP..."
+                                    style="padding: 0.3rem 0.55rem 0.3rem 1.8rem; font-size: 0.76rem;">
+                            </div>
+                        </div>
+
+                        <!-- Región Geográfica Multi-Select Filter -->
+                        <div class="form-group" style="gap: 0.15rem; position: relative; z-index: 50;">
+                            <label class="form-label" style="font-size: 0.7rem;">Región Geográfica</label>
+                            <div class="custom-multiselect" id="mop-region-multiselect-container">
+                                <button type="button" class="form-input multiselect-trigger" id="mop-region-multiselect-btn"
+                                    style="padding: 0.3rem 0.55rem; font-size: 0.76rem;">
+                                    <span id="mop-region-multiselect-text">Todas las regiones</span>
+                                    <i data-lucide="chevron-down" style="width: 13px; height: 13px; margin-left: 0.35rem; flex-shrink: 0;"></i>
+                                </button>
+                                <div class="multiselect-dropdown" id="mop-region-multiselect-dropdown" style="display: none;">
+                                    <div class="multiselect-actions">
+                                        <label class="multiselect-option select-all-option" style="padding: 0.2rem 0; font-weight: 700;">
+                                            <input type="checkbox" id="mop-region-check-all">
+                                            <span>(Seleccionar Todas)</span>
+                                        </label>
+                                    </div>
+                                    <div class="multiselect-options-list" id="mop-region-options-list"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Servicio MOP Multi-Select Filter -->
+                        <div class="form-group" style="gap: 0.15rem; position: relative; z-index: 40;">
+                            <label class="form-label" style="font-size: 0.7rem;">Servicio MOP</label>
+                            <div class="custom-multiselect" id="mop-servicio-multiselect-container">
+                                <button type="button" class="form-input multiselect-trigger" id="mop-servicio-multiselect-btn"
+                                    style="padding: 0.3rem 0.55rem; font-size: 0.76rem;">
+                                    <span id="mop-servicio-multiselect-text">Todos los servicios</span>
+                                    <i data-lucide="chevron-down" style="width: 13px; height: 13px; margin-left: 0.35rem; flex-shrink: 0;"></i>
+                                </button>
+                                <div class="multiselect-dropdown" id="mop-servicio-multiselect-dropdown" style="display: none;">
+                                    <div class="multiselect-actions">
+                                        <label class="multiselect-option select-all-option" style="padding: 0.2rem 0; font-weight: 700;">
+                                            <input type="checkbox" id="mop-servicio-check-all">
+                                            <span>(Seleccionar Todos)</span>
+                                        </label>
+                                    </div>
+                                    <div class="multiselect-options-list" id="mop-servicio-options-list"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Etapa Multi-Select Filter -->
+                        <div class="form-group" style="gap: 0.15rem; position: relative; z-index: 30;">
+                            <label class="form-label" style="font-size: 0.7rem;">Etapa del Proyecto</label>
+                            <div class="custom-multiselect" id="mop-etapa-multiselect-container">
+                                <button type="button" class="form-input multiselect-trigger" id="mop-etapa-multiselect-btn"
+                                    style="padding: 0.3rem 0.55rem; font-size: 0.76rem;">
+                                    <span id="mop-etapa-multiselect-text">Todas las etapas</span>
+                                    <i data-lucide="chevron-down" style="width: 13px; height: 13px; margin-left: 0.35rem; flex-shrink: 0;"></i>
+                                </button>
+                                <div class="multiselect-dropdown" id="mop-etapa-multiselect-dropdown" style="display: none;">
+                                    <div class="multiselect-actions">
+                                        <label class="multiselect-option select-all-option" style="padding: 0.2rem 0; font-weight: 700;">
+                                            <input type="checkbox" id="mop-etapa-check-all">
+                                            <span>(Seleccionar Todas)</span>
+                                        </label>
+                                    </div>
+                                    <div class="multiselect-options-list" id="mop-etapa-options-list"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Restablecer & Exportar Filtros -->
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.15rem;">
+                            <button class="btn-reset" id="mop-btn-reset"
+                                style="padding: 0.28rem 0.4rem; font-size: 0.72rem; justify-content: center; width: 100%;">
+                                <i data-lucide="rotate-ccw" style="width: 12px; height: 12px;"></i>
+                                Restablecer Filtros
+                            </button>
+                            <button class="btn-reset" id="mop-btn-export-excel"
+                                style="padding: 0.28rem 0.4rem; font-size: 0.72rem; justify-content: center; width: 100%; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); color: #10b981; font-weight: 600; cursor: pointer; transition: all 0.15s ease;"
+                                title="Descargar cartera de proyectos MOP en Excel (.xlsx)">
+                                <i data-lucide="file-spreadsheet" style="width: 12px; height: 12px;"></i>
+                                Exportar a Excel (.xlsx)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Analytics Charts Card (Dual Charts: Proyectos & Inversión por Servicio) -->
+                    <div class="panel-card panel-card-analytics"
+                        style="padding: 0.55rem 0.75rem; gap: 0.25rem; flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
+                        <h2 class="panel-title"
+                            style="font-size: 0.82rem; padding-bottom: 0.25rem; border-bottom: 1px solid var(--border-color); margin-bottom: 0.15rem;">
+                            <i data-lucide="pie-chart" style="width: 14px; height: 14px;"></i>
+                            Análisis Rápido
+                        </h2>
+
+                        <!-- Chart 1: Distribución por Servicio (Nº Proyectos) -->
+                        <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 0.15rem;">
+                            <div
+                                style="font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: flex; align-items: center; gap: 0.3rem;">
+                                <i data-lucide="pie-chart" style="width: 12px; height: 12px; color: var(--primary);"></i>
+                                Distribución por Servicio
+                            </div>
+                            <div
+                                style="flex: 1; min-height: 0; display: flex; align-items: center; gap: 0.4rem; position: relative;">
+                                <div
+                                    style="width: 72px; height: 72px; min-width: 72px; flex-shrink: 0; position: relative; margin: auto 0;">
+                                    <canvas id="chart-servicio"></canvas>
+                                </div>
+                                <div id="mopServicioChartLegend"
+                                    style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.05rem; overflow: hidden;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chart 2: Costo Total por Servicio (Inversión MM$) -->
+                        <div
+                            style="flex: 1.1; min-height: 0; display: flex; flex-direction: column; gap: 0.15rem; border-top: 1px solid var(--border-color); padding-top: 0.3rem;">
+                            <div
+                                style="font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: flex; align-items: center; gap: 0.3rem;">
+                                <i data-lucide="bar-chart-2" style="width: 12px; height: 12px; color: var(--primary);"></i>
+                                Inversión por Servicio
+                            </div>
+                            <div
+                                style="flex: 1; min-height: 0; display: flex; align-items: center; gap: 0.4rem; position: relative;">
+                                <div
+                                    style="width: 72px; height: 72px; min-width: 72px; flex-shrink: 0; position: relative; margin: auto 0;">
+                                    <canvas id="chart-servicio-cost"></canvas>
+                                </div>
+                                <div id="mopServicioCostChartLegend"
+                                    style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.05rem; overflow: hidden;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </section>
+
+                <!-- ─── RIGHT CONTENT AREA: Dynamic View Container (Switches with Tabs) ── -->
+                <section style="display:flex;flex-direction:column;height:100%;min-height:0;overflow:hidden;">
+
+                    <!-- ── TAB 1: Resumen General (Active View) ────────────────── -->
+                    <div class="mop-view-container" data-mop-view="resumen" style="display:flex;flex-direction:column;gap:0.5rem;height:100%;min-height:0;overflow:hidden;">
+                        <!-- Título Principal (Texto plano, grande, sin contenedor) -->
+                        <div style="flex-shrink: 0; padding: 0.15rem 0.1rem 0.15rem 0.1rem;">
+                            <h1 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin: 0; line-height: 1.35; letter-spacing: -0.01em;">
+                                Proyectos del MOP actualmente en ejecución y planificados para los próximos 5 años
+                            </h1>
+                        </div>
+
+                        <!-- KPI Row (Aligned with index.html styles) -->
+                        <div class="mop-kpi-row" aria-label="Indicadores Clave">
+                            <!-- 1. Proyectos -->
+                            <div class="card-kpi" id="kpi-total-projects">
+                                <div class="kpi-icon"><i data-lucide="file-text"></i></div>
+                                <div class="kpi-val-container">
+                                    <span class="kpi-label">Proyectos Totales</span>
+                                    <span class="kpi-value kpi-val" id="kpi-val-projects">—</span>
+                                </div>
+                            </div>
+
+                            <!-- 2. Costo Total de Proyectos -->
+                            <div class="card-kpi" id="kpi-total-cost">
+                                <div class="kpi-icon"><i data-lucide="trending-up"></i></div>
+                                <div class="kpi-val-container">
+                                    <span class="kpi-label">Inversión Total (MM CLP)</span>
+                                    <span class="kpi-value kpi-val" id="kpi-val-cost" style="font-size: 0.95rem;">—</span>
+                                </div>
+                            </div>
+
+                            <!-- 3. Servicio Principal -->
+                            <div class="card-kpi" id="kpi-top-servicio">
+                                <div class="kpi-icon"><i data-lucide="building-2"></i></div>
+                                <div class="kpi-val-container">
+                                    <span class="kpi-label">Servicio Principal</span>
+                                    <span class="kpi-value kpi-val" id="kpi-val-servicio" style="font-size: 0.82rem; line-height: 1.25;">—</span>
+                                </div>
+                            </div>
+
+                            <!-- 4. En Ejecución -->
+                            <div class="card-kpi" id="kpi-en-ejecucion">
+                                <div class="kpi-icon"><i data-lucide="activity"></i></div>
+                                <div class="kpi-val-container">
+                                    <span class="kpi-label">En Ejecución</span>
+                                    <span class="kpi-value kpi-val" id="kpi-val-ejecucion">—</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TABLA GLOBAL DE PROYECTOS MOP (Vista de Tabla Completa) -->
+                        <div id="mop-table-view-container" class="panel-card" style="flex:1; min-height:0; display:flex; flex-direction:column; overflow:hidden; padding: 0;">
+
+                            <!-- Table Scroll Container -->
+                            <div class="mop-table-container custom-scrollbar">
+                                <table class="mop-data-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 32px; text-align: center;">#</th>
+                                            <th class="mop-sortable" data-sort="nombre">
+                                                Nombre Proyecto <span class="mop-sort-icon">⇅</span>
+                                            </th>
+                                            <th class="mop-sortable" data-sort="bip">
+                                                Código BIP <span class="mop-sort-icon">⇅</span>
+                                            </th>
+                                            <th class="mop-sortable" data-sort="region">
+                                                Región <span class="mop-sort-icon">⇅</span>
+                                            </th>
+                                            <th class="mop-sortable" data-sort="servicio">
+                                                Servicio <span class="mop-sort-icon">⇅</span>
+                                            </th>
+                                            <th class="mop-sortable" data-sort="programa">
+                                                Programa <span class="mop-sort-icon">⇅</span>
+                                            </th>
+                                            <th class="mop-sortable" data-sort="etapa">
+                                                Etapa <span class="mop-sort-icon">⇅</span>
+                                            </th>
+                                            <th class="mop-sortable active-sort" data-sort="cost_mm" style="text-align: right;">
+                                                Inversión (MM CLP) <span class="mop-sort-icon">↓</span>
+                                            </th>
+                                            <th class="mop-sortable" data-sort="year" style="text-align: center;">
+                                                1ª Post. <span class="mop-sort-icon">⇅</span>
+                                            </th>
+                                            <th class="mop-sortable" data-sort="year_ult" style="text-align: center;">
+                                                Últ. Post. <span class="mop-sort-icon">⇅</span>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="mop-global-table-tbody">
+                                        <tr>
+                                            <td colspan="10" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                                                Cargando proyectos...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Table Pagination Footer Bar -->
+                            <div class="mop-pagination">
+                                <div style="color: var(--text-secondary);" id="mop-table-page-info">
+                                    Página 1 de 1
+                                </div>
+                                <div style="display: flex; gap: 0.35rem;" id="mop-table-pagination-btns">
+                                    <button class="btn-reset" id="mop-table-prev-btn" style="padding: 0.2rem 0.55rem; font-size: 0.68rem; display: flex; align-items: center; gap: 0.25rem;" disabled>
+                                        <i data-lucide="chevron-left" style="width: 12px; height: 12px;"></i> Anterior
+                                    </button>
+                                    <button class="btn-reset" id="mop-table-next-btn" style="padding: 0.2rem 0.55rem; font-size: 0.68rem; display: flex; align-items: center; gap: 0.25rem;">
+                                        Siguiente <i data-lucide="chevron-right" style="width: 12px; height: 12px;"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- FICHA DETALLADA DEL PROYECTO MOP (Reemplazo dinámico de la tabla) -->
+                        <div id="mop-project-detail-container" class="panel-card" style="flex:1; min-height:0; display:none; flex-direction:column; overflow:hidden; padding: 0.65rem 0.85rem; gap: 0.5rem;">
+                            <!-- Se llena dinámicamente al hacer clic en un proyecto -->
+                        </div>
+                    </div>
+
+                    <!-- ── TAB 2: Inversión por Región & Proyectos por Región ────────── -->
+                    <div class="mop-view-container hidden" data-mop-view="inversion" style="display: flex; flex-direction: column; height: 100%; min-height: 0;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; height: 100%; min-height: 0;">
+                            <!-- Chart 1: Inversión por Región -->
+                            <div class="panel-card" style="padding: 0.75rem; display: flex; flex-direction: column; height: 100%; min-height: 0;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.35rem; margin-bottom: 0.35rem; flex-shrink: 0;">
+                                    <h3 class="panel-title" style="font-size:0.8rem;">
+                                        <i data-lucide="bar-chart-2" style="width:14px;height:14px;color:#3b82f6;"></i>
+                                        Inversión Acumulada por Región (Millones CLP)
+                                    </h3>
+                                </div>
+                                <div class="chart-wrap" style="flex:1; position:relative; min-height:0;">
+                                    <canvas id="chart-region"></canvas>
+                                </div>
+                            </div>
+                            <!-- Chart 2: Proyectos por Región (Reemplazo de Evolución Anual) -->
+                            <div class="panel-card" style="padding: 0.75rem; display: flex; flex-direction: column; height: 100%; min-height: 0;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.35rem; margin-bottom: 0.35rem; flex-shrink: 0;">
+                                    <h3 class="panel-title" style="font-size:0.8rem;">
+                                        <i data-lucide="layers" style="width:14px;height:14px;color:#10b981;"></i>
+                                        Número de Proyectos por Región
+                                    </h3>
+                                </div>
+                                <div class="chart-wrap" style="flex:1; position:relative; min-height:0;">
+                                    <canvas id="chart-region-count"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── TAB 3: Programas y Etapas + Evolución Anual ────────────────── -->
+                    <div class="mop-view-container hidden" data-mop-view="programas" style="display: flex; flex-direction: column; height: 100%; min-height: 0;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 0.6rem; height: 100%; min-height: 0;">
+                            <!-- Chart 1: Proyectos por Etapa -->
+                            <div class="panel-card" style="padding: 0.75rem; display: flex; flex-direction: column; height: 100%; min-height: 0;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.35rem; margin-bottom: 0.35rem; flex-shrink: 0;">
+                                    <h3 class="panel-title" style="font-size:0.8rem;">
+                                        <i data-lucide="git-commit-vertical" style="width:14px;height:14px;color:#f97316;"></i>
+                                        Proyectos por Etapa del Ciclo de Vida
+                                    </h3>
+                                </div>
+                                <div class="chart-wrap" style="flex:1; position:relative; min-height:0;">
+                                    <canvas id="chart-etapa-tab"></canvas>
+                                </div>
+                            </div>
+                            <!-- Chart 2: Top Programas -->
+                            <div class="panel-card" style="padding: 0.75rem; display: flex; flex-direction: column; height: 100%; min-height: 0;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.35rem; margin-bottom: 0.35rem; flex-shrink: 0;">
+                                    <h3 class="panel-title" style="font-size:0.8rem;">
+                                        <i data-lucide="trophy" style="width:14px;height:14px;color:#f59e0b;"></i>
+                                        Top Programas MOP por Inversión
+                                    </h3>
+                                </div>
+                                <div class="chart-wrap" style="flex:1; position:relative; min-height:0;">
+                                    <canvas id="chart-programa-tab"></canvas>
+                                </div>
+                            </div>
+                            <!-- Chart 3: Evolución Anual (Traspasado a esta visualización) -->
+                            <div class="panel-card" style="grid-column: span 2; padding: 0.75rem; display: flex; flex-direction: column; height: 100%; min-height: 0;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.35rem; margin-bottom: 0.35rem; flex-shrink: 0;">
+                                    <h3 class="panel-title" style="font-size:0.8rem;">
+                                        <i data-lucide="trending-up" style="width:14px;height:14px;color:#10b981;"></i>
+                                        Evolución Anual (Primera Postulación)
+                                    </h3>
+                                </div>
+                                <div class="chart-wrap" style="flex:1; position:relative; min-height:0;">
+                                    <canvas id="chart-year"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </section>
+            </div>
+
+        </main>
+
+        <!-- ═══════════════════════════════ FOOTER (identical to index.html) -->
+        <footer class="app-footer">
+            <div class="app-footer-left">
+                <span class="app-footer-divider"></span>
+                <span class="app-footer-text">Desarrollado por: Jose Oliveros, Vicente Pérez</span>
+            </div>
+            <div class="app-footer-right">
+                <img src="logo/Escudo_udec.gif" alt="Escudo UdeC"
+                    style="height:18px;width:auto;margin-right:0.35rem;vertical-align:middle;display:inline-block;">
+                <span class="app-footer-text">Universidad de Concepción &nbsp;·&nbsp; Facultad de Ingeniería</span>
+            </div>
+        </footer>
+
+    </div><!-- /app-container -->
+
+    <!-- MOP chart logic -->
+    <script src="static/js/MOP/charts.js"></script>
+
+    <!-- Nav Menu JS (exact copy from index.html) -->
+    <script>
+        (function () {
+            const navBtn      = document.getElementById('nav-menu-btn');
+            const navDropdown = document.getElementById('nav-menu-dropdown');
+            const navDgcGroup = document.getElementById('nav-dgc-group');
+            const navMopGroup = document.getElementById('nav-mop-group');
+            let dgcTimeout    = null;
+            let mopTimeout    = null;
+
+            if (navBtn && navDropdown) {
+                navBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    navDropdown.classList.toggle('open');
+                    navBtn.setAttribute('aria-expanded', navDropdown.classList.contains('open'));
+                });
+                document.addEventListener('click', function () {
+                    navDropdown.classList.remove('open');
+                    if (navDgcGroup) navDgcGroup.classList.remove('open');
+                    if (navMopGroup) navMopGroup.classList.remove('open');
+                });
+                navDropdown.addEventListener('click', function (e) { e.stopPropagation(); });
+            }
+
+            // DGC hover & chevron click
+            if (navDgcGroup) {
+                const dgcTrigger = navDgcGroup.querySelector('.nav-submenu-trigger-icon');
+                if (dgcTrigger) {
+                    dgcTrigger.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        navDgcGroup.classList.toggle('open');
+                    });
+                }
+
+                navDgcGroup.addEventListener('mouseenter', function () {
+                    if (dgcTimeout) clearTimeout(dgcTimeout);
+                    navDgcGroup.classList.add('open');
+                });
+                navDgcGroup.addEventListener('mouseleave', function () {
+                    dgcTimeout = setTimeout(function () {
+                        navDgcGroup.classList.remove('open');
+                    }, 250);
+                });
+            }
+
+            // MOP hover, parent click & submenu links
+            if (navMopGroup) {
+                const mopMainLink = document.getElementById('nav-mop-main-link');
+                if (mopMainLink) {
+                    mopMainLink.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        if (typeof window.switchMOPTab === 'function') window.switchMOPTab('resumen');
+                        navDropdown.classList.remove('open');
+                        navMopGroup.classList.remove('open');
+                    });
+                }
+
+                const mopTrigger = navMopGroup.querySelector('.nav-submenu-trigger-icon');
+                if (mopTrigger) {
+                    mopTrigger.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        navMopGroup.classList.toggle('open');
+                    });
+                }
+
+                navMopGroup.addEventListener('mouseenter', function () {
+                    if (mopTimeout) clearTimeout(mopTimeout);
+                    navMopGroup.classList.add('open');
+                });
+                navMopGroup.addEventListener('mouseleave', function () {
+                    mopTimeout = setTimeout(function () {
+                        navMopGroup.classList.remove('open');
+                    }, 250);
+                });
+
+                // MOP submenu item direct switching without reload
+                const subRes = document.getElementById('nav-mop-sub-resumen');
+                const subInv = document.getElementById('nav-mop-sub-inversion');
+                const subPrg = document.getElementById('nav-mop-sub-programas');
+                if (subRes) {
+                    subRes.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        if (typeof window.switchMOPTab === 'function') window.switchMOPTab('resumen');
+                        navDropdown.classList.remove('open');
+                        navMopGroup.classList.remove('open');
+                    });
+                }
+                if (subInv) {
+                    subInv.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        if (typeof window.switchMOPTab === 'function') window.switchMOPTab('inversion');
+                        navDropdown.classList.remove('open');
+                        navMopGroup.classList.remove('open');
+                    });
+                }
+                if (subPrg) {
+                    subPrg.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        if (typeof window.switchMOPTab === 'function') window.switchMOPTab('programas');
+                        navDropdown.classList.remove('open');
+                        navMopGroup.classList.remove('open');
+                    });
+                }
+            }
+        })();
+
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        });
+    </script>
+
+</body>
+</html>

@@ -268,6 +268,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Export to Excel
+    const efeBtnExportExcel = document.getElementById('efe-btn-export-excel');
+    if (efeBtnExportExcel) {
+        efeBtnExportExcel.addEventListener('click', () => {
+            if (typeof exportEFEToExcel === 'function') {
+                exportEFEToExcel();
+            }
+        });
+    }
+
     // Reset map
     if (efeBtnResetMap) {
         efeBtnResetMap.addEventListener('click', () => {
@@ -275,3 +285,4 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+

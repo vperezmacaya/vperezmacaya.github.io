@@ -587,6 +587,12 @@ let chartInvShareRegionInstance = null;
 let chartActiveContractsYearInstance = null;
 let chartActiveInvYearInstance = null;
 
+// Bidders analytics chart instances
+let chartBiddersHistogramInstance = null;
+let chartBiddersPieInstance = null;
+let chartTopCompaniesInstance = null;
+
+
 
 function initTimelineEvents() {
     const closeBtn = document.getElementById('btn-close-timeline');

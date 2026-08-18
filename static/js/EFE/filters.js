@@ -308,5 +308,62 @@ function efeFetchData() {
         efeUpdateAnalyticsCharts(filtered);
     }
 
+    currentFilteredEFEProjects = filtered;
     efeUpdateMapBadge(filtered.length, totalAll);
 }
+
+let currentFilteredEFEProjects = [];
+
+/**
+ * Exporta la base de datos de proyectos ferroviarios EFE a Excel (.xlsx)
+ * con todas las columnas originales y resumen de métricas.
+ */
+function exportEFEToExcel() {
+    if (typeof XLSX === 'undefined') {
+        alert('La librería SheetJS (XLSX) no se encuentra disponible.');
+        return;
+    }
+
+    const projects = (currentFilteredEFEProjects && currentFilteredEFEProjects.length > 0)
+        ? currentFilteredEFEProjects
+        : ((window.EFE_DATA && window.EFE_DATA.data) ? window.EFE_DATA.data : []);
+
+    if (!projects || projects.length === 0) {
+        alert('No hay proyectos de EFE para exportar con los filtros seleccionados.');
+        return;
+    }
+
+    const dataRows = projects.map(p => ({
+        "Nombre del Proyecto": p.name || '',
+        "Región": p.region || '',
+        "Filial EFE": p.filial || 'EFE Corporativo / Nacional',
+        "Inversión Estimada (USD)": p.investment_usd != null ? p.investment_usd : '',
+        "Inversión Formateada": p.investment_usd != null ? efeFormatUSD(p.investment_usd) : 'No informada',
+        "Descripción Completa": p.description || '',
+        "Fuente Oficial": p.source || 'https://www.efe.cl/proyectos/'
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(dataRows);
+
+    if (dataRows.length > 0) {
+        const colKeys = Object.keys(dataRows[0]);
+        ws['!cols'] = colKeys.map(key => {
+            let maxLen = key.length;
+            for (let i = 0; i < Math.min(dataRows.length, 30); i++) {
+                const val = dataRows[i][key];
+                if (val != null) {
+                    const strLen = String(val).length;
+                    if (strLen > maxLen) maxLen = strLen;
+                }
+            }
+            return { wch: Math.min(Math.max(maxLen + 2, 14), 50) };
+        });
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Proyectos_EFE");
+
+    const today = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `CATLEC_EFE_Proyectos_${today}.xlsx`);
+}
+

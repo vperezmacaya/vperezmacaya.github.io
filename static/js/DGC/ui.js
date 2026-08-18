@@ -1,21 +1,25 @@
 function setActiveSubheaderTab(activeId) {
     const btnMap = document.getElementById('btn-view-map');
-    const btnTl = document.getElementById('btn-view-timeline');
+    const btnTl  = document.getElementById('btn-view-timeline');
     const btnInv = document.getElementById('btn-view-investment');
+    const btnBid = document.getElementById('btn-view-bidders');
     if (btnMap) btnMap.classList.toggle('active', activeId === 'map');
-    if (btnTl) btnTl.classList.toggle('active', activeId === 'timeline');
+    if (btnTl)  btnTl.classList.toggle('active', activeId === 'timeline');
     if (btnInv) btnInv.classList.toggle('active', activeId === 'investment');
+    if (btnBid) btnBid.classList.toggle('active', activeId === 'bidders');
 }
 
 function initSubheaderViewSwitcher() {
     const btnMap = document.getElementById('btn-view-map');
-    const btnTl = document.getElementById('btn-view-timeline');
+    const btnTl  = document.getElementById('btn-view-timeline');
     const btnInv = document.getElementById('btn-view-investment');
+    const btnBid = document.getElementById('btn-view-bidders');
 
     if (btnMap) {
         btnMap.addEventListener('click', () => {
             if (typeof hideTimelineView === 'function') hideTimelineView();
             if (typeof hideInvestmentView === 'function') hideInvestmentView();
+            if (typeof hideBiddersView === 'function') hideBiddersView();
             setActiveSubheaderTab('map');
         });
     }
@@ -23,6 +27,7 @@ function initSubheaderViewSwitcher() {
     if (btnTl) {
         btnTl.addEventListener('click', () => {
             if (typeof hideInvestmentView === 'function') hideInvestmentView();
+            if (typeof hideBiddersView === 'function') hideBiddersView();
             if (typeof showTimelineView === 'function') showTimelineView();
             setActiveSubheaderTab('timeline');
         });
@@ -31,8 +36,18 @@ function initSubheaderViewSwitcher() {
     if (btnInv) {
         btnInv.addEventListener('click', () => {
             if (typeof hideTimelineView === 'function') hideTimelineView();
+            if (typeof hideBiddersView === 'function') hideBiddersView();
             if (typeof showInvestmentView === 'function') showInvestmentView();
             setActiveSubheaderTab('investment');
+        });
+    }
+
+    if (btnBid) {
+        btnBid.addEventListener('click', () => {
+            if (typeof hideTimelineView === 'function') hideTimelineView();
+            if (typeof hideInvestmentView === 'function') hideInvestmentView();
+            if (typeof showBiddersView === 'function') showBiddersView();
+            setActiveSubheaderTab('bidders');
         });
     }
 }
@@ -169,6 +184,13 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchData();
     });
 
+    const btnExportExcel = document.getElementById('btn-export-excel');
+    if (btnExportExcel) {
+        btnExportExcel.addEventListener('click', () => {
+            exportDGCToExcel();
+        });
+    }
+
     btnResetMap.addEventListener('click', () => {
         if (leafletMap) {
             leafletMap.setView([-37.6751, -71.5430], 4.0);
@@ -224,6 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize Timeline view events
     initTimelineEvents();
     initInvestmentEvents();
+    initBiddersEvents();
 });
 
 function updateDetailNavButtons(code) {
@@ -349,6 +372,7 @@ function renderTable(contracts) {
 function showTableListView() {
     if (projectDetailView) projectDetailView.style.display = 'none';
     if (tableContainerView) tableContainerView.style.display = 'flex';
+    if (detailViewBody) detailViewBody.scrollTop = 0;
 }
 
 async function showProjectDetailView(code) {
@@ -356,7 +380,13 @@ async function showProjectDetailView(code) {
     const cleanCode = code.toString().trim();
 
     if (tableContainerView) tableContainerView.style.display = 'none';
-    if (projectDetailView) projectDetailView.style.display = 'flex';
+    if (projectDetailView) {
+        projectDetailView.style.display = 'flex';
+        projectDetailView.scrollTop = 0;
+    }
+    if (detailViewBody) {
+        detailViewBody.scrollTop = 0;
+    }
 
     updateDetailNavButtons(cleanCode);
 
@@ -371,6 +401,7 @@ async function showProjectDetailView(code) {
                     <span>Cargando detalle del proyecto...</span>
                 </div>
             `;
+            detailViewBody.scrollTop = 0;
             lucide.createIcons();
         }
         try {
@@ -463,18 +494,25 @@ function renderProjectDetailBody(cleanCode, item) {
         `;
     }
 
-    // Build bidders HTML section
+    // Build bidders HTML section (Contenedores por oferente con desglose de consorcio)
     const biddersList = (item && item.bidders) || (projectMetadata[cleanCode] && projectMetadata[cleanCode].bidders) || [];
     let biddersHTML = '';
     if (biddersList && biddersList.length > 0) {
         const bidderItems = biddersList.map(b => {
             const isAwarded = b.adjudicado || (b.adjudicado_raw && b.adjudicado_raw.toUpperCase().startsWith('S'));
             const badge = isAwarded
-                ? `<span class="badge badge-success" style="font-size: 0.64rem; padding: 0.1rem 0.35rem; font-weight: 600; flex-shrink: 0;"><i data-lucide="award" style="width: 10px; height: 10px; margin-right: 2px;"></i>Adjudicado</span>`
+                ? `<span class="badge badge-success" style="font-size: 0.62rem; padding: 0.1rem 0.35rem; font-weight: 600; flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.2rem;"><i data-lucide="award" style="width: 10px; height: 10px;"></i>Adjudicado</span>`
                 : '';
+            const empresasFmt = b.empresas
+                ? b.empresas.split(';').map(s => s.trim()).filter(Boolean).join(' - ')
+                : '';
+
             return `
-                <li style="padding: 0.35rem 0.5rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.74rem; display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; margin-bottom: 0.3rem;">
-                    <span style="font-weight: 600; color: var(--text-primary); word-break: break-word;">${b.name}</span>
+                <li style="padding: 0.4rem 0.55rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.74rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 0.45rem; margin-bottom: 0.3rem;">
+                    <div style="display: flex; flex-direction: column; min-width: 0; flex: 1;">
+                        <span style="font-weight: 600; color: var(--text-primary); word-break: break-word; line-height: 1.35;">${b.name}</span>
+                        ${empresasFmt ? `<span style="font-size: 0.65rem; color: var(--text-muted); line-height: 1.25; margin-top: 0.15rem;">${empresasFmt}</span>` : ''}
+                    </div>
                     ${badge}
                 </li>
             `;
@@ -592,6 +630,17 @@ function renderProjectDetailBody(cleanCode, item) {
         `;
     }
 
+    const presVal = item && (item['Presupuesto oficial estimado'] || item['Presupuesto oficial']);
+    const presCurrency = (item && item['Moneda']) ? item['Moneda'] : 'UF';
+    const presText = (presVal != null && !isNaN(presVal) && Number(presVal) > 0)
+        ? `${formatUFComplete(presVal)} ${presCurrency}`
+        : 'No informado';
+
+    const invVal = item && item['Inversión Materializada estimada'];
+    const invText = (invVal != null && !isNaN(invVal) && Number(invVal) > 0)
+        ? `${formatUFComplete(invVal)} UF`
+        : 'No informada';
+
     if (detailViewBody) {
         detailViewBody.innerHTML = `
             <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.1rem;">
@@ -624,8 +673,11 @@ function renderProjectDetailBody(cleanCode, item) {
                     <span class="detail-label">Región:</span>
                     <span class="detail-value">${formatRegionCell(item && item['Región geográfica'])}</span>
 
+                    <span class="detail-label">Presupuesto:</span>
+                    <span class="detail-value">${presText}</span>
+
                     <span class="detail-label">Inversión:</span>
-                    <span class="detail-value">${item ? formatUFComplete(item['Inversión Materializada estimada']) + ' UF' : 'N/A'}</span>
+                    <span class="detail-value">${invText}</span>
 
                     <span class="detail-label">Plazo:</span>
                     <span class="detail-value">${(item && item['Plazo fijo / variable ']) || 'Indefinido'}</span>
@@ -650,6 +702,11 @@ function renderProjectDetailBody(cleanCode, item) {
                 ${linkMOP}
             </div>
         `;
+        detailViewBody.scrollTop = 0;
+    }
+
+    if (projectDetailView) {
+        projectDetailView.scrollTop = 0;
     }
 
     const btnViewTl = document.getElementById('btn-view-in-timeline');
@@ -686,5 +743,160 @@ function updatePaginationControls(pInfo) {
             btnNext.disabled = (pInfo.page >= pInfo.total_pages);
         }
     }
+}
+
+/**
+ * Exporta la base de datos de concesiones (completa o filtrada) a Excel (.xlsx)
+ * con TODAS las columnas originales y datos estructurados de oferentes.
+ */
+function exportDGCToExcel() {
+    if (typeof XLSX === 'undefined') {
+        alert('La librería SheetJS (XLSX) no se encuentra disponible.');
+        return;
+    }
+
+    const contracts = (typeof currentFilteredContractsList !== 'undefined' && currentFilteredContractsList.length > 0)
+        ? currentFilteredContractsList
+        : (window.STATIC_DATA ? window.STATIC_DATA.data : []);
+
+    if (!contracts || contracts.length === 0) {
+        alert('No hay concesiones disponibles para exportar con los filtros seleccionados.');
+        return;
+    }
+
+    // Mapear cada concesión con todas sus columnas originales y orden óptimo
+    const dataRows = contracts.map(p => {
+        // Extraer datos de oferentes de forma limpia
+        let adjudicadoName = '';
+        let tipoAdjudicado = '';
+        let empresasIntegrantes = '';
+        let todosOferentes = '';
+
+        if (Array.isArray(p.bidders) && p.bidders.length > 0) {
+            const adj = p.bidders.find(b => b.adjudicado === true || String(b.adjudicado_raw).toLowerCase().includes('si'));
+            if (adj) {
+                adjudicadoName = adj.name || '';
+                tipoAdjudicado = adj.consorcio ? 'Consorcio' : 'Empresa Única';
+                empresasIntegrantes = adj.empresas || '';
+            }
+            todosOferentes = p.bidders.map(b => b.name).filter(Boolean).join(' | ');
+        }
+
+        return {
+            "Código Proyecto": p["Código proyecto"] || "",
+            "Nombre Concesión Oficial": p["Nombre de la Concesión "] || p["Nombre de la Concesión"] || "",
+            "Nombre Uso Común": p["Nombre de uso común"] || "",
+            "N° Licitación": p["NUM_Lic"] != null ? p["NUM_Lic"] : "",
+            "Sector del Proyecto": p["Sector del proyecto"] || "",
+            "Región Geográfica": p["Región geográfica"] || "",
+            "Estado": p["ESTADO"] || "",
+            "Origen": p["Origen"] || "",
+            "Descripción": p["Descripción "] || p["Descripción"] || "",
+            "Presupuesto Oficial Estimado (UF)": p["Presupuesto oficial estimado"] != null ? p["Presupuesto oficial estimado"] : "",
+            "Inversión Materializada Estimada (UF)": p["Inversión Materializada estimada"] != null ? p["Inversión Materializada estimada"] : "",
+            "Moneda": p["Moneda"] || "UF",
+            "Método de Licitación": p["Metodo de licitación"] || "",
+            "Variable(s) de Licitación": p["Variable(s) de licitación"] || "",
+            "Fecha Declaración Interés Público": p["Fecha resolución declaración interes público"] || "",
+            "Fecha Llamado a Licitación": p["Fecha llamado a licitación"] || "",
+            "Fecha Recepción Ofertas": p["Fecha recepción ofertas"] || "",
+            "Fecha Apertura Económica": p["Fecha apertura económica"] || "",
+            "Fecha Decreto Adjudicación": p["Fecha decreto adjudicación"] || "",
+            "Fecha Publicación Decreto": p["Fecha publicación decreto adjudicación"] || "",
+            "Fecha Inicio Contrato": p["Fecha inicio del contrato de concesión"] || "",
+            "Fecha Término Estimada": p["Fecha término de la concesión"] || "",
+            "Plazo Fijo / Variable": p["Plazo fijo / variable "] || p["Plazo fijo / variable"] || "",
+            "Fecha Inicio de Obras": p["Fecha inicio de obras"] || "",
+            "Fecha Puesta Servicio Provisorio": p["Fecha puesta servicio provisorio"] || "",
+            "Fecha Puesta Servicio Definitivo": p["Fecha puesta servicio definitivo"] || "",
+            "% Avance Obras Físicas": p["% Avance obras físicas"] != null ? p["% Avance obras físicas"] : "",
+            "RUT Sociedad Concesionaria": p["Rut sociedad Concesionaria"] || "",
+            "Nombre Sociedad Concesionaria": p["Nombre sociedad concesionaria"] || "",
+            "Oferente Adjudicado": adjudicadoName,
+            "Tipo Adjudicatario": tipoAdjudicado,
+            "Empresas Integrantes": empresasIntegrantes,
+            "Todos los Oferentes Participantes": todosOferentes,
+            "Link Concesiones MOP": p["Link pagina web concesiones"] || "",
+            "Link CMF": p["Link a CMF de SC"] || ""
+        };
+    });
+
+    // 1. Crear Hoja Principal de Concesiones
+    const ws = XLSX.utils.json_to_sheet(dataRows);
+
+    // Ajuste automático de anchos de columna
+    if (dataRows.length > 0) {
+        const colKeys = Object.keys(dataRows[0]);
+        ws['!cols'] = colKeys.map(key => {
+            let maxLen = key.length;
+            for (let i = 0; i < Math.min(dataRows.length, 60); i++) {
+                const val = dataRows[i][key];
+                if (val != null) {
+                    const strLen = String(val).length;
+                    if (strLen > maxLen) maxLen = strLen;
+                }
+            }
+            return { wch: Math.min(Math.max(maxLen + 2, 12), 48) };
+        });
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Concesiones_DGC");
+
+    // 2. Hoja 2: Base de Datos de Oferentes de la Licitación
+    const bidderRows = [];
+    contracts.forEach(p => {
+        const projCode = p["Código proyecto"] || "";
+        const projName = p["Nombre de uso común"] || p["Nombre de la Concesión "] || "";
+        const sector = p["Sector del proyecto"] || "";
+        const region = p["Región geográfica"] || "";
+        const estado = p["ESTADO"] || "";
+
+        if (Array.isArray(p.bidders) && p.bidders.length > 0) {
+            p.bidders.forEach((b, idx) => {
+                const isAdj = (b.adjudicado === true || String(b.adjudicado_raw).trim().toUpperCase() === 'SI' || String(b.adjudicado_raw).trim().toUpperCase() === 'SÍ');
+                const isCons = (b.consorcio === true || String(b.consorcio_raw).trim().toUpperCase() === 'SI' || String(b.consorcio_raw).trim().toUpperCase() === 'SÍ' || String(b.consorcio_raw).trim().toUpperCase() === 'X');
+
+                bidderRows.push({
+                    "Código Proyecto": projCode,
+                    "Nombre Concesión": projName,
+                    "Sector del Proyecto": sector,
+                    "Región Geográfica": region,
+                    "Estado Concesión": estado,
+                    "N° Oferente": idx + 1,
+                    "Código Oferente": b.code || "",
+                    "Nombre Oferente / Consorcio": b.name || "",
+                    "¿Adjudicado?": isAdj ? "Sí" : "No",
+                    "¿Es Consorcio?": isCons ? "Sí" : "No",
+                    "Empresas Integrantes": b.empresas || "",
+                    "% Participación": b.pct || ""
+                });
+            });
+        }
+    });
+
+    if (bidderRows.length > 0) {
+        const wsBidders = XLSX.utils.json_to_sheet(bidderRows);
+        const colKeysBidders = Object.keys(bidderRows[0]);
+        wsBidders['!cols'] = colKeysBidders.map(key => {
+            let maxLen = key.length;
+            for (let i = 0; i < Math.min(bidderRows.length, 60); i++) {
+                const val = bidderRows[i][key];
+                if (val != null) {
+                    const strLen = String(val).length;
+                    if (strLen > maxLen) maxLen = strLen;
+                }
+            }
+            return { wch: Math.min(Math.max(maxLen + 2, 12), 50) };
+        });
+        XLSX.utils.book_append_sheet(wb, wsBidders, "Oferentes_Licitaciones");
+    } else {
+        const wsEmpty = XLSX.utils.json_to_sheet([{ "Mensaje": "No hay registro de oferentes para las concesiones seleccionadas" }]);
+        XLSX.utils.book_append_sheet(wb, wsEmpty, "Oferentes_Licitaciones");
+    }
+
+    // 3. Descargar archivo
+    const today = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `CATLEC_DGC_Concesiones_${today}.xlsx`);
 }
 

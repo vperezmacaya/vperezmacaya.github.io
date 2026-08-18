@@ -13,7 +13,9 @@ let appState = {
     selectedProjectCode: null, // track selected project for dimming
     hoveredProjectCode: null,  // track hovered project code
     timelineOpen: false,       // timeline panel visibility flag
-    investmentOpen: false
+    investmentOpen: false,
+    biddersOpen: false,        // bidders analytics panel visibility flag
+    topCompaniesMode: 'participaciones' // 'participaciones' | 'adjudicaciones'
 };
 
 // Chart references
