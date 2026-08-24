@@ -11,6 +11,8 @@ function showTimelineView() {
         appState.savedMapZoom = leafletMap.getZoom();
     }
     if (appState.investmentOpen) hideInvestmentView();
+    if (appState.contractsOpen) hideContractsView();
+    if (appState.biddersOpen) hideBiddersView();
     appState.timelineOpen = true;
     const grid = document.querySelector('.dashboard-grid');
     const centerPanel = document.querySelector('.center-panel');
@@ -41,7 +43,7 @@ function hideTimelineView(skipRestoreCenter) {
     if (centerPanel) { centerPanel.style.display = ''; }
     if (rightPanel) { rightPanel.style.display = ''; }
     if (tlPanel) { tlPanel.style.display = 'none'; }
-    if (typeof setActiveSubheaderTab === 'function' && !appState.investmentOpen) setActiveSubheaderTab('map');
+    if (typeof setActiveSubheaderTab === 'function' && !appState.investmentOpen && !appState.contractsOpen && !appState.biddersOpen) setActiveSubheaderTab('map');
 
     if (typeof leafletMap !== 'undefined' && leafletMap) {
         leafletMap.invalidateSize({ animate: false });
@@ -57,12 +59,14 @@ function getGroupEarliestStartDate(g) {
     if (!g || !g.segments || !g.segments.length) return Infinity;
     let earliest = Infinity;
     g.segments.forEach(seg => {
-        if (seg.start_date) {
-            const y = dateToYear(seg.start_date);
-            if (y !== null && y < earliest) {
-                earliest = y;
+        [seg.start_date, seg.tender_date, seg.adjudication_date].forEach(d => {
+            if (d) {
+                const y = dateToYear(d);
+                if (y !== null && y < earliest) {
+                    earliest = y;
+                }
             }
-        }
+        });
     });
     return earliest;
 }
@@ -93,7 +97,7 @@ function buildTimelineGroups(data) {
 
     const groupsList = Array.from(seen.values());
 
-    // ALWAYS sort from oldest to newest based on contract start date
+    // ALWAYS sort from oldest to newest based on contract start date / tender date
     groupsList.sort((a, b) => {
         const yearA = getGroupEarliestStartDate(a);
         const yearB = getGroupEarliestStartDate(b);
@@ -109,6 +113,57 @@ function renderTimeline(data, highlightCode = null) {
     const groups = buildTimelineGroups(data);
     const badge = document.getElementById('timeline-count-badge');
     if (badge) badge.textContent = `${groups.length} proyecto${groups.length !== 1 ? 's' : ''}`;
+
+    // ── Update Timeline KPI Banner ──────────────────────────────────────────
+    const durations = [];
+    const diffsLlamadoInicio = [];
+    const diffsAdjInicio = [];
+
+    const seenSegmentCodes = new Set();
+    groups.forEach(g => {
+        (g.segments || []).forEach(seg => {
+            if (seg.code && seenSegmentCodes.has(seg.code)) return;
+            if (seg.code) seenSegmentCodes.add(seg.code);
+
+            const startY = dateToYear(seg.start_date);
+            const endY = dateToYear(seg.end_date);
+            const tenderY = dateToYear(seg.tender_date);
+            const adjY = dateToYear(seg.adjudication_date);
+
+            if (startY !== null && endY !== null && endY > startY) {
+                durations.push(endY - startY);
+            }
+            if (tenderY !== null && startY !== null && startY > tenderY) {
+                diffsLlamadoInicio.push((startY - tenderY) * 12);
+            }
+            if (adjY !== null && startY !== null && startY >= adjY) {
+                diffsAdjInicio.push((startY - adjY) * 12);
+            }
+        });
+    });
+
+    const elDur = document.getElementById('kpi-timeline-duration');
+    const elLlamado = document.getElementById('kpi-timeline-llamado-inicio');
+    const elAdj = document.getElementById('kpi-timeline-adj-inicio');
+
+    if (elDur) {
+        elDur.textContent = durations.length > 0
+            ? `${(durations.reduce((a, b) => a + b, 0) / durations.length).toFixed(1)} años`
+            : '—';
+    }
+    if (elLlamado) {
+        elLlamado.textContent = diffsLlamadoInicio.length > 0
+            ? `${(diffsLlamadoInicio.reduce((a, b) => a + b, 0) / diffsLlamadoInicio.length).toFixed(1)} meses`
+            : '—';
+    }
+    if (elAdj) {
+        elAdj.textContent = diffsAdjInicio.length > 0
+            ? `${(diffsAdjInicio.reduce((a, b) => a + b, 0) / diffsAdjInicio.length).toFixed(1)} meses`
+            : '—';
+    }
+    if (typeof lucide !== 'undefined' && lucide.createIcons) {
+        lucide.createIcons();
+    }
 
     // Layout constants
     const SUBLANE_H = 11;  // height of each individual bar
@@ -146,7 +201,7 @@ function renderTimeline(data, highlightCode = null) {
     groups.forEach(g => {
         g.segments.forEach(seg => {
             [seg.start_date, seg.end_date,
-            seg.resolution_date, seg.adjudication_date].forEach(d => {
+            seg.resolution_date, seg.tender_date, seg.adjudication_date].forEach(d => {
                 const y = dateToYear(d);
                 if (y !== null) {
                     if (y < minYear) minYear = y;
@@ -401,6 +456,43 @@ function renderTimeline(data, highlightCode = null) {
                 }
             }
 
+            // Milestone circle: tender_date (Llamado a Licitación)
+            const tenderY = dateToYear(seg.tender_date);
+            if (tenderY !== null && tenderY >= minYear && tenderY <= maxYear) {
+                const tx = toPx(tenderY);
+                const ty = laneY + SUBLANE_H / 2;
+                const circTender = svgEl('circle', {
+                    cx: tx, cy: ty,
+                    r: MILESTONE_R,
+                    fill: '#64748b', stroke: '#ffffff', 'stroke-width': 1.5,
+                    style: 'cursor: pointer;'
+                });
+                circTender.addEventListener('mouseenter', (e) => {
+                    circTender.setAttribute('stroke-width', '2.5');
+                    circTender.setAttribute('r', (MILESTONE_R + 1.5).toString());
+                    circTender.setAttribute('fill', '#94a3b8');
+                    showMilestoneTooltip(e, seg.common_name || seg.name, 'Llamado a Licitación', seg.tender_date, '#94a3b8');
+                });
+                circTender.addEventListener('mousemove', (e) => moveTimelineTooltip(e));
+                circTender.addEventListener('mouseleave', () => {
+                    circTender.setAttribute('stroke-width', '1.5');
+                    circTender.setAttribute('r', MILESTONE_R.toString());
+                    circTender.setAttribute('fill', '#64748b');
+                    hideTimelineTooltip();
+                });
+                circTender.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    hideTimelineTooltip();
+                    hideTimelineView(true);
+                    if (seg.code) {
+                        setTimeout(() => {
+                            zoomToProjectCode(seg.code);
+                        }, 50);
+                    }
+                });
+                barsSvg.appendChild(circTender);
+            }
+
             // Milestone diamond: adjudication_date
             const adjY = dateToYear(seg.adjudication_date);
             if (adjY !== null && adjY >= minYear && adjY <= maxYear) {
@@ -488,11 +580,9 @@ function renderTimeline(data, highlightCode = null) {
     const rowsWrapperEl = document.querySelector('.timeline-rows-wrapper');
     if (highlightedRowIdx !== -1 && rowYOffsets[highlightedRowIdx] !== undefined && rowsWrapperEl) {
         setTimeout(() => {
-            const rowY = rowYOffsets[highlightedRowIdx];
-            const rowH = rowMetrics[highlightedRowIdx].height;
-            const targetScroll = Math.max(0, rowY - (rowsWrapperEl.clientHeight / 2) + (rowH / 2));
-            rowsWrapperEl.scrollTo({ top: targetScroll, behavior: 'smooth' });
-        }, 60);
+            const targetScrollTop = Math.max(0, rowYOffsets[highlightedRowIdx] - 120);
+            rowsWrapperEl.scrollTo({ top: targetScrollTop, behavior: 'smooth' });
+        }, 150);
     }
 }
 
@@ -502,24 +592,32 @@ function renderTimeline(data, highlightCode = null) {
 function showTimelineTooltip(e, seg, licitNum, color) {
     const tip = document.getElementById('timeline-tooltip');
     if (!tip) return;
-    const fmt = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('es-CL', { year: 'numeric', month: 'short' }) : '—';
+    const fmt = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('es-CL', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
     tip.innerHTML = `
         <span class="timeline-tooltip-name" style="color:${color};">${seg.common_name || seg.name || '—'}</span>
         <div class="timeline-tooltip-row">
-            <span class="timeline-tooltip-label">Inicio</span>
+            <span class="timeline-tooltip-label">Inicio Contrato</span>
             <span class="timeline-tooltip-val">${fmt(seg.start_date)}</span>
         </div>
         <div class="timeline-tooltip-row">
-            <span class="timeline-tooltip-label">Término</span>
+            <span class="timeline-tooltip-label">Término Contrato</span>
             <span class="timeline-tooltip-val">${fmt(seg.end_date)}</span>
         </div>
         <div class="timeline-tooltip-row">
             <span class="timeline-tooltip-label">Estado</span>
             <span class="timeline-tooltip-val">${seg.status || '—'}</span>
         </div>
-        ${seg.adj ? `<div class="timeline-tooltip-row">
+        ${seg.tender_date ? `<div class="timeline-tooltip-row">
+            <span class="timeline-tooltip-label">Llamado Licitación</span>
+            <span class="timeline-tooltip-val" style="color:#94a3b8; font-weight:600;">${fmt(seg.tender_date)}</span>
+        </div>` : ''}
+        ${seg.adjudication_date ? `<div class="timeline-tooltip-row">
             <span class="timeline-tooltip-label">Adjudicación</span>
-            <span class="timeline-tooltip-val">${fmt(seg.adj)}</span>
+            <span class="timeline-tooltip-val" style="color:#a78bfa; font-weight:600;">${fmt(seg.adjudication_date)}</span>
+        </div>` : ''}
+        ${seg.resolution_date ? `<div class="timeline-tooltip-row">
+            <span class="timeline-tooltip-label">Resolución</span>
+            <span class="timeline-tooltip-val" style="color:#fbbf24; font-weight:600;">${fmt(seg.resolution_date)}</span>
         </div>` : ''}
     `;
     tip.style.display = 'block';
@@ -578,21 +676,6 @@ function hideTimelineTooltip() {
     const tip = document.getElementById('timeline-tooltip');
     if (tip) tip.style.display = 'none';
 }
-
-// ── Wire up events (called from DOMContentLoaded) ─────────────
-// ── MOTOR DE ANÁLISIS DE INVERSIÓN Y ESTADÍSTICAS REGIONALES ─────────────────
-let chartInvByRegionInstance = null;
-let chartContractsByRegionInstance = null;
-let chartInvShareRegionInstance = null;
-let chartActiveContractsYearInstance = null;
-let chartActiveInvYearInstance = null;
-
-// Bidders analytics chart instances
-let chartBiddersHistogramInstance = null;
-let chartBiddersPieInstance = null;
-let chartTopCompaniesInstance = null;
-
-
 
 function initTimelineEvents() {
     const closeBtn = document.getElementById('btn-close-timeline');

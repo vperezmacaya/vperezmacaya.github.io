@@ -7,7 +7,7 @@
 (function () {
     'use strict';
 
-    // ── Paletas de colores ────────────────────────────────────────────────────
+    // ── Paletas de colores institucionales para servicios MOP ─────────────────
     const MOP_SERVICE_MAP = {
         'Dirección de Vialidad': '#2563eb',                    // Azul Real
         'Dirección de Obras Portuarias': '#0d9488',            // Verde azulado / Teal
@@ -47,8 +47,10 @@
     }
 
     function formatMM(val) {
-        if (val >= 1000) return (val / 1000).toFixed(1) + ' MM';
-        return val.toFixed(0) + ' M';
+        if (!val || val === 0) return '$0M';
+        if (val >= 1000000) return `$${(val / 1000000).toFixed(1).replace(/\.0$/, '')}B`;
+        if (val >= 1000) return `$${(val / 1000).toFixed(1).replace(/\.0$/, '')}kM`;
+        return `$${Number(val).toLocaleString('es-CL')}M`;
     }
 
     function shortRegion(name) {
@@ -59,16 +61,90 @@
             .replace('Metropolitana de Santiago', 'Metropolitana');
     }
 
-    // ── Detección de tema oscuro ───────────────────────────────────────────────
+    // ── Detección de tema oscuro y estilos idénticos a index.html ─────────────
     function isDark() {
         return document.body.classList.contains('dark-theme');
     }
-    function gridColor() { return isDark() ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'; }
-    function labelColor() { return isDark() ? '#94a3b8' : '#64748b'; }
+    function gridColor() { return isDark() ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'; }
+    function labelColor() { return isDark() ? '#94a3b8' : '#374151'; }
+    function titleColor() { return isDark() ? '#cbd5e1' : '#334155'; }
 
-    // ── Chart.js defaults ────────────────────────────────────────────────────
-    Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
-    Chart.defaults.font.size   = 11;
+    // Plugin para dibujar la línea vertical de "Hoy" en los histogramas temporales (idéntico a index.html)
+    const todayLineChartPlugin = {
+        id: 'todayLineChartPlugin',
+        afterDraw: (chart) => {
+            const currentYear = new Date().getFullYear();
+            const labels = chart.data.labels || [];
+            const index = labels.indexOf(currentYear);
+            if (index !== -1) {
+                const xAxis = chart.scales.x;
+                const yAxis = chart.scales.y;
+                const x = xAxis.getPixelForValue(index);
+                const ctx = chart.ctx;
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.setLineDash([4, 3]);
+                ctx.lineWidth = 1.8;
+                ctx.strokeStyle = '#ef4444';
+                ctx.moveTo(x, yAxis.top);
+                ctx.lineTo(x, yAxis.bottom);
+                ctx.stroke();
+
+                // Etiqueta "Hoy" en la parte superior
+                ctx.fillStyle = '#ef4444';
+                ctx.font = 'bold 8.5px Inter, system-ui, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(`Hoy (${currentYear})`, x, Math.max(10, yAxis.top - 3));
+                ctx.restore();
+            }
+        }
+    };
+
+    // Plugin para dibujar etiquetas de valor en barras horizontales (idéntico a index.html)
+    const horizontalBarDataLabelsPlugin = {
+        id: 'horizontalBarDataLabelsPlugin',
+        afterDatasetsDraw: (chart, args, pluginOptions) => {
+            const ctx = chart.ctx;
+            const meta = chart.getDatasetMeta(0);
+            if (!meta || !meta.data) return;
+
+            const isDarkTheme = isDark();
+            const outsideColor = isDarkTheme ? '#cbd5e1' : '#334155';
+            const insideColor = '#ffffff';
+            const formatter = (pluginOptions && pluginOptions.formatter) || ((v) => String(v));
+
+            ctx.save();
+            ctx.font = '600 9px Inter, system-ui, -apple-system, sans-serif';
+            ctx.textBaseline = 'middle';
+
+            meta.data.forEach((bar, index) => {
+                const rawVal = chart.data.datasets[0].data[index];
+                if (rawVal === undefined || rawVal === null || rawVal <= 0) return;
+
+                const text = formatter(rawVal);
+                const textWidth = ctx.measureText(text).width;
+                const barWidth = Math.abs(bar.x - bar.base);
+
+                if (barWidth >= textWidth + 18) {
+                    ctx.fillStyle = insideColor;
+                    ctx.textAlign = 'right';
+                    ctx.fillText(text, bar.x - 6, bar.y);
+                } else {
+                    ctx.fillStyle = outsideColor;
+                    ctx.textAlign = 'left';
+                    ctx.fillText(text, bar.x + 5, bar.y);
+                }
+            });
+
+            ctx.restore();
+        }
+    };
+
+    // ── Chart.js defaults (exactos a index.html) ───────────────────────────────
+    Chart.defaults.font.family = "'Inter', system-ui, -apple-system, sans-serif";
+    Chart.defaults.font.size   = 10.5;
+    Chart.defaults.devicePixelRatio = Math.max(2.5, window.devicePixelRatio || 1);
     Chart.defaults.plugins.legend.labels.boxWidth = 10;
     Chart.defaults.plugins.legend.labels.padding  = 10;
     Chart.defaults.plugins.tooltip.enabled = false;
@@ -388,6 +464,33 @@
             .replace(/"/g, '&quot;');
     }
 
+    function formatRegionCell(regionStr) {
+        if (!regionStr || String(regionStr).trim() === '' || String(regionStr).trim() === 'N/A' || String(regionStr).trim() === '—') {
+            return '<span style="color:var(--text-muted);font-style:italic">Sin región</span>';
+        }
+        const str = String(regionStr).trim();
+        if (str.toLowerCase().includes('nacional') || str.toLowerCase().includes('interregional')) {
+            return '<span class="region-pill">Nacional</span>';
+        }
+
+        const parts = str.split(/[;,/\n]+/).map(p => shortRegion(p.trim())).filter(p => p.length > 0);
+        if (parts.length > 1) {
+            return `<div class="region-pills-wrap">${parts.map(p => `<span class="region-pill">${p}</span>`).join('')}</div>`;
+        }
+
+        return `<span>${shortRegion(str)}</span>`;
+    }
+
+    function getStageBadgeClass(etapa) {
+        if (!etapa) return 'badge-neutral';
+        const e = etapa.toUpperCase();
+        if (e.includes('EJECUCION') || e.includes('EJECUCIÓN')) return 'badge-info';
+        if (e.includes('DISEÑO') || e.includes('DISENO')) return 'badge-warning';
+        if (e.includes('LICITAC')) return 'badge-licitacion';
+        if (e.includes('OPERACION') || e.includes('OPERACIÓN') || e.includes('TERMINADO')) return 'badge-success';
+        return 'badge-neutral';
+    }
+
     function getSortedProjects() {
         return [...filteredProjects].sort((a, b) => {
             let valA = a[sortColumn];
@@ -407,11 +510,10 @@
 
     function renderGlobalTable() {
         const tbody = document.getElementById('mop-global-table-tbody');
-        const countEl = document.getElementById('mop-table-count');
-        const totalCountEl = document.getElementById('mop-table-total-count');
-        const pageInfoEl = document.getElementById('mop-table-page-info');
-        const prevBtn = document.getElementById('mop-table-prev-btn');
-        const nextBtn = document.getElementById('mop-table-next-btn');
+        const pageInfoEl = document.getElementById('mop-pagination-info');
+        const prevBtn = document.getElementById('mop-btn-prev');
+        const nextBtn = document.getElementById('mop-btn-next');
+        const emptyState = document.getElementById('mop-empty-state');
 
         if (!tbody) return;
 
@@ -425,27 +527,25 @@
         const startIndex = (tableCurrentPage - 1) * TABLE_PAGE_SIZE;
         const pageProjects = sorted.slice(startIndex, startIndex + TABLE_PAGE_SIZE);
 
-        if (countEl) countEl.textContent = totalRecords.toLocaleString('es-CL');
-        if (totalCountEl && window.MOP_DATA && window.MOP_DATA.projects) {
-            totalCountEl.textContent = window.MOP_DATA.projects.length.toLocaleString('es-CL');
+        if (pageInfoEl) {
+            if (totalRecords === 0) {
+                pageInfoEl.textContent = '0-0 de 0';
+            } else {
+                const startRecord = startIndex + 1;
+                const endRecord = Math.min(startIndex + TABLE_PAGE_SIZE, totalRecords);
+                pageInfoEl.textContent = `${startRecord}-${endRecord} de ${totalRecords.toLocaleString('es-CL')}`;
+            }
         }
-        if (pageInfoEl) pageInfoEl.textContent = `Página ${tableCurrentPage} de ${totalPages} (${totalRecords.toLocaleString('es-CL')} proyectos filtrados)`;
 
         if (prevBtn) prevBtn.disabled = (tableCurrentPage <= 1);
-        if (nextBtn) nextBtn.disabled = (tableCurrentPage >= totalPages);
+        if (nextBtn) nextBtn.disabled = (tableCurrentPage >= totalPages || totalRecords === 0);
 
         if (pageProjects.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="10" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
-                        <i data-lucide="search-x" style="width:28px;height:28px;opacity:0.4;display:block;margin:0 auto 0.4rem;"></i>
-                        No se encontraron proyectos para los filtros aplicados
-                    </td>
-                </tr>
-            `;
-            if (typeof lucide !== 'undefined') lucide.createIcons();
+            tbody.innerHTML = '';
+            if (emptyState) emptyState.style.display = 'flex';
             return;
         }
+        if (emptyState) emptyState.style.display = 'none';
 
         tbody.innerHTML = pageProjects.map((p, idx) => {
             const rowNum = startIndex + idx + 1;
@@ -453,28 +553,20 @@
             const bipFmt = p.bip || '—';
             const yearFmt = p.year || '—';
             const yearUltFmt = p.year_ult || '—';
+            const badgeClass = getStageBadgeClass(p.etapa);
 
             return `
-                <tr class="mop-project-row" data-idx="${idx}" title="Haz clic para ver la ficha técnica completa del proyecto">
-                    <td class="mop-td" style="text-align: center; color: var(--text-muted); font-size: 0.68rem; width: 32px;">${rowNum}</td>
-                    <td class="mop-td" style="font-weight: 600; min-width: 220px; white-space: normal; word-break: break-word; line-height: 1.35;">
-                        <span style="display:inline-flex; align-items:center; gap:0.3rem;">
-                            ${escapeHtml(p.nombre) || '—'}
-                            <i data-lucide="chevron-right" style="width:11px; height:11px; opacity:0.35; flex-shrink:0;"></i>
-                        </span>
-                    </td>
-                    <td class="mop-td" style="color: var(--text-secondary); white-space: nowrap; font-family: var(--font-mono, monospace); font-size: 0.7rem;">${bipFmt}</td>
-                    <td class="mop-td" style="color: var(--text-secondary); white-space: nowrap;">${shortRegion(p.region || '—')}</td>
-                    <td class="mop-td" style="color: var(--text-secondary); white-space: nowrap; font-weight: 500;">${shortServiceName(p.servicio || '—')}</td>
-                    <td class="mop-td" style="color: var(--text-muted); min-width: 140px; white-space: normal; word-break: break-word; line-height: 1.3;" title="${escapeHtml(p.programa)}">${escapeHtml(p.programa) || '—'}</td>
-                    <td class="mop-td" style="white-space: nowrap;">
-                        <span style="font-size: 0.62rem; padding: 0.12rem 0.4rem; border-radius: 4px; background: rgba(59,130,246,0.12); color: #3b82f6; font-weight: 600;">
-                            ${p.etapa || '—'}
-                        </span>
-                    </td>
-                    <td class="mop-td" style="text-align: right; font-weight: 700; color: #3b82f6; white-space: nowrap; font-variant-numeric: tabular-nums;">${costFmt}</td>
-                    <td class="mop-td" style="text-align: center; color: var(--text-muted); white-space: nowrap;">${yearFmt}</td>
-                    <td class="mop-td" style="text-align: center; color: var(--text-muted); white-space: nowrap;">${yearUltFmt}</td>
+                <tr class="row-main mop-project-row" data-idx="${idx}" style="cursor: pointer;">
+                    <td style="text-align: center; color: var(--text-muted);">${rowNum}</td>
+                    <td><strong>${escapeHtml(p.nombre) || 'Sin nombre'}</strong></td>
+                    <td>${bipFmt}</td>
+                    <td>${formatRegionCell(p.region)}</td>
+                    <td>${escapeHtml(p.servicio) || '—'}</td>
+                    <td>${escapeHtml(p.programa) || '—'}</td>
+                    <td><span class="badge ${badgeClass}">${escapeHtml(p.etapa) || '—'}</span></td>
+                    <td style="text-align: right; font-weight: 700; color: #3b82f6;">${costFmt}</td>
+                    <td style="text-align: center; color: var(--text-muted);">${yearFmt}</td>
+                    <td style="text-align: center; color: var(--text-muted);">${yearUltFmt}</td>
                 </tr>
             `;
         }).join('');
@@ -484,121 +576,146 @@
             row.addEventListener('click', () => {
                 const idx = parseInt(row.dataset.idx, 10);
                 const proj = pageProjects[idx];
-                if (proj) showProjectDetail(proj);
+                if (proj) showProjectDetail(proj, startIndex + idx);
             });
         });
 
         if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
-    // ── Ficha Detallada del Proyecto (Reemplazo de la Tabla) ──────────────────
-    function showProjectDetail(p) {
-        const tableContainer = document.getElementById('mop-table-view-container');
-        const detailContainer = document.getElementById('mop-project-detail-container');
-        if (!tableContainer || !detailContainer || !p) return;
+    // ── Ficha Detallada del Proyecto (Reemplazo de la Tabla - Idéntica a index.html) ──
+    function updateDetailNavButtons(index, list) {
+        const btnDetailPrev = document.getElementById('mop-btn-detail-prev');
+        const btnDetailNext = document.getElementById('mop-btn-detail-next');
 
-        tableContainer.style.display = 'none';
-        detailContainer.style.display = 'flex';
+        if (!btnDetailPrev || !btnDetailNext) return;
+
+        if (index > 0) {
+            btnDetailPrev.disabled = false;
+            btnDetailPrev.style.opacity = '1';
+            btnDetailPrev.style.cursor = 'pointer';
+            btnDetailPrev.style.pointerEvents = 'auto';
+            btnDetailPrev.onclick = (e) => {
+                e.stopPropagation();
+                showProjectDetail(list[index - 1], index - 1);
+            };
+        } else {
+            btnDetailPrev.disabled = true;
+            btnDetailPrev.style.opacity = '0.35';
+            btnDetailPrev.style.cursor = 'not-allowed';
+            btnDetailPrev.style.pointerEvents = 'none';
+            btnDetailPrev.onclick = null;
+        }
+
+        if (index >= 0 && index < list.length - 1) {
+            btnDetailNext.disabled = false;
+            btnDetailNext.style.opacity = '1';
+            btnDetailNext.style.cursor = 'pointer';
+            btnDetailNext.style.pointerEvents = 'auto';
+            btnDetailNext.onclick = (e) => {
+                e.stopPropagation();
+                showProjectDetail(list[index + 1], index + 1);
+            };
+        } else {
+            btnDetailNext.disabled = true;
+            btnDetailNext.style.opacity = '0.35';
+            btnDetailNext.style.cursor = 'not-allowed';
+            btnDetailNext.style.pointerEvents = 'none';
+            btnDetailNext.onclick = null;
+        }
+    }
+
+    function showProjectDetail(p, globalIndex) {
+        const tableView = document.getElementById('mop-table-container-view');
+        const detailView = document.getElementById('mop-project-detail-view');
+        const detailBody = document.getElementById('mop-detail-view-body');
+        if (!tableView || !detailView || !detailBody || !p) return;
+
+        tableView.style.display = 'none';
+        detailView.style.display = 'flex';
+        detailView.scrollTop = 0;
+        detailBody.scrollTop = 0;
+
+        const sorted = getSortedProjects();
+        const index = typeof globalIndex === 'number' ? globalIndex : sorted.indexOf(p);
+        updateDetailNavButtons(index, sorted);
 
         const costFmt = p.cost_mm > 0 ? `$${p.cost_mm.toLocaleString('es-CL')} MM CLP` : 'No informado';
         const hasDesc = p.descripcion && p.descripcion.trim().length > 0;
-        const descText = hasDesc ? escapeHtml(p.descripcion) : 'No se registra descripción';
-        const locText = p.localizacion && p.localizacion.trim().length > 0 ? escapeHtml(p.localizacion) : 'No informada';
-        const yearText = (p.year ? `1ª Postulación: ${p.year}` : '1ª Postulación: No informada') +
-                         (p.year_ult ? ` · Última: ${p.year_ult}` : '');
+        const descText = hasDesc ? escapeHtml(p.descripcion) : 'No se registra descripción en la base de datos.';
+        const hasLoc = p.localizacion && p.localizacion.trim().length > 0 && p.localizacion.trim() !== '—';
+        const locText = hasLoc ? escapeHtml(p.localizacion) : 'No informada';
+        const badgeClass = getStageBadgeClass(p.etapa);
+        const titleName = escapeHtml(p.nombre) || 'Iniciativa MOP';
 
-        detailContainer.innerHTML = `
-            <!-- Top Action Bar (Botón Volver a la izquierda) -->
-            <div style="display:flex; align-items:center; justify-content:flex-start; border-bottom:1px solid var(--border-color); padding-bottom:0.4rem; margin-bottom:0.2rem; flex-shrink:0;">
-                <button class="btn-reset" id="mop-btn-back-to-table" style="padding:0.25rem 0.6rem; font-size:0.72rem; font-weight:600; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer; background:rgba(59,130,246,0.1); color:#3b82f6; border-color:rgba(59,130,246,0.25); border-radius:6px; transition:all 0.15s ease;" title="Volver a la tabla principal">
-                    <i data-lucide="arrow-left" style="width:13px; height:13px;"></i> Volver a la tabla
-                </button>
+        detailBody.innerHTML = `
+            <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.1rem;">
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
+                    <h3 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--text-primary); line-height: 1.35; font-family: var(--font-heading); flex: 1; min-width: 0;">${titleName}</h3>
+                    <span class="badge ${badgeClass}" style="flex-shrink: 0; font-size: 0.7rem; padding: 0.2rem 0.5rem; white-space: nowrap; margin-top: 2px;">${escapeHtml(p.etapa) || 'Sin etapa'}</span>
+                </div>
+                <div style="font-size: 0.75rem; color: #0d9488; font-weight: 600; margin-top: 0.25rem;">${escapeHtml(p.servicio) || 'Servicio MOP'}</div>
             </div>
 
-            <!-- Scrollable Content -->
-            <div style="flex:1; overflow-y:auto; min-height:0; display:flex; flex-direction:column; gap:0.55rem; padding-right:0.25rem;" class="custom-scrollbar">
-                
-                <!-- Project Title & Badges -->
-                <div>
-                    <h2 style="font-size:1.02rem; font-weight:700; color:var(--text-primary); margin:0; line-height:1.35; letter-spacing:-0.01em;">
-                        ${escapeHtml(p.nombre) || 'Iniciativa MOP'}
-                    </h2>
-                    <div style="display:flex; flex-wrap:wrap; gap:0.35rem; margin-top:0.35rem; align-items:center;">
-                        <span style="font-size:0.68rem; padding:0.12rem 0.45rem; border-radius:4px; background:rgba(59,130,246,0.12); color:#3b82f6; font-weight:600;">
-                            ${p.servicio || 'Servicio MOP'}
-                        </span>
-                        <span style="font-size:0.68rem; padding:0.12rem 0.45rem; border-radius:4px; background:rgba(16,185,129,0.12); color:#10b981; font-weight:600;">
-                            Etapa: ${p.etapa || 'No especificada'}
-                        </span>
-                        <span style="font-size:0.68rem; padding:0.12rem 0.45rem; border-radius:4px; background:var(--bg-card-hover); color:var(--text-secondary); border:1px solid var(--border-color);">
-                            ${p.region || 'Región no especificada'}
-                        </span>
-                    </div>
-                </div>
+            <!-- Sección Descripción -->
+            <div class="detail-section" style="margin-top: 0.4rem;">
+                <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.35rem;">Descripción</h4>
+                <p class="detail-desc" style="font-size: 0.76rem; line-height: 1.45;">${descText}</p>
+            </div>
 
-                <!-- Relevant Metrics Grid (4 items) -->
-                <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:0.45rem;">
-                    <div class="card-kpi" style="padding:0.45rem 0.6rem; flex-direction:column; align-items:flex-start; gap:0.12rem;">
-                        <span class="kpi-label">Inversión Total</span>
-                        <span class="kpi-value" style="font-size:0.92rem; color:#3b82f6;">${costFmt}</span>
-                    </div>
-                    <div class="card-kpi" style="padding:0.45rem 0.6rem; flex-direction:column; align-items:flex-start; gap:0.12rem;">
-                        <span class="kpi-label">Código BIP</span>
-                        <span class="kpi-value" style="font-size:0.88rem;">${p.bip || '—'}</span>
-                    </div>
-                    <div class="card-kpi" style="padding:0.45rem 0.6rem; flex-direction:column; align-items:flex-start; gap:0.12rem;">
-                        <span class="kpi-label">Historial Postulación</span>
-                        <span class="kpi-value" style="font-size:0.75rem;">${yearText}</span>
-                    </div>
-                    <div class="card-kpi" style="padding:0.45rem 0.6rem; flex-direction:column; align-items:flex-start; gap:0.12rem;">
-                        <span class="kpi-label">Programa</span>
-                        <span class="kpi-value" style="font-size:0.75rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(p.programa)}">${escapeHtml(p.programa) || '—'}</span>
-                    </div>
-                </div>
+            <!-- Datos de la Iniciativa (Detail Grid exacto a index.html) -->
+            <div class="detail-section" style="margin-top: 0.4rem;">
+                <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.4rem;">Datos de la Iniciativa</h4>
+                <div class="detail-grid" style="grid-template-columns: 130px 1fr; gap: 0.35rem; font-size: 0.74rem;">
+                    <span class="detail-label">Código BIP:</span>
+                    <span class="detail-value" style="font-family: var(--font-mono, monospace); font-weight: 600;">${escapeHtml(p.bip || 'No informado')}</span>
 
-                <!-- Description Box -->
-                <div class="panel-card" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; padding:0.65rem 0.8rem; display:flex; flex-direction:column; gap:0.3rem;">
-                    <div style="font-size:0.72rem; font-weight:700; color:var(--text-primary); text-transform:uppercase; letter-spacing:0.04em; display:flex; align-items:center; gap:0.35rem;">
-                        <i data-lucide="align-left" style="width:13px; height:13px; color:var(--primary);"></i>
-                        Descripción del Proyecto
-                    </div>
-                    <div style="font-size:0.78rem; line-height:1.6; color:${hasDesc ? 'var(--text-secondary)' : 'var(--text-muted)'}; font-style:${hasDesc ? 'normal' : 'italic'};">
-                        ${descText}
-                    </div>
-                </div>
+                    <span class="detail-label">Servicio MOP:</span>
+                    <span class="detail-value">${escapeHtml(p.servicio || 'No especificado')}</span>
 
-                ${locText !== 'No informada' ? `
-                <!-- Location Box -->
-                <div class="panel-card" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; padding:0.5rem 0.75rem; display:flex; align-items:center; gap:0.45rem;">
-                    <i data-lucide="map-pin" style="width:14px; height:14px; color:#f97316; flex-shrink:0;"></i>
-                    <div style="font-size:0.74rem; color:var(--text-secondary);">
-                        <strong style="color:var(--text-primary); font-weight:600;">Localización:</strong> ${locText}
-                    </div>
-                </div>
-                ` : ''}
+                    <span class="detail-label">Programa:</span>
+                    <span class="detail-value">${escapeHtml(p.programa || 'No especificado')}</span>
 
+                    <span class="detail-label">Región:</span>
+                    <span class="detail-value">${formatRegionCell(p.region)}</span>
+
+                    <span class="detail-label">Comuna / Localización:</span>
+                    <span class="detail-value">${locText}</span>
+
+                    <span class="detail-label">Etapa Ciclo de Vida:</span>
+                    <span class="detail-value"><span class="badge ${badgeClass}">${escapeHtml(p.etapa || 'No informada')}</span></span>
+
+                    <span class="detail-label">Costo Total Estimado:</span>
+                    <span class="detail-value" style="font-weight: 700; color: #3b82f6;">${costFmt}</span>
+
+                    <span class="detail-label">Año Primera Postulación:</span>
+                    <span class="detail-value">${p.year || 'No informado'}</span>
+
+                    <span class="detail-label">Año Última Postulación:</span>
+                    <span class="detail-value">${p.year_ult || 'No informado'}</span>
+                </div>
             </div>
         `;
 
         if (typeof lucide !== 'undefined') lucide.createIcons();
 
-        const backBtn = document.getElementById('mop-btn-back-to-table');
+        const backBtn = document.getElementById('mop-btn-back-to-list');
         if (backBtn) {
-            backBtn.addEventListener('click', hideProjectDetail);
+            backBtn.onclick = hideProjectDetail;
         }
     }
 
     function hideProjectDetail() {
-        const tableContainer = document.getElementById('mop-table-view-container');
-        const detailContainer = document.getElementById('mop-project-detail-container');
-        if (tableContainer && detailContainer) {
-            detailContainer.style.display = 'none';
-            tableContainer.style.display = 'flex';
+        const tableView = document.getElementById('mop-table-container-view');
+        const detailView = document.getElementById('mop-project-detail-view');
+        if (tableView && detailView) {
+            detailView.style.display = 'none';
+            tableView.style.display = 'flex';
         }
     }
 
     function bindTableSortEvents() {
-        document.querySelectorAll('.mop-data-table .mop-sortable, .mop-global-table .sort-th').forEach(th => {
+        document.querySelectorAll('.data-table.mop-data-table th.sortable').forEach(th => {
             th.addEventListener('click', () => {
                 const col = th.dataset.sort;
                 if (!col) return;
@@ -610,26 +727,20 @@
                 }
 
                 // Reset all sort headers
-                document.querySelectorAll('.mop-data-table .mop-sortable, .mop-global-table .sort-th').forEach(t => {
-                    t.classList.remove('active-sort');
-                    const icon = t.querySelector('.mop-sort-icon');
-                    if (icon) icon.textContent = '⇅';
+                document.querySelectorAll('.data-table.mop-data-table th.sortable').forEach(t => {
+                    t.classList.remove('asc', 'desc', 'active-sort');
                 });
 
                 // Activate current header
-                th.classList.add('active-sort');
-                const curIcon = th.querySelector('.mop-sort-icon');
-                if (curIcon) {
-                    curIcon.textContent = (sortDirection === 'asc' ? '↑' : '↓');
-                }
+                th.classList.add(sortDirection, 'active-sort');
 
                 tableCurrentPage = 1;
                 renderGlobalTable();
             });
         });
 
-        const prevBtn = document.getElementById('mop-table-prev-btn');
-        const nextBtn = document.getElementById('mop-table-next-btn');
+        const prevBtn = document.getElementById('mop-btn-prev');
+        const nextBtn = document.getElementById('mop-btn-next');
 
         if (prevBtn) {
             prevBtn.addEventListener('click', () => {
@@ -746,10 +857,11 @@
             renderGlobalTable();
         } else if (currentActiveTab === 'inversion') {
             renderRegionBar();
-            renderRegionCountBar();
+            renderServicioInversionBar();
+            renderProgramaInversionBar();
         } else if (currentActiveTab === 'programas') {
             renderEtapaBar();
-            renderProgramaBar();
+            renderRegionCountBar();
             renderYearLine();
         }
     }
@@ -821,17 +933,17 @@
         if (legendEl) {
             legendEl.innerHTML = data.map((d, idx) => {
                 const count = d.count;
-                const pct = totalProjects > 0 ? ((count / totalProjects) * 100).toFixed(0) : 0;
+                const pct = totalProjects > 0 ? ((count / totalProjects) * 100).toFixed(1).replace(/\.0$/, '') : '0';
                 const col = colors[idx];
                 const sName = shortServiceName(d.label);
                 return `
-                    <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.69rem; padding:0.1rem 0;">
-                        <div style="display:flex; align-items:center; gap:0.35rem; min-width:0;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.69rem; padding:0.1rem 0; color:var(--text-primary);">
+                        <div style="display:flex; align-items:center; gap:0.35rem; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                             <span style="width:7px; height:7px; border-radius:50%; background-color:${col}; flex-shrink:0;"></span>
                             <span style="color:var(--text-primary); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${sName}</span>
                         </div>
-                        <span style="font-size:0.67rem; color:${col}; font-weight:700; font-variant-numeric:tabular-nums; flex-shrink:0; margin-left:0.25rem;">
-                            ${count} <span style="color:var(--text-muted); font-weight:500; font-size:0.62rem;">(${pct}%)</span>
+                        <span style="font-size:0.68rem; color:var(--text-secondary); font-weight:700; font-variant-numeric:tabular-nums; flex-shrink:0; margin-left:0.25rem;">
+                            ${pct}%
                         </span>
                     </div>
                 `;
@@ -902,18 +1014,17 @@
         if (legendEl) {
             legendEl.innerHTML = data.map((d, idx) => {
                 const cost = d.total;
-                const pct = totalCost > 0 ? ((cost / totalCost) * 100).toFixed(0) : 0;
+                const pct = totalCost > 0 ? ((cost / totalCost) * 100).toFixed(1).replace(/\.0$/, '') : '0';
                 const col = colors[idx];
                 const sName = shortServiceName(d.label);
-                const costFmt = formatMM(cost);
                 return `
-                    <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.69rem; padding:0.1rem 0;">
-                        <div style="display:flex; align-items:center; gap:0.35rem; min-width:0;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.69rem; padding:0.1rem 0; color:var(--text-primary);">
+                        <div style="display:flex; align-items:center; gap:0.35rem; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                             <span style="width:7px; height:7px; border-radius:50%; background-color:${col}; flex-shrink:0;"></span>
                             <span style="color:var(--text-primary); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${sName}</span>
                         </div>
-                        <span style="font-size:0.67rem; color:${col}; font-weight:700; font-variant-numeric:tabular-nums; flex-shrink:0; margin-left:0.25rem;">
-                            ${costFmt} <span style="color:var(--text-muted); font-weight:500; font-size:0.62rem;">(${pct}%)</span>
+                        <span style="font-size:0.68rem; color:var(--text-secondary); font-weight:700; font-variant-numeric:tabular-nums; flex-shrink:0; margin-left:0.25rem;">
+                            ${pct}%
                         </span>
                     </div>
                 `;
@@ -934,29 +1045,33 @@
             return;
         }
 
+        const totalCost = data.reduce((sum, d) => sum + d.total, 0);
         const labels = data.map(d => shortRegion(d.label));
         const values = data.map(d => +d.total.toFixed(1));
-        const bgColors = PALETTE_BLUE[0];
+        const bgColors = '#2563eb';
 
         if (charts.region) {
             charts.region.data.labels = labels;
             charts.region.data.datasets[0].data = values;
             charts.region.data.datasets[0].backgroundColor = bgColors;
+            charts.region.options.scales.x.title.color = titleColor();
             charts.region.options.scales.x.grid.color = gridColor();
             charts.region.options.scales.x.ticks.color = labelColor();
             charts.region.options.scales.y.ticks.color = labelColor();
+            charts.region.options.plugins.tooltip.callbacks.label = (ctx) => ` Inversión: $${Number(ctx.raw).toLocaleString('es-CL')} MM CLP (${((ctx.raw / (totalCost || 1)) * 100).toFixed(1)}%)`;
             delete charts.region.options.onClick;
             charts.region.update();
         } else {
             charts.region = new Chart(canvas, {
                 type: 'bar',
+                plugins: [horizontalBarDataLabelsPlugin],
                 data: {
                     labels: labels,
                     datasets: [{
                         label:           'Inversión (MM CLP)',
                         data:            values,
                         backgroundColor: bgColors,
-                        borderRadius:    4,
+                        borderRadius:    3,
                         borderSkipped:   false,
                     }]
                 },
@@ -964,26 +1079,43 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     indexAxis: 'y',
-                    animation: { duration: 500, easing: 'easeOutQuart' },
+                    animation: { duration: 450, easing: 'easeOutQuart' },
                     plugins: {
                         legend: { display: false },
+                        horizontalBarDataLabelsPlugin: {
+                            formatter: (v) => formatMM(v)
+                        },
                         tooltip: {
                             enabled: false,
                             external: mopExternalTooltip,
                             callbacks: {
                                 title: items => items.length ? items[0].label : '',
-                                label: ctx => ` Inversión: $${Number(ctx.raw).toLocaleString('es-CL')} MM CLP`
+                                label: ctx => ` Inversión: $${Number(ctx.raw).toLocaleString('es-CL')} MM CLP (${((ctx.raw / (totalCost || 1)) * 100).toFixed(1)}%)`
                             }
                         }
                     },
                     scales: {
                         x: {
+                            title: {
+                                display: true,
+                                text: 'Inversión (MM CLP)',
+                                color: titleColor(),
+                                font: { size: 10, weight: '600' }
+                            },
                             grid:  { color: gridColor() },
-                            ticks: { color: labelColor(), callback: v => `$${v}M` }
+                            ticks: {
+                                color: labelColor(),
+                                font: { size: 10 },
+                                callback: v => `$${v.toLocaleString('es-CL')}M`
+                            }
                         },
                         y: {
                             grid:  { display: false },
-                            ticks: { color: labelColor(), font: { size: 9.5 } }
+                            ticks: {
+                                color: labelColor(),
+                                font: { size: 10.5, weight: '500' },
+                                autoSkip: false
+                            }
                         }
                     }
                 }
@@ -991,162 +1123,106 @@
         }
     }
 
-    // ── 2b. Barras: Número de Proyectos por Región (Interactiva) ─────────────
-    function renderRegionCountBar() {
-        const canvas = document.getElementById('chart-region-count');
-        if (!canvas) return;
-        clearEmpty(canvas);
-
-        const data = aggregateBy('region', 'cost_mm').sort((a,b) => b.count - a.count);
-        if (!data.length) {
-            destroyChart('region-count');
-            showEmpty(canvas);
-            return;
-        }
-
-        const labels = data.map(d => shortRegion(d.label));
-        const values = data.map(d => d.count);
-        const bgColors = '#10b981';
-
-        if (charts['region-count']) {
-            charts['region-count'].data.labels = labels;
-            charts['region-count'].data.datasets[0].data = values;
-            charts['region-count'].data.datasets[0].backgroundColor = bgColors;
-            charts['region-count'].options.scales.x.grid.color = gridColor();
-            charts['region-count'].options.scales.x.ticks.color = labelColor();
-            charts['region-count'].options.scales.y.ticks.color = labelColor();
-            delete charts['region-count'].options.onClick;
-            charts['region-count'].update();
-        } else {
-            charts['region-count'] = new Chart(canvas, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label:           'Nº Proyectos',
-                        data:            values,
-                        backgroundColor: bgColors,
-                        borderRadius:    4,
-                        borderSkipped:   false,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: 'y',
-                    animation: { duration: 500, easing: 'easeOutQuart' },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            enabled: false,
-                            external: mopExternalTooltip,
-                            callbacks: {
-                                title: items => items.length ? items[0].label : '',
-                                label: ctx => ` Cantidad: ${ctx.raw} proyecto${ctx.raw !== 1 ? 's' : ''}`
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            grid:  { color: gridColor() },
-                            ticks: { color: labelColor(), stepSize: 1 }
-                        },
-                        y: {
-                            grid:  { display: false },
-                            ticks: { color: labelColor(), font: { size: 9.5 } }
-                        }
-                    }
-                }
-            });
-        }
-    }
-
-    // ── 3. Barras: Proyectos por Etapa (Interactiva) ──────────────────────────
-    function renderEtapaBar() {
-        const id = 'chart-etapa-tab';
+    // ── 2b. Barras: Inversión por Servicio MOP (Inversión MM CLP) ───────────
+    function renderServicioInversionBar() {
+        const id = 'chart-servicio-inversion';
         const canvas = document.getElementById(id);
         if (!canvas) return;
         clearEmpty(canvas);
 
-        const data = aggregateBy('etapa', 'cost_mm').sort((a,b) => b.count - a.count);
+        const data = aggregateBy('servicio', 'cost_mm').sort((a,b) => b.total - a.total);
         if (!data.length) {
             destroyChart(id);
             showEmpty(canvas);
             return;
         }
 
-        const labels = data.map(d => d.label);
-        const countValues = data.map(d => d.count);
-        const costValues = data.map(d => +d.total.toFixed(1));
-        const barColors = data.map((d, i) => PALETTE_BLUE[i % PALETTE_BLUE.length]);
+        const totalCost = data.reduce((sum, d) => sum + d.total, 0);
+        const labels = data.map(d => shortServiceName(d.label));
+        const values = data.map(d => +d.total.toFixed(1));
+        const colors = data.map(d => getServiceColor(d.label));
 
         if (charts[id]) {
             charts[id].data.labels = labels;
-            charts[id].data.datasets[0].data = countValues;
-            charts[id].data.datasets[0].backgroundColor = barColors;
-            charts[id].data.datasets[1].data = costValues;
-            delete charts[id].options.onClick;
+            charts[id].data.datasets[0].data = values;
+            charts[id].data.datasets[0].backgroundColor = colors;
+            charts[id].options.scales.x.title.color = titleColor();
+            charts[id].options.scales.x.grid.color = gridColor();
+            charts[id].options.scales.x.ticks.color = labelColor();
+            charts[id].options.scales.y.ticks.color = labelColor();
+            charts[id].options.plugins.tooltip.callbacks.label = (ctx) => ` Inversión: $${Number(ctx.raw).toLocaleString('es-CL')} MM CLP (${((ctx.raw / (totalCost || 1)) * 100).toFixed(1)}%)`;
             charts[id].update();
         } else {
             charts[id] = new Chart(canvas, {
                 type: 'bar',
+                plugins: [horizontalBarDataLabelsPlugin],
                 data: {
                     labels: labels,
-                    datasets: [
-                        {
-                            label:           'Nº Proyectos',
-                            data:            countValues,
-                            backgroundColor: barColors,
-                            borderRadius:    5,
-                            borderSkipped:   false,
-                            yAxisID:         'y',
-                        },
-                        {
-                            label:           'Inversión (MM CLP)',
-                            data:            costValues,
-                            type:            'line',
-                            borderColor:     PALETTE_ORANGE[0],
-                            backgroundColor: 'transparent',
-                            borderWidth:     2,
-                            pointRadius:     5,
-                            pointHoverRadius:7,
-                            yAxisID:         'y2',
-                        }
-                    ]
+                    datasets: [{
+                        label:           'Inversión (MM CLP)',
+                        data:            values,
+                        backgroundColor: colors,
+                        borderRadius:    3,
+                        borderSkipped:   false,
+                    }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    animation: { duration: 500, easing: 'easeOutQuart' },
+                    indexAxis: 'y',
+                    animation: { duration: 450, easing: 'easeOutQuart' },
                     plugins: {
-                        legend: { labels: { color: labelColor() } },
+                        legend: { display: false },
+                        horizontalBarDataLabelsPlugin: {
+                            formatter: (v) => formatMM(v)
+                        },
                         tooltip: {
                             enabled: false,
-                            mode: 'index',
-                            intersect: false,
                             external: mopExternalTooltip,
                             callbacks: {
-                                title: items => items.length ? `Etapa: ${items[0].label}` : '',
-                                label: ctx => {
-                                    if (ctx.datasetIndex === 0) return ` Proyectos: ${ctx.raw}`;
-                                    return ` Inversión: $${Number(ctx.raw).toLocaleString('es-CL')} MM CLP`;
-                                }
+                                title: (items) => {
+                                    if (items.length > 0) {
+                                        const idx = items[0].dataIndex;
+                                        return data[idx] ? data[idx].label : (items[0].label || '');
+                                    }
+                                    return '';
+                                },
+                                label: ctx => ` Inversión: $${Number(ctx.raw).toLocaleString('es-CL')} MM CLP (${((ctx.raw / (totalCost || 1)) * 100).toFixed(1)}%)`
                             }
                         }
                     },
                     scales: {
-                        x:  { grid: { display: false }, ticks: { color: labelColor() } },
-                        y:  { grid: { color: gridColor() }, ticks: { color: labelColor() }, title: { display: true, text: 'Nº Proyectos', color: labelColor() } },
-                        y2: { position: 'right', grid: { display: false }, ticks: { color: PALETTE_ORANGE[0], callback: v => `$${v}M` } }
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Inversión (MM CLP)',
+                                color: titleColor(),
+                                font: { size: 10, weight: '600' }
+                            },
+                            grid:  { color: gridColor() },
+                            ticks: {
+                                color: labelColor(),
+                                font: { size: 10 },
+                                callback: v => `$${v.toLocaleString('es-CL')}M`
+                            }
+                        },
+                        y: {
+                            grid:  { display: false },
+                            ticks: {
+                                color: labelColor(),
+                                font: { size: 10.5, weight: '500' },
+                                autoSkip: false
+                            }
+                        }
                     }
                 }
             });
         }
     }
 
-    // ── 4. Barras horizontales: Top Programas por inversión ───────────────────
-    function renderProgramaBar() {
-        const id = 'chart-programa-tab';
+    // ── 2c. Barras: Inversión por Programa (Top 10 Programas por Inversión) ──
+    function renderProgramaInversionBar() {
+        const id = 'chart-programa-inversion';
         const canvas = document.getElementById(id);
         if (!canvas) return;
         clearEmpty(canvas);
@@ -1162,21 +1238,28 @@
 
         const labels = data.map(d => d.label.length > 32 ? d.label.slice(0, 31) + '…' : d.label);
         const values = data.map(d => +d.total.toFixed(1));
+        const barColor = '#f59e0b';
 
         if (charts[id]) {
             charts[id].data.labels = labels;
             charts[id].data.datasets[0].data = values;
+            charts[id].data.datasets[0].backgroundColor = barColor;
+            charts[id].options.scales.x.title.color = titleColor();
+            charts[id].options.scales.x.grid.color = gridColor();
+            charts[id].options.scales.x.ticks.color = labelColor();
+            charts[id].options.scales.y.ticks.color = labelColor();
             charts[id].update();
         } else {
             charts[id] = new Chart(canvas, {
                 type: 'bar',
+                plugins: [horizontalBarDataLabelsPlugin],
                 data: {
                     labels: labels,
                     datasets: [{
                         label:           'Inversión (MM CLP)',
                         data:            values,
-                        backgroundColor: PALETTE_ORANGE,
-                        borderRadius:    4,
+                        backgroundColor: barColor,
+                        borderRadius:    3,
                         borderSkipped:   false,
                     }]
                 },
@@ -1184,9 +1267,12 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     indexAxis: 'y',
-                    animation: { duration: 500, easing: 'easeOutQuart' },
+                    animation: { duration: 450, easing: 'easeOutQuart' },
                     plugins: {
                         legend: { display: false },
+                        horizontalBarDataLabelsPlugin: {
+                            formatter: (v) => formatMM(v)
+                        },
                         tooltip: {
                             enabled: false,
                             external: mopExternalTooltip,
@@ -1203,15 +1289,218 @@
                         }
                     },
                     scales: {
-                        x: { grid: { color: gridColor() }, ticks: { color: labelColor(), callback: v => `$${v}M` } },
-                        y: { grid: { display: false }, ticks: { color: labelColor(), font: { size: 9 } } }
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Inversión (MM CLP)',
+                                color: titleColor(),
+                                font: { size: 10, weight: '600' }
+                            },
+                            grid:  { color: gridColor() },
+                            ticks: {
+                                color: labelColor(),
+                                font: { size: 10 },
+                                callback: v => `$${v.toLocaleString('es-CL')}M`
+                            }
+                        },
+                        y: {
+                            grid:  { display: false },
+                            ticks: {
+                                color: labelColor(),
+                                font: { size: 9.5, weight: '500' },
+                                autoSkip: false
+                            }
+                        }
                     }
                 }
             });
         }
     }
 
-    // ── 5. Línea: Evolución por año de primera postulación ────────────────────
+    // ── 3. Barras: Número de Proyectos por Región (Reubicado en Programas y Etapas) ──
+    function renderRegionCountBar() {
+        const canvas = document.getElementById('chart-region-count');
+        if (!canvas) return;
+        clearEmpty(canvas);
+
+        const data = aggregateBy('region', 'cost_mm').sort((a,b) => b.count - a.count);
+        if (!data.length) {
+            destroyChart('region-count');
+            showEmpty(canvas);
+            return;
+        }
+
+        const totalProjects = data.reduce((sum, d) => sum + d.count, 0);
+        const labels = data.map(d => shortRegion(d.label));
+        const values = data.map(d => d.count);
+        const bgColors = '#10b981';
+
+        if (charts['region-count']) {
+            charts['region-count'].data.labels = labels;
+            charts['region-count'].data.datasets[0].data = values;
+            charts['region-count'].data.datasets[0].backgroundColor = bgColors;
+            charts['region-count'].options.scales.x.title.color = titleColor();
+            charts['region-count'].options.scales.x.grid.color = gridColor();
+            charts['region-count'].options.scales.x.ticks.color = labelColor();
+            charts['region-count'].options.scales.y.ticks.color = labelColor();
+            charts['region-count'].options.plugins.tooltip.callbacks.label = (ctx) => ` Cantidad: ${ctx.raw} proyecto${ctx.raw !== 1 ? 's' : ''} (${((ctx.raw / (totalProjects || 1)) * 100).toFixed(1)}%)`;
+            delete charts['region-count'].options.onClick;
+            charts['region-count'].update();
+        } else {
+            charts['region-count'] = new Chart(canvas, {
+                type: 'bar',
+                plugins: [horizontalBarDataLabelsPlugin],
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label:           'Nº Proyectos',
+                        data:            values,
+                        backgroundColor: bgColors,
+                        borderRadius:    3,
+                        borderSkipped:   false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    animation: { duration: 450, easing: 'easeOutQuart' },
+                    plugins: {
+                        legend: { display: false },
+                        horizontalBarDataLabelsPlugin: {
+                            formatter: (v) => String(v)
+                        },
+                        tooltip: {
+                            enabled: false,
+                            external: mopExternalTooltip,
+                            callbacks: {
+                                title: items => items.length ? items[0].label : '',
+                                label: ctx => ` Cantidad: ${ctx.raw} proyecto${ctx.raw !== 1 ? 's' : ''} (${((ctx.raw / (totalProjects || 1)) * 100).toFixed(1)}%)`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Número de Proyectos',
+                                color: titleColor(),
+                                font: { size: 10, weight: '600' }
+                            },
+                            grid:  { color: gridColor() },
+                            ticks: {
+                                color: labelColor(),
+                                font: { size: 10 },
+                                stepSize: 1
+                            }
+                        },
+                        y: {
+                            grid:  { display: false },
+                            ticks: {
+                                color: labelColor(),
+                                font: { size: 10, weight: '500' },
+                                autoSkip: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // ── 4. Barras: Proyectos por Etapa (Sin línea amarilla de inversión) ────────
+    function renderEtapaBar() {
+        const id = 'chart-etapa-tab';
+        const canvas = document.getElementById(id);
+        if (!canvas) return;
+        clearEmpty(canvas);
+
+        const data = aggregateBy('etapa', 'cost_mm').sort((a,b) => b.count - a.count);
+        if (!data.length) {
+            destroyChart(id);
+            showEmpty(canvas);
+            return;
+        }
+
+        const totalProjects = data.reduce((sum, d) => sum + d.count, 0);
+        const labels = data.map(d => d.label);
+        const countValues = data.map(d => d.count);
+        const barColor = '#2563eb';
+
+        if (charts[id]) {
+            charts[id].data.labels = labels;
+            charts[id].data.datasets = [{
+                label:           'Nº Proyectos',
+                data:            countValues,
+                backgroundColor: barColor,
+                borderRadius:    3,
+                borderSkipped:   false,
+            }];
+            charts[id].options.scales.y.title.color = titleColor();
+            charts[id].options.scales.y.grid.color = gridColor();
+            charts[id].options.scales.y.ticks.color = labelColor();
+            charts[id].options.scales.x.ticks.color = labelColor();
+            charts[id].options.plugins.tooltip.callbacks.label = (ctx) => ` Cantidad: ${ctx.raw} proyecto${ctx.raw !== 1 ? 's' : ''} (${((ctx.raw / (totalProjects || 1)) * 100).toFixed(1)}%)`;
+            delete charts[id].options.onClick;
+            charts[id].update();
+        } else {
+            charts[id] = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label:           'Nº Proyectos',
+                        data:            countValues,
+                        backgroundColor: barColor,
+                        borderRadius:    3,
+                        borderSkipped:   false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 450, easing: 'easeOutQuart' },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            enabled: false,
+                            mode: 'index',
+                            intersect: false,
+                            external: mopExternalTooltip,
+                            callbacks: {
+                                title: items => items.length ? `Etapa: ${items[0].label}` : '',
+                                label: ctx => ` Cantidad: ${ctx.raw} proyecto${ctx.raw !== 1 ? 's' : ''} (${((ctx.raw / (totalProjects || 1)) * 100).toFixed(1)}%)`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: labelColor(),
+                                font: { size: 10, weight: '600' }
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Nº Proyectos',
+                                color: titleColor(),
+                                font: { size: 10, weight: '600' }
+                            },
+                            grid: { color: gridColor() },
+                            ticks: {
+                                color: labelColor(),
+                                font: { size: 10 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // ── 5. Línea: Evolución por año de primera postulación (Plugin Hoy exacto a index.html) ──
     function renderYearLine() {
         const canvas = document.getElementById('chart-year');
         if (!canvas) return;
@@ -1238,32 +1527,39 @@
             charts.year.data.labels = years;
             charts.year.data.datasets[0].data = countValues;
             charts.year.data.datasets[1].data = costValues;
+            charts.year.options.scales.x.grid.color = gridColor();
+            charts.year.options.scales.x.ticks.color = labelColor();
+            charts.year.options.scales.y.title.color = titleColor();
+            charts.year.options.scales.y.grid.color = gridColor();
+            charts.year.options.scales.y.ticks.color = labelColor();
+            charts.year.options.scales.y2.title.color = '#f59e0b';
+            charts.year.options.scales.y2.ticks.color = '#f59e0b';
             charts.year.update();
         } else {
             charts.year = new Chart(canvas, {
-                type: 'line',
+                type: 'bar',
+                plugins: [todayLineChartPlugin],
                 data: {
                     labels: years,
                     datasets: [
                         {
                             label:           'Nº Proyectos',
                             data:            countValues,
-                            borderColor:     PALETTE_BLUE[0],
-                            backgroundColor: 'rgba(59,130,246,0.12)',
-                            fill:            true,
-                            tension:         0.35,
-                            pointRadius:     4,
+                            backgroundColor: '#2563eb',
+                            borderRadius:    3,
+                            borderSkipped:   false,
                             yAxisID:         'y',
                         },
                         {
                             label:           'Inversión (MM CLP)',
                             data:            costValues,
-                            borderColor:     PALETTE_ORANGE[0],
+                            type:            'line',
+                            borderColor:     '#f59e0b',
                             backgroundColor: 'transparent',
-                            fill:            false,
-                            tension:         0.35,
+                            borderWidth:     2,
                             pointRadius:     4,
-                            borderDash:      [4,3],
+                            pointHoverRadius:6,
+                            tension:         0.25,
                             yAxisID:         'y2',
                         }
                     ]
@@ -1271,10 +1567,21 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    animation: { duration: 500, easing: 'easeOutQuart' },
+                    animation: { duration: 450, easing: 'easeOutQuart' },
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
-                        legend: { labels: { color: labelColor() } },
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            align: 'end',
+                            labels: {
+                                boxWidth: 10,
+                                boxHeight: 10,
+                                padding: 12,
+                                color: labelColor(),
+                                font: { size: 10 }
+                            }
+                        },
                         tooltip: {
                             enabled: false,
                             mode: 'index',
@@ -1290,9 +1597,41 @@
                         }
                     },
                     scales: {
-                        x:  { grid: { color: gridColor() }, ticks: { color: labelColor() } },
-                        y:  { grid: { color: gridColor() }, ticks: { color: labelColor() }, title: { display: true, text: 'Nº Proyectos', color: labelColor() } },
-                        y2: { position: 'right', grid: { display: false }, ticks: { color: PALETTE_ORANGE[0], callback: v => `$${v}M` } }
+                        x: {
+                            grid: { color: gridColor() },
+                            ticks: {
+                                color: labelColor(),
+                                font: { size: 10 }
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Nº Proyectos',
+                                color: titleColor(),
+                                font: { size: 10, weight: '600' }
+                            },
+                            grid: { color: gridColor() },
+                            ticks: {
+                                color: labelColor(),
+                                font: { size: 10 }
+                            }
+                        },
+                        y2: {
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Inversión (MM CLP)',
+                                color: '#f59e0b',
+                                font: { size: 10, weight: '600' }
+                            },
+                            grid: { display: false },
+                            ticks: {
+                                color: '#f59e0b',
+                                font: { size: 10 },
+                                callback: v => `$${v.toLocaleString('es-CL')}M`
+                            }
+                        }
                     }
                 }
             });

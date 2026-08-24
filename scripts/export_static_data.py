@@ -18,10 +18,14 @@ import numpy as np
 import pandas as pd
 
 # ── Rutas ──────────────────────────────────────────────────────────────────────
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-EXCEL_PATH = os.path.join(BASE_DIR, 'CATLEC.xlsx')
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(BASE_DIR, 'Bases de dato')
+
+EXCEL_PATH = os.path.join(DATA_DIR, 'CATLEC.xlsx')
 if not os.path.exists(EXCEL_PATH):
-    EXCEL_PATH = os.path.join(BASE_DIR, 'CALTEC.xlsx')
+    EXCEL_PATH = os.path.join(DATA_DIR, 'CALTEC.xlsx')
+if not os.path.exists(EXCEL_PATH):
+    EXCEL_PATH = os.path.join(BASE_DIR, 'CATLEC.xlsx')
 
 OUT_DIR = os.path.join(BASE_DIR, 'static', 'data')
 os.makedirs(OUT_DIR, exist_ok=True)
@@ -210,12 +214,13 @@ for idx, row in df_contracts.iterrows():
         'concession_name': sanitize_value(row.get('Nombre de la Concesión ')),
         'common_name': sanitize_value(row.get('Nombre de uso común')),
         'status': sanitize_value(row['ESTADO']),
-        'resolution_date': sanitize_value(row['Fecha resolución declaración interes público']),
-        'adjudication_date': sanitize_value(row['Fecha decreto adjudicación']),
-        'start_date': sanitize_value(row['Fecha inicio del contrato de concesión']),
-        'end_date': sanitize_value(row['Fecha término de la concesión']),
-        'investment': sanitize_value(row['Inversión Materializada estimada']),
-        'progress': sanitize_value(row['% Avance obras físicas'])
+        'resolution_date': sanitize_value(row.get('Fecha resolución declaración interes público')),
+        'tender_date': sanitize_value(row.get('Fecha llamado a licitación')),
+        'adjudication_date': sanitize_value(row.get('Fecha decreto adjudicación')),
+        'start_date': sanitize_value(row.get('Fecha inicio del contrato de concesión')),
+        'end_date': sanitize_value(row.get('Fecha término de la concesión')),
+        'investment': sanitize_value(row.get('Inversión Materializada estimada')),
+        'progress': sanitize_value(row.get('% Avance obras físicas'))
     })
 
 for base_code in BASE_GROUPS:
@@ -233,11 +238,12 @@ UNIQUE_SECTORS = sorted([str(s) for s in df_contracts['Sector del proyecto'].dro
 total_inv_uf = float(df_contracts['Inversión Materializada estimada'].dropna().sum())
 total_bidders = int(sum(len(BIDDERS_BY_PROJECT.get(str(row['Código proyecto'] or '').strip(), [])) for _, row in df_contracts.iterrows()))
 hitos_status = {
-    'operación':      int((df_contracts['ESTADO'] == 'Operación').sum()),
-    'construcción':   int((df_contracts['ESTADO'] == 'Construcción').sum()),
+    'operación':       int((df_contracts['ESTADO'] == 'Operación').sum()),
+    'construcción':    int((df_contracts['ESTADO'] == 'Construcción').sum()),
     'comb_const_oper': int((df_contracts['ESTADO'] == 'Construcción y Operación').sum()),
-    'finalizado':     int((df_contracts['ESTADO'] == 'Finalizado').sum()),
-    'activos':        int(((df_contracts['ESTADO'] == 'Operación') | (df_contracts['ESTADO'] == 'Construcción y Operación')).sum())
+    'licitación':      int((df_contracts['ESTADO'].astype(str).str.contains('Licitaci', case=False, na=False)).sum()),
+    'finalizado':      int((df_contracts['ESTADO'] == 'Finalizado').sum()),
+    'activos':         int(((df_contracts['ESTADO'] == 'Operación') | (df_contracts['ESTADO'] == 'Construcción y Operación')).sum())
 }
 sector_stats  = {str(k): int(v) for k, v in df_contracts['Sector del proyecto'].value_counts().to_dict().items()}
 status_stats  = {str(k): int(v) for k, v in df_contracts['ESTADO'].value_counts().to_dict().items()}
@@ -385,7 +391,9 @@ except Exception as e:
 print("\nProcesando hoja 'Base MOP'...")
 
 try:
-    MOP_EXCEL_PATH = os.path.join(BASE_DIR, 'BASE MOP.xlsx')
+    MOP_EXCEL_PATH = os.path.join(DATA_DIR, 'BASE MOP.xlsx')
+    if not os.path.exists(MOP_EXCEL_PATH):
+        MOP_EXCEL_PATH = os.path.join(BASE_DIR, 'BASE MOP.xlsx')
     df_mop = pd.read_excel(MOP_EXCEL_PATH, sheet_name='Base MOP')
     print(f"  -> {len(df_mop)} filas cargadas en hoja 'Base MOP'")
 
@@ -609,3 +617,146 @@ try:
 except Exception as e:
     print(f"[WARN] Error al exportar datos MOP: {e}")
     import traceback; traceback.print_exc()
+
+
+# ── SECTRA: Exportar datos de Secretaría de Planificación de Transporte ───────────
+print("\nProcesando Base de Datos SECTRA...")
+
+try:
+    SECTRA_EXCEL_PATH = os.path.join(DATA_DIR, 'Proyectos_SECTRA.xlsx')
+    if not os.path.exists(SECTRA_EXCEL_PATH):
+        SECTRA_EXCEL_PATH = os.path.join(DATA_DIR, 'Proyectos_SECTRA_actualizado.xlsx')
+    if not os.path.exists(SECTRA_EXCEL_PATH):
+        SECTRA_EXCEL_PATH = os.path.join(BASE_DIR, 'Proyectos_SECTRA.xlsx')
+
+    if os.path.exists(SECTRA_EXCEL_PATH):
+        # 1. Cargar proyectos
+        df_sectra = pd.read_excel(SECTRA_EXCEL_PATH, sheet_name='Proyectos SECTRA')
+        print(f"  -> {len(df_sectra)} filas cargadas en hoja 'Proyectos SECTRA'")
+
+        # 2. Cargar conurbaciones e indicadores
+        df_conurb = pd.DataFrame()
+        try:
+            df_conurb = pd.read_excel(SECTRA_EXCEL_PATH, sheet_name='Info por Conurbación')
+            print(f"  -> {len(df_conurb)} filas cargadas en hoja 'Info por Conurbación'")
+        except Exception:
+            print("  -> Hoja 'Info por Conurbación' no encontrada o vacía.")
+
+        sectra_projects = []
+        for idx, row in df_sectra.iterrows():
+            inv = sanitize_value(row.get('Inversión'))
+            if inv is not None:
+                try:
+                    inv = float(inv)
+                except Exception:
+                    inv = None
+
+            sectra_projects.append({
+                'id': int(idx + 1),
+                'region': sanitize_value(row.get('Región')),
+                'city': sanitize_value(row.get('Ciudad / Área')),
+                'number': sanitize_value(row.get('N°')),
+                'name': sanitize_value(row.get('Proyecto')),
+                'investment': inv,
+                'currency': sanitize_value(row.get('Moneda')),
+                'tir': sanitize_value(row.get('TIR')),
+                'mandante': sanitize_value(row.get('Mandante')),
+                'status': sanitize_value(row.get('Estado')),
+                'description': sanitize_value(row.get('Descripción')),
+                'source_url': sanitize_value(row.get('Fuente URL')),
+            })
+
+        conurbations = []
+        if not df_conurb.empty:
+            for c_idx, crow in df_conurb.iterrows():
+                conurbations.append({
+                    'id': int(c_idx + 1),
+                    'region': sanitize_value(crow.get('Región')),
+                    'city': sanitize_value(crow.get('Ciudad / Conurbación')),
+                    'population': sanitize_value(crow.get('Población')),
+                    'households': sanitize_value(crow.get('Hogares')),
+                    'private_vehicles': sanitize_value(crow.get('Vehículos privados')),
+                    'road_network': sanitize_value(crow.get('Redes viales')),
+                    'daily_trips': sanitize_value(crow.get('Viajes diarios')),
+                    'execution_deadline': sanitize_value(crow.get('Plazo de ejecución')),
+                    'portfolio_value': sanitize_value(crow.get('Valor de la cartera')),
+                    'source_url': sanitize_value(crow.get('Fuente URL')),
+                })
+
+        # Summary KPIs & distributions
+        unique_regions = sorted(list(set([p['region'] for p in sectra_projects if p['region']])))
+        unique_cities = sorted(list(set([p['city'] for p in sectra_projects if p['city']])))
+        unique_statuses = sorted(list(set([p['status'] for p in sectra_projects if p['status']])))
+        unique_mandantes = sorted(list(set([p['mandante'] for p in sectra_projects if p['mandante']])))
+
+        # Region stats
+        by_region = []
+        for r in unique_regions:
+            r_projs = [p for p in sectra_projects if p['region'] == r]
+            r_inv = sum([p['investment'] for p in r_projs if p['investment'] and p.get('currency') == 'UF'])
+            by_region.append({
+                'region': r,
+                'count': len(r_projs),
+                'total_inv_uf': round(r_inv, 2)
+            })
+        by_region.sort(key=lambda x: x['count'], reverse=True)
+
+        # Status stats
+        by_status = []
+        for st in unique_statuses:
+            st_projs = [p for p in sectra_projects if p['status'] == st]
+            by_status.append({
+                'status': st,
+                'count': len(st_projs)
+            })
+        by_status.sort(key=lambda x: x['count'], reverse=True)
+
+        # Mandante stats
+        by_mandante = []
+        for m in unique_mandantes:
+            m_projs = [p for p in sectra_projects if p['mandante'] == m]
+            by_mandante.append({
+                'mandante': m,
+                'count': len(m_projs)
+            })
+        by_mandante.sort(key=lambda x: x['count'], reverse=True)
+
+        total_inv_uf = sum([p['investment'] for p in sectra_projects if p['investment'] and p.get('currency') == 'UF'])
+
+        sectra_payload = {
+            'summary': {
+                'total_projects': len(sectra_projects),
+                'total_investment_uf': round(total_inv_uf, 2),
+                'total_conurbations': len(conurbations),
+                'total_regions': len(unique_regions),
+                'total_cities': len(unique_cities)
+            },
+            'projects': sectra_projects,
+            'conurbations': conurbations,
+            'by_region': by_region,
+            'by_status': by_status,
+            'by_mandante': by_mandante,
+            'filters': {
+                'regions': unique_regions,
+                'cities': unique_cities,
+                'statuses': unique_statuses,
+                'mandantes': unique_mandantes
+            }
+        }
+
+        out_sectra_js = os.path.join(OUT_DIR, 'sectra_data.js')
+        sectra_json = json.dumps(sectra_payload, ensure_ascii=False, separators=(',', ':'))
+        with open(out_sectra_js, 'w', encoding='utf-8') as f:
+            f.write(f'window.SECTRA_DATA = {sectra_json};')
+
+        size_sectra = os.path.getsize(out_sectra_js) / 1024 / 1024
+        print(f"OK SECTRA Generado: {out_sectra_js} ({size_sectra:.3f} MB)")
+        print(f"   Proyectos SECTRA exportados: {len(sectra_projects)}")
+        print(f"   Conurbaciones exportadas: {len(conurbations)}")
+    else:
+        print(f"[WARN] No se encontró el archivo Excel de SECTRA en {SECTRA_EXCEL_PATH}")
+
+except Exception as e:
+    print(f"[WARN] Error al exportar datos SECTRA: {e}")
+    import traceback; traceback.print_exc()
+

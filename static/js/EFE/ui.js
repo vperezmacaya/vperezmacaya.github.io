@@ -9,20 +9,20 @@ function efeDebounce(fn, delay) {
 }
 
 function efeFormatRegionCell(regionStr) {
-    if (!regionStr || String(regionStr).trim() === '') {
+    if (!regionStr || String(regionStr).trim() === '' || String(regionStr).trim() === 'N/A') {
         return '<span style="color:var(--text-muted);font-style:italic">Sin región</span>';
     }
     const str = String(regionStr).trim();
     if (str.toLowerCase().includes('nacional')) {
-        return '<span class="efe-region-pill">Nacional</span>';
+        return '<span class="region-pill">Nacional</span>';
     }
 
     const parts = str.split(/[;,/\n]+/).map(p => shortenRegionName(p.trim())).filter(p => p.length > 0);
     if (parts.length > 1) {
-        return `<div class="efe-region-pills-wrap">${parts.map(p => `<span class="efe-region-pill">${p}</span>`).join('')}</div>`;
+        return `<div class="region-pills-wrap">${parts.map(p => `<span class="region-pill">${p}</span>`).join('')}</div>`;
     }
 
-    return `<span class="efe-region-text">${shortenRegionName(str)}</span>`;
+    return `<span>${shortenRegionName(str)}</span>`;
 }
 
 function efeRenderTable(projects) {
@@ -32,7 +32,7 @@ function efeRenderTable(projects) {
 
     if (selectedProj) {
         // Replace table with full project detail view card
-        efeShowProjectDetailView(selectedProj, projects);
+        efeShowProjectDetailView(selectedProj, currentFilteredEFEProjects);
         return;
     }
 
@@ -49,13 +49,15 @@ function efeRenderTable(projects) {
     if (efeEmptyState) efeEmptyState.style.display = 'none';
 
     efeTableBody.innerHTML = '';
-    projects.forEach(proj => {
+    projects.forEach((proj, index) => {
         const tr = document.createElement('tr');
-        tr.className = 'efe-table-row';
+        tr.className = 'row-main';
+        tr.id = `efe-row-${index}`;
+        tr.style.cursor = 'pointer';
         tr.innerHTML = `
-            <td class="efe-td efe-td-name" title="${proj.name || ''}">${proj.name || '—'}</td>
-            <td class="efe-td efe-td-region">${efeFormatRegionCell(proj.region)}</td>
-            <td class="efe-td efe-td-inv">${efeFormatUSD(proj.investment_usd)}</td>
+            <td><strong>${proj.name || 'Sin nombre'}</strong></td>
+            <td>${efeFormatRegionCell(proj.region)}</td>
+            <td style="text-align: right;"><span style="font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums;">${efeFormatUSD(proj.investment_usd)}</span></td>
         `;
 
         // Select project on click
@@ -94,62 +96,89 @@ function efeShowProjectDetailView(proj, currentFilteredProjects) {
     }
 
     if (efeTableContainerView) efeTableContainerView.style.display = 'none';
-    if (efeProjectDetailView) efeProjectDetailView.style.display = 'flex';
+    if (efeProjectDetailView) {
+        efeProjectDetailView.style.display = 'flex';
+        efeProjectDetailView.scrollTop = 0;
+    }
 
     if (!efeDetailViewBody) return;
+    efeDetailViewBody.scrollTop = 0;
 
     const rawDesc = proj.description;
     const hasDesc = rawDesc && String(rawDesc).trim() !== '' && String(rawDesc).trim().toLowerCase() !== 'none';
     const descContent = hasDesc
         ? String(rawDesc).trim()
-        : '<span style="color:var(--text-muted);font-style:italic">No se registra</span>';
+        : 'No se registra descripción en la base de datos para este proyecto.';
 
     const rawSource = proj.source;
     const hasSource = rawSource && String(rawSource).trim() !== '' && String(rawSource).trim().toLowerCase() !== 'none';
 
+    const filialColors = {
+        'EFE Valparaíso': '#0284c7',
+        'EFE Central': '#2563eb',
+        'EFE Sur': '#d97706',
+        'Nacional': '#8b5cf6'
+    };
+    const filialColor = filialColors[proj.filial] || '#3b82f6';
+    const subtitleText = proj.filial ? `Filial ${proj.filial}` : 'Red Ferroviaria Nacional (EFE Matriz)';
+
+    const badgeClass = proj.filial === 'EFE Sur' ? 'badge-warning' : (proj.filial === 'EFE Valparaíso' ? 'badge-info' : (proj.filial === 'EFE Central' ? 'badge-info' : 'badge-neutral'));
+    const badgeText = proj.filial || 'Nacional';
+
+    const invText = (proj.investment_usd != null && !isNaN(proj.investment_usd) && Number(proj.investment_usd) > 0)
+        ? efeFormatUSD(proj.investment_usd)
+        : 'No informada';
+
+    // Región formateada
+    let regionPillsHTML = '';
+    const regStr = proj.region ? String(proj.region).trim() : 'Nacional';
+    if (regStr.toLowerCase().includes('nacional') || !regStr) {
+        regionPillsHTML = `<span class="region-pill region-pill-nacional">Nacional</span>`;
+    } else {
+        const parts = regStr.split(/[;,/\n]+/).map(r => shortenRegionName(r.trim())).filter(Boolean);
+        regionPillsHTML = `<div class="region-pills-wrap">${parts.map(r => `<span class="region-pill">${r}</span>`).join('')}</div>`;
+    }
+
+    const linkSource = hasSource ? `
+        <div class="detail-actions" style="margin-top: 0.5rem; gap: 0.4rem;">
+            <a href="${String(rawSource).trim()}" target="_blank" class="btn-action-link" style="font-size: 0.72rem; padding: 0.3rem 0.6rem;">
+                <i data-lucide="globe" style="width: 13px; height: 13px;"></i> Web EFE Proyectos
+            </a>
+        </div>
+    ` : '';
+
     efeDetailViewBody.innerHTML = `
-        <!-- Title & Subtitle Card -->
-        <div style="background: rgba(22, 163, 74, 0.08); border: 1px solid rgba(22, 163, 74, 0.25); border-radius: 8px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.4rem; flex-shrink: 0;">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
-                <span class="badge" style="background: #16a34a; color: white; font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 0.25rem;">
-                    <i data-lucide="train-front" style="width: 12px; height: 12px;"></i> Proyecto EFE
-                </span>
-                <span style="font-size: 0.7rem; color: var(--text-muted);">COD Shapes: <strong>${(proj.shapes || []).join(', ') || 'N/A'}</strong></span>
+        <!-- 1. Nombre y Cabecera del Proyecto (Idéntico a index.html) -->
+        <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.1rem;">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
+                <h3 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--text-primary); line-height: 1.35; font-family: var(--font-heading); flex: 1; min-width: 0;">${proj.name}</h3>
+                <span class="badge ${badgeClass}" style="flex-shrink: 0; font-size: 0.7rem; padding: 0.2rem 0.5rem; white-space: nowrap; margin-top: 2px;">${badgeText}</span>
             </div>
-            <h3 style="font-size: 0.92rem; font-weight: 700; color: var(--text-primary); margin: 0; line-height: 1.35;">${proj.name}</h3>
+            <div style="font-size: 0.75rem; color: ${filialColor}; font-weight: 600; margin-top: 0.25rem;">${subtitleText}</div>
         </div>
 
-        <!-- Meta Details Grid -->
-        <div style="display: grid; grid-template-columns: ${proj.filial ? '1fr 1fr 1fr' : '1fr 1fr'}; gap: 0.5rem; flex-shrink: 0;">
-            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.55rem 0.7rem; display: flex; flex-direction: column; gap: 0.15rem;">
-                <span style="font-size: 0.66rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Región</span>
-                <span style="font-size: 0.78rem; font-weight: 600; color: var(--text-primary);">${proj.region || 'Sin información'}</span>
-            </div>
-            ${proj.filial ? `
-            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.55rem 0.7rem; display: flex; flex-direction: column; gap: 0.15rem;">
-                <span style="font-size: 0.66rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Filial</span>
-                <span style="font-size: 0.78rem; font-weight: 600; color: var(--text-primary);">${proj.filial}</span>
-            </div>` : ''}
-            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.55rem 0.7rem; display: flex; flex-direction: column; gap: 0.15rem;">
-                <span style="font-size: 0.66rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Inversión (USD)</span>
-                <span style="font-size: 0.78rem; font-weight: 700; color: #4ade80;">${efeFormatUSD(proj.investment_usd)}</span>
+        <!-- 2. Descripción del Proyecto (Segundo) -->
+        <div class="detail-section">
+            <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.35rem;">Descripción</h4>
+            <p class="detail-desc" style="font-size: 0.76rem; line-height: 1.45; white-space: pre-wrap;">${descContent}</p>
+        </div>
+
+        <!-- 3. Datos del Proyecto (Al final) -->
+        <div class="detail-section">
+            <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.4rem;">Datos del Proyecto</h4>
+            <div class="detail-grid" style="grid-template-columns: 110px 1fr; gap: 0.3rem; font-size: 0.74rem;">
+                <span class="detail-label">Filial:</span>
+                <span class="detail-value">${proj.filial || 'Nacional (EFE Matriz)'}</span>
+
+                <span class="detail-label">Región:</span>
+                <span class="detail-value">${regionPillsHTML}</span>
+
+                <span class="detail-label">Inversión (USD):</span>
+                <span class="detail-value"><strong>${invText}</strong></span>
             </div>
         </div>
 
-        <!-- Description Card -->
-        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.4rem; flex: 1; min-height: 0; overflow: hidden;">
-            <div style="font-size: 0.72rem; font-weight: 700; color: #4ade80; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.35rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.35rem; flex-shrink: 0;">
-                <i data-lucide="file-text" style="width: 13px; height: 13px;"></i> Descripción del Proyecto
-            </div>
-            <div style="font-size: 0.76rem; color: var(--text-primary); line-height: 1.5; white-space: pre-wrap; overflow-y: auto; flex: 1; padding-right: 0.2rem;">${descContent}</div>
-        </div>
-
-        <!-- Source Footer Card (if present) -->
-        ${hasSource ? `
-        <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.45rem 0.65rem; display: flex; align-items: center; gap: 0.4rem; font-size: 0.7rem; color: var(--text-secondary); flex-shrink: 0;">
-            <i data-lucide="info" style="width: 12px; height: 12px; color: var(--text-muted); flex-shrink: 0;"></i>
-            <span>Fuente: <strong>${String(rawSource).trim()}</strong></span>
-        </div>` : ''}
+        ${linkSource}
     `;
 
     efeUpdateDetailNavButtons(proj.name, currentFilteredProjects);
@@ -169,6 +198,7 @@ function efeUpdateDetailNavButtons(currentProjName, currentFilteredProjects) {
         efeBtnDetailPrev.disabled = false;
         efeBtnDetailPrev.style.opacity = '1';
         efeBtnDetailPrev.style.cursor = 'pointer';
+        efeBtnDetailPrev.style.pointerEvents = 'auto';
         efeBtnDetailPrev.onclick = (e) => {
             e.stopPropagation();
             efeSelectProject(list[idx - 1]);
@@ -177,6 +207,7 @@ function efeUpdateDetailNavButtons(currentProjName, currentFilteredProjects) {
         efeBtnDetailPrev.disabled = true;
         efeBtnDetailPrev.style.opacity = '0.35';
         efeBtnDetailPrev.style.cursor = 'not-allowed';
+        efeBtnDetailPrev.style.pointerEvents = 'none';
         efeBtnDetailPrev.onclick = null;
     }
 
@@ -184,6 +215,7 @@ function efeUpdateDetailNavButtons(currentProjName, currentFilteredProjects) {
         efeBtnDetailNext.disabled = false;
         efeBtnDetailNext.style.opacity = '1';
         efeBtnDetailNext.style.cursor = 'pointer';
+        efeBtnDetailNext.style.pointerEvents = 'auto';
         efeBtnDetailNext.onclick = (e) => {
             e.stopPropagation();
             efeSelectProject(list[idx + 1]);
@@ -192,16 +224,20 @@ function efeUpdateDetailNavButtons(currentProjName, currentFilteredProjects) {
         efeBtnDetailNext.disabled = true;
         efeBtnDetailNext.style.opacity = '0.35';
         efeBtnDetailNext.style.cursor = 'not-allowed';
+        efeBtnDetailNext.style.pointerEvents = 'none';
         efeBtnDetailNext.onclick = null;
     }
 }
 
 function efeUpdatePagination(page, totalPages, totalFiltered) {
+    const pageSize = efeState.pageSize || 50;
+    const start = totalFiltered === 0 ? 0 : (page - 1) * pageSize + 1;
+    const end = Math.min(page * pageSize, totalFiltered);
     if (efePaginationInfo) {
-        efePaginationInfo.textContent = `Página ${page} de ${totalPages} (${totalFiltered} proyectos)`;
+        efePaginationInfo.textContent = `${start}-${end} de ${totalFiltered}`;
     }
-    if (efeBtnPrev) efeBtnPrev.disabled = page <= 1;
-    if (efeBtnNext) efeBtnNext.disabled = page >= totalPages;
+    if (efeBtnPrev) efeBtnPrev.disabled = (page <= 1);
+    if (efeBtnNext) efeBtnNext.disabled = (page >= totalPages || totalFiltered === 0);
 }
 
 // ─── DOMContentLoaded ────────────────────────────────────────────────────────
@@ -254,7 +290,17 @@ document.addEventListener('DOMContentLoaded', () => {
             efeState.selectedFiliales = [];
             efeState.selectedProjectName = null;
             efeState.hoveredProjectName = null;
+            efeState.sortBy = 'name';
+            efeState.sortOrder = 'asc';
             efeState.page = 1;
+
+            document.querySelectorAll('.data-table th.sortable').forEach(el => {
+                el.classList.remove('asc', 'desc');
+                if (el.getAttribute('data-sort') === efeState.sortBy) {
+                    el.classList.add(efeState.sortOrder);
+                }
+            });
+
             document.querySelectorAll('.efe-region-checkbox').forEach(cb => cb.checked = false);
             if (efeRegionCheckAll) efeRegionCheckAll.checked = false;
             if (efeRegionMultiselectText) efeRegionMultiselectText.textContent = 'Todas las regiones';
@@ -263,6 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (efeFilialCheckAll) efeFilialCheckAll.checked = false;
             if (efeFilialMultiselectText) efeFilialMultiselectText.textContent = 'Todas las filiales';
 
+            efeShowTableListView();
             efeFetchData();
             if (typeof efeUpdateMapStyles === 'function') efeUpdateMapStyles();
         });
@@ -285,4 +332,3 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-

@@ -14,6 +14,7 @@ let appState = {
     hoveredProjectCode: null,  // track hovered project code
     timelineOpen: false,       // timeline panel visibility flag
     investmentOpen: false,
+    contractsOpen: false,      // contracts analytics panel visibility flag
     biddersOpen: false,        // bidders analytics panel visibility flag
     topCompaniesMode: 'participaciones' // 'participaciones' | 'adjudicaciones'
 };
@@ -48,7 +49,7 @@ let availableSectorsList = [
     'Penitenciaria',
     'Soluciones hídricas'
 ];
-let availableStatusesList = ['Construcción', 'Construcción y Operación', 'Finalizado', 'Operación'];
+let availableStatusesList = ['Construcción', 'Construcción y Operación', 'En Licitación', 'Finalizado', 'Operación'];
 
 // Leaflet Map state and layers
 let leafletMap = null;

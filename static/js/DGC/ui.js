@@ -2,10 +2,12 @@ function setActiveSubheaderTab(activeId) {
     const btnMap = document.getElementById('btn-view-map');
     const btnTl  = document.getElementById('btn-view-timeline');
     const btnInv = document.getElementById('btn-view-investment');
+    const btnCnt = document.getElementById('btn-view-contracts');
     const btnBid = document.getElementById('btn-view-bidders');
     if (btnMap) btnMap.classList.toggle('active', activeId === 'map');
     if (btnTl)  btnTl.classList.toggle('active', activeId === 'timeline');
     if (btnInv) btnInv.classList.toggle('active', activeId === 'investment');
+    if (btnCnt) btnCnt.classList.toggle('active', activeId === 'contracts');
     if (btnBid) btnBid.classList.toggle('active', activeId === 'bidders');
 }
 
@@ -13,12 +15,14 @@ function initSubheaderViewSwitcher() {
     const btnMap = document.getElementById('btn-view-map');
     const btnTl  = document.getElementById('btn-view-timeline');
     const btnInv = document.getElementById('btn-view-investment');
+    const btnCnt = document.getElementById('btn-view-contracts');
     const btnBid = document.getElementById('btn-view-bidders');
 
     if (btnMap) {
         btnMap.addEventListener('click', () => {
             if (typeof hideTimelineView === 'function') hideTimelineView();
             if (typeof hideInvestmentView === 'function') hideInvestmentView();
+            if (typeof hideContractsView === 'function') hideContractsView();
             if (typeof hideBiddersView === 'function') hideBiddersView();
             setActiveSubheaderTab('map');
         });
@@ -27,6 +31,7 @@ function initSubheaderViewSwitcher() {
     if (btnTl) {
         btnTl.addEventListener('click', () => {
             if (typeof hideInvestmentView === 'function') hideInvestmentView();
+            if (typeof hideContractsView === 'function') hideContractsView();
             if (typeof hideBiddersView === 'function') hideBiddersView();
             if (typeof showTimelineView === 'function') showTimelineView();
             setActiveSubheaderTab('timeline');
@@ -36,9 +41,20 @@ function initSubheaderViewSwitcher() {
     if (btnInv) {
         btnInv.addEventListener('click', () => {
             if (typeof hideTimelineView === 'function') hideTimelineView();
+            if (typeof hideContractsView === 'function') hideContractsView();
             if (typeof hideBiddersView === 'function') hideBiddersView();
             if (typeof showInvestmentView === 'function') showInvestmentView();
             setActiveSubheaderTab('investment');
+        });
+    }
+
+    if (btnCnt) {
+        btnCnt.addEventListener('click', () => {
+            if (typeof hideTimelineView === 'function') hideTimelineView();
+            if (typeof hideInvestmentView === 'function') hideInvestmentView();
+            if (typeof hideBiddersView === 'function') hideBiddersView();
+            if (typeof showContractsView === 'function') showContractsView();
+            setActiveSubheaderTab('contracts');
         });
     }
 
@@ -46,6 +62,7 @@ function initSubheaderViewSwitcher() {
         btnBid.addEventListener('click', () => {
             if (typeof hideTimelineView === 'function') hideTimelineView();
             if (typeof hideInvestmentView === 'function') hideInvestmentView();
+            if (typeof hideContractsView === 'function') hideContractsView();
             if (typeof showBiddersView === 'function') showBiddersView();
             setActiveSubheaderTab('bidders');
         });
@@ -333,6 +350,7 @@ function renderTable(contracts) {
         if (status === 'Operación') badgeClass = 'badge-success';
         else if (status === 'Construcción') badgeClass = 'badge-info';
         else if (status === 'Construcción y Operación') badgeClass = 'badge-warning';
+        else if (status === 'En Licitación' || status.toLowerCase().includes('licitaci')) badgeClass = 'badge-licitacion';
         else if (status === 'Finalizado') badgeClass = 'badge-neutral';
 
         const tr = document.createElement('tr');
@@ -433,6 +451,7 @@ function renderProjectDetailBody(cleanCode, item) {
     if (status === 'Operación') badgeClass = 'badge-success';
     else if (status === 'Construcción') badgeClass = 'badge-info';
     else if (status === 'Construcción y Operación') badgeClass = 'badge-warning';
+    else if (status === 'En Licitación' || (status && status.toLowerCase().includes('licitaci'))) badgeClass = 'badge-licitacion';
 
     const titleName = (item && item['Nombre de uso común']) || (item && item['Nombre de la Concesión ']) || (projectMetadata[cleanCode] && projectMetadata[cleanCode].name) || 'Concesión';
 
@@ -449,24 +468,19 @@ function renderProjectDetailBody(cleanCode, item) {
         ? `<a href="${item['Link a CMF de SC']}" target="_blank" class="btn-action-link" style="font-size: 0.72rem; padding: 0.3rem 0.6rem;"><i data-lucide="external-link"></i> Perfil CMF</a>`
         : '';
 
-    const linkMap = item && item['Link a mapa página web'] && item['Link a mapa página web'] !== 'Sitio en construcción'
-        ? `<a href="${item['Link a mapa página web']}" target="_blank" class="btn-action-link" style="font-size: 0.72rem; padding: 0.3rem 0.6rem;"><i data-lucide="map-pin"></i> Mapa Virtual</a>`
+    const linkMap = item && item['Link a mapa página web'] && item['Link a mapa página web'] !== 'SIN' && item['Link a mapa página web'] !== 'Sin informar'
+        ? `<a href="${item['Link a mapa página web']}" target="_blank" class="btn-action-link" style="font-size: 0.72rem; padding: 0.3rem 0.6rem;"><i data-lucide="map-pin"></i> Ficha MOP</a>`
         : '';
 
-    const linkMOP = item && item['Link pagina web concesiones'] && item['Link pagina web concesiones'] !== 'SIN'
-        ? `<a href="${item['Link pagina web concesiones']}" target="_blank" class="btn-action-link" style="font-size: 0.72rem; padding: 0.3rem 0.6rem;"><i data-lucide="globe"></i> Ficha MOP</a>`
+    const linkMOP = item && item['Link pagina web concesiones'] && item['Link pagina web concesiones'] !== 'SIN' && item['Link pagina web concesiones'] !== 'Sin informar'
+        ? `<a href="${item['Link pagina web concesiones']}" target="_blank" class="btn-action-link" style="font-size: 0.72rem; padding: 0.3rem 0.6rem;"><i data-lucide="globe"></i> Web Concesiones</a>`
         : '';
 
-    // Build Street View HTML section
+    // Street view iframe handling
     let streetViewHTML = '';
-    let rawSvVal = null;
-    if (item) {
-        for (let k of Object.keys(item)) {
-            if (k.toLowerCase().replace(/[\s_]/g, '') === 'streetview') {
-                rawSvVal = item[k];
-                break;
-            }
-        }
+    let rawSvVal = item ? (item['streetview'] || item['StreetView'] || item['Streetview']) : '';
+    if (!rawSvVal && projectMetadata[cleanCode]) {
+        rawSvVal = projectMetadata[cleanCode].streetview || '';
     }
     let svUrl = rawSvVal ? String(rawSvVal).trim() : '';
 
@@ -496,6 +510,8 @@ function renderProjectDetailBody(cleanCode, item) {
 
     // Build bidders HTML section (Contenedores por oferente con desglose de consorcio)
     const biddersList = (item && item.bidders) || (projectMetadata[cleanCode] && projectMetadata[cleanCode].bidders) || [];
+    const isEnLicitacion = (status === 'En Licitación' || (item && item['ESTADO'] === 'En Licitación') || (status && status.toLowerCase().includes('licitaci')));
+
     let biddersHTML = '';
     if (biddersList && biddersList.length > 0) {
         const bidderItems = biddersList.map(b => {
@@ -532,6 +548,19 @@ function renderProjectDetailBody(cleanCode, item) {
                 </ul>
             </div>
         `;
+    } else if (isEnLicitacion) {
+        biddersHTML = `
+            <div class="detail-section" style="margin-top: 0.65rem;">
+                <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.35rem;">
+                    <i data-lucide="users" style="width: 14px; height: 14px; color: #a78bfa;"></i>
+                    Oferentes / Licitantes
+                </h4>
+                <p class="detail-desc" style="font-size: 0.75rem; color: #c4b5fd; font-style: italic; background: rgba(139, 92, 246, 0.08); padding: 0.45rem 0.6rem; border-radius: 6px; border: 1px solid rgba(139, 92, 246, 0.25); display: flex; align-items: center; gap: 0.35rem;">
+                    <i data-lucide="info" style="width: 13px; height: 13px; flex-shrink: 0; color: #a78bfa;"></i>
+                    El proyecto se encuentra actualmente en proceso de licitación.
+                </p>
+            </div>
+        `;
     } else {
         biddersHTML = `
             <div class="detail-section" style="margin-top: 0.65rem;">
@@ -539,7 +568,7 @@ function renderProjectDetailBody(cleanCode, item) {
                     <i data-lucide="users" style="width: 14px; height: 14px; color: var(--text-muted);"></i>
                     Oferentes / Licitantes
                 </h4>
-                <p class="detail-desc" style="font-size: 0.75rem; color: var(--text-muted); font-style: italic; background: rgba(255, 255, 255, 0.02); padding: 0.4rem 0.5rem; border-radius: 6px; border: 1px dashed var(--border-color);">No se detectan licitantes en la base de datos para este proyecto.</p>
+                <p class="detail-desc" style="font-size: 0.75rem; color: var(--text-muted); font-style: italic; background: rgba(255, 255, 255, 0.02); padding: 0.4rem 0.5rem; border-radius: 6px; border: 1px dashed var(--border-color);">No se registran licitantes en la base de datos para este proyecto.</p>
             </div>
         `;
     }
@@ -563,7 +592,8 @@ function renderProjectDetailBody(cleanCode, item) {
             const statusColors = {
                 'Operación': '#059669',
                 'Construcción': '#0284c7',
-                'Construcción y Operación': '#d97706'
+                'Construcción y Operación': '#d97706',
+                'En Licitación': '#8b5cf6'
             };
             const dotColor = statusColors[node.status] || '#64748b';
             return `<button
@@ -681,6 +711,9 @@ function renderProjectDetailBody(cleanCode, item) {
 
                     <span class="detail-label">Plazo:</span>
                     <span class="detail-value">${(item && item['Plazo fijo / variable ']) || 'Indefinido'}</span>
+
+                    <span class="detail-label">Llamado Licitación:</span>
+                    <span class="detail-value">${item ? formatDate(item['Fecha llamado a licitación']) : 'N/A'}</span>
 
                     <span class="detail-label">Adjudicación:</span>
                     <span class="detail-value">${item ? formatDate(item['Fecha decreto adjudicación']) : 'N/A'}</span>

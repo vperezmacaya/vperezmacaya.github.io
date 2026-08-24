@@ -9,6 +9,7 @@ let efeState = {
     sortOrder: 'asc',
     page: 1,
     pageSize: 50,
+    investmentOpen: false
 };
 
 // Leaflet Map state
@@ -20,6 +21,8 @@ let efeShapeToProjects = {};    // cod (int) -> array of project names
 let efeHighlightedCods = new Set(); // currently highlighted shape CODs
 let efeShapeGeometries = {};    // cod (string) -> array of Leaflet layer objects
 let efeProjectMarkers = [];     // Array of train marker objects currently on map
+let efeClusterOriginMarkers = []; // Array of cluster origin dot markers
+let efeClusterLegLayers = [];     // Array of spiderfy connecting leg polylines
 
 // Available filter options (hardcoded)
 let efeAvailableRegions = [

@@ -1,4 +1,5 @@
 // ─── EFE Filters & Data Module ───────────────────────────────────────────────
+let currentFilteredEFEProjects = [];
 
 function shortenRegionName(name) {
     if (!name) return '';
@@ -9,6 +10,18 @@ function shortenRegionName(name) {
     if (/ays[eé]n/i.test(str)) return 'Aysén';
     if (/magallanes/i.test(str)) return 'Magallanes';
     if (/o'higgins|bernardo/i.test(str)) return "O'Higgins";
+    if (/biob[ií]o/i.test(str)) return 'Biobío';
+    if (/araucan[ií]a/i.test(str)) return 'La Araucanía';
+    if (/r[ií]os/i.test(str)) return 'Los Ríos';
+    if (/lagos/i.test(str)) return 'Los Lagos';
+    if (/tarapac[aá]/i.test(str)) return 'Tarapacá';
+    if (/valpara[ií]so/i.test(str)) return 'Valparaíso';
+    if (/antofagasta/i.test(str)) return 'Antofagasta';
+    if (/atacama/i.test(str)) return 'Atacama';
+    if (/coquimbo/i.test(str)) return 'Coquimbo';
+    if (/maule/i.test(str)) return 'Maule';
+    if (/ñuble/i.test(str)) return 'Ñuble';
+    if (/arica/i.test(str)) return 'Arica y Parinacota';
 
     return str;
 }
@@ -27,12 +40,21 @@ function efeFormatUSD(value) {
     return `US$ ${value.toLocaleString('es-CL')}`;
 }
 
+const EFE_OPERATIONAL_REGIONS = ['Valparaíso', 'Metropolitana', "O'Higgins", 'Maule', 'Ñuble', 'Biobío', 'La Araucanía', 'Los Lagos'];
+
 function efeRegionMatchesFilter(projectRegion, selectedRegions) {
     if (!selectedRegions || selectedRegions.length === 0) return true;
     if (!projectRegion) return false;
 
     const normProjRegion = efeNormalize(projectRegion);
-    if (normProjRegion.includes('nacional')) return true;
+    if (normProjRegion.includes('nacional')) {
+        // Los proyectos nacionales solo se incluyen cuando la región filtrada
+        // corresponde a alguna región con red/servicio/proyectos de EFE.
+        return selectedRegions.some(selected => {
+            const cleanSel = shortenRegionName(selected);
+            return EFE_OPERATIONAL_REGIONS.some(opReg => shortenRegionName(opReg) === cleanSel);
+        });
+    }
 
     // Split multiregional string into tokens (by ;, ,, /, \n)
     const projTokens = normProjRegion
@@ -148,7 +170,7 @@ function efeLoadFilters() {
 }
 
 function efeInitTableSorting() {
-    document.querySelectorAll('.efe-sortable').forEach(th => {
+    document.querySelectorAll('.data-table th.sortable').forEach(th => {
         th.addEventListener('click', () => {
             const col = th.getAttribute('data-sort');
             if (!col) return;
@@ -160,6 +182,11 @@ function efeInitTableSorting() {
                 efeState.sortOrder = (col === 'investment_usd') ? 'desc' : 'asc';
             }
 
+            document.querySelectorAll('.data-table th.sortable').forEach(el => {
+                el.classList.remove('asc', 'desc');
+            });
+            th.classList.add(efeState.sortOrder);
+
             efeState.page = 1;
             efeFetchData();
         });
@@ -167,20 +194,11 @@ function efeInitTableSorting() {
 }
 
 function efeUpdateSortHeaderIcons() {
-    document.querySelectorAll('.efe-sortable').forEach(th => {
+    document.querySelectorAll('.data-table th.sortable').forEach(th => {
         const col = th.getAttribute('data-sort');
-        th.classList.remove('sorted-asc', 'sorted-desc');
-        const iconSpan = th.querySelector('.efe-sort-icon');
-
+        th.classList.remove('asc', 'desc');
         if (col === efeState.sortBy) {
-            th.classList.add(efeState.sortOrder === 'asc' ? 'sorted-asc' : 'sorted-desc');
-            if (iconSpan) {
-                iconSpan.textContent = efeState.sortOrder === 'asc' ? '▲' : '▼';
-            }
-        } else {
-            if (iconSpan) {
-                iconSpan.textContent = '⇅';
-            }
+            th.classList.add(efeState.sortOrder);
         }
     });
 }
@@ -309,10 +327,20 @@ function efeFetchData() {
     }
 
     currentFilteredEFEProjects = filtered;
+
+    // Update investment panel if currently open
+    if (efeState.investmentOpen && typeof renderEfeInvestmentAnalytics === 'function') {
+        renderEfeInvestmentAnalytics(filtered);
+    }
+
     efeUpdateMapBadge(filtered.length, totalAll);
 }
 
-let currentFilteredEFEProjects = [];
+function efeGetFilteredProjects() {
+    return (currentFilteredEFEProjects && currentFilteredEFEProjects.length > 0)
+        ? currentFilteredEFEProjects
+        : ((window.EFE_DATA && window.EFE_DATA.data) ? window.EFE_DATA.data : []);
+}
 
 /**
  * Exporta la base de datos de proyectos ferroviarios EFE a Excel (.xlsx)

@@ -141,6 +141,11 @@ async function loadFilters() {
     // Populate status checkboxes
     if (statusOptionsList) {
         statusOptionsList.innerHTML = '';
+        const statuses = (data.stats && data.stats.status)
+            ? Object.keys(data.stats.status).sort()
+            : availableStatusesList;
+        availableStatusesList = statuses;
+
         availableStatusesList.forEach(st => {
             const label = document.createElement('label');
             label.className = 'multiselect-option';
@@ -225,6 +230,7 @@ function staticFetchData(params) {
             if (st === 'Operación') { hitos['operación']++; hitos['activos']++; }
             else if (st === 'Construcción') hitos['construcción']++;
             else if (st === 'Construcción y Operación') { hitos['comb_const_oper']++; hitos['activos']++; }
+            else if (st === 'En Licitación' || st.toLowerCase().includes('licitaci')) { hitos['licitación'] = (hitos['licitación'] || 0) + 1; }
             else if (st === 'Finalizado') hitos['finalizado']++;
         }
         const sec = item['Sector del proyecto'] || '';
@@ -293,9 +299,14 @@ async function fetchData() {
         // VERSIÓN ESTÁTICA: filtrar y paginar en el cliente
         const resData = staticFetchData(params);
 
-        // Si el panel de análisis de inversión está abierto, re-renderizar los 5 gráficos en tiempo real
+        // Si el panel de análisis de inversión está abierto, re-renderizar los gráficos en tiempo real
         if (appState.investmentOpen) {
             renderInvestmentAnalytics(resData.full_filtered || resData.data);
+        }
+
+        // Si el panel de análisis de contratos está abierto, re-renderizar los gráficos de contratos
+        if (appState.contractsOpen && typeof renderContractsAnalytics === 'function') {
+            renderContractsAnalytics(resData.full_filtered || resData.data);
         }
 
         // Si el panel de análisis de oferentes está abierto, re-renderizar los gráficos de oferentes
@@ -486,7 +497,11 @@ function renderChart(statsData, currentThemeMode) {
                         enabled: false,
                         external: customChartTooltip,
                         callbacks: {
-                            label: (ctx) => ` ${ctx.label}: ${ctx.raw} contratos`
+                            label: (ctx) => {
+                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0) || 1;
+                                const pct = ((ctx.raw / total) * 100).toFixed(1);
+                                return ` ${ctx.label}: ${pct}% (${ctx.raw} contratos)`;
+                            }
                         }
                     }
                 }
@@ -503,8 +518,10 @@ function renderChart(statsData, currentThemeMode) {
     // Populate custom HTML Legend for Sector Chart (Non-scrollable, all visible)
     if (sectorLegendEl) {
         sectorLegendEl.innerHTML = '';
+        const totalSectorCount = sectorCounts.reduce((acc, v) => acc + v, 0) || 1;
         sectorLabels.forEach((label, i) => {
             const count = sectorCounts[i];
+            const pct = totalSectorCount > 0 ? ((count / totalSectorCount) * 100).toFixed(1) : '0.0';
             const secCfg = getSectorConfig(label);
             const itemEl = document.createElement('div');
             itemEl.className = 'sector-legend-item';
@@ -514,7 +531,7 @@ function renderChart(statsData, currentThemeMode) {
                     <span style="width: 7px; height: 7px; border-radius: 50%; background-color: ${secCfg.color}; flex-shrink: 0;"></span>
                     <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.66rem;">${label}</span>
                 </div>
-                <span style="font-weight: 700; color: var(--text-secondary); flex-shrink: 0; font-size: 0.66rem;">${count}</span>
+                <span style="font-weight: 700; color: var(--text-secondary); flex-shrink: 0; font-size: 0.66rem;">${pct}%</span>
             `;
 
             itemEl.addEventListener('mouseenter', () => {

@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CATLEC - Plataforma Concesiones de Chile</title>
+    <link rel="icon" type="image/png" href="logo/favicon.png">
+    <link rel="shortcut icon" href="logo/favicon.ico">
     <!-- Leaflet mapping library -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -64,7 +66,11 @@
                                 </a>
                                 <a class="nav-submenu-item" id="nav-sub-investment" href="#">
                                     <i data-lucide="line-chart" style="width:13px;height:13px;"></i>
-                                    Gráficos de Inversión
+                                    Análisis de Inversión
+                                </a>
+                                <a class="nav-submenu-item" id="nav-sub-contracts" href="#">
+                                    <i data-lucide="layers" style="width:13px;height:13px;"></i>
+                                    Análisis de Contratos
                                 </a>
                                 <a class="nav-submenu-item" id="nav-sub-bidders" href="#">
                                     <i data-lucide="users" style="width:13px;height:13px;"></i>
@@ -72,10 +78,28 @@
                                 </a>
                             </div>
                         </div>
-                        <a class="nav-menu-item" href="EFE.html">
-                            <i data-lucide="train-front" style="width:13px;height:13px;"></i>
-                            Empresas de Ferrocarriles del Estado (EFE)
-                        </a>
+                        <!-- Group EFE with Submenu -->
+                        <div class="nav-menu-group" id="nav-efe-group">
+                            <div class="nav-menu-item nav-menu-has-sub" id="nav-efe-parent-item">
+                                <a href="EFE.html" class="nav-menu-parent-link"
+                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
+                                    <i data-lucide="train-front" style="width:13px;height:13px;"></i>
+                                    Empresas de Ferrocarriles del Estado (EFE)
+                                </a>
+                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
+                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
+                            </div>
+                            <div class="nav-submenu" id="nav-efe-submenu">
+                                <a class="nav-submenu-item" href="EFE.html">
+                                    <i data-lucide="map" style="width:13px;height:13px;"></i>
+                                    Mapa
+                                </a>
+                                <a class="nav-submenu-item" href="EFE.html#inversion">
+                                    <i data-lucide="line-chart" style="width:13px;height:13px;"></i>
+                                    Análisis de Inversión
+                                </a>
+                            </div>
+                        </div>
                         <!-- Group MOP with Submenu -->
                         <div class="nav-menu-group" id="nav-mop-group">
                             <div class="nav-menu-item nav-menu-has-sub" id="nav-mop-parent-item">
@@ -89,12 +113,10 @@
                             </div>
                             <div class="nav-submenu" id="nav-mop-submenu">
                                 <a class="nav-submenu-item" href="MOP.html">
-                                    <i data-lucide="layout-dashboard" style="width:13px;height:13px;"></i> Resumen
-                                    General
+                                    <i data-lucide="layout-dashboard" style="width:13px;height:13px;"></i> Tabla de proyectos
                                 </a>
                                 <a class="nav-submenu-item" href="MOP.html#inversion">
-                                    <i data-lucide="bar-chart-2" style="width:13px;height:13px;"></i> Inversión por
-                                    Región
+                                    <i data-lucide="bar-chart-2" style="width:13px;height:13px;"></i> Análisis de inversión
                                 </a>
                                 <a class="nav-submenu-item" href="MOP.html#programas">
                                     <i data-lucide="layers" style="width:13px;height:13px;"></i> Programas y Etapas
@@ -107,7 +129,7 @@
             </div>
         </header>
 
-        <!-- Subheader: Rapid View Switcher Bar (3 Large Equal Blue Sections) -->
+        <!-- Subheader: Rapid View Switcher Bar -->
         <div class="view-subheader">
             <button class="view-tab-btn active" id="btn-view-map">
                 <i data-lucide="map" style="width: 14px; height: 14px;"></i>
@@ -119,7 +141,11 @@
             </button>
             <button class="view-tab-btn" id="btn-view-investment">
                 <i data-lucide="line-chart" style="width: 14px; height: 14px;"></i>
-                <span>Gráficos de Inversión</span>
+                <span>Análisis de Inversión</span>
+            </button>
+            <button class="view-tab-btn" id="btn-view-contracts">
+                <i data-lucide="layers" style="width: 14px; height: 14px;"></i>
+                <span>Análisis de Contratos</span>
             </button>
             <button class="view-tab-btn" id="btn-view-bidders">
                 <i data-lucide="users" style="width: 14px; height: 14px;"></i>
@@ -255,18 +281,18 @@
                     <div class="panel-card panel-card-analytics"
                         style="padding: 0.55rem 0.75rem; gap: 0.3rem; flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
                         <h2 class="panel-title"
-                            style="font-size: 0.82rem; padding-bottom: 0.25rem; border-bottom: 1px solid var(--border-color); margin-bottom: 0.15rem;">
-                            <i data-lucide="pie-chart" style="width: 14px; height: 14px;"></i>
-                            Análisis Rápido
+                            style="font-size: 0.8rem; padding-bottom: 0.25rem; border-bottom: 1px solid var(--border-color); margin-bottom: 0.1rem;">
+                            <i data-lucide="pie-chart" style="width: 14px; height: 14px; color: var(--primary);"></i>
+                            Análisis
                         </h2>
 
                         <!-- Chart 1: Sectors -->
-                        <div style="flex: 1.1; min-height: 0; display: flex; flex-direction: column; gap: 0.2rem;">
-                            <div
-                                style="font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: flex; align-items: center; gap: 0.3rem;">
-                                <i data-lucide="pie-chart"
-                                    style="width: 12px; height: 12px; color: var(--primary);"></i>
-                                Sectores
+                        <div style="flex: 1.1; min-height: 0; display: flex; flex-direction: column; gap: 0.15rem;">
+                            <div style="display: flex; flex-direction: column; gap: 0.05rem;">
+                                <div
+                                    style="font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: flex; align-items: center; gap: 0.3rem;">
+                                    Contratos por sector
+                                </div>
                             </div>
                             <div
                                 style="flex: 1; min-height: 0; display: flex; align-items: center; gap: 0.4rem; position: relative;">
@@ -283,12 +309,12 @@
 
                         <!-- Chart 2: Status / Hitos -->
                         <div
-                            style="flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 0.2rem; border-top: 1px solid var(--border-color); padding-top: 0.35rem;">
-                            <div
-                                style="font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: flex; align-items: center; gap: 0.3rem;">
-                                <i data-lucide="bar-chart-2"
-                                    style="width: 12px; height: 12px; color: var(--primary);"></i>
-                                Estados
+                            style="flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 0.15rem; border-top: 1px solid var(--border-color); padding-top: 0.3rem;">
+                            <div style="display: flex; flex-direction: column; gap: 0.05rem;">
+                                <div
+                                    style="font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: flex; align-items: center; gap: 0.3rem;">
+                                    Contratos por estado
+                                </div>
                             </div>
                             <div class="chart-container"
                                 style="flex: 1; min-height: 0; height: 100%; position: relative;">
@@ -523,7 +549,7 @@
                                     <i data-lucide="trending-up"></i>
                                 </div>
                                 <div class="kpi-val-container">
-                                    <span class="kpi-label">Inversión total</span>
+                                    <span class="kpi-label" id="kpi-panel-total-inv-label">Inversión total</span>
                                     <span class="kpi-value" id="kpi-panel-total-inv"
                                         style="font-size: 0.95rem;">-</span>
                                 </div>
@@ -536,6 +562,8 @@
                                 <div class="kpi-val-container">
                                     <span class="kpi-label">Promedio inversión / contrato</span>
                                     <span class="kpi-value" id="kpi-panel-avg-inv" style="font-size: 0.95rem;">-</span>
+                                    <span id="kpi-panel-avg-sub"
+                                        style="font-size: 0.65rem; color: var(--text-muted); display: block; margin-top: 0.05rem;"></span>
                                 </div>
                             </div>
 
@@ -551,10 +579,10 @@
                             </div>
                         </div>
 
-                        <!-- Fila 1 (Arriba: 3 Gráficos Regionales) -->
-                        <div
-                            style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; height: 100%; min-height: 0;">
-                            <!-- Gráfico 1: Inversión por Región -->
+                        <!-- CUADRÍCULA PRINCIPAL DE 2 COLUMNAS (Izquierda: Inversión por Región a toda la altura; Derecha: Pie arriba comprimido + Inversión activa abajo ampliado) -->
+                        <div style="display: grid; grid-template-columns: 42% 58%; gap: 0.5rem; flex: 1; min-height: 0; height: 100%;">
+                            
+                            <!-- COLUMNA IZQUIERDA: Inversión por Región (Barras Horizontales a toda la altura) -->
                             <div class="panel-card"
                                 style="padding: 0.45rem 0.5rem 0.35rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
                                 <div
@@ -565,14 +593,139 @@
                                             style="width: 13px; height: 13px; color: var(--primary);"></i>
                                         Inversión por Región (UF)
                                     </h3>
-                                    <span style="font-size: 0.6rem; color: var(--text-muted);">Proporcional</span>
+                                    <span style="font-size: 0.58rem; color: var(--text-muted); text-align: right; line-height: 1.1;">*Proyectos interregionales distribuidos equitativamente por región</span>
                                 </div>
                                 <div style="flex: 1; position: relative; min-height: 0; height: 100%;">
                                     <canvas id="chartInvByRegion"></canvas>
                                 </div>
                             </div>
 
-                            <!-- Gráfico 2: Contratos por Región -->
+                            <!-- COLUMNA DERECHA: 2 Pies arriba comprimidos + Inversión Activa amplio abajo -->
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem; height: 100%; min-height: 0;">
+                                
+                                <!-- Fila Superior Derecha (Dividida en 2 contenedores: Inversión por Sector + Inversión por Tipo de Iniciativa) -->
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; flex: 0 0 35%; min-height: 0;">
+                                    
+                                    <!-- Gráfico Arriba Izq: Pie Chart % Inversión por Sector -->
+                                    <div class="panel-card"
+                                        style="padding: 0.35rem 0.5rem 0.25rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
+                                        <div
+                                            style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
+                                            <h3
+                                                style="font-size: 0.72rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
+                                                <i data-lucide="pie-chart"
+                                                    style="width: 12px; height: 12px; color: #d97706;"></i>
+                                                Inversión por Sector (%)
+                                            </h3>
+                                        </div>
+                                        <div
+                                            style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; gap: 0.6rem; padding: 0 0.15rem; position: relative;">
+                                            <div
+                                                style="width: 80px; height: 80px; min-width: 80px; flex-shrink: 0; position: relative;">
+                                                <canvas id="chartInvShareRegion"></canvas>
+                                            </div>
+                                            <div id="chartInvShareRegionLegend"
+                                                style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.03rem; overflow: hidden; justify-content: center;">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Gráfico Arriba Der: Pie Chart % Inversión por Tipo de Iniciativa -->
+                                    <div class="panel-card"
+                                        style="padding: 0.35rem 0.5rem 0.25rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
+                                        <div
+                                            style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
+                                            <h3
+                                                style="font-size: 0.72rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
+                                                <i data-lucide="building-2"
+                                                    style="width: 12px; height: 12px; color: #0284c7;"></i>
+                                                Inversión por Iniciativa (%)
+                                            </h3>
+                                        </div>
+                                        <div
+                                            style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; gap: 0.6rem; padding: 0 0.15rem; position: relative;">
+                                            <div
+                                                style="width: 80px; height: 80px; min-width: 80px; flex-shrink: 0; position: relative;">
+                                                <canvas id="chartInvIniciativa"></canvas>
+                                            </div>
+                                            <div id="chartInvIniciativaLegend"
+                                                style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.15rem; overflow: hidden; justify-content: center;">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <!-- Gráfico Abajo: Inversión Activa en el Tiempo por Año (Espacio expandido) -->
+                                <div class="panel-card"
+                                    style="padding: 0.45rem 0.5rem 0.35rem; display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;">
+                                    <div
+                                        style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
+                                        <h3
+                                            style="font-size: 0.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
+                                            <i data-lucide="activity"
+                                                style="width: 13px; height: 13px; color: #8b5cf6;"></i>
+                                            Inversión Activa en el Tiempo por Año
+                                        </h3>
+                                        <span style="font-size: 0.6rem; color: var(--text-muted);">Inversión acumulada</span>
+                                    </div>
+                                    <div style="flex: 1; min-height: 0; position: relative;">
+                                        <canvas id="chartActiveInvYear"></canvas>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Full-Width Contracts Analysis Panel (replaces center + right panels - Single Page No Scroll) -->
+                <div id="contracts-analysis-full-panel" class="contracts-analysis-full-panel"
+                    style="display:none; grid-column: 2 / -1; flex-direction: column; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; height: 100%; min-height: 0;">
+
+                    <div class="contracts-body"
+                        style="flex: 1; overflow: hidden; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.45rem; min-height: 0;">
+
+                        <!-- BANNER KPI SUPERIOR (Análisis de Contratos) -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.4rem; flex-shrink: 0;">
+                            <div class="card-kpi">
+                                <div class="kpi-icon">
+                                    <i data-lucide="file-text"></i>
+                                </div>
+                                <div class="kpi-val-container">
+                                    <span class="kpi-label" id="kpi-contracts-total-label">Contratos totales</span>
+                                    <span class="kpi-value" id="kpi-contracts-total"
+                                        style="font-size: 0.95rem;">-</span>
+                                </div>
+                            </div>
+
+                            <div class="card-kpi">
+                                <div class="kpi-icon">
+                                    <i data-lucide="activity"></i>
+                                </div>
+                                <div class="kpi-val-container">
+                                    <span class="kpi-label">Contratos vigentes</span>
+                                    <span class="kpi-value" id="kpi-contracts-active" style="font-size: 0.95rem;">-</span>
+                                </div>
+                            </div>
+
+                            <div class="card-kpi">
+                                <div class="kpi-icon">
+                                    <i data-lucide="globe"></i>
+                                </div>
+                                <div class="kpi-val-container">
+                                    <span class="kpi-label">Contratos interregionales</span>
+                                    <span class="kpi-value" id="kpi-contracts-interregional" style="font-size: 0.95rem;">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CUADRÍCULA PRINCIPAL DE 2 COLUMNAS (Izquierda: Contratos por Región a toda la altura; Derecha: 2 Pies arriba comprimidos + Contratos vigentes abajo ampliado) -->
+                        <div style="display: grid; grid-template-columns: 42% 58%; gap: 0.5rem; flex: 1; min-height: 0; height: 100%;">
+                            
+                            <!-- COLUMNA IZQUIERDA: Contratos por Región (Barras Horizontales a toda la altura) -->
                             <div class="panel-card"
                                 style="padding: 0.45rem 0.5rem 0.35rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
                                 <div
@@ -582,77 +735,89 @@
                                         <i data-lucide="layers" style="width: 13px; height: 13px; color: #059669;"></i>
                                         Contratos por Región
                                     </h3>
-                                    <span style="font-size: 0.6rem; color: var(--text-muted);">(1/N multiregión)</span>
+                                    <span style="font-size: 0.58rem; color: var(--text-muted); text-align: right; line-height: 1.1;">*Proyectos interregionales distribuidos equitativamente por región</span>
                                 </div>
                                 <div style="flex: 1; position: relative; min-height: 0; height: 100%;">
                                     <canvas id="chartContractsByRegion"></canvas>
                                 </div>
                             </div>
 
-                            <!-- Gráfico 3: Pie Chart % Inversión por Sector -->
-                            <div class="panel-card"
-                                style="padding: 0.5rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
-                                <div
-                                    style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem; margin-bottom: 0.35rem; flex-shrink: 0;">
-                                    <h3
-                                        style="font-size: 0.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
-                                        <i data-lucide="pie-chart"
-                                            style="width: 13px; height: 13px; color: #d97706;"></i>
-                                        Inversión por Sector (%)
-                                    </h3>
+                            <!-- COLUMNA DERECHA: 2 Pies arriba comprimidos + Contratos Vigentes amplio abajo -->
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem; height: 100%; min-height: 0;">
+                                
+                                <!-- Fila Superior Derecha (Dividida en 2 contenedores: Contratos por Sector + Contratos por Tipo de Iniciativa) -->
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; flex: 0 0 35%; min-height: 0;">
+                                    
+                                    <!-- Gráfico Arriba Izq: Pie Chart % Contratos por Método de Licitación -->
+                                    <div class="panel-card"
+                                        style="padding: 0.35rem 0.5rem 0.25rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
+                                        <div
+                                            style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
+                                            <h3
+                                                style="font-size: 0.72rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
+                                                <i data-lucide="file-check"
+                                                    style="width: 12px; height: 12px; color: #8b5cf6;"></i>
+                                                Método de Licitación (%)
+                                            </h3>
+                                        </div>
+                                        <div
+                                            style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; gap: 0.6rem; padding: 0 0.15rem; position: relative;">
+                                            <div
+                                                style="width: 80px; height: 80px; min-width: 80px; flex-shrink: 0; position: relative;">
+                                                <canvas id="chartContractsByMetodo"></canvas>
+                                            </div>
+                                            <div id="chartContractsByMetodoLegend"
+                                                style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.06rem; overflow: hidden; justify-content: center;">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Gráfico Arriba Der: Pie Chart % Contratos por Tipo de Iniciativa -->
+                                    <div class="panel-card"
+                                        style="padding: 0.35rem 0.5rem 0.25rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
+                                        <div
+                                            style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
+                                            <h3
+                                                style="font-size: 0.72rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
+                                                <i data-lucide="building-2"
+                                                    style="width: 12px; height: 12px; color: #0284c7;"></i>
+                                                Contratos por Iniciativa (%)
+                                            </h3>
+                                        </div>
+                                        <div
+                                            style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; gap: 0.6rem; padding: 0 0.15rem; position: relative;">
+                                            <div
+                                                style="width: 80px; height: 80px; min-width: 80px; flex-shrink: 0; position: relative;">
+                                                <canvas id="chartContractsByIniciativa"></canvas>
+                                            </div>
+                                            <div id="chartContractsByIniciativaLegend"
+                                                style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.15rem; overflow: hidden; justify-content: center;">
+                                            </div>
+                                        </div>
+                                    </div>
+
                                 </div>
-                                <div
-                                    style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; gap: 1.2rem; padding: 0 0.5rem; position: relative;">
+
+                                <!-- Gráfico Abajo: Contratos Vigentes por Año (Espacio expandido) -->
+                                <div class="panel-card"
+                                    style="padding: 0.45rem 0.5rem 0.35rem; display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;">
                                     <div
-                                        style="width: 145px; height: 145px; min-width: 145px; flex-shrink: 0; position: relative;">
-                                        <canvas id="chartInvShareRegion"></canvas>
+                                        style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
+                                        <h3
+                                            style="font-size: 0.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
+                                            <i data-lucide="calendar"
+                                                style="width: 13px; height: 13px; color: #3b82f6;"></i>
+                                            Contratos Vigentes por Año
+                                        </h3>
+                                        <span style="font-size: 0.6rem; color: var(--text-muted);">Inicio-término</span>
                                     </div>
-                                    <div id="chartInvShareRegionLegend"
-                                        style="width: 200px; min-width: 120px; flex-shrink: 0; display: flex; flex-direction: column; gap: 0.1rem; overflow: hidden; justify-content: center;">
+                                    <div style="flex: 1; min-height: 0; position: relative;">
+                                        <canvas id="chartActiveContractsYear"></canvas>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        <!-- Fila 2 (Abajo: 2 Histogramas Temporales) -->
-                        <div
-                            style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; height: 100%; min-height: 0;">
-                            <!-- Gráfico 4: Contratos Vigentes por Año -->
-                            <div class="panel-card"
-                                style="padding: 0.5rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
-                                <div
-                                    style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem; margin-bottom: 0.35rem; flex-shrink: 0;">
-                                    <h3
-                                        style="font-size: 0.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
-                                        <i data-lucide="calendar"
-                                            style="width: 13px; height: 13px; color: #3b82f6;"></i>
-                                        Contratos Vigentes por Año
-                                    </h3>
-                                    <span style="font-size: 0.6rem; color: var(--text-muted);">Inicio-término</span>
-                                </div>
-                                <div style="flex: 1; min-height: 0;">
-                                    <canvas id="chartActiveContractsYear"></canvas>
-                                </div>
                             </div>
 
-                            <!-- Gráfico 5: Inversión Activa por Año -->
-                            <div class="panel-card"
-                                style="padding: 0.5rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
-                                <div
-                                    style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem; margin-bottom: 0.35rem; flex-shrink: 0;">
-                                    <h3
-                                        style="font-size: 0.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
-                                        <i data-lucide="activity"
-                                            style="width: 13px; height: 13px; color: #8b5cf6;"></i>
-                                        Inversión Activa en el Tiempo por Año
-                                    </h3>
-                                    <span style="font-size: 0.6rem; color: var(--text-muted);">Inversión
-                                        acumulada</span>
-                                </div>
-                                <div style="flex: 1; min-height: 0;">
-                                    <canvas id="chartActiveInvYear"></canvas>
-                                </div>
-                            </div>
                         </div>
 
                     </div>
@@ -786,12 +951,14 @@
                                                 style="overflow: hidden; text-overflow: ellipsis;">10 Empresas con mayor
                                                 cantidad de concesiones adjudicadas</span>
                                         </h3>
-                                        <button id="btn-toggle-top-companies"
-                                            style="display: inline-flex; align-items: center; gap: 0.25rem; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 4px; color: #f59e0b; font-size: 0.58rem; font-weight: 600; padding: 0.12rem 0.4rem; cursor: pointer; transition: all 0.15s ease; flex-shrink: 0;"
-                                            title="Alternar entre Concesiones Adjudicadas Netas y Adjudicaciones Ponderadas">
-                                            <i data-lucide="arrow-left-right" style="width: 10px; height: 10px;"></i>
-                                            <span id="btn-top-companies-text">Ver Adj. Ponderadas</span>
-                                        </button>
+                                        <div style="display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0;">
+                                            <button id="btn-toggle-top-companies"
+                                                style="display: inline-flex; align-items: center; gap: 0.25rem; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 4px; color: #f59e0b; font-size: 0.58rem; font-weight: 600; padding: 0.12rem 0.4rem; cursor: pointer; transition: all 0.15s ease; flex-shrink: 0;"
+                                                title="Alternar entre Concesiones Adjudicadas Netas y Adjudicaciones Ponderadas">
+                                                <i data-lucide="arrow-left-right" style="width: 10px; height: 10px;"></i>
+                                                <span id="btn-top-companies-text">Ver Adj. Ponderadas</span>
+                                            </button>
+                                        </div>
                                     </div>
                                     <div style="flex: 1; position: relative; min-height: 0; height: 100%;">
                                         <canvas id="chartTopCompanies"></canvas>
@@ -805,6 +972,39 @@
                 </div>
 
                 <div id="timeline-full-panel" class="timeline-full-panel" style="display:none; grid-column: 2 / -1;">
+                    <!-- BANNER KPI SUPERIOR (Líneas de Tiempo) -->
+                    <div style="padding: 0.5rem 0.5rem 0.35rem 0.5rem; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.4rem; flex-shrink: 0; border-bottom: 1px solid var(--border-color);">
+                        <div class="card-kpi">
+                            <div class="kpi-icon">
+                                <i data-lucide="clock"></i>
+                            </div>
+                            <div class="kpi-val-container">
+                                <span class="kpi-label">Duración promedio</span>
+                                <span class="kpi-value" id="kpi-timeline-duration" style="font-size: 0.95rem;">-</span>
+                            </div>
+                        </div>
+
+                        <div class="card-kpi">
+                            <div class="kpi-icon">
+                                <i data-lucide="timer"></i>
+                            </div>
+                            <div class="kpi-val-container">
+                                <span class="kpi-label">Llamado a licitación ➔ Inicio</span>
+                                <span class="kpi-value" id="kpi-timeline-llamado-inicio" style="font-size: 0.95rem;">-</span>
+                            </div>
+                        </div>
+
+                        <div class="card-kpi">
+                            <div class="kpi-icon">
+                                <i data-lucide="calendar-check"></i>
+                            </div>
+                            <div class="kpi-val-container">
+                                <span class="kpi-label">Adjudicación ➔ Inicio</span>
+                                <span class="kpi-value" id="kpi-timeline-adj-inicio" style="font-size: 0.95rem;">-</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Timeline Header -->
                     <div class="timeline-header">
                         <div class="timeline-header-left">
@@ -815,11 +1015,17 @@
                         <div class="timeline-header-right">
                             <span class="timeline-legend-item">
                                 <span class="tl-legend-dot"
+                                    style="background:#64748b; width:8px; height:8px; border-radius:50%;"></span>Llamado
+                                a Licitación
+                            </span>
+                            <span class="timeline-legend-item">
+                                <span class="tl-legend-dot"
                                     style="background:#7c3aed; width:8px; height:8px; transform:rotate(45deg); border-radius:1px;"></span>Adjudicación
                             </span>
                             <span class="timeline-legend-item">
                                 <span class="tl-legend-dot"
                                     style="background:#f59e0b; width:8px; height:8px; border-radius:50%;"></span>Resolución
+                                de interés público
                             </span>
                             <span class="timeline-legend-item">
                                 <span
@@ -857,7 +1063,7 @@
     <!-- Footer -->
     <footer class="app-footer">
         <div class="app-footer-left">
-
+            <span class="app-footer-brand">CATLEC</span>
             <span class="app-footer-divider"></span>
             <span class="app-footer-text">Desarrollado por: Jose Oliveros, Vicente Pérez</span>
         </div>
@@ -878,6 +1084,7 @@
     <script src="static/js/DGC/map.js"></script>
     <script src="static/js/DGC/timeline.js"></script>
     <script src="static/js/DGC/investment.js"></script>
+    <script src="static/js/DGC/contracts_analysis.js"></script>
     <script src="static/js/DGC/bidders.js"></script>
     <script src="static/js/DGC/filters.js"></script>
     <script src="static/js/DGC/ui.js"></script>
@@ -1031,9 +1238,8 @@
             const navBtn = document.getElementById('nav-menu-btn');
             const navDropdown = document.getElementById('nav-menu-dropdown');
             const navDgcGroup = document.getElementById('nav-dgc-group');
+            const navEfeGroup = document.getElementById('nav-efe-group');
             const navMopGroup = document.getElementById('nav-mop-group');
-            let dgcTimeout = null;
-            let mopTimeout = null;
 
             if (navBtn && navDropdown) {
                 navBtn.addEventListener('click', function (e) {
@@ -1044,6 +1250,7 @@
                 document.addEventListener('click', function () {
                     navDropdown.classList.remove('open');
                     if (navDgcGroup) navDgcGroup.classList.remove('open');
+                    if (navEfeGroup) navEfeGroup.classList.remove('open');
                     if (navMopGroup) navMopGroup.classList.remove('open');
                 });
                 navDropdown.addEventListener('click', function (e) { e.stopPropagation(); });
@@ -1074,13 +1281,29 @@
                 }
 
                 navDgcGroup.addEventListener('mouseenter', function () {
-                    if (dgcTimeout) clearTimeout(dgcTimeout);
                     navDgcGroup.classList.add('open');
                 });
                 navDgcGroup.addEventListener('mouseleave', function () {
-                    dgcTimeout = setTimeout(function () {
-                        navDgcGroup.classList.remove('open');
-                    }, 250);
+                    navDgcGroup.classList.remove('open');
+                });
+            }
+
+            // EFE hover & chevron toggle
+            if (navEfeGroup) {
+                const efeTrigger = navEfeGroup.querySelector('.nav-submenu-trigger-icon');
+                if (efeTrigger) {
+                    efeTrigger.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        navEfeGroup.classList.toggle('open');
+                    });
+                }
+
+                navEfeGroup.addEventListener('mouseenter', function () {
+                    navEfeGroup.classList.add('open');
+                });
+                navEfeGroup.addEventListener('mouseleave', function () {
+                    navEfeGroup.classList.remove('open');
                 });
             }
 
@@ -1096,19 +1319,17 @@
                 }
 
                 navMopGroup.addEventListener('mouseenter', function () {
-                    if (mopTimeout) clearTimeout(mopTimeout);
                     navMopGroup.classList.add('open');
                 });
                 navMopGroup.addEventListener('mouseleave', function () {
-                    mopTimeout = setTimeout(function () {
-                        navMopGroup.classList.remove('open');
-                    }, 250);
+                    navMopGroup.classList.remove('open');
                 });
             }
 
             const subMap = document.getElementById('nav-sub-map');
             const subTl = document.getElementById('nav-sub-timeline');
             const subInv = document.getElementById('nav-sub-investment');
+            const subCnt = document.getElementById('nav-sub-contracts');
             const subBid = document.getElementById('nav-sub-bidders');
 
             if (subMap) {
@@ -1116,6 +1337,7 @@
                     e.preventDefault();
                     if (typeof hideTimelineView === 'function') hideTimelineView();
                     if (typeof hideInvestmentView === 'function') hideInvestmentView();
+                    if (typeof hideContractsView === 'function') hideContractsView();
                     if (typeof hideBiddersView === 'function') hideBiddersView();
                     if (typeof setActiveSubheaderTab === 'function') setActiveSubheaderTab('map');
                     if (navDropdown) navDropdown.classList.remove('open');
@@ -1125,6 +1347,7 @@
                 subTl.addEventListener('click', function (e) {
                     e.preventDefault();
                     if (typeof hideInvestmentView === 'function') hideInvestmentView();
+                    if (typeof hideContractsView === 'function') hideContractsView();
                     if (typeof hideBiddersView === 'function') hideBiddersView();
                     if (typeof showTimelineView === 'function') showTimelineView();
                     if (typeof setActiveSubheaderTab === 'function') setActiveSubheaderTab('timeline');
@@ -1135,9 +1358,21 @@
                 subInv.addEventListener('click', function (e) {
                     e.preventDefault();
                     if (typeof hideTimelineView === 'function') hideTimelineView();
+                    if (typeof hideContractsView === 'function') hideContractsView();
                     if (typeof hideBiddersView === 'function') hideBiddersView();
                     if (typeof showInvestmentView === 'function') showInvestmentView();
                     if (typeof setActiveSubheaderTab === 'function') setActiveSubheaderTab('investment');
+                    if (navDropdown) navDropdown.classList.remove('open');
+                });
+            }
+            if (subCnt) {
+                subCnt.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    if (typeof hideTimelineView === 'function') hideTimelineView();
+                    if (typeof hideInvestmentView === 'function') hideInvestmentView();
+                    if (typeof hideBiddersView === 'function') hideBiddersView();
+                    if (typeof showContractsView === 'function') showContractsView();
+                    if (typeof setActiveSubheaderTab === 'function') setActiveSubheaderTab('contracts');
                     if (navDropdown) navDropdown.classList.remove('open');
                 });
             }
@@ -1146,22 +1381,61 @@
                     e.preventDefault();
                     if (typeof hideTimelineView === 'function') hideTimelineView();
                     if (typeof hideInvestmentView === 'function') hideInvestmentView();
+                    if (typeof hideContractsView === 'function') hideContractsView();
                     if (typeof showBiddersView === 'function') showBiddersView();
                     if (typeof setActiveSubheaderTab === 'function') setActiveSubheaderTab('bidders');
                     if (navDropdown) navDropdown.classList.remove('open');
                 });
             }
 
-            // Check URL hash on page load
-            if (window.location.hash === '#timeline') {
-                setTimeout(() => { if (typeof showTimelineView === 'function') showTimelineView(); }, 150);
-            } else if (window.location.hash === '#investment') {
-                setTimeout(() => { if (typeof showInvestmentView === 'function') showInvestmentView(); }, 150);
-            } else if (window.location.hash === '#bidders') {
-                setTimeout(() => { if (typeof showBiddersView === 'function') showBiddersView(); }, 150);
+            // Check URL hash on page load and on hash change
+            function handleHashRoute() {
+                const hash = window.location.hash;
+                if (hash === '#timeline') {
+                    if (typeof showTimelineView === 'function') showTimelineView();
+                } else if (hash === '#investment') {
+                    if (typeof showInvestmentView === 'function') showInvestmentView();
+                } else if (hash === '#contracts') {
+                    if (typeof showContractsView === 'function') showContractsView();
+                } else if (hash === '#bidders') {
+                    if (typeof showBiddersView === 'function') showBiddersView();
+                }
+            }
+
+            window.addEventListener('hashchange', handleHashRoute);
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => setTimeout(handleHashRoute, 250));
+            } else {
+                setTimeout(handleHashRoute, 250);
             }
         })();
     </script>
+    <!-- Modal: Concesiones Adjudicadas por Empresa (Análisis de Oferentes) -->
+    <div id="company-participations-modal" class="company-modal-backdrop" style="display: none;">
+        <div class="company-modal-container" style="max-width: 620px;">
+            <!-- Modal Header -->
+            <div class="company-modal-header">
+                <div style="display: flex; align-items: center; gap: 0.65rem; min-width: 0;">
+                    <div class="company-modal-icon">
+                        <i data-lucide="building-2" style="width: 19px; height: 19px; color: #60a5fa;"></i>
+                    </div>
+                    <div style="min-width: 0;">
+                        <h3 id="company-modal-title" class="company-modal-title">—</h3>
+                        <p class="company-modal-subtitle">Concesiones adjudicadas: <strong id="company-modal-count" style="color: #60a5fa;">0</strong></p>
+                    </div>
+                </div>
+                <button id="btn-close-company-modal" class="company-modal-close-btn" title="Cerrar (Esc)">
+                    <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                </button>
+            </div>
+
+            <!-- Modal List Body -->
+            <div id="company-modal-body" class="company-modal-body">
+                <!-- Concession items generated dynamically -->
+            </div>
+        </div>
+    </div>
+
 </body>
 
 

@@ -1,4 +1,7 @@
 // ── ANÁLISIS DE OFERENTES ─────────────────────────────────────────────────────
+let chartBiddersHistogramInstance = null;
+let chartBiddersPieInstance = null;
+let chartTopCompaniesInstance = null;
 
 function showBiddersView() {
     if (typeof leafletMap !== 'undefined' && leafletMap && leafletMap.getCenter) {
@@ -7,6 +10,7 @@ function showBiddersView() {
     }
     if (appState.timelineOpen) hideTimelineView();
     if (appState.investmentOpen) hideInvestmentView();
+    if (appState.contractsOpen) hideContractsView();
 
     appState.biddersOpen = true;
     const grid = document.querySelector('.dashboard-grid');
@@ -27,7 +31,7 @@ function showBiddersView() {
     renderBiddersAnalytics(currentList);
 }
 
-function hideBiddersView() {
+function hideBiddersView(skipRestoreCenter) {
     appState.biddersOpen = false;
     const grid = document.querySelector('.dashboard-grid');
     const centerPanel = document.querySelector('.center-panel');
@@ -39,21 +43,15 @@ function hideBiddersView() {
     if (rightPanel) rightPanel.style.display = 'flex';
     if (biddersPanel) biddersPanel.style.display = 'none';
 
-    if (typeof setActiveSubheaderTab === 'function' && !appState.timelineOpen && !appState.investmentOpen) {
+    if (typeof setActiveSubheaderTab === 'function' && !appState.timelineOpen && !appState.investmentOpen && !appState.contractsOpen) {
         setActiveSubheaderTab('map');
     }
 
     if (typeof leafletMap !== 'undefined' && leafletMap) {
         leafletMap.invalidateSize({ animate: false });
-        if (appState.savedMapCenter) {
+        if (!skipRestoreCenter && appState.savedMapCenter) {
             leafletMap.setView(appState.savedMapCenter, appState.savedMapZoom || 6, { animate: false });
         }
-        setTimeout(() => {
-            leafletMap.invalidateSize({ animate: false });
-            if (appState.savedMapCenter) {
-                leafletMap.setView(appState.savedMapCenter, appState.savedMapZoom || 6, { animate: false });
-            }
-        }, 0);
     }
 }
 
@@ -136,8 +134,14 @@ function renderBiddersAnalytics(contractsList) {
     const topNetName = topNetCompany ? topNetCompany.name : 'Sin datos';
     const topNetCount = topNetCompany ? topNetCompany.score : 0;
 
-    const avgBiddersPerContract = contractsList.length > 0
-        ? (totalBidders / contractsList.length).toFixed(1)
+    // Calculate average bidders per contract, omitting concessions currently in tender / licitación
+    const eligibleContractsForAvg = contractsList.filter(item => {
+        const st = (item['ESTADO'] || '').toLowerCase();
+        return !st.includes('licitaci');
+    });
+
+    const avgBiddersPerContract = eligibleContractsForAvg.length > 0
+        ? (totalBidders / eligibleContractsForAvg.length).toFixed(1)
         : '0';
 
     // ── Update KPI Banner ─────────────────────────────────────────────────────
@@ -151,7 +155,14 @@ function renderBiddersAnalytics(contractsList) {
     if (elTopCount) elTopCount.textContent = topNetCount > 0 ? `${topNetCount} concesió${topNetCount !== 1 ? 'nes' : 'n'} adjudicada${topNetCount !== 1 ? 's' : ''}` : '—';
     if (elTotal) elTotal.textContent = totalBidders.toLocaleString('es-CL');
     if (elAvg) elAvg.textContent = avgBiddersPerContract;
-    if (elBadge) elBadge.textContent = `${contractsList.length} contratos`;
+    if (elBadge) {
+        const omittedCount = contractsList.length - eligibleContractsForAvg.length;
+        if (omittedCount > 0) {
+            elBadge.textContent = `*${eligibleContractsForAvg.length} concesiones adjudicadas`;
+        } else {
+            elBadge.textContent = `${contractsList.length} contratos`;
+        }
+    }
 
     // ── Chart 1: Histogram — Licitantes Promedio vs Presupuesto Promedio por Período de 4 años ───────
     const sortedPeriods = Object.keys(byPeriod).sort((a, b) => {
@@ -236,15 +247,15 @@ function renderBiddersAnalytics(contractsList) {
                     scales: {
                         x: {
                             grid: { display: false },
-                            ticks: { color: textColor, font: { size: 8.5 } }
+                            ticks: { color: textColor, font: { size: 10 } }
                         },
                         y: {
                             type: 'linear',
                             display: true,
                             position: 'left',
                             grid: { color: gridColor },
-                            ticks: { color: textColor, font: { size: 8.5 }, callback: (v) => v.toFixed(1) },
-                            title: { display: true, text: 'Promedio licitantes', color: textColor, font: { size: 8 } }
+                            ticks: { color: textColor, font: { size: 10 }, callback: (v) => v.toFixed(1) },
+                            title: { display: true, text: 'Promedio licitantes', color: textColor, font: { size: 9.5, weight: '600' } }
                         },
                         y1: {
                             type: 'linear',
@@ -253,10 +264,10 @@ function renderBiddersAnalytics(contractsList) {
                             grid: { display: false },
                             ticks: {
                                 color: budgetLineColor,
-                                font: { size: 8 },
+                                font: { size: 10 },
                                 callback: (v) => formatUF(v)
                             },
-                            title: { display: true, text: 'Presupuesto prom. (UF)', color: budgetLineColor, font: { size: 8 } }
+                            title: { display: true, text: 'Presupuesto prom. (UF)', color: budgetLineColor, font: { size: 9.5, weight: '600' } }
                         }
                     }
                 }
@@ -268,12 +279,17 @@ function renderBiddersAnalytics(contractsList) {
             chartBiddersHistogramInstance.data.datasets[1].borderColor = budgetLineColor;
             chartBiddersHistogramInstance.data.datasets[1].pointBackgroundColor = budgetLineColor;
             chartBiddersHistogramInstance.options.scales.x.ticks.color = textColor;
+            chartBiddersHistogramInstance.options.scales.x.ticks.font = { size: 10 };
             chartBiddersHistogramInstance.options.scales.y.grid.color = gridColor;
             chartBiddersHistogramInstance.options.scales.y.ticks.color = textColor;
+            chartBiddersHistogramInstance.options.scales.y.ticks.font = { size: 10 };
             chartBiddersHistogramInstance.options.scales.y.title.color = textColor;
+            chartBiddersHistogramInstance.options.scales.y.title.font = { size: 9.5, weight: '600' };
             if (chartBiddersHistogramInstance.options.scales.y1) {
                 chartBiddersHistogramInstance.options.scales.y1.ticks.color = budgetLineColor;
+                chartBiddersHistogramInstance.options.scales.y1.ticks.font = { size: 10 };
                 chartBiddersHistogramInstance.options.scales.y1.title.color = budgetLineColor;
+                chartBiddersHistogramInstance.options.scales.y1.title.font = { size: 9.5, weight: '600' };
             }
             chartBiddersHistogramInstance.options.plugins.tooltip.callbacks.title = (items) => `Período ${items[0].label}`;
             chartBiddersHistogramInstance.options.plugins.tooltip.callbacks.label = (ctx) => {
@@ -356,7 +372,7 @@ function renderBiddersAnalytics(contractsList) {
                     const pct = ((val / (totalAdjudicados || 1)) * 100).toFixed(1);
                     const col = pieColors[i];
                     const itemDiv = document.createElement('div');
-                    itemDiv.style.cssText = 'display:flex; align-items:center; gap:0.35rem; font-size:0.65rem; padding:0.05rem 0;';
+                    itemDiv.style.cssText = 'display:flex; align-items:center; gap:0.35rem; font-size:0.78rem; padding:0.08rem 0;';
                     itemDiv.innerHTML = `
                         <span style="width:8px; height:8px; border-radius:50%; background-color:${col}; flex-shrink:0;"></span>
                         <span style="color:var(--text-secondary); flex:1;">${lbl}</span>
@@ -365,11 +381,11 @@ function renderBiddersAnalytics(contractsList) {
                     pieLegendEl.appendChild(itemDiv);
                 });
                 const totalDiv = document.createElement('div');
-                totalDiv.style.cssText = 'display:flex; align-items:center; justify-content:space-between; font-size:0.62rem; padding-top:0.15rem; margin-top:0.1rem; border-top:1px solid var(--border-color);';
+                totalDiv.style.cssText = 'display:flex; align-items:center; justify-content:space-between; font-size:0.74rem; padding-top:0.2rem; margin-top:0.15rem; border-top:1px solid var(--border-color);';
                 totalDiv.innerHTML = `<span style="color:var(--text-muted);">Total adjudicados:</span><span style="font-weight:700; color:var(--text-primary);">${totalAdjudicados}</span>`;
                 pieLegendEl.appendChild(totalDiv);
             } else {
-                pieLegendEl.innerHTML = `<p style="font-size:0.65rem; color:var(--text-muted); font-style:italic; text-align:center; margin:0;">Sin datos de adjudicaciones</p>`;
+                pieLegendEl.innerHTML = `<p style="font-size:0.74rem; color:var(--text-muted); font-style:italic; text-align:center; margin:0;">Sin datos de adjudicaciones</p>`;
             }
         }
     }
@@ -441,6 +457,21 @@ function renderBiddersAnalytics(contractsList) {
                     indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
+                    onClick: (event, elements, chart) => {
+                        let elems = elements;
+                        if (!elems || elems.length === 0) {
+                            elems = chart.getElementsAtEventForMode(event, 'nearest', { intersect: false }, true);
+                        }
+                        if (!elems || elems.length === 0) return;
+                        const dataIndex = elems[0].index;
+                        const entry = top10rev[dataIndex];
+                        if (entry && entry.name) {
+                            openCompanyDetailsModal(entry.name, contractsList);
+                        }
+                    },
+                    onHover: (event, chartElement) => {
+                        event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                    },
                     plugins: {
                         legend: { display: false },
                         tooltip: {
@@ -456,7 +487,8 @@ function renderBiddersAnalytics(contractsList) {
                                     const pct = totalSum > 0 ? ((entry.score / totalSum) * 100).toFixed(1) : '0';
                                     return [
                                         ` ${isParticipaciones ? 'Concesiones adjudicadas' : 'Adjudicaciones (ponderadas)'}: ${ctx.raw}`,
-                                        ` Participación: ${pct}% del total`
+                                        ` Participación: ${pct}% del total`,
+                                        ` Haz click para ver las concesiones`
                                     ];
                                 }
                             }
@@ -467,16 +499,16 @@ function renderBiddersAnalytics(contractsList) {
                             grid: { color: gridColor },
                             ticks: {
                                 color: textColor,
-                                font: { size: 8 },
+                                font: { size: 10 },
                                 callback: (v) => isParticipaciones ? (v % 1 === 0 ? v : '') : (v % 1 === 0 ? v : v.toFixed(1))
                             },
-                            title: { display: true, text: xTitle, color: textColor, font: { size: 7.5 } }
+                            title: { display: true, text: xTitle, color: textColor, font: { size: 9.5, weight: '600' } }
                         },
                         y: {
                             grid: { display: false },
                             ticks: {
                                 color: textColor,
-                                font: { size: 7.2 },
+                                font: { size: 9.5, weight: '500' },
                                 autoSkip: false,
                                 callback: function (val, idx) {
                                     const entry = top10rev[idx];
@@ -496,15 +528,34 @@ function renderBiddersAnalytics(contractsList) {
             chartTopCompaniesInstance.data.datasets[0].borderColor = borderCol;
             chartTopCompaniesInstance.options.scales.x.grid.color = gridColor;
             chartTopCompaniesInstance.options.scales.x.ticks.color = textColor;
+            chartTopCompaniesInstance.options.scales.x.ticks.font = { size: 10 };
             chartTopCompaniesInstance.options.scales.x.title.text = xTitle;
-            chartTopCompaniesInstance.options.scales.x/*  */.title.color = textColor;
+            chartTopCompaniesInstance.options.scales.x.title.color = textColor;
+            chartTopCompaniesInstance.options.scales.x.title.font = { size: 9.5, weight: '600' };
             chartTopCompaniesInstance.options.scales.x.ticks.callback = (v) => isParticipaciones ? (v % 1 === 0 ? v : '') : (v % 1 === 0 ? v : v.toFixed(1));
 
             chartTopCompaniesInstance.options.scales.y.ticks.color = textColor;
+            chartTopCompaniesInstance.options.scales.y.ticks.font = { size: 9.5, weight: '500' };
             chartTopCompaniesInstance.options.scales.y.ticks.callback = function (val, idx) {
                 const entry = top10rev[idx];
                 if (!entry) return this.getLabelForValue(val);
                 return wrapTextToLines(entry.name, 20);
+            };
+
+            chartTopCompaniesInstance.options.onClick = (event, elements, chart) => {
+                let elems = elements;
+                if (!elems || elems.length === 0) {
+                    elems = chart.getElementsAtEventForMode(event, 'nearest', { intersect: false }, true);
+                }
+                if (!elems || elems.length === 0) return;
+                const dataIndex = elems[0].index;
+                const entry = top10rev[dataIndex];
+                if (entry && entry.name) {
+                    openCompanyDetailsModal(entry.name, contractsList);
+                }
+            };
+            chartTopCompaniesInstance.options.onHover = (event, chartElement) => {
+                event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
             };
 
             chartTopCompaniesInstance.options.plugins.tooltip.callbacks.title = (items) => {
@@ -516,11 +567,38 @@ function renderBiddersAnalytics(contractsList) {
                 const pct = totalSum > 0 ? ((entry.score / totalSum) * 100).toFixed(1) : '0';
                 return [
                     ` ${isParticipaciones ? 'Concesiones adjudicadas' : 'Adjudicaciones (ponderadas)'}: ${ctx.raw}`,
-                    ` Participación: ${pct}% del total`
+                    ` Participación: ${pct}% del total`,
+                    ` Haz click para ver las concesiones`
                 ];
             };
             chartTopCompaniesInstance.update();
         }
+
+        // Direct canvas click handler for guaranteed responsiveness
+        canvasBar.onclick = (evt) => {
+            if (!chartTopCompaniesInstance) return;
+            const elements = chartTopCompaniesInstance.getElementsAtEventForMode(evt, 'nearest', { intersect: false }, true);
+            if (elements && elements.length > 0) {
+                const dataIndex = elements[0].index;
+                const entry = top10rev[dataIndex];
+                if (entry && entry.name) {
+                    openCompanyDetailsModal(entry.name, contractsList);
+                    return;
+                }
+            }
+            // Pixel-based fallback
+            if (chartTopCompaniesInstance.scales && chartTopCompaniesInstance.scales.y) {
+                const rect = canvasBar.getBoundingClientRect();
+                const offsetY = evt.clientY - rect.top;
+                const idx = chartTopCompaniesInstance.scales.y.getValueForPixel(offsetY);
+                if (idx !== undefined && idx !== null && idx >= 0 && idx < top10rev.length) {
+                    const entry = top10rev[idx];
+                    if (entry && entry.name) {
+                        openCompanyDetailsModal(entry.name, contractsList);
+                    }
+                }
+            }
+        };
     }
 
     lucide.createIcons();
@@ -666,6 +744,179 @@ function computeTopCompanies(contractsList, mode = 'adjudicaciones') {
         .sort((a, b) => b.score - a.score);
 }
 
+// ── Extraction of Adjudicated Concessions for a Specific Company ──────────────
+function getCompanyAdjudications(companyName, contractsList) {
+    if (!companyName) return [];
+    const allData = (contractsList && contractsList.length > 0)
+        ? contractsList
+        : ((window.STATIC_DATA && window.STATIC_DATA.data) || []);
+
+    const target = companyName.trim().toLowerCase();
+    const adjudications = [];
+    const seenCodes = new Set();
+
+    allData.forEach(item => {
+        const bidders = item.bidders || [];
+        const cName = item['Nombre de la Concesión '] || item['Nombre de uso común'] || item['CONCESION'] || 'Sin nombre';
+        const code = (item['Código proyecto'] || item['Codigo proyecto'] || item.code || '').toString().trim();
+        const year = item['Año de llamado a licitación'] || (item['Fecha llamado a licitación'] ? item['Fecha llamado a licitación'].substring(0, 4) : null) || '—';
+        const region = item['Región geográfica'] || '';
+
+        bidders.forEach(b => {
+            const isAdj = b.adjudicado || (b.adjudicado_raw && b.adjudicado_raw.trim().toUpperCase().startsWith('S'));
+            if (!isAdj) return;
+
+            const isConsorcio = b.consorcio || (b.consorcio_raw && ['SI', 'SÍ', 'YES', 'TRUE', '1', 'X'].includes((b.consorcio_raw || '').trim().toUpperCase()));
+            const bName = (b.name || '').trim();
+            let matched = false;
+            let consorcioName = null;
+
+            if (!isConsorcio) {
+                if (bName.toLowerCase() === target) matched = true;
+            } else {
+                const empresasStr = (b.empresas || '').trim();
+                if (empresasStr) {
+                    const comps = empresasStr.split(';').map(s => s.replace(/\n/g, ' ').trim()).filter(Boolean);
+                    if (comps.some(c => c.toLowerCase() === target)) {
+                        matched = true;
+                        consorcioName = bName || empresasStr;
+                    }
+                }
+                if (!matched && bName.toLowerCase() === target) {
+                    matched = true;
+                    consorcioName = bName;
+                }
+            }
+
+            if (matched && code && !seenCodes.has(code)) {
+                seenCodes.add(code);
+                adjudications.push({
+                    concessionName: cName,
+                    code: code,
+                    year: year,
+                    isConsorcio: !!isConsorcio,
+                    consorcioName: consorcioName
+                });
+            }
+        });
+    });
+
+    // Ordenar por año descendente y por nombre
+    adjudications.sort((a, b) => {
+        const yA = parseInt(a.year, 10) || 0;
+        const yB = parseInt(b.year, 10) || 0;
+        if (yB !== yA) return yB - yA;
+        return a.concessionName.localeCompare(b.concessionName);
+    });
+
+    return adjudications;
+}
+
+let currentModalAdjudications = [];
+
+function openCompanyDetailsModal(companyName, contractsList) {
+    const modal = document.getElementById('company-participations-modal');
+    if (!modal) return;
+
+    currentModalAdjudications = getCompanyAdjudications(companyName, contractsList);
+
+    // Update Header
+    const titleEl = document.getElementById('company-modal-title');
+    if (titleEl) titleEl.textContent = companyName;
+
+    const countEl = document.getElementById('company-modal-count');
+    if (countEl) countEl.textContent = currentModalAdjudications.length;
+
+    renderCompanyModalList();
+
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+}
+
+function closeCompanyDetailsModal() {
+    const modal = document.getElementById('company-participations-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+function renderCompanyModalList() {
+    const body = document.getElementById('company-modal-body');
+    if (!body) return;
+
+    if (currentModalAdjudications.length === 0) {
+        body.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2.5rem 1rem; color: var(--text-muted); gap: 0.5rem; text-align: center;">
+                <i data-lucide="info" style="width: 24px; height: 24px; opacity: 0.6;"></i>
+                <span style="font-size: 0.8rem;">Sin concesiones adjudicadas registradas.</span>
+            </div>
+        `;
+        if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+        return;
+    }
+
+    body.innerHTML = currentModalAdjudications.map(p => {
+        let consorcioText = '';
+        if (p.isConsorcio && p.consorcioName) {
+            const cleanCName = p.consorcioName.trim();
+            if (cleanCName.toLowerCase().startsWith('consorcio')) {
+                consorcioText = `Como parte del ${cleanCName}`;
+            } else {
+                consorcioText = `Como parte del Consorcio ${cleanCName}`;
+            }
+        }
+
+        const subParts = [];
+        if (p.year && p.year !== '—') subParts.push(p.year);
+        if (consorcioText) subParts.push(consorcioText);
+
+        const subHtml = subParts.length > 0
+            ? `<span style="font-size: 0.68rem; color: var(--text-muted); display: block; margin-top: 0.15rem;">${subParts.join(' • ')}</span>`
+            : '';
+
+        return `
+            <div class="company-concession-card">
+                <div style="min-width: 0; flex: 1;">
+                    <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-primary); cursor: pointer; line-height: 1.3; display: block;" onclick="viewConcessionFromModal('${p.code}')" title="Ver ficha completa">
+                        ${p.concessionName}
+                    </span>
+                    ${subHtml}
+                </div>
+
+                <div style="flex-shrink: 0; margin-left: 0.5rem;">
+                    <button class="company-btn-view-project" onclick="viewConcessionFromModal('${p.code}')" title="Ver ficha de concesión">
+                        <span>Ver ficha</span>
+                        <i data-lucide="arrow-right" style="width: 11px; height: 11px;"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+}
+
+function viewConcessionFromModal(code) {
+    if (!code) return;
+    closeCompanyDetailsModal();
+    hideBiddersView(true);
+    if (typeof leafletMap !== 'undefined' && leafletMap) {
+        leafletMap.invalidateSize({ animate: false });
+    }
+    if (typeof zoomToProjectCode === 'function') {
+        zoomToProjectCode(code);
+    } else if (typeof showProjectDetailView === 'function') {
+        showProjectDetailView(code);
+    }
+}
+
+// Attach to window for global access
+window.openCompanyDetailsModal = openCompanyDetailsModal;
+window.closeCompanyDetailsModal = closeCompanyDetailsModal;
+window.viewConcessionFromModal = viewConcessionFromModal;
+
 function initBiddersEvents() {
     const btnClose = document.getElementById('btn-close-bidders');
     if (btnClose) {
@@ -682,4 +933,28 @@ function initBiddersEvents() {
             renderBiddersAnalytics(currentList);
         });
     }
+
+    // Modal Events
+    const btnCloseModal = document.getElementById('btn-close-company-modal');
+    if (btnCloseModal) {
+        btnCloseModal.addEventListener('click', () => closeCompanyDetailsModal());
+    }
+
+    const modal = document.getElementById('company-participations-modal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeCompanyDetailsModal();
+            }
+        });
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const modalEl = document.getElementById('company-participations-modal');
+            if (modalEl && modalEl.style.display === 'flex') {
+                closeCompanyDetailsModal();
+            }
+        }
+    });
 }

@@ -861,27 +861,10 @@ function zoomToProjectCode(code) {
                 padding: [50, 50],
                 maxZoom: 12
             });
-
             leafletMap.closePopup();
-
-            setTimeout(() => {
-                const content = getProjectPopupContent(cleanCode, foundSector);
-                const popupAnchorLatLng = targetLatLng || combinedBounds.getCenter();
-                L.popup({ offset: L.point(0, -12) })
-                    .setLatLng(popupAnchorLatLng)
-                    .setContent(content)
-                    .openOn(leafletMap);
-            }, 1000);
         }
     } else if (targetLatLng) {
         leafletMap.flyTo(targetLatLng, 11, { animate: true, duration: 1.2 });
         leafletMap.closePopup();
-        setTimeout(() => {
-            const content = getProjectPopupContent(cleanCode, foundSector);
-            L.popup({ offset: L.point(0, -12) })
-                .setLatLng(targetLatLng)
-                .setContent(content)
-                .openOn(leafletMap);
-        }, 1000);
     }
 }
