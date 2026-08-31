@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CATLEC - Sistema Nacional de Inversiones</title>
+    <meta name="description"
+        content="Plataforma de visualización logística y territorial de inversiones públicas en infraestructura de Chile (2010-2024) — CATLEC">
+    <link rel="icon" type="image/png" href="logo/favicon.png">
+    <link rel="shortcut icon" href="logo/favicon.ico">
+
+    <!-- Leaflet mapping library -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- CSS Custom stylesheet -->
+    <link rel="stylesheet" href="static/css/styles.css">
+
+    <!-- Chart.js for premium chart renders -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- SheetJS for Client-Side Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Datos estáticos pre-generados -->
+    <script src="static/data/regions_data.js"></script>
+    <script src="static/data/sni_data.js"></script>
+
+    <!-- Módulos de lógica SNI -->
+    <script src="static/js/SNI/state.js"></script>
+    <script src="static/js/SNI/filters.js"></script>
+    <script src="static/js/SNI/charts.js"></script>
+    <script src="static/js/SNI/map.js"></script>
+    <script src="static/js/SNI/ui.js"></script>
+
+    <style>
+        /* Estructura general de pantalla única para SNI */
+        .view-subheader.four-tabs {
+            grid-template-columns: repeat(4, 1fr) !important;
+        }
+
+        .sni-layout {
+            display: grid;
+            grid-template-columns: 275px 1fr;
+            gap: 0.6rem;
+            flex: 1;
+            min-height: 0;
+            padding: 0.5rem 0.75rem;
+            overflow: hidden;
+            width: 100vw;
+            box-sizing: border-box;
+        }
+
+        .sni-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            height: 100%;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .sni-sidebar-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md, 12px);
+            padding: 0.65rem 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            height: 100%;
+            min-height: 0;
+            overflow: hidden;
+            box-shadow: var(--shadow-main);
+        }
+
+        .sni-sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.25rem;
+            flex-shrink: 0;
+        }
+
+        .sni-sidebar-header .panel-title {
+            border: none;
+            padding: 0;
+            margin: 0;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .sni-sidebar-header .panel-title i,
+        .sni-sidebar-header .panel-title svg {
+            color: var(--primary);
+            width: 14px;
+            height: 14px;
+        }
+
+        .sni-sidebar-scroll {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding-right: 3px;
+        }
+
+        /* Cajas de Filtros con bordes y límites bien definidos */
+        .sni-filter-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.45rem 0.55rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .sni-filter-box:hover {
+            border-color: rgba(37, 99, 235, 0.4);
+        }
+
+        .sni-filter-box-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 0.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            margin-bottom: 0.1rem;
+        }
+
+        .sni-filter-box-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .filter-header-action {
+            background: transparent;
+            border: 1px solid rgba(37, 99, 235, 0.25);
+            color: var(--primary);
+            font-size: 9.5px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 1px 5px;
+            border-radius: 4px;
+            transition: all 0.15s ease;
+        }
+
+        .filter-header-action:hover {
+            background: var(--primary);
+            color: #ffffff;
+            border-color: var(--primary);
+        }
+
+        .sni-filter-list-scroll {
+            max-height: 125px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding-right: 3px;
+        }
+
+        .sni-filter-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .sni-year-chips-wrap {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 3px;
+        }
+
+        .sni-year-chip {
+            padding: 3px 2px;
+            font-size: 10px;
+            font-weight: 500;
+            border-radius: 4px;
+            background: var(--bg-sidebar);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s ease;
+        }
+
+        .sni-year-chip:hover {
+            border-color: var(--primary);
+            background: rgba(37, 99, 235, 0.1);
+        }
+
+        .sni-year-chip.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            font-weight: 600;
+        }
+
+        .sni-presets-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-bottom: 0.35rem;
+        }
+
+        .preset-btn {
+            font-size: 9.5px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--bg-sidebar);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .preset-btn.active,
+        .preset-btn:hover {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        #btn-export-excel:hover {
+            background: rgba(16, 185, 129, 0.2) !important;
+            border-color: #10b981 !important;
+            color: #10b981 !important;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+        }
+
+        .sni-filter-checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10.5px;
+            color: var(--text-secondary);
+            padding: 3px 4px;
+            border-radius: 4px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.12s ease;
+        }
+
+        .sni-filter-checkbox-label:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        .sni-filter-checkbox-label input[type="checkbox"] {
+            cursor: pointer;
+            accent-color: var(--primary);
+            width: 13px;
+            height: 13px;
+            margin: 0;
+            flex-shrink: 0;
+        }
+
+        .sni-filter-checkbox-label span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .sni-color-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .sni-main-area {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        /* Banner de KPIs superior horizontal */
+        .sni-kpi-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.45rem;
+            flex-shrink: 0;
+        }
+
+        .sni-kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm, 8px);
+            padding: 0.45rem 0.65rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: var(--shadow-main);
+            min-height: 52px;
+            transition: border-color 0.2s ease;
+        }
+
+        .sni-kpi-card:hover {
+            border-color: var(--primary);
+        }
+
+        .sni-kpi-label {
+            font-size: 0.64rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-secondary);
+            margin-bottom: 2px;
+        }
+
+        .sni-kpi-value {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--primary);
+            line-height: 1.1;
+        }
+
+        .sni-kpi-subtext {
+            font-size: 0.62rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sni-viewport {
+            flex: 1;
+            min-height: 0;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .sni-view-container {
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .sni-grid-1x2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+        }
+
+        .sni-grid-1x3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+        }
+
+        .sni-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md, 12px);
+            padding: 0.65rem 0.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            min-height: 0;
+            overflow: hidden;
+            box-shadow: var(--shadow-main);
+        }
+
+        .sni-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.35rem;
+            flex-shrink: 0;
+        }
+
+        .sni-card-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin: 0;
+        }
+
+        .sni-badge {
+            font-size: 0.62rem;
+            font-weight: 600;
+            padding: 2px 7px;
+            border-radius: 12px;
+            background: rgba(37, 99, 235, 0.12);
+            color: var(--primary);
+            border: 1px solid rgba(37, 99, 235, 0.25);
+        }
+
+        .sni-chart-wrap {
+            flex: 1;
+            position: relative;
+            min-height: 0;
+            width: 100%;
+        }
+
+        .map-metric-toolbar {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: var(--bg-card);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 3px;
+            display: flex;
+            gap: 3px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .map-metric-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 10.5px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .map-metric-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .map-metric-btn.active {
+            background: var(--primary);
+            color: #ffffff;
+        }
+
+        .map-region-detail-card {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            z-index: 1000;
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px 12px;
+            width: 250px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+            display: none;
+        }
+
+        .map-metric-mini-kpis {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.35rem;
+            padding-top: 0.35rem;
+            border-top: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .map-metric-mini-kpi {
+            background: var(--bg-sidebar);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 4px 6px;
+            text-align: center;
+        }
+
+        .map-metric-mini-kpi-label {
+            font-size: 0.58rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .map-metric-mini-kpi-val {
+            font-size: 0.76rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-top: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        @keyframes sniSpin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .sni-table-wrap {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-sidebar);
+        }
+
+        .sni-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11.5px;
+        }
+
+        .sni-table th {
+            position: sticky;
+            top: 0;
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-align: left;
+            padding: 6px 8px;
+            border-bottom: 1px solid var(--border-color);
+            z-index: 1;
+        }
+
+        .sni-table td {
+            padding: 5px 8px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .sni-table tr:hover {
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        .sni-badge-min {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .sni-page-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 10.5px;
+            cursor: pointer;
+        }
+
+        .sni-page-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .sni-page-number {
+            font-size: 10.5px;
+            color: var(--text-secondary);
+            align-self: center;
+        }
+    </style>
+</head>
+
+<body class="light-theme">
+    <div class="app-container">
+
+        <!-- Top Navigation Banner -->
+        <header class="top-navbar">
+            <div class="top-navbar-left">
+                <img src="logo/cropped-Logo-CATLEC-horizontal-sin-fondo-1.png" alt="Logo CATLEC"
+                    class="top-navbar-logo">
+                <span class="top-navbar-title">Plataforma de visualización logística de datos - Sistema Nacional de
+                    Inversiones (SNI)</span>
+                <span class="top-navbar-divider"></span>
+                <span class="top-navbar-proto">Prototipo en desarrollo</span>
+            </div>
+            <div class="top-navbar-right">
+                <!-- Navigation Menu -->
+                <div class="nav-menu" id="nav-menu">
+                    <button class="nav-menu-btn" id="nav-menu-btn" aria-haspopup="true" aria-expanded="false">
+                        <i data-lucide="layers" style="width:13px;height:13px;"></i>
+                        Seleccionar Base de Datos
+                        <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
+                    </button>
+                    <div class="nav-menu-dropdown" id="nav-menu-dropdown">
+                        <!-- Group DGC with Submenu -->
+                        <div class="nav-menu-group" id="nav-dgc-group">
+                            <div class="nav-menu-item nav-menu-has-sub" id="nav-dgc-parent-item">
+                                <a href="index.html" class="nav-menu-parent-link"
+                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
+                                    <i data-lucide="building-2" style="width:13px;height:13px;"></i>
+                                    Dirección General de Concesiones (DGC)
+                                </a>
+                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
+                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
+                            </div>
+                            <div class="nav-submenu" id="nav-dgc-submenu">
+                                <a class="nav-submenu-item" href="index.html">
+                                    <i data-lucide="map" style="width:13px;height:13px;"></i> Mapa
+                                </a>
+                                <a class="nav-submenu-item" href="index.html#timeline">
+                                    <i data-lucide="clock" style="width:13px;height:13px;"></i> Líneas de Tiempo
+                                </a>
+                                <a class="nav-submenu-item" href="index.html#investment">
+                                    <i data-lucide="line-chart" style="width:13px;height:13px;"></i> Análisis de
+                                    Inversión
+                                </a>
+                                <a class="nav-submenu-item" href="index.html#contracts">
+                                    <i data-lucide="layers" style="width:13px;height:13px;"></i> Análisis de Contratos
+                                </a>
+                                <a class="nav-submenu-item" href="index.html#bidders">
+                                    <i data-lucide="users" style="width:13px;height:13px;"></i> Análisis de Oferentes
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Group EFE with Submenu -->
+                        <div class="nav-menu-group" id="nav-efe-group">
+                            <div class="nav-menu-item nav-menu-has-sub" id="nav-efe-parent-item">
+                                <a href="EFE.html" class="nav-menu-parent-link"
+                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
+                                    <i data-lucide="train-front" style="width:13px;height:13px;"></i>
+                                    Empresas de Ferrocarriles del Estado (EFE)
+                                </a>
+                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
+                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
+                            </div>
+                            <div class="nav-submenu" id="nav-efe-submenu">
+                                <a class="nav-submenu-item" href="EFE.html">
+                                    <i data-lucide="map" style="width:13px;height:13px;"></i> Mapa
+                                </a>
+                                <a class="nav-submenu-item" href="EFE.html#inversion">
+                                    <i data-lucide="line-chart" style="width:13px;height:13px;"></i> Análisis de
+                                    Inversión
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Group MOP with Submenu -->
+                        <div class="nav-menu-group" id="nav-mop-group">
+                            <div class="nav-menu-item nav-menu-has-sub" id="nav-mop-parent-item">
+                                <a href="MOP.html" class="nav-menu-parent-link"
+                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
+                                    <i data-lucide="hard-hat" style="width:13px;height:13px;"></i>
+                                    Ministerio de Obras Públicas (MOP)
+                                </a>
+                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
+                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
+                            </div>
+                            <div class="nav-submenu" id="nav-mop-submenu">
+                                <a class="nav-submenu-item" href="MOP.html">
+                                    <i data-lucide="layout-dashboard" style="width:13px;height:13px;"></i> Tabla de
+                                    proyectos
+                                </a>
+                                <a class="nav-submenu-item" href="MOP.html#inversion">
+                                    <i data-lucide="bar-chart-2" style="width:13px;height:13px;"></i> Análisis de
+                                    inversión
+                                </a>
+                                <a class="nav-submenu-item" href="MOP.html#programas">
+                                    <i data-lucide="layers" style="width:13px;height:13px;"></i> Programas y Etapas
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Group SNI (Active) -->
+                        <div class="nav-menu-group" id="nav-sni-group">
+                            <div class="nav-menu-item active nav-menu-has-sub" id="nav-sni-parent-item">
+                                <a href="SNI.html" class="nav-menu-parent-link"
+                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;font-weight:600;">
+                                    <i data-lucide="pie-chart" style="width:13px;height:13px;color:var(--primary);"></i>
+                                    Sistema Nacional de Inversiones (SNI)
+                                </a>
+                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
+                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
+                            </div>
+                            <div class="nav-submenu" id="nav-sni-submenu">
+                                <a class="nav-submenu-item" href="SNI.html#map">
+                                    <i data-lucide="map" style="width:13px;height:13px;"></i> Mapa Regional
+                                </a>
+                                <a class="nav-submenu-item" href="SNI.html#territorial">
+                                    <i data-lucide="bar-chart-2" style="width:13px;height:13px;"></i> Análisis
+                                    Territorial
+                                </a>
+                                <a class="nav-submenu-item" href="SNI.html#ministries">
+                                    <i data-lucide="landmark" style="width:13px;height:13px;"></i> Ministerios y
+                                    Sectores
+                                </a>
+                                <a class="nav-submenu-item" href="SNI.html#temporal">
+                                    <i data-lucide="clock" style="width:13px;height:13px;"></i> Evolución Temporal
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Subheader: Rapid View Switcher Bar (4 Tabs Equitativos) -->
+        <div class="view-subheader four-tabs">
+            <button class="view-tab-btn active" id="btn-view-map" data-view="map">
+                <i data-lucide="map" style="width: 14px; height: 14px;"></i>
+                <span>Mapa Regional</span>
+            </button>
+            <button class="view-tab-btn" id="btn-view-territorial" data-view="territorial">
+                <i data-lucide="bar-chart-2" style="width: 14px; height: 14px;"></i>
+                <span>Análisis Territorial</span>
+            </button>
+            <button class="view-tab-btn" id="btn-view-ministries" data-view="ministries">
+                <i data-lucide="landmark" style="width: 14px; height: 14px;"></i>
+                <span>Ministerios y Sectores</span>
+            </button>
+            <button class="view-tab-btn" id="btn-view-temporal" data-view="temporal">
+                <i data-lucide="clock" style="width: 14px; height: 14px;"></i>
+                <span>Evolución Temporal</span>
+            </button>
+        </div>
+
+        <!-- Layout Principal: Sidebar Izquierda + Contenido Principal Derecha -->
+        <div class="sni-layout">
+
+            <!-- Sidebar Filters -->
+            <aside class="sni-sidebar">
+                <div class="sni-sidebar-card">
+                    <div class="sni-sidebar-header">
+                        <h2 class="panel-title" style="border: none; padding: 0; margin: 0; font-size: 0.8rem;">
+                            <i data-lucide="sliders-horizontal" style="width: 14px; height: 14px; color: var(--primary);"></i>
+                            Filtros de Inversión
+                        </h2>
+                        <button class="preset-btn" id="btn-reset-filters" title="Restablecer todos los filtros"
+                            style="display:flex;align-items:center;gap:3px;">
+                            <i data-lucide="rotate-ccw" style="width:11px;height:11px;"></i>
+                            Limpiar
+                        </button>
+                    </div>
+
+                    <div class="sni-sidebar-scroll">
+                        <!-- 1. Caja: Año -->
+                        <div class="sni-filter-box">
+                            <div class="sni-filter-box-header">
+                                <div class="sni-filter-box-title">
+                                    <i data-lucide="calendar" style="width:12px;height:12px;color:var(--primary);"></i>
+                                    <span>Año</span>
+                                </div>
+                                <button type="button" class="filter-header-action" id="btn-select-all-years"
+                                    title="Seleccionar o deseleccionar todos los años">Seleccionar todos</button>
+                            </div>
+                            <div class="sni-year-chips-wrap" id="filter-years-container">
+                                <!-- Inyectado por JS -->
+                            </div>
+                        </div>
+
+                        <!-- 2. Caja: Ministerios y Sectores -->
+                        <div class="sni-filter-box">
+                            <div class="sni-filter-box-header">
+                                <div class="sni-filter-box-title">
+                                    <i data-lucide="landmark" style="width:12px;height:12px;color:var(--primary);"></i>
+                                    <span>Ministerio</span>
+                                </div>
+                                <button type="button" class="filter-header-action" id="btn-select-all-ministries"
+                                    title="Seleccionar o deseleccionar todos los ministerios">Seleccionar todos</button>
+                            </div>
+                            <div id="filter-ministries-container" class="sni-filter-list-scroll">
+                                <!-- Inyectado por JS -->
+                            </div>
+                        </div>
+
+                        <!-- 3. Caja: Regiones de Chile -->
+                        <div class="sni-filter-box">
+                            <div class="sni-filter-box-header">
+                                <div class="sni-filter-box-title">
+                                    <i data-lucide="map-pin" style="width:12px;height:12px;color:var(--primary);"></i>
+                                    <span>Región geográfica</span>
+                                </div>
+                                <button type="button" class="filter-header-action" id="btn-select-all-regions"
+                                    title="Seleccionar o deseleccionar todas las regiones">Seleccionar todos</button>
+                            </div>
+                            <div id="filter-regions-container" class="sni-filter-list-scroll">
+                                <!-- Inyectado por JS -->
+                            </div>
+                        </div>
+
+                        <!-- 4. Caja: Fuentes de Datos -->
+                        <div class="sni-filter-box">
+                            <div class="sni-filter-box-header">
+                                <div class="sni-filter-box-title">
+                                    <i data-lucide="database" style="width:12px;height:12px;color:var(--primary);"></i>
+                                    <span>Fuentes de Datos</span>
+                                </div>
+                                <button type="button" class="filter-header-action" id="btn-select-all-sources"
+                                    title="Seleccionar o deseleccionar todas las fuentes">Seleccionar todos</button>
+                            </div>
+                            <div id="filter-sources-container" class="sni-filter-list">
+                                <!-- Inyectado por JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botón de Exportación a Excel en el Sidebar -->
+                    <div
+                        style="padding-top: 8px; border-top: 1px solid var(--border-color); margin-top: 4px; flex-shrink: 0;">
+                        <button class="btn-reset" id="btn-export-excel"
+                            style="padding: 0.35rem 0.5rem; font-size: 0.74rem; justify-content: center; width: 100%; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); color: #10b981; font-weight: 600; cursor: pointer; transition: all 0.15s ease; border-radius: 6px; display: flex; align-items: center; gap: 6px;"
+                            title="Descargar base de datos filtrada o completa en Excel (.xlsx)">
+                            <i data-lucide="file-spreadsheet" style="width: 13px; height: 13px;"></i>
+                            <span>Exportar a Excel (.xlsx)</span>
+                        </button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Area: Top KPI Strip + Active View Container -->
+            <main class="sni-main-area">
+
+                <!-- Banner de KPIs Globales con el formato exacto de index.html -->
+                <div class="sni-kpi-row">
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="dollar-sign"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Inversión Total</span>
+                            <span class="kpi-value" id="kpi-total-usd">US$ 126.955,51 MM</span>
+                        </div>
+                    </div>
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="trending-up"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Promedio Anual</span>
+                            <span class="kpi-value" id="kpi-avg-year">US$ 8.463,7 MM/año</span>
+                        </div>
+                    </div>
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="landmark"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Ministerio Líder</span>
+                            <span class="kpi-value" id="kpi-top-min" style="font-size: 0.95rem;">MOP (29.9%)</span>
+                        </div>
+                    </div>
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="map-pin"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Región Líder</span>
+                            <span class="kpi-value" id="kpi-top-reg" style="font-size: 0.95rem;">Metropolitana
+                                (20.7%)</span>
+                        </div>
+                    </div>
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="pie-chart"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Mecanismo</span>
+                            <span class="kpi-value" id="kpi-sub-split" style="font-size: 0.92rem;">63% Proy | 28%
+                                FNDR</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Viewport contenedor -->
+                <div class="sni-viewport">
+
+                    <!-- 1. VISTA: MAPA REGIONAL (Layout 2 Columnas: Gráfico Izquierda, Mapa Derecha) -->
+                    <div class="sni-view-container" id="view-map"
+                        style="display: grid; grid-template-columns: 68% 32%; gap: 0.5rem; width: 100%; height: 100%; min-height: 0;">
+                        <!-- Columna Izquierda: Panel Analítico con Ranking Dinámico -->
+                        <div class="sni-card"
+                            style="height: 100%; min-height: 0; display: flex; flex-direction: column;">
+                            <div class="sni-card-header">
+                                <h3 class="sni-card-title">
+                                    <i data-lucide="bar-chart-2"
+                                        style="width:14px;height:14px;color:var(--primary);"></i>
+                                    <span id="map-metric-chart-title">Ranking Regional: Inversión Total (MM USD)</span>
+                                </h3>
+                            </div>
+
+                            <div class="sni-chart-wrap" style="flex: 1; min-height: 0;">
+                                <canvas id="chart-map-ranking"></canvas>
+                            </div>
+
+                            <!-- Mini KPIs de la métrica activa -->
+                            <div class="map-metric-mini-kpis">
+                                <div class="map-metric-mini-kpi">
+                                    <div class="map-metric-mini-kpi-label">Región Líder</div>
+                                    <div class="map-metric-mini-kpi-val" id="map-kpi-leader">-</div>
+                                </div>
+                                <div class="map-metric-mini-kpi">
+                                    <div class="map-metric-mini-kpi-label">Menor Valor</div>
+                                    <div class="map-metric-mini-kpi-val" id="map-kpi-lowest">-</div>
+                                </div>
+                                <div class="map-metric-mini-kpi">
+                                    <div class="map-metric-mini-kpi-label">Promedio Regional</div>
+                                    <div class="map-metric-mini-kpi-val" id="map-kpi-avg">-</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Columna Derecha: Mapa Leaflet (Angosto) -->
+                        <div class="sni-card" style="position: relative; padding: 0; height: 100%; min-height: 0;">
+                            <!-- Toolbar de Métricas del Mapa -->
+                            <div class="map-metric-toolbar">
+                                <button class="map-metric-btn active" data-metric="total">Inversión Total</button>
+                                <button class="map-metric-btn" data-metric="per_capita">Inversión per Cápita</button>
+                                <button class="map-metric-btn" data-metric="km2">Inversión por km²</button>
+                            </div>
+
+                            <!-- Floating Reset Map Button (idéntico a index.html) -->
+                            <button id="btn-reset-map" class="btn-floating-map"
+                                style="top: 38px; right: 8px; font-size: 10px; padding: 3px 7px;">
+                                <i data-lucide="maximize-2" style="width: 12px; height: 12px;"></i>
+                                Restablecer Mapa
+                            </button>
+
+                            <!-- Mapa Leaflet -->
+                            <div id="sni-map" style="width: 100%; height: 100%; border-radius: 12px;"></div>
+
+                            <!-- Tarjeta Flotante de Detalle Regional -->
+                            <div class="map-region-detail-card" id="map-region-detail-card">
+                                <div
+                                    style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+                                    <span id="mrd-name"
+                                        style="font-weight: 700; font-size: 13px; color: var(--primary);">Región</span>
+                                    <button id="btn-close-map-detail"
+                                        style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 2px 4px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: color 0.15s ease;"
+                                        title="Cerrar detalle">
+                                        <i data-lucide="x" style="width: 13px; height: 13px;"></i>
+                                    </button>
+                                </div>
+                                <div style="font-size: 11px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                                    <div><span style="color:var(--text-muted);">Total Invertido:</span><br><strong
+                                            id="mrd-total-usd">-</strong></div>
+                                    <div><span style="color:var(--text-muted);">Per Cápita:</span><br><strong
+                                            id="mrd-per-capita">-</strong></div>
+                                    <div><span style="color:var(--text-muted);">Población:</span><br><strong
+                                            id="mrd-poblacion">-</strong></div>
+                                    <div><span style="color:var(--text-muted);">Superficie:</span><br><strong
+                                            id="mrd-superficie">-</strong></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. VISTA: ANÁLISIS TERRITORIAL -->
+                    <div class="sni-view-container" id="view-territorial"
+                        style="display: none; flex-direction: column;">
+                        <!-- Matriz PIB vs Inversión (Equidad Territorial) -->
+                        <div class="sni-card" style="flex: 1;">
+                            <div class="sni-card-header">
+                                <h3 class="sni-card-title">
+                                    <i data-lucide="scale" style="width:14px;height:14px;color:var(--warning);"></i>
+                                    Equidad Territorial: Inversión vs Aporte al PIB
+                                </h3>
+                            </div>
+                            <div class="sni-chart-wrap">
+                                <canvas id="chart-pib-balance"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Inversión Per Cápita -->
+                        <div class="sni-card" style="height: 45%; flex-shrink: 0;">
+                            <div class="sni-card-header">
+                                <h3 class="sni-card-title">
+                                    <i data-lucide="users" style="width:14px;height:14px;color:var(--success);"></i>
+                                    Inversión Anual Total vs Inversión Per Cápita por Habitante (Pesos 2024)
+                                </h3>
+                            </div>
+                            <div class="sni-chart-wrap">
+                                <canvas id="chart-per-capita"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. VISTA: MINISTERIOS Y SECTORES -->
+                    <div class="sni-view-container" id="view-ministries" style="display: none;">
+                        <div class="sni-grid-1x2" style="width: 100%;">
+                            <!-- Participación por Ministerio -->
+                            <div class="sni-card">
+                                <div class="sni-card-header">
+                                    <h3 class="sni-card-title">
+                                        <i data-lucide="bar-chart-2"
+                                            style="width:14px;height:14px;color:var(--primary);"></i>
+                                        Distribución por Ministerio (MM USD 2024)
+                                    </h3>
+                                </div>
+                                <div class="sni-chart-wrap">
+                                    <canvas id="chart-ministry-share"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Radiografía MOP -->
+                            <div class="sni-card">
+                                <div class="sni-card-header">
+                                    <h3 class="sni-card-title">
+                                        <i data-lucide="hard-hat"
+                                            style="width:14px;height:14px;color:var(--secondary);"></i>
+                                        Desglose Direcciones MOP
+                                    </h3>
+                                </div>
+                                <div class="sni-chart-wrap">
+                                    <canvas id="chart-mop-services"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. VISTA: EVOLUCIÓN TEMPORAL -->
+                    <div class="sni-view-container" id="view-temporal" style="display: none; flex-direction: column;">
+                        <!-- Evolución Anual -->
+                        <div class="sni-card" style="flex: 1;">
+                            <div class="sni-card-header">
+                                <h3 class="sni-card-title">
+                                    <i data-lucide="line-chart"
+                                        style="width:14px;height:14px;color:var(--primary);"></i>
+                                    Evolución Anual de Inversión Pública por Ministerio (2010–2024)
+                                </h3>
+                            </div>
+                            <div class="sni-chart-wrap">
+                                <canvas id="chart-temporal-evolution"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Comparativa por Períodos Presidenciales -->
+                        <div class="sni-card" style="height: 45%; flex-shrink: 0;">
+                            <div class="sni-card-header">
+                                <h3 class="sni-card-title">
+                                    <i data-lucide="arrow-left-right"
+                                        style="width:14px;height:14px;color:var(--accent);"></i>
+                                    Comparativa por Períodos Presidenciales (2010–2024)
+                                </h3>
+                            </div>
+                            <div class="sni-chart-wrap">
+                                <canvas id="chart-pre-post-gov"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                </div> <!-- Fin .sni-viewport -->
+            </main>
+        </div>
+
+    </div>
+
+    <!-- Nav Menu JS (Dropdown & Submenus) -->
+    <script>
+        (function () {
+            const navBtn = document.getElementById('nav-menu-btn');
+            const navDropdown = document.getElementById('nav-menu-dropdown');
+            const navDgcGroup = document.getElementById('nav-dgc-group');
+            const navEfeGroup = document.getElementById('nav-efe-group');
+            const navMopGroup = document.getElementById('nav-mop-group');
+            const navSectraGroup = document.getElementById('nav-sectra-group');
+            const navSniGroup = document.getElementById('nav-sni-group');
+
+            if (navBtn && navDropdown) {
+                navBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    navDropdown.classList.toggle('open');
+                    navBtn.setAttribute('aria-expanded', navDropdown.classList.contains('open'));
+                });
+                document.addEventListener('click', function () {
+                    navDropdown.classList.remove('open');
+                    if (navDgcGroup) navDgcGroup.classList.remove('open');
+                    if (navEfeGroup) navEfeGroup.classList.remove('open');
+                    if (navMopGroup) navMopGroup.classList.remove('open');
+                    if (navSniGroup) navSniGroup.classList.remove('open');
+                });
+                navDropdown.addEventListener('click', function (e) { e.stopPropagation(); });
+            }
+
+            // DGC hover & chevron toggle
+            if (navDgcGroup) {
+                const dgcTrigger = navDgcGroup.querySelector('.nav-submenu-trigger-icon');
+                if (dgcTrigger) {
+                    dgcTrigger.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        navDgcGroup.classList.toggle('open');
+                    });
+                }
+                navDgcGroup.addEventListener('mouseenter', function () { navDgcGroup.classList.add('open'); });
+                navDgcGroup.addEventListener('mouseleave', function () { navDgcGroup.classList.remove('open'); });
+            }
+
+            // EFE hover & chevron toggle
+            if (navEfeGroup) {
+                const efeTrigger = navEfeGroup.querySelector('.nav-submenu-trigger-icon');
+                if (efeTrigger) {
+                    efeTrigger.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        navEfeGroup.classList.toggle('open');
+                    });
+                }
+                navEfeGroup.addEventListener('mouseenter', function () { navEfeGroup.classList.add('open'); });
+                navEfeGroup.addEventListener('mouseleave', function () { navEfeGroup.classList.remove('open'); });
+            }
+
+            // MOP hover & chevron toggle
+            if (navMopGroup) {
+                const mopTrigger = navMopGroup.querySelector('.nav-submenu-trigger-icon');
+                if (mopTrigger) {
+                    mopTrigger.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        navMopGroup.classList.toggle('open');
+                    });
+                }
+                navMopGroup.addEventListener('mouseenter', function () { navMopGroup.classList.add('open'); });
+                navMopGroup.addEventListener('mouseleave', function () { navMopGroup.classList.remove('open'); });
+            }
+
+            // SNI hover & chevron toggle
+            if (navSniGroup) {
+                const sniTrigger = navSniGroup.querySelector('.nav-submenu-trigger-icon');
+                if (sniTrigger) {
+                    sniTrigger.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        navSniGroup.classList.toggle('open');
+                    });
+                }
+                navSniGroup.addEventListener('mouseenter', function () { navSniGroup.classList.add('open'); });
+                navSniGroup.addEventListener('mouseleave', function () { navSniGroup.classList.remove('open'); });
+            }
+        })();
+    </script>
+
+    <!-- Toast de Notificación para Exportación a Excel On-Demand -->
+    <div id="sni-export-toast"
+        style="display: none; position: fixed; bottom: 24px; right: 24px; z-index: 9999; background: var(--bg-card); border: 1px solid var(--primary); box-shadow: 0 10px 30px rgba(0,0,0,0.35); border-radius: 10px; padding: 12px 18px; color: var(--text-primary); font-size: 12px; align-items: center; gap: 10px; backdrop-filter: blur(12px);">
+        <div
+            style="width: 18px; height: 18px; border: 2px solid rgba(37,99,235,0.25); border-top-color: var(--primary); border-radius: 50%; animation: sniSpin 0.8s linear infinite; flex-shrink: 0;">
+        </div>
+        <span id="sni-export-toast-text" style="font-weight: 500;">Preparando exportación a Excel...</span>
+    </div>
+</body>
+
+</html>

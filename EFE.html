@@ -124,6 +124,30 @@
                                 </a>
                             </div>
                         </div>
+                        <!-- Group SNI -->
+                        <div class="nav-menu-group" id="nav-sni-group">
+                            <div class="nav-menu-item nav-menu-has-sub" id="nav-sni-parent-item">
+                                <a href="SNI.html" class="nav-menu-parent-link" style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
+                                    <i data-lucide="pie-chart" style="width:13px;height:13px;"></i>
+                                    Sistema Nacional de Inversiones (SNI)
+                                </a>
+                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon" style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
+                            </div>
+                            <div class="nav-submenu" id="nav-sni-submenu">
+                                <a class="nav-submenu-item" href="SNI.html#map">
+                                    <i data-lucide="map" style="width:13px;height:13px;"></i> Mapa Regional
+                                </a>
+                                <a class="nav-submenu-item" href="SNI.html#territorial">
+                                    <i data-lucide="bar-chart-2" style="width:13px;height:13px;"></i> Análisis Territorial
+                                </a>
+                                <a class="nav-submenu-item" href="SNI.html#ministries">
+                                    <i data-lucide="landmark" style="width:13px;height:13px;"></i> Ministerios y Sectores
+                                </a>
+                                <a class="nav-submenu-item" href="SNI.html#temporal">
+                                    <i data-lucide="clock" style="width:13px;height:13px;"></i> Evolución Temporal
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -613,6 +637,25 @@
                 });
                 navMopGroup.addEventListener('mouseleave', function () {
                     navMopGroup.classList.remove('open');
+                });
+            }
+
+            // SNI hover & chevron toggle
+            const navSniGroup = document.getElementById('nav-sni-group');
+            if (navSniGroup) {
+                const sniTrigger = navSniGroup.querySelector('.nav-submenu-trigger-icon');
+                if (sniTrigger) {
+                    sniTrigger.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        navSniGroup.classList.toggle('open');
+                    });
+                }
+                navSniGroup.addEventListener('mouseenter', function () {
+                    navSniGroup.classList.add('open');
+                });
+                navSniGroup.addEventListener('mouseleave', function () {
+                    navSniGroup.classList.remove('open');
                 });
             }
 

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CATLEC - Plataforma Concesiones de Chile</title>
+    <title>CATLEC - Dirección General de Concesiones</title>
     <link rel="icon" type="image/png" href="logo/favicon.png">
     <link rel="shortcut icon" href="logo/favicon.ico">
     <!-- Leaflet mapping library -->
@@ -113,13 +113,41 @@
                             </div>
                             <div class="nav-submenu" id="nav-mop-submenu">
                                 <a class="nav-submenu-item" href="MOP.html">
-                                    <i data-lucide="layout-dashboard" style="width:13px;height:13px;"></i> Tabla de proyectos
+                                    <i data-lucide="layout-dashboard" style="width:13px;height:13px;"></i> Tabla de
+                                    proyectos
                                 </a>
                                 <a class="nav-submenu-item" href="MOP.html#inversion">
-                                    <i data-lucide="bar-chart-2" style="width:13px;height:13px;"></i> Análisis de inversión
+                                    <i data-lucide="bar-chart-2" style="width:13px;height:13px;"></i> Análisis de
+                                    inversión
                                 </a>
                                 <a class="nav-submenu-item" href="MOP.html#programas">
                                     <i data-lucide="layers" style="width:13px;height:13px;"></i> Programas y Etapas
+                                </a>
+                            </div>
+                        </div>
+                        <!-- Group SNI -->
+                        <div class="nav-menu-group" id="nav-sni-group">
+                            <div class="nav-menu-item nav-menu-has-sub" id="nav-sni-parent-item">
+                                <a href="SNI.html" class="nav-menu-parent-link"
+                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
+                                    <i data-lucide="pie-chart" style="width:13px;height:13px;"></i>
+                                    Sistema Nacional de Inversiones (SNI)
+                                </a>
+                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
+                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
+                            </div>
+                            <div class="nav-submenu" id="nav-sni-submenu">
+                                <a class="nav-submenu-item" href="SNI.html#map">
+                                    <i data-lucide="map" style="width:13px;height:13px;"></i> Mapa Regional
+                                </a>
+                                <a class="nav-submenu-item" href="SNI.html#territorial">
+                                    <i data-lucide="bar-chart-2" style="width:13px;height:13px;"></i> Análisis Territorial
+                                </a>
+                                <a class="nav-submenu-item" href="SNI.html#ministries">
+                                    <i data-lucide="landmark" style="width:13px;height:13px;"></i> Ministerios y Sectores
+                                </a>
+                                <a class="nav-submenu-item" href="SNI.html#temporal">
+                                    <i data-lucide="clock" style="width:13px;height:13px;"></i> Evolución Temporal
                                 </a>
                             </div>
                         </div>
@@ -580,8 +608,9 @@
                         </div>
 
                         <!-- CUADRÍCULA PRINCIPAL DE 2 COLUMNAS (Izquierda: Inversión por Región a toda la altura; Derecha: Pie arriba comprimido + Inversión activa abajo ampliado) -->
-                        <div style="display: grid; grid-template-columns: 42% 58%; gap: 0.5rem; flex: 1; min-height: 0; height: 100%;">
-                            
+                        <div
+                            style="display: grid; grid-template-columns: 42% 58%; gap: 0.5rem; flex: 1; min-height: 0; height: 100%;">
+
                             <!-- COLUMNA IZQUIERDA: Inversión por Región (Barras Horizontales a toda la altura) -->
                             <div class="panel-card"
                                 style="padding: 0.45rem 0.5rem 0.35rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
@@ -593,7 +622,9 @@
                                             style="width: 13px; height: 13px; color: var(--primary);"></i>
                                         Inversión por Región (UF)
                                     </h3>
-                                    <span style="font-size: 0.58rem; color: var(--text-muted); text-align: right; line-height: 1.1;">*Proyectos interregionales distribuidos equitativamente por región</span>
+                                    <span
+                                        style="font-size: 0.58rem; color: var(--text-muted); text-align: right; line-height: 1.1;">*Proyectos
+                                        interregionales distribuidos equitativamente por región</span>
                                 </div>
                                 <div style="flex: 1; position: relative; min-height: 0; height: 100%;">
                                     <canvas id="chartInvByRegion"></canvas>
@@ -601,11 +632,13 @@
                             </div>
 
                             <!-- COLUMNA DERECHA: 2 Pies arriba comprimidos + Inversión Activa amplio abajo -->
-                            <div style="display: flex; flex-direction: column; gap: 0.5rem; height: 100%; min-height: 0;">
-                                
+                            <div
+                                style="display: flex; flex-direction: column; gap: 0.5rem; height: 100%; min-height: 0;">
+
                                 <!-- Fila Superior Derecha (Dividida en 2 contenedores: Inversión por Sector + Inversión por Tipo de Iniciativa) -->
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; flex: 0 0 35%; min-height: 0;">
-                                    
+                                <div
+                                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; flex: 0 0 35%; min-height: 0;">
+
                                     <!-- Gráfico Arriba Izq: Pie Chart % Inversión por Sector -->
                                     <div class="panel-card"
                                         style="padding: 0.35rem 0.5rem 0.25rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
@@ -667,7 +700,8 @@
                                                 style="width: 13px; height: 13px; color: #8b5cf6;"></i>
                                             Inversión Activa en el Tiempo por Año
                                         </h3>
-                                        <span style="font-size: 0.6rem; color: var(--text-muted);">Inversión acumulada</span>
+                                        <span style="font-size: 0.6rem; color: var(--text-muted);">Inversión
+                                            acumulada</span>
                                     </div>
                                     <div style="flex: 1; min-height: 0; position: relative;">
                                         <canvas id="chartActiveInvYear"></canvas>
@@ -707,7 +741,8 @@
                                 </div>
                                 <div class="kpi-val-container">
                                     <span class="kpi-label">Contratos vigentes</span>
-                                    <span class="kpi-value" id="kpi-contracts-active" style="font-size: 0.95rem;">-</span>
+                                    <span class="kpi-value" id="kpi-contracts-active"
+                                        style="font-size: 0.95rem;">-</span>
                                 </div>
                             </div>
 
@@ -717,14 +752,16 @@
                                 </div>
                                 <div class="kpi-val-container">
                                     <span class="kpi-label">Contratos interregionales</span>
-                                    <span class="kpi-value" id="kpi-contracts-interregional" style="font-size: 0.95rem;">-</span>
+                                    <span class="kpi-value" id="kpi-contracts-interregional"
+                                        style="font-size: 0.95rem;">-</span>
                                 </div>
                             </div>
                         </div>
 
                         <!-- CUADRÍCULA PRINCIPAL DE 2 COLUMNAS (Izquierda: Contratos por Región a toda la altura; Derecha: 2 Pies arriba comprimidos + Contratos vigentes abajo ampliado) -->
-                        <div style="display: grid; grid-template-columns: 42% 58%; gap: 0.5rem; flex: 1; min-height: 0; height: 100%;">
-                            
+                        <div
+                            style="display: grid; grid-template-columns: 42% 58%; gap: 0.5rem; flex: 1; min-height: 0; height: 100%;">
+
                             <!-- COLUMNA IZQUIERDA: Contratos por Región (Barras Horizontales a toda la altura) -->
                             <div class="panel-card"
                                 style="padding: 0.45rem 0.5rem 0.35rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
@@ -735,7 +772,9 @@
                                         <i data-lucide="layers" style="width: 13px; height: 13px; color: #059669;"></i>
                                         Contratos por Región
                                     </h3>
-                                    <span style="font-size: 0.58rem; color: var(--text-muted); text-align: right; line-height: 1.1;">*Proyectos interregionales distribuidos equitativamente por región</span>
+                                    <span
+                                        style="font-size: 0.58rem; color: var(--text-muted); text-align: right; line-height: 1.1;">*Proyectos
+                                        interregionales distribuidos equitativamente por región</span>
                                 </div>
                                 <div style="flex: 1; position: relative; min-height: 0; height: 100%;">
                                     <canvas id="chartContractsByRegion"></canvas>
@@ -743,11 +782,13 @@
                             </div>
 
                             <!-- COLUMNA DERECHA: 2 Pies arriba comprimidos + Contratos Vigentes amplio abajo -->
-                            <div style="display: flex; flex-direction: column; gap: 0.5rem; height: 100%; min-height: 0;">
-                                
+                            <div
+                                style="display: flex; flex-direction: column; gap: 0.5rem; height: 100%; min-height: 0;">
+
                                 <!-- Fila Superior Derecha (Dividida en 2 contenedores: Contratos por Sector + Contratos por Tipo de Iniciativa) -->
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; flex: 0 0 35%; min-height: 0;">
-                                    
+                                <div
+                                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; flex: 0 0 35%; min-height: 0;">
+
                                     <!-- Gráfico Arriba Izq: Pie Chart % Contratos por Método de Licitación -->
                                     <div class="panel-card"
                                         style="padding: 0.35rem 0.5rem 0.25rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
@@ -955,7 +996,8 @@
                                             <button id="btn-toggle-top-companies"
                                                 style="display: inline-flex; align-items: center; gap: 0.25rem; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 4px; color: #f59e0b; font-size: 0.58rem; font-weight: 600; padding: 0.12rem 0.4rem; cursor: pointer; transition: all 0.15s ease; flex-shrink: 0;"
                                                 title="Alternar entre Concesiones Adjudicadas Netas y Adjudicaciones Ponderadas">
-                                                <i data-lucide="arrow-left-right" style="width: 10px; height: 10px;"></i>
+                                                <i data-lucide="arrow-left-right"
+                                                    style="width: 10px; height: 10px;"></i>
                                                 <span id="btn-top-companies-text">Ver Adj. Ponderadas</span>
                                             </button>
                                         </div>
@@ -973,7 +1015,8 @@
 
                 <div id="timeline-full-panel" class="timeline-full-panel" style="display:none; grid-column: 2 / -1;">
                     <!-- BANNER KPI SUPERIOR (Líneas de Tiempo) -->
-                    <div style="padding: 0.5rem 0.5rem 0.35rem 0.5rem; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.4rem; flex-shrink: 0; border-bottom: 1px solid var(--border-color);">
+                    <div
+                        style="padding: 0.5rem 0.5rem 0.35rem 0.5rem; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.4rem; flex-shrink: 0; border-bottom: 1px solid var(--border-color);">
                         <div class="card-kpi">
                             <div class="kpi-icon">
                                 <i data-lucide="clock"></i>
@@ -990,7 +1033,8 @@
                             </div>
                             <div class="kpi-val-container">
                                 <span class="kpi-label">Llamado a licitación ➔ Inicio</span>
-                                <span class="kpi-value" id="kpi-timeline-llamado-inicio" style="font-size: 0.95rem;">-</span>
+                                <span class="kpi-value" id="kpi-timeline-llamado-inicio"
+                                    style="font-size: 0.95rem;">-</span>
                             </div>
                         </div>
 
@@ -1000,7 +1044,8 @@
                             </div>
                             <div class="kpi-val-container">
                                 <span class="kpi-label">Adjudicación ➔ Inicio</span>
-                                <span class="kpi-value" id="kpi-timeline-adj-inicio" style="font-size: 0.95rem;">-</span>
+                                <span class="kpi-value" id="kpi-timeline-adj-inicio"
+                                    style="font-size: 0.95rem;">-</span>
                             </div>
                         </div>
                     </div>
@@ -1326,6 +1371,26 @@
                 });
             }
 
+            // SNI hover & chevron toggle
+            const navSniGroup = document.getElementById('nav-sni-group');
+            if (navSniGroup) {
+                const sniTrigger = navSniGroup.querySelector('.nav-submenu-trigger-icon');
+                if (sniTrigger) {
+                    sniTrigger.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        navSniGroup.classList.toggle('open');
+                    });
+                }
+
+                navSniGroup.addEventListener('mouseenter', function () {
+                    navSniGroup.classList.add('open');
+                });
+                navSniGroup.addEventListener('mouseleave', function () {
+                    navSniGroup.classList.remove('open');
+                });
+            }
+
             const subMap = document.getElementById('nav-sub-map');
             const subTl = document.getElementById('nav-sub-timeline');
             const subInv = document.getElementById('nav-sub-investment');
@@ -1421,7 +1486,8 @@
                     </div>
                     <div style="min-width: 0;">
                         <h3 id="company-modal-title" class="company-modal-title">—</h3>
-                        <p class="company-modal-subtitle">Concesiones adjudicadas: <strong id="company-modal-count" style="color: #60a5fa;">0</strong></p>
+                        <p class="company-modal-subtitle">Concesiones adjudicadas: <strong id="company-modal-count"
+                                style="color: #60a5fa;">0</strong></p>
                     </div>
                 </div>
                 <button id="btn-close-company-modal" class="company-modal-close-btn" title="Cerrar (Esc)">

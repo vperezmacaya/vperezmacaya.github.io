@@ -142,7 +142,7 @@ h6 {
     border-bottom: 1px solid rgba(59, 130, 246, 0.18);
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
     position: relative;
-    z-index: 200;
+    z-index: 2500;
     flex-shrink: 0;
 }
 
@@ -284,7 +284,7 @@ body.light-theme .view-subheader {
     border-radius: 8px;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
     min-width: 220px;
-    z-index: 500;
+    z-index: 3000;
 }
 
 .nav-menu-dropdown.open {
