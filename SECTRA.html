@@ -96,6 +96,9 @@
                                 <a class="nav-submenu-item" href="EFE.html">
                                     <i data-lucide="map" style="width:13px;height:13px;"></i> Mapa
                                 </a>
+                                <a class="nav-submenu-item" href="EFE.html#timeline">
+                                    <i data-lucide="clock" style="width:13px;height:13px;"></i> Líneas de Tiempo
+                                </a>
                                 <a class="nav-submenu-item" href="EFE.html#inversion">
                                     <i data-lucide="line-chart" style="width:13px;height:13px;"></i> Análisis de Inversión
                                 </a>
@@ -120,8 +123,11 @@
                                 <a class="nav-submenu-item" href="Metro.html#timeline">
                                     <i data-lucide="clock" style="width:13px;height:13px;"></i> Líneas de Tiempo
                                 </a>
-                                <a class="nav-submenu-item" href="Metro.html#inversion">
-                                    <i data-lucide="line-chart" style="width:13px;height:13px;"></i> Análisis de Inversión
+                                <a class="nav-submenu-item" href="Metro.html#comunas">
+                                    <i data-lucide="building-2" style="width:13px;height:13px;"></i> Estadísticas Comunales
+                                </a>
+                                <a class="nav-submenu-item" href="Metro.html#demanda">
+                                    <i data-lucide="trending-up" style="width:13px;height:13px;"></i> Demanda y Operación
                                 </a>
                             </div>
                         </div>
@@ -139,16 +145,13 @@
                             </div>
                             <div class="nav-submenu" id="nav-mop-submenu">
                                 <a class="nav-submenu-item" href="MOP.html">
-                                    <i data-lucide="layout-dashboard" style="width:13px;height:13px;"></i> Resumen General
+                                    <i data-lucide="layout-dashboard" style="width:13px;height:13px;"></i> Tabla de proyectos
                                 </a>
                                 <a class="nav-submenu-item" href="MOP.html#inversion">
-                                    <i data-lucide="bar-chart-2" style="width:13px;height:13px;"></i> Inversión por Región
+                                    <i data-lucide="bar-chart-2" style="width:13px;height:13px;"></i> Análisis de inversión
                                 </a>
                                 <a class="nav-submenu-item" href="MOP.html#programas">
                                     <i data-lucide="layers" style="width:13px;height:13px;"></i> Programas y Etapas
-                                </a>
-                                <a class="nav-submenu-item" href="MOP.html#proyectos-region">
-                                    <i data-lucide="map-pin" style="width:13px;height:13px;"></i> Proyectos por Región
                                 </a>
                             </div>
                         </div>
@@ -585,7 +588,9 @@
             const navDropdown = document.getElementById('nav-menu-dropdown');
             const navDgcGroup = document.getElementById('nav-dgc-group');
             const navEfeGroup = document.getElementById('nav-efe-group');
+            const navMetroGroup = document.getElementById('nav-metro-group');
             const navMopGroup = document.getElementById('nav-mop-group');
+            const navSniGroup = document.getElementById('nav-sni-group');
 
             if (navBtn && navDropdown) {
                 navBtn.addEventListener('click', function (e) {
@@ -597,16 +602,12 @@
                     navDropdown.classList.remove('open');
                     if (navDgcGroup) navDgcGroup.classList.remove('open');
                     if (navEfeGroup) navEfeGroup.classList.remove('open');
-                if (navMopGroup) {
-                    navMopGroup.classList.remove('open');
-                }
-                const navSniGroup = document.getElementById('nav-sni-group');
-                if (navSniGroup) {
-                    navSniGroup.classList.remove('open');
-                }
-            });
-            navDropdown.addEventListener('click', function (e) { e.stopPropagation(); });
-        }
+                    if (navMetroGroup) navMetroGroup.classList.remove('open');
+                    if (navMopGroup) navMopGroup.classList.remove('open');
+                    if (navSniGroup) navSniGroup.classList.remove('open');
+                });
+                navDropdown.addEventListener('click', function (e) { e.stopPropagation(); });
+            }
 
         if (navDgcGroup) {
             const dgcTrigger = navDgcGroup.querySelector('.nav-submenu-trigger-icon');
@@ -642,6 +643,23 @@
             });
         }
 
+        if (navMetroGroup) {
+            const metroTrigger = navMetroGroup.querySelector('.nav-submenu-trigger-icon');
+            if (metroTrigger) {
+                metroTrigger.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    navMetroGroup.classList.toggle('open');
+                });
+            }
+            navMetroGroup.addEventListener('mouseenter', function () {
+                navMetroGroup.classList.add('open');
+            });
+            navMetroGroup.addEventListener('mouseleave', function () {
+                navMetroGroup.classList.remove('open');
+            });
+        }
+
         if (navMopGroup) {
             const mopTrigger = navMopGroup.querySelector('.nav-submenu-trigger-icon');
             if (mopTrigger) {
@@ -659,7 +677,7 @@
             });
         }
 
-        const navSniGroup = document.getElementById('nav-sni-group');
+        // SNI hover & chevron toggle
         if (navSniGroup) {
             const sniTrigger = navSniGroup.querySelector('.nav-submenu-trigger-icon');
             if (sniTrigger) {

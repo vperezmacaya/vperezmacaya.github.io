@@ -129,8 +129,11 @@
                                 <a class="nav-submenu-item" href="Metro.html#timeline">
                                     <i data-lucide="clock" style="width:13px;height:13px;"></i> Líneas de Tiempo
                                 </a>
-                                <a class="nav-submenu-item" href="Metro.html#inversion">
-                                    <i data-lucide="line-chart" style="width:13px;height:13px;"></i> Análisis de Inversión
+                                <a class="nav-submenu-item" href="Metro.html#comunas">
+                                    <i data-lucide="building-2" style="width:13px;height:13px;"></i> Estadísticas Comunales
+                                </a>
+                                <a class="nav-submenu-item" href="Metro.html#demanda">
+                                    <i data-lucide="trending-up" style="width:13px;height:13px;"></i> Demanda y Operación
                                 </a>
                             </div>
                         </div>
@@ -736,6 +739,7 @@
             const navEfeGroup = document.getElementById('nav-efe-group');
             const navMetroGroup = document.getElementById('nav-metro-group');
             const navMopGroup = document.getElementById('nav-mop-group');
+            const navSniGroup = document.getElementById('nav-sni-group');
 
             if (navBtn && navDropdown) {
                 navBtn.addEventListener('click', (e) => {
@@ -749,6 +753,7 @@
                     if (navEfeGroup) navEfeGroup.classList.remove('open');
                     if (navMetroGroup) navMetroGroup.classList.remove('open');
                     if (navMopGroup) navMopGroup.classList.remove('open');
+                    if (navSniGroup) navSniGroup.classList.remove('open');
                 });
                 navDropdown.addEventListener('click', e => e.stopPropagation());
             }
@@ -822,7 +827,6 @@
             }
 
             // SNI hover & chevron toggle
-            const navSniGroup = document.getElementById('nav-sni-group');
             if (navSniGroup) {
                 const sniTrigger = navSniGroup.querySelector('.nav-submenu-trigger-icon');
                 if (sniTrigger) {

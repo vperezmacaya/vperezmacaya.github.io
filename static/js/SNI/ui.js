@@ -83,6 +83,21 @@ function setupViewTabs() {
             targetBtn.click();
         }
     }
+
+    window.addEventListener('hashchange', () => {
+        const hash = (window.location.hash || '').replace('#', '');
+        if (hash) {
+            const targetBtn = document.getElementById(`btn-view-${hash}`);
+            if (targetBtn && !targetBtn.classList.contains('active')) {
+                targetBtn.click();
+            }
+        } else {
+            const mapBtn = document.getElementById('btn-view-map');
+            if (mapBtn && !mapBtn.classList.contains('active')) {
+                mapBtn.click();
+            }
+        }
+    });
 }
 
 function switchViewContainer(viewName) {
