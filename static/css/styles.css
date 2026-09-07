@@ -275,8 +275,10 @@ body.light-theme .view-subheader {
 }
 
 .nav-db-logo {
-    width: 15px;
-    height: 15px;
+    width: 15px !important;
+    height: 15px !important;
+    max-width: 15px !important;
+    max-height: 15px !important;
     object-fit: contain;
     flex-shrink: 0;
     display: inline-block;
@@ -293,6 +295,7 @@ body.light-theme .view-subheader {
     border-radius: 8px;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
     min-width: 220px;
+    max-width: 320px;
     z-index: 3000;
 }
 
