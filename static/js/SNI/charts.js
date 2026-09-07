@@ -158,14 +158,7 @@ function getChartThemeOptions() {
         },
         plugins: {
             legend: {
-                labels: {
-                    color: textColor,
-                    font: { family: "'Plus Jakarta Sans', sans-serif", size: 10.5, weight: '500' },
-                    boxWidth: 10,
-                    boxHeight: 10,
-                    usePointStyle: true,
-                    padding: 12
-                }
+                display: false
             },
             tooltip: {
                 enabled: false,
@@ -518,7 +511,9 @@ function updatePibBalanceChart() {
                         label: '% Aporte PIB País',
                         data: pibData,
                         backgroundColor: 'rgba(245, 158, 11, 0.85)',
-                        borderRadius: 4,
+                        borderColor: 'rgba(245, 158, 11, 1)',
+                        borderWidth: 1,
+                        borderRadius: 3,
                         barPercentage: 0.75,
                         categoryPercentage: 0.8
                     },
@@ -527,7 +522,9 @@ function updatePibBalanceChart() {
                         label: '% Inversión Recibida',
                         data: invData,
                         backgroundColor: 'rgba(37, 99, 235, 0.85)',
-                        borderRadius: 4,
+                        borderColor: 'rgba(37, 99, 235, 1)',
+                        borderWidth: 1,
+                        borderRadius: 3,
                         barPercentage: 0.75,
                         categoryPercentage: 0.8
                     },
@@ -537,11 +534,11 @@ function updatePibBalanceChart() {
                         data: ratioData,
                         borderColor: '#10b981',
                         backgroundColor: '#10b981',
-                        borderWidth: 2.2,
+                        borderWidth: 2,
                         yAxisID: 'y1',
                         pointRadius: 3.5,
                         pointHoverRadius: 5.5,
-                        tension: 0.2
+                        tension: 0.25
                     }
                 ]
             },
@@ -549,6 +546,7 @@ function updatePibBalanceChart() {
                 ...baseOpts,
                 plugins: {
                     ...baseOpts.plugins,
+                    legend: { display: false },
                     tooltip: {
                         ...baseOpts.plugins.tooltip,
                         callbacks: {
@@ -590,6 +588,7 @@ function updatePibBalanceChart() {
         chart.data.datasets[0].data = pibData;
         chart.data.datasets[1].data = invData;
         chart.data.datasets[2].data = ratioData;
+        chart.options.plugins.legend = { display: false };
         chart.options.scales.x.ticks.color = baseOpts.scales.x.ticks.color;
         chart.options.scales.x.grid.color = baseOpts.scales.x.grid.color;
         chart.options.scales.y.ticks.color = baseOpts.scales.y.ticks.color;
@@ -625,7 +624,11 @@ function updatePerCapitaChart() {
                         label: 'Inversión Prom. Anual (MM USD)',
                         data: totalUsd,
                         backgroundColor: 'rgba(37, 99, 235, 0.75)',
-                        borderRadius: 4,
+                        borderColor: 'rgba(37, 99, 235, 1)',
+                        borderWidth: 1,
+                        borderRadius: 3,
+                        barPercentage: 0.72,
+                        categoryPercentage: 0.8,
                         yAxisID: 'y'
                     },
                     {
@@ -634,11 +637,11 @@ function updatePerCapitaChart() {
                         data: perCapita,
                         borderColor: '#10b981',
                         backgroundColor: '#10b981',
-                        borderWidth: 2.2,
+                        borderWidth: 2,
                         yAxisID: 'y1',
                         pointRadius: 3.5,
                         pointHoverRadius: 5.5,
-                        tension: 0.2
+                        tension: 0.25
                     }
                 ]
             },
@@ -646,6 +649,7 @@ function updatePerCapitaChart() {
                 ...baseOpts,
                 plugins: {
                     ...baseOpts.plugins,
+                    legend: { display: false },
                     tooltip: {
                         ...baseOpts.plugins.tooltip,
                         callbacks: {
@@ -686,6 +690,7 @@ function updatePerCapitaChart() {
         chart.data.labels = labels;
         chart.data.datasets[0].data = totalUsd;
         chart.data.datasets[1].data = perCapita;
+        chart.options.plugins.legend = { display: false };
         chart.options.scales.x.ticks.color = baseOpts.scales.x.ticks.color;
         chart.options.scales.x.grid.color = baseOpts.scales.x.grid.color;
         chart.options.scales.y.ticks.color = baseOpts.scales.y.ticks.color;
@@ -735,8 +740,10 @@ function updateMinistryShareChart() {
                     label: 'Inversión por Ministerio (MM USD)',
                     data: data,
                     backgroundColor: colors,
-                    borderRadius: 4,
-                    barPercentage: 0.8
+                    borderRadius: 3,
+                    borderWidth: 1,
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    barPercentage: 0.75
                 }]
             },
             options: {
@@ -834,14 +841,17 @@ function updateMopServicesChart() {
     if (!sniChartInstances.mopServices) {
         sniChartInstances.mopServices = new Chart(ctx, {
             type: 'bar',
+            plugins: [sniHorizontalBarLabelsPlugin],
             data: {
                 labels: labels,
                 datasets: [{
                     label: 'Inversión MOP (MM USD)',
                     data: data,
                     backgroundColor: '#3b82f6',
-                    borderRadius: 4,
-                    barPercentage: 0.8
+                    borderColor: '#2563eb',
+                    borderWidth: 1,
+                    borderRadius: 3,
+                    barPercentage: 0.75
                 }]
             },
             options: {
@@ -853,6 +863,12 @@ function updateMopServicesChart() {
                     tooltip: {
                         ...baseOpts.plugins.tooltip,
                         callbacks: { label: tooltipCb }
+                    },
+                    sniHorizontalBarLabelsPlugin: {
+                        formatter: (val) => {
+                            const pct = totalMop > 0 ? ((val / totalMop) * 100).toFixed(1) : '0';
+                            return `US$ ${val.toLocaleString('es-CL', { minimumFractionDigits: 1 })} MM (${pct}%)`;
+                        }
                     }
                 },
                 scales: {
@@ -876,6 +892,12 @@ function updateMopServicesChart() {
         chart.data.labels = labels;
         chart.data.datasets[0].data = data;
         chart.options.plugins.tooltip.callbacks.label = tooltipCb;
+        if (chart.options.plugins.sniHorizontalBarLabelsPlugin) {
+            chart.options.plugins.sniHorizontalBarLabelsPlugin.formatter = (val) => {
+                const pct = totalMop > 0 ? ((val / totalMop) * 100).toFixed(1) : '0';
+                return `US$ ${val.toLocaleString('es-CL', { minimumFractionDigits: 1 })} MM (${pct}%)`;
+            };
+        }
         chart.options.scales.x.ticks.color = baseOpts.scales.x.ticks.color;
         chart.options.scales.x.grid.color = baseOpts.scales.x.grid.color;
         chart.options.scales.y.ticks.color = baseOpts.scales.y.ticks.color;
@@ -936,6 +958,17 @@ function updateTemporalEvolutionChart() {
         });
     }
 
+    // Actualizar micro-leyenda HTML en cabecera del card
+    const legendEl = document.getElementById('temporal-evolution-legend');
+    if (legendEl) {
+        legendEl.innerHTML = datasets.map(ds => `
+            <span class="sni-card-legend-item">
+                <span class="sni-legend-dot" style="background:${ds.backgroundColor};"></span>
+                ${ds.label}
+            </span>
+        `).join('');
+    }
+
     const baseOpts = getChartThemeOptions();
 
     if (!sniChartInstances.temporalEvolution) {
@@ -949,6 +982,7 @@ function updateTemporalEvolutionChart() {
                 ...baseOpts,
                 plugins: {
                     ...baseOpts.plugins,
+                    legend: { display: false },
                     tooltip: {
                         ...baseOpts.plugins.tooltip,
                         callbacks: {
@@ -975,6 +1009,7 @@ function updateTemporalEvolutionChart() {
         chart.data.labels = years.map(String);
         // Para stacked charts con datasets dinámicos, reemplazamos el array completo
         chart.data.datasets = datasets;
+        chart.options.plugins.legend = { display: false };
         chart.options.scales.x.ticks.color = baseOpts.scales.x.ticks.color;
         chart.options.scales.x.grid.color = baseOpts.scales.x.grid.color;
         chart.options.scales.y.ticks.color = baseOpts.scales.y.ticks.color;
@@ -1018,8 +1053,10 @@ function updatePrePostGovChart() {
                     label: 'Promedio Anual (MM USD 2024)',
                     data: avgData,
                     backgroundColor: colors,
-                    borderRadius: 4,
-                    barPercentage: 0.65
+                    borderColor: colors,
+                    borderWidth: 1,
+                    borderRadius: 3,
+                    barPercentage: 0.55
                 }]
             },
             options: {
@@ -1052,6 +1089,7 @@ function updatePrePostGovChart() {
         chart.data.labels = labels;
         chart.data.datasets[0].data = avgData;
         chart.data.datasets[0].backgroundColor = colors;
+        chart.options.plugins.legend = { display: false };
         chart.options.scales.x.ticks.color = baseOpts.scales.x.ticks.color;
         chart.options.scales.x.grid.color = baseOpts.scales.x.grid.color;
         chart.options.scales.y.ticks.color = baseOpts.scales.y.ticks.color;

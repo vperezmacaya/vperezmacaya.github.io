@@ -8,21 +8,20 @@ function efeDebounce(fn, delay) {
     };
 }
 
-function efeFormatRegionCell(regionStr) {
-    if (!regionStr || String(regionStr).trim() === '' || String(regionStr).trim() === 'N/A') {
-        return '<span style="color:var(--text-muted);font-style:italic">Sin región</span>';
+function efeFormatFilialCell(filialStr) {
+    if (!filialStr || String(filialStr).trim() === '' || String(filialStr).trim().toLowerCase() === 'nan' || String(filialStr).trim().toLowerCase() === 'null') {
+        return '<span style="color:var(--text-muted);font-style:italic;font-size:0.75rem;">—</span>';
     }
-    const str = String(regionStr).trim();
-    if (str.toLowerCase().includes('nacional')) {
-        return '<span class="region-pill">Nacional</span>';
-    }
+    const str = String(filialStr).trim();
+    return `<span style="font-size:0.75rem; font-weight:600; color:var(--text-primary);">${str}</span>`;
+}
 
-    const parts = str.split(/[;,/\n]+/).map(p => shortenRegionName(p.trim())).filter(p => p.length > 0);
-    if (parts.length > 1) {
-        return `<div class="region-pills-wrap">${parts.map(p => `<span class="region-pill">${p}</span>`).join('')}</div>`;
+function efeFormatStageCell(stageStr) {
+    if (!stageStr || String(stageStr).trim() === '' || String(stageStr).trim().toLowerCase() === 'nan' || String(stageStr).trim().toLowerCase() === 'null') {
+        return '<span style="color:var(--text-muted);font-style:italic;font-size:0.75rem;">—</span>';
     }
-
-    return `<span>${shortenRegionName(str)}</span>`;
+    const str = String(stageStr).trim();
+    return `<span style="font-size:0.75rem; color:var(--text-primary); font-weight:500;" title="${str}">${str}</span>`;
 }
 
 function efeRenderTable(projects) {
@@ -55,9 +54,10 @@ function efeRenderTable(projects) {
         tr.id = `efe-row-${index}`;
         tr.style.cursor = 'pointer';
         tr.innerHTML = `
-            <td><strong>${proj.name || 'Sin nombre'}</strong></td>
-            <td>${efeFormatRegionCell(proj.region)}</td>
-            <td style="text-align: right;"><span style="font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums;">${efeFormatUSD(proj.investment_usd)}</span></td>
+            <td style="width: 38%;"><strong>${proj.name || 'Sin nombre'}</strong></td>
+            <td style="width: 22%;">${efeFormatFilialCell(proj.filial)}</td>
+            <td style="width: 20%; text-align: right;"><span style="font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums;">${efeFormatInvestment(proj.investment_mm_usd)}</span></td>
+            <td style="width: 20%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${efeFormatStageCell(proj.stage)}</td>
         `;
 
         // Select project on click
@@ -117,26 +117,28 @@ function efeShowProjectDetailView(proj, currentFilteredProjects) {
         'EFE Valparaíso': '#0284c7',
         'EFE Central': '#2563eb',
         'EFE Sur': '#d97706',
-        'Nacional': '#8b5cf6'
+        'EFE Arica - La Paz': '#059669'
     };
-    const filialColor = filialColors[proj.filial] || '#3b82f6';
-    const subtitleText = proj.filial ? `Filial ${proj.filial}` : 'Red Ferroviaria Nacional (EFE Matriz)';
+    const hasFilial = proj.filial && String(proj.filial).trim() !== '' && String(proj.filial).trim().toLowerCase() !== 'nan';
+    const filialColor = hasFilial ? (filialColors[proj.filial] || '#3b82f6') : 'var(--text-muted)';
+    const subtitleText = hasFilial ? `Filial ${proj.filial}` : 'Sin filial específica';
 
-    const badgeClass = proj.filial === 'EFE Sur' ? 'badge-warning' : (proj.filial === 'EFE Valparaíso' ? 'badge-info' : (proj.filial === 'EFE Central' ? 'badge-info' : 'badge-neutral'));
-    const badgeText = proj.filial || 'Nacional';
+    const badgeClass = proj.filial === 'EFE Sur' ? 'badge-warning' : (proj.filial === 'EFE Valparaíso' ? 'badge-info' : (proj.filial === 'EFE Central' ? 'badge-info' : (proj.filial === 'EFE Arica - La Paz' ? 'badge-success' : 'badge-neutral')));
+    const badgeText = hasFilial ? proj.filial : 'Sin filial';
 
-    const invText = (proj.investment_usd != null && !isNaN(proj.investment_usd) && Number(proj.investment_usd) > 0)
-        ? efeFormatUSD(proj.investment_usd)
+    const invText = (proj.investment_mm_usd != null && !isNaN(proj.investment_mm_usd) && Number(proj.investment_mm_usd) > 0)
+        ? efeFormatInvestment(proj.investment_mm_usd)
         : 'No informada';
 
-    // Región formateada
-    let regionPillsHTML = '';
-    const regStr = proj.region ? String(proj.region).trim() : 'Nacional';
-    if (regStr.toLowerCase().includes('nacional') || !regStr) {
-        regionPillsHTML = `<span class="region-pill region-pill-nacional">Nacional</span>`;
-    } else {
-        const parts = regStr.split(/[;,/\n]+/).map(r => shortenRegionName(r.trim())).filter(Boolean);
-        regionPillsHTML = `<div class="region-pills-wrap">${parts.map(r => `<span class="region-pill">${r}</span>`).join('')}</div>`;
+    // Progress display
+    let progressDisplay = '—';
+    if (proj.progress != null) {
+        const pv = Number(proj.progress);
+        if (!isNaN(pv)) {
+            progressDisplay = pv <= 1 ? `${Math.round(pv * 100)}%` : `${pv}%`;
+        } else {
+            progressDisplay = String(proj.progress);
+        }
     }
 
     const linkSource = hasSource ? `
@@ -147,8 +149,35 @@ function efeShowProjectDetailView(proj, currentFilteredProjects) {
         </div>
     ` : '';
 
+    // Renderizado de fotografía(s) asociada(s) desde Fotos/EFE (después de la descripción y antes de los datos)
+    let photoHTML = '';
+    const photosList = proj.photos && proj.photos.length > 0 ? proj.photos : (proj.photo ? [proj.photo] : []);
+    if (photosList.length === 1) {
+        const encodedUrl = encodeURI(photosList[0]);
+        photoHTML = `
+        <div class="detail-photo-wrapper">
+            <img src="${encodedUrl}" alt="${proj.name}" class="detail-project-photo" onerror="this.parentElement.style.display='none'">
+            <div class="detail-photo-caption">Fuente: EFE</div>
+        </div>
+        `;
+    } else if (photosList.length > 1) {
+        photoHTML = `
+        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem; margin-bottom: 0.5rem;">
+            ${photosList.map((pUrl, pIdx) => {
+                const enc = encodeURI(pUrl);
+                return `
+                <div class="detail-photo-wrapper" style="margin: 0;">
+                    <img src="${enc}" alt="${proj.name} - Foto ${pIdx + 1}" class="detail-project-photo" onerror="this.parentElement.style.display='none'">
+                    <div class="detail-photo-caption">Fuente: EFE (${pIdx + 1}/${photosList.length})</div>
+                </div>
+                `;
+            }).join('')}
+        </div>
+        `;
+    }
+
     efeDetailViewBody.innerHTML = `
-        <!-- 1. Nombre y Cabecera del Proyecto (Idéntico a index.html) -->
+        <!-- 1. Nombre y Cabecera del Proyecto -->
         <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.1rem;">
             <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
                 <h3 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--text-primary); line-height: 1.35; font-family: var(--font-heading); flex: 1; min-width: 0;">${proj.name}</h3>
@@ -157,24 +186,44 @@ function efeShowProjectDetailView(proj, currentFilteredProjects) {
             <div style="font-size: 0.75rem; color: ${filialColor}; font-weight: 600; margin-top: 0.25rem;">${subtitleText}</div>
         </div>
 
-        <!-- 2. Descripción del Proyecto (Segundo) -->
+        <!-- 2. Descripción del Proyecto -->
         <div class="detail-section">
             <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.35rem;">Descripción</h4>
             <p class="detail-desc" style="font-size: 0.76rem; line-height: 1.45; white-space: pre-wrap;">${descContent}</p>
         </div>
 
-        <!-- 3. Datos del Proyecto (Al final) -->
+        <!-- 3. Foto del Proyecto -->
+        ${photoHTML}
+
+        <!-- 4. Datos del Proyecto -->
         <div class="detail-section">
             <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.4rem;">Datos del Proyecto</h4>
-            <div class="detail-grid" style="grid-template-columns: 110px 1fr; gap: 0.3rem; font-size: 0.74rem;">
+            <div class="detail-grid" style="grid-template-columns: 120px 1fr; gap: 0.3rem; font-size: 0.74rem;">
                 <span class="detail-label">Filial:</span>
-                <span class="detail-value">${proj.filial || 'Nacional (EFE Matriz)'}</span>
+                <span class="detail-value">${hasFilial ? proj.filial : 'Sin filial específica'}</span>
 
-                <span class="detail-label">Región:</span>
-                <span class="detail-value">${regionPillsHTML}</span>
+                <span class="detail-label">Tipo:</span>
+                <span class="detail-value" style="display:flex; align-items:center; gap:0.35rem;">
+                    <span style="display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:3px; background:rgba(37,99,235,0.08); color:var(--primary); flex-shrink:0;">
+                        ${typeof efeGetProjectTypeSvg === 'function' ? efeGetProjectTypeSvg(proj.type, 12, 12, 'currentColor') : ''}
+                    </span>
+                    <strong>${proj.type || '—'}</strong>
+                </span>
 
-                <span class="detail-label">Inversión (USD):</span>
+                <span class="detail-label">Etapa:</span>
+                <span class="detail-value">${proj.stage || '—'}</span>
+
+                <span class="detail-label">Inversión (MM USD):</span>
                 <span class="detail-value"><strong>${invText}</strong></span>
+
+                <span class="detail-label">Operación estimada:</span>
+                <span class="detail-value">${proj.operation_year || '—'}</span>
+
+                <span class="detail-label">Avance etapa:</span>
+                <span class="detail-value">${progressDisplay}</span>
+
+                <span class="detail-label">Fuente:</span>
+                <span class="detail-value">${proj.source || '—'}</span>
             </div>
         </div>
 
@@ -286,12 +335,13 @@ document.addEventListener('DOMContentLoaded', () => {
         efeBtnReset.addEventListener('click', () => {
             if (efeSearchInput) efeSearchInput.value = '';
             efeState.search = '';
-            efeState.selectedRegions = [];
             efeState.selectedFiliales = [];
+            efeState.selectedDetails = [];
+            efeState.selectedTipos = [];
             efeState.selectedProjectName = null;
             efeState.hoveredProjectName = null;
-            efeState.sortBy = 'name';
-            efeState.sortOrder = 'asc';
+            efeState.sortBy = 'investment_mm_usd';
+            efeState.sortOrder = 'desc';
             efeState.page = 1;
 
             document.querySelectorAll('.data-table th.sortable').forEach(el => {
@@ -301,13 +351,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            document.querySelectorAll('.efe-region-checkbox').forEach(cb => cb.checked = false);
-            if (efeRegionCheckAll) efeRegionCheckAll.checked = false;
-            if (efeRegionMultiselectText) efeRegionMultiselectText.textContent = 'Todas las regiones';
-
             document.querySelectorAll('.efe-filial-checkbox').forEach(cb => cb.checked = false);
             if (efeFilialCheckAll) efeFilialCheckAll.checked = false;
             if (efeFilialMultiselectText) efeFilialMultiselectText.textContent = 'Todas las filiales';
+
+            document.querySelectorAll('.efe-detail-checkbox').forEach(cb => cb.checked = false);
+            if (efeDetailCheckAll) efeDetailCheckAll.checked = false;
+            if (efeDetailMultiselectText) efeDetailMultiselectText.textContent = 'Todo el portafolio';
+
+            document.querySelectorAll('.efe-tipo-checkbox').forEach(cb => cb.checked = false);
+            if (efeTipoCheckAll) efeTipoCheckAll.checked = false;
+            if (efeTipoMultiselectText) efeTipoMultiselectText.textContent = 'Todos los tipos';
 
             efeShowTableListView();
             efeFetchData();

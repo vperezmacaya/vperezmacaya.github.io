@@ -1,30 +1,5 @@
 // ─── EFE Filters & Data Module ───────────────────────────────────────────────
-let currentFilteredEFEProjects = [];
-
-function shortenRegionName(name) {
-    if (!name) return '';
-    let str = String(name).trim();
-    str = str.replace(/^Región\s+(de\s+la\s+|del\s+|de\s+)?/i, '');
-
-    if (/metropolitana/i.test(str)) return 'Metropolitana';
-    if (/ays[eé]n/i.test(str)) return 'Aysén';
-    if (/magallanes/i.test(str)) return 'Magallanes';
-    if (/o'higgins|bernardo/i.test(str)) return "O'Higgins";
-    if (/biob[ií]o/i.test(str)) return 'Biobío';
-    if (/araucan[ií]a/i.test(str)) return 'La Araucanía';
-    if (/r[ií]os/i.test(str)) return 'Los Ríos';
-    if (/lagos/i.test(str)) return 'Los Lagos';
-    if (/tarapac[aá]/i.test(str)) return 'Tarapacá';
-    if (/valpara[ií]so/i.test(str)) return 'Valparaíso';
-    if (/antofagasta/i.test(str)) return 'Antofagasta';
-    if (/atacama/i.test(str)) return 'Atacama';
-    if (/coquimbo/i.test(str)) return 'Coquimbo';
-    if (/maule/i.test(str)) return 'Maule';
-    if (/ñuble/i.test(str)) return 'Ñuble';
-    if (/arica/i.test(str)) return 'Arica y Parinacota';
-
-    return str;
-}
+var currentFilteredEFEProjects = [];
 
 function efeNormalize(str) {
     return str
@@ -32,88 +7,49 @@ function efeNormalize(str) {
         : '';
 }
 
+function efeFormatInvestment(valueMM) {
+    if (valueMM == null || isNaN(valueMM)) return '—';
+    const v = Number(valueMM);
+    if (v >= 1000) return `US$ ${(v / 1000).toFixed(2)}B`;
+    if (v >= 1) return `US$ ${v.toLocaleString('es-CL', {maximumFractionDigits: 0})} MM`;
+    return `US$ ${v.toFixed(1)} MM`;
+}
+window.efeFormatInvestment = efeFormatInvestment;
+
+// Legacy alias
 function efeFormatUSD(value) {
-    if (value == null || isNaN(value)) return '—';
-    if (value >= 1e9) return `US$ ${(value / 1e9).toFixed(2)}B`;
-    if (value >= 1e6) return `US$ ${(value / 1e6).toFixed(1)}M`;
-    if (value >= 1e3) return `US$ ${(value / 1e3).toFixed(0)}K`;
-    return `US$ ${value.toLocaleString('es-CL')}`;
+    return efeFormatInvestment(value);
 }
-
-const EFE_OPERATIONAL_REGIONS = ['Valparaíso', 'Metropolitana', "O'Higgins", 'Maule', 'Ñuble', 'Biobío', 'La Araucanía', 'Los Lagos'];
-
-function efeRegionMatchesFilter(projectRegion, selectedRegions) {
-    if (!selectedRegions || selectedRegions.length === 0) return true;
-    if (!projectRegion) return false;
-
-    const normProjRegion = efeNormalize(projectRegion);
-    if (normProjRegion.includes('nacional')) {
-        // Los proyectos nacionales solo se incluyen cuando la región filtrada
-        // corresponde a alguna región con red/servicio/proyectos de EFE.
-        return selectedRegions.some(selected => {
-            const cleanSel = shortenRegionName(selected);
-            return EFE_OPERATIONAL_REGIONS.some(opReg => shortenRegionName(opReg) === cleanSel);
-        });
-    }
-
-    // Split multiregional string into tokens (by ;, ,, /, \n)
-    const projTokens = normProjRegion
-        .split(/[;,/\n]+/)
-        .map(t => t.trim())
-        .filter(t => t.length > 0);
-
-    return selectedRegions.some(selected => {
-        const normSelected = efeNormalize(selected);
-
-        // 1. Direct full match
-        if (normProjRegion.includes(normSelected) || normSelected.includes(normProjRegion)) {
-            return true;
-        }
-
-        // 2. Token-by-token match for multiregional strings (e.g. O'Higgins in Libertador General Bernardo O'Higgins)
-        return projTokens.some(token => {
-            if (token.length < 3) return false;
-            return normSelected.includes(token) || token.includes(normSelected);
-        });
-    });
-}
+window.efeFormatUSD = efeFormatUSD;
 
 function efeFilialMatchesFilter(projectFilial, selectedFiliales) {
     if (!selectedFiliales || selectedFiliales.length === 0) return true;
-    if (!projectFilial) return false;
+    const hasSinFilial = selectedFiliales.includes('Sin filial específica');
+    if (!projectFilial || String(projectFilial).trim() === '' || String(projectFilial).trim().toLowerCase() === 'nan') {
+        return hasSinFilial;
+    }
     const normProjFilial = efeNormalize(projectFilial);
     return selectedFiliales.some(selected => {
+        if (selected === 'Sin filial específica') return false;
         const normSelected = efeNormalize(selected);
         return normProjFilial.includes(normSelected) || normSelected.includes(normProjFilial);
     });
 }
 
+function efeDetailMatchesFilter(projectDetail, selectedDetails) {
+    if (!selectedDetails || selectedDetails.length === 0) return true;
+    const cat = typeof efeGetDetailCategory === 'function' ? efeGetDetailCategory(projectDetail) : 'Otros / Extra';
+    return selectedDetails.includes(cat);
+}
+
+function efeTipoMatchesFilter(projectTipo, selectedTipos) {
+    if (!selectedTipos || selectedTipos.length === 0) return true;
+    if (!projectTipo) return false;
+    const t = String(projectTipo).trim();
+    return selectedTipos.includes(t);
+}
+
 function efeLoadFilters() {
-    // Populate region checkboxes
-    if (efeRegionOptionsList) {
-        efeRegionOptionsList.innerHTML = '';
-        efeAvailableRegions.forEach(region => {
-            const label = document.createElement('label');
-            label.className = 'multiselect-option';
-            label.innerHTML = `<input type="checkbox" class="efe-region-checkbox" value="${region}">
-                <span>${region}</span>`;
-            efeRegionOptionsList.appendChild(label);
-        });
-
-        // Check-all
-        if (efeRegionCheckAll) {
-            efeRegionCheckAll.addEventListener('change', () => {
-                const isChecked = efeRegionCheckAll.checked;
-                document.querySelectorAll('.efe-region-checkbox').forEach(cb => cb.checked = isChecked);
-                efeUpdateSelectedRegions();
-            });
-        }
-
-        document.querySelectorAll('.efe-region-checkbox').forEach(cb => {
-            cb.addEventListener('change', efeUpdateSelectedRegions);
-        });
-    }
-
     // Populate filial checkboxes
     if (efeFilialOptionsList) {
         efeFilialOptionsList.innerHTML = '';
@@ -139,32 +75,105 @@ function efeLoadFilters() {
         });
     }
 
-    // Multiselect dropdown toggles
-    if (efeRegionMultiselectBtn && efeRegionMultiselectDropdown) {
-        efeRegionMultiselectBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (efeFilialMultiselectDropdown) efeFilialMultiselectDropdown.style.display = 'none';
-            const isOpen = efeRegionMultiselectDropdown.style.display === 'block';
-            efeRegionMultiselectDropdown.style.display = isOpen ? 'none' : 'block';
+    // Populate detail checkboxes (Portafolio Estratégico vs Preinversional)
+    if (efeDetailOptionsList) {
+        efeDetailOptionsList.innerHTML = '';
+        efeAvailableDetails.forEach(detail => {
+            const label = document.createElement('label');
+            label.className = 'multiselect-option';
+            label.innerHTML = `<input type="checkbox" class="efe-detail-checkbox" value="${detail}">
+                <span>${detail}</span>`;
+            efeDetailOptionsList.appendChild(label);
+        });
+
+        // Check-all
+        if (efeDetailCheckAll) {
+            efeDetailCheckAll.addEventListener('change', () => {
+                const isChecked = efeDetailCheckAll.checked;
+                document.querySelectorAll('.efe-detail-checkbox').forEach(cb => cb.checked = isChecked);
+                efeUpdateSelectedDetails();
+            });
+        }
+
+        document.querySelectorAll('.efe-detail-checkbox').forEach(cb => {
+            cb.addEventListener('change', efeUpdateSelectedDetails);
         });
     }
 
+    // Populate tipo checkboxes
+    if (efeTipoOptionsList) {
+        efeTipoOptionsList.innerHTML = '';
+        efeAvailableTipos.forEach(tipo => {
+            const label = document.createElement('label');
+            label.className = 'multiselect-option';
+            const svgIcon = (typeof efeGetProjectTypeSvg === 'function')
+                ? efeGetProjectTypeSvg(tipo, 12, 12, 'currentColor')
+                : '';
+            const tipoColor = (typeof EFE_TIPO_COLORS !== 'undefined' && EFE_TIPO_COLORS[tipo])
+                ? EFE_TIPO_COLORS[tipo]
+                : '#2563eb';
+            label.innerHTML = `<input type="checkbox" class="efe-tipo-checkbox" value="${tipo}">
+                <span style="display:flex; align-items:center; gap:0.35rem;">
+                    <span style="display:inline-flex; align-items:center; justify-content:center; color:${tipoColor};">${svgIcon}</span>
+                    <span>${tipo}</span>
+                </span>`;
+            efeTipoOptionsList.appendChild(label);
+        });
+
+        // Check-all
+        if (efeTipoCheckAll) {
+            efeTipoCheckAll.addEventListener('change', () => {
+                const isChecked = efeTipoCheckAll.checked;
+                document.querySelectorAll('.efe-tipo-checkbox').forEach(cb => cb.checked = isChecked);
+                efeUpdateSelectedTipos();
+            });
+        }
+
+        document.querySelectorAll('.efe-tipo-checkbox').forEach(cb => {
+            cb.addEventListener('change', efeUpdateSelectedTipos);
+        });
+    }
+
+    // Multiselect dropdown toggles
     if (efeFilialMultiselectBtn && efeFilialMultiselectDropdown) {
         efeFilialMultiselectBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (efeRegionMultiselectDropdown) efeRegionMultiselectDropdown.style.display = 'none';
+            if (efeDetailMultiselectDropdown) efeDetailMultiselectDropdown.style.display = 'none';
+            if (efeTipoMultiselectDropdown) efeTipoMultiselectDropdown.style.display = 'none';
             const isOpen = efeFilialMultiselectDropdown.style.display === 'block';
             efeFilialMultiselectDropdown.style.display = isOpen ? 'none' : 'block';
         });
     }
 
+    if (efeDetailMultiselectBtn && efeDetailMultiselectDropdown) {
+        efeDetailMultiselectBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (efeFilialMultiselectDropdown) efeFilialMultiselectDropdown.style.display = 'none';
+            if (efeTipoMultiselectDropdown) efeTipoMultiselectDropdown.style.display = 'none';
+            const isOpen = efeDetailMultiselectDropdown.style.display === 'block';
+            efeDetailMultiselectDropdown.style.display = isOpen ? 'none' : 'block';
+        });
+    }
+
+    if (efeTipoMultiselectBtn && efeTipoMultiselectDropdown) {
+        efeTipoMultiselectBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (efeFilialMultiselectDropdown) efeFilialMultiselectDropdown.style.display = 'none';
+            if (efeDetailMultiselectDropdown) efeDetailMultiselectDropdown.style.display = 'none';
+            const isOpen = efeTipoMultiselectDropdown.style.display === 'block';
+            efeTipoMultiselectDropdown.style.display = isOpen ? 'none' : 'block';
+        });
+    }
+
     document.addEventListener('click', () => {
-        if (efeRegionMultiselectDropdown) efeRegionMultiselectDropdown.style.display = 'none';
         if (efeFilialMultiselectDropdown) efeFilialMultiselectDropdown.style.display = 'none';
+        if (efeDetailMultiselectDropdown) efeDetailMultiselectDropdown.style.display = 'none';
+        if (efeTipoMultiselectDropdown) efeTipoMultiselectDropdown.style.display = 'none';
     });
 
-    if (efeRegionMultiselectDropdown) efeRegionMultiselectDropdown.addEventListener('click', e => e.stopPropagation());
     if (efeFilialMultiselectDropdown) efeFilialMultiselectDropdown.addEventListener('click', e => e.stopPropagation());
+    if (efeDetailMultiselectDropdown) efeDetailMultiselectDropdown.addEventListener('click', e => e.stopPropagation());
+    if (efeTipoMultiselectDropdown) efeTipoMultiselectDropdown.addEventListener('click', e => e.stopPropagation());
 
     efeInitTableSorting();
 }
@@ -179,7 +188,7 @@ function efeInitTableSorting() {
                 efeState.sortOrder = efeState.sortOrder === 'asc' ? 'desc' : 'asc';
             } else {
                 efeState.sortBy = col;
-                efeState.sortOrder = (col === 'investment_usd') ? 'desc' : 'asc';
+                efeState.sortOrder = (col === 'investment_mm_usd' || col.includes('investment')) ? 'desc' : 'asc';
             }
 
             document.querySelectorAll('.data-table th.sortable').forEach(el => {
@@ -203,22 +212,6 @@ function efeUpdateSortHeaderIcons() {
     });
 }
 
-function efeUpdateSelectedRegions() {
-    const checked = Array.from(document.querySelectorAll('.efe-region-checkbox:checked'));
-    efeState.selectedRegions = checked.map(cb => cb.value);
-
-    const total = efeAvailableRegions.length;
-    const count = efeState.selectedRegions.length;
-    if (efeRegionCheckAll) efeRegionCheckAll.checked = (count === total && total > 0);
-    if (efeRegionMultiselectText) {
-        if (count === 0 || count === total) efeRegionMultiselectText.textContent = 'Todas las regiones';
-        else if (count === 1) efeRegionMultiselectText.textContent = efeState.selectedRegions[0];
-        else efeRegionMultiselectText.textContent = `${count} regiones seleccionadas`;
-    }
-    efeState.page = 1;
-    efeFetchData();
-}
-
 function efeUpdateSelectedFiliales() {
     const checked = Array.from(document.querySelectorAll('.efe-filial-checkbox:checked'));
     efeState.selectedFiliales = checked.map(cb => cb.value);
@@ -235,6 +228,38 @@ function efeUpdateSelectedFiliales() {
     efeFetchData();
 }
 
+function efeUpdateSelectedDetails() {
+    const checked = Array.from(document.querySelectorAll('.efe-detail-checkbox:checked'));
+    efeState.selectedDetails = checked.map(cb => cb.value);
+
+    const total = efeAvailableDetails.length;
+    const count = efeState.selectedDetails.length;
+    if (efeDetailCheckAll) efeDetailCheckAll.checked = (count === total && total > 0);
+    if (efeDetailMultiselectText) {
+        if (count === 0 || count === total) efeDetailMultiselectText.textContent = 'Todo el portafolio';
+        else if (count === 1) efeDetailMultiselectText.textContent = efeState.selectedDetails[0];
+        else efeDetailMultiselectText.textContent = `${count} tipos seleccionados`;
+    }
+    efeState.page = 1;
+    efeFetchData();
+}
+
+function efeUpdateSelectedTipos() {
+    const checked = Array.from(document.querySelectorAll('.efe-tipo-checkbox:checked'));
+    efeState.selectedTipos = checked.map(cb => cb.value);
+
+    const total = efeAvailableTipos.length;
+    const count = efeState.selectedTipos.length;
+    if (efeTipoCheckAll) efeTipoCheckAll.checked = (count === total && total > 0);
+    if (efeTipoMultiselectText) {
+        if (count === 0 || count === total) efeTipoMultiselectText.textContent = 'Todos los tipos';
+        else if (count === 1) efeTipoMultiselectText.textContent = efeState.selectedTipos[0];
+        else efeTipoMultiselectText.textContent = `${count} tipos seleccionados`;
+    }
+    efeState.page = 1;
+    efeFetchData();
+}
+
 function efeFetchData() {
     const allProjects = (window.EFE_DATA && window.EFE_DATA.data) ? window.EFE_DATA.data : [];
     const searchNorm = efeNormalize(efeState.search);
@@ -243,27 +268,29 @@ function efeFetchData() {
     let filtered = allProjects.filter(proj => {
         // Search
         if (searchNorm) {
-            const haystack = efeNormalize(proj.name + ' ' + (proj.region || '') + ' ' + (proj.filial || '') + ' ' + (proj.description || ''));
+            const haystack = efeNormalize(proj.name + ' ' + (proj.filial || '') + ' ' + (proj.stage || '') + ' ' + (proj.detail || '') + ' ' + (proj.type || '') + ' ' + (proj.description || ''));
             if (!haystack.includes(searchNorm)) return false;
         }
-        // Region filter
-        if (!efeRegionMatchesFilter(proj.region, efeState.selectedRegions)) return false;
         // Filial filter
         if (!efeFilialMatchesFilter(proj.filial, efeState.selectedFiliales)) return false;
+        // Detail filter (Estratégico vs Preinversional)
+        if (!efeDetailMatchesFilter(proj.detail, efeState.selectedDetails)) return false;
+        // Tipo filter
+        if (!efeTipoMatchesFilter(proj.type, efeState.selectedTipos)) return false;
         return true;
     });
 
     // Sort
-    const sortBy = efeState.sortBy || 'name';
-    const sortOrder = efeState.sortOrder || 'asc';
+    const sortBy = efeState.sortBy || 'investment_mm_usd';
+    const sortOrder = efeState.sortOrder || 'desc';
 
     filtered.sort((a, b) => {
         let valA = a[sortBy];
         let valB = b[sortBy];
 
-        if (sortBy === 'investment_usd') {
-            valA = valA != null ? Number(valA) : 0;
-            valB = valB != null ? Number(valB) : 0;
+        if (sortBy === 'investment_mm_usd' || sortBy === 'operation_year') {
+            valA = valA != null && !isNaN(valA) ? Number(valA) : (sortOrder === 'asc' ? Infinity : -Infinity);
+            valB = valB != null && !isNaN(valB) ? Number(valB) : (sortOrder === 'asc' ? Infinity : -Infinity);
             return sortOrder === 'asc' ? valA - valB : valB - valA;
         } else {
             valA = valA != null ? String(valA).trim() : '';
@@ -315,10 +342,8 @@ function efeFetchData() {
 
     if (efeKpiTotalProjects) efeKpiTotalProjects.textContent = totalFiltered;
     if (efeKpiTotalInvestment) {
-        const totalInv = filtered.reduce((sum, p) => sum + (p.investment_usd || 0), 0);
-        efeKpiTotalInvestment.textContent = typeof efeFormatCompactUSD === 'function'
-            ? efeFormatCompactUSD(totalInv)
-            : 'US$ ' + Math.round(totalInv).toLocaleString('es-CL');
+        const totalInvMM = filtered.reduce((sum, p) => sum + (p.investment_mm_usd || 0), 0);
+        efeKpiTotalInvestment.textContent = efeFormatInvestment(totalInvMM);
     }
 
     // Update analytics charts
@@ -331,6 +356,11 @@ function efeFetchData() {
     // Update investment panel if currently open
     if (efeState.investmentOpen && typeof renderEfeInvestmentAnalytics === 'function') {
         renderEfeInvestmentAnalytics(filtered);
+    }
+
+    // Update timeline panel if currently open
+    if (efeState.timelineOpen && typeof renderEfeTimeline === 'function') {
+        renderEfeTimeline(filtered);
     }
 
     efeUpdateMapBadge(filtered.length, totalAll);
@@ -363,12 +393,15 @@ function exportEFEToExcel() {
 
     const dataRows = projects.map(p => ({
         "Nombre del Proyecto": p.name || '',
-        "Región": p.region || '',
-        "Filial EFE": p.filial || 'EFE Corporativo / Nacional',
-        "Inversión Estimada (USD)": p.investment_usd != null ? p.investment_usd : '',
-        "Inversión Formateada": p.investment_usd != null ? efeFormatUSD(p.investment_usd) : 'No informada',
-        "Descripción Completa": p.description || '',
-        "Fuente Oficial": p.source || 'https://www.efe.cl/proyectos/'
+        "Filial EFE": p.filial || 'Sin filial específica',
+        "Detalle / Cartera": typeof efeGetDetailCategory === 'function' ? efeGetDetailCategory(p.detail) : (p.detail || ''),
+        "Tipo": p.type || '',
+        "Etapa": p.stage || '',
+        "Inversión Estimada (MM USD)": p.investment_mm_usd != null ? p.investment_mm_usd : '',
+        "Operación Estimada": p.operation_year || '',
+        "% Avance Etapa": p.progress || '',
+        "Fuente": p.source || '',
+        "Descripción": p.description || '',
     }));
 
     const ws = XLSX.utils.json_to_sheet(dataRows);

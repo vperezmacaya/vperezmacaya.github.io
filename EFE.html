@@ -16,15 +16,15 @@
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <!-- EFE Custom Stylesheet -->
-    <link rel="stylesheet" href="static/css/efe_styles.css?v=17">
+    <link rel="stylesheet" href="static/css/efe_styles.css?v=33">
 
     <!-- SheetJS for Client-Side Excel Export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <!-- Static Data -->
-    <script src="static/data/efe_data.js?v=17"></script>
-    <script src="static/data/efe_geo.js?v=17"></script>
-    <script src="static/data/regions_data.js?v=17"></script>
+    <script src="static/data/efe_data.js?v=33"></script>
+    <script src="static/data/efe_geo.js?v=33"></script>
+    <script src="static/data/regions_data.js?v=33"></script>
 </head>
 
 <body class="light-theme">
@@ -44,7 +44,7 @@
                 <!-- Navigation Menu -->
                 <div class="nav-menu" id="nav-menu">
                     <button class="nav-menu-btn" id="nav-menu-btn" aria-haspopup="true" aria-expanded="false">
-                        <i data-lucide="layers" style="width:13px;height:13px;"></i>
+                        <img src="logo/efe_logo.png" alt="EFE" class="nav-db-logo">
                         Seleccionar Base de Datos
                         <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
                     </button>
@@ -52,11 +52,13 @@
                         <!-- Group DGC with Submenu -->
                         <div class="nav-menu-group" id="nav-dgc-group">
                             <div class="nav-menu-item nav-menu-has-sub" id="nav-dgc-parent-item">
-                                <a href="index.html" class="nav-menu-parent-link" style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <i data-lucide="building-2" style="width:13px;height:13px;"></i>
+                                <a href="index.html" class="nav-menu-parent-link"
+                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
+                                    <img src="logo/Gob_chile_logo.svg" alt="DGC" class="nav-db-logo">
                                     Dirección General de Concesiones (DGC)
                                 </a>
-                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon" style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
+                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
+                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
                             </div>
                             <div class="nav-submenu" id="nav-dgc-submenu">
                                 <a class="nav-submenu-item" href="index.html">
@@ -85,16 +87,22 @@
                         <!-- Group EFE with Submenu (Active) -->
                         <div class="nav-menu-group" id="nav-efe-group">
                             <div class="nav-menu-item active nav-menu-has-sub" id="nav-efe-parent-item">
-                                <a href="EFE.html" class="nav-menu-parent-link" style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <i data-lucide="train-front" style="width:13px;height:13px;"></i>
+                                <a href="EFE.html" class="nav-menu-parent-link"
+                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
+                                    <img src="logo/efe_logo.png" alt="EFE" class="nav-db-logo">
                                     Empresas de Ferrocarriles del Estado (EFE)
                                 </a>
-                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon" style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
+                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
+                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
                             </div>
                             <div class="nav-submenu" id="nav-efe-submenu">
                                 <a class="nav-submenu-item" id="nav-efe-sub-map" href="#">
                                     <i data-lucide="map" style="width:13px;height:13px;"></i>
                                     Mapa
+                                </a>
+                                <a class="nav-submenu-item" id="nav-efe-sub-timeline" href="#timeline">
+                                    <i data-lucide="clock" style="width:13px;height:13px;"></i>
+                                    Líneas de Tiempo
                                 </a>
                                 <a class="nav-submenu-item" id="nav-efe-sub-investment" href="#inversion">
                                     <i data-lucide="line-chart" style="width:13px;height:13px;"></i>
@@ -103,21 +111,49 @@
                             </div>
                         </div>
 
+                        <!-- Group Metro with Submenu -->
+                        <div class="nav-menu-group" id="nav-metro-group">
+                            <div class="nav-menu-item nav-menu-has-sub" id="nav-metro-parent-item">
+                                <a href="Metro.html" class="nav-menu-parent-link"
+                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
+                                    <img src="logo/metro_logo.png" alt="Metro" class="nav-db-logo">
+                                    Metro de Santiago
+                                </a>
+                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
+                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
+                            </div>
+                            <div class="nav-submenu" id="nav-metro-submenu">
+                                <a class="nav-submenu-item" href="Metro.html">
+                                    <i data-lucide="map" style="width:13px;height:13px;"></i> Mapa
+                                </a>
+                                <a class="nav-submenu-item" href="Metro.html#timeline">
+                                    <i data-lucide="clock" style="width:13px;height:13px;"></i> Líneas de Tiempo
+                                </a>
+                                <a class="nav-submenu-item" href="Metro.html#inversion">
+                                    <i data-lucide="line-chart" style="width:13px;height:13px;"></i> Análisis de Inversión
+                                </a>
+                            </div>
+                        </div>
+
                         <!-- Group MOP with Submenu -->
                         <div class="nav-menu-group" id="nav-mop-group">
                             <div class="nav-menu-item nav-menu-has-sub" id="nav-mop-parent-item">
-                                <a href="MOP.html" class="nav-menu-parent-link" style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <i data-lucide="hard-hat" style="width:13px;height:13px;"></i>
+                                <a href="MOP.html" class="nav-menu-parent-link"
+                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
+                                    <img src="logo/Gob_chile_logo.svg" alt="MOP" class="nav-db-logo">
                                     Ministerio de Obras Públicas (MOP)
                                 </a>
-                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon" style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
+                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
+                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
                             </div>
                             <div class="nav-submenu" id="nav-mop-submenu">
                                 <a class="nav-submenu-item" href="MOP.html">
-                                    <i data-lucide="layout-dashboard" style="width:13px;height:13px;"></i> Tabla de proyectos
+                                    <i data-lucide="layout-dashboard" style="width:13px;height:13px;"></i> Tabla de
+                                    proyectos
                                 </a>
                                 <a class="nav-submenu-item" href="MOP.html#inversion">
-                                    <i data-lucide="bar-chart-2" style="width:13px;height:13px;"></i> Análisis de inversión
+                                    <i data-lucide="bar-chart-2" style="width:13px;height:13px;"></i> Análisis de
+                                    inversión
                                 </a>
                                 <a class="nav-submenu-item" href="MOP.html#programas">
                                     <i data-lucide="layers" style="width:13px;height:13px;"></i> Programas y Etapas
@@ -127,21 +163,25 @@
                         <!-- Group SNI -->
                         <div class="nav-menu-group" id="nav-sni-group">
                             <div class="nav-menu-item nav-menu-has-sub" id="nav-sni-parent-item">
-                                <a href="SNI.html" class="nav-menu-parent-link" style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <i data-lucide="pie-chart" style="width:13px;height:13px;"></i>
+                                <a href="SNI.html" class="nav-menu-parent-link"
+                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
+                                    <img src="logo/Gob_chile_logo.svg" alt="SNI" class="nav-db-logo">
                                     Sistema Nacional de Inversiones (SNI)
                                 </a>
-                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon" style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
+                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
+                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
                             </div>
                             <div class="nav-submenu" id="nav-sni-submenu">
                                 <a class="nav-submenu-item" href="SNI.html#map">
                                     <i data-lucide="map" style="width:13px;height:13px;"></i> Mapa Regional
                                 </a>
                                 <a class="nav-submenu-item" href="SNI.html#territorial">
-                                    <i data-lucide="bar-chart-2" style="width:13px;height:13px;"></i> Análisis Territorial
+                                    <i data-lucide="bar-chart-2" style="width:13px;height:13px;"></i> Análisis
+                                    Territorial
                                 </a>
                                 <a class="nav-submenu-item" href="SNI.html#ministries">
-                                    <i data-lucide="landmark" style="width:13px;height:13px;"></i> Ministerios y Sectores
+                                    <i data-lucide="landmark" style="width:13px;height:13px;"></i> Ministerios y
+                                    Sectores
                                 </a>
                                 <a class="nav-submenu-item" href="SNI.html#temporal">
                                     <i data-lucide="clock" style="width:13px;height:13px;"></i> Evolución Temporal
@@ -155,10 +195,14 @@
         </header>
 
         <!-- Subheader: Rapid View Switcher Bar -->
-        <div class="view-subheader efe-tabs">
+        <div class="view-subheader efe-tabs three-tabs">
             <button class="view-tab-btn active" id="btn-efe-view-map">
                 <i data-lucide="map" style="width: 14px; height: 14px;"></i>
                 <span>Mapa</span>
+            </button>
+            <button class="view-tab-btn" id="btn-efe-view-timeline">
+                <i data-lucide="clock" style="width: 14px; height: 14px;"></i>
+                <span>Líneas de Tiempo</span>
             </button>
             <button class="view-tab-btn" id="btn-efe-view-investment">
                 <i data-lucide="line-chart" style="width: 14px; height: 14px;"></i>
@@ -191,26 +235,8 @@
                             <div class="search-wrapper">
                                 <i data-lucide="search" style="width:13px;height:13px;"></i>
                                 <input type="text" id="efe-search-input" class="form-input"
-                                    placeholder="Nombre, región..."
+                                    placeholder="Buscar proyecto o filial..."
                                     style="padding:0.3rem 0.55rem 0.3rem 1.8rem;font-size:0.76rem;">
-                            </div>
-                        </div>
-
-                        <!-- Region Filter -->
-                        <div class="form-group" style="gap:0.15rem; position:relative; z-index:100;">
-                            <label class="form-label" style="font-size:0.7rem;">Región</label>
-                            <div class="multiselect-container" id="efe-region-multiselect-container">
-                                <button class="multiselect-btn" id="efe-region-multiselect-btn">
-                                    <span id="efe-region-multiselect-text">Todas las regiones</span>
-                                    <i data-lucide="chevron-down" style="width:12px;height:12px;flex-shrink:0;"></i>
-                                </button>
-                                <div class="multiselect-dropdown" id="efe-region-multiselect-dropdown">
-                                    <label class="multiselect-check-all">
-                                        <input type="checkbox" id="efe-region-check-all">
-                                        <span>Todas las regiones</span>
-                                    </label>
-                                    <div id="efe-region-options-list"></div>
-                                </div>
                             </div>
                         </div>
 
@@ -228,6 +254,42 @@
                                         <span>Todas las filiales</span>
                                     </label>
                                     <div id="efe-filial-options-list"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tipo Filter -->
+                        <div class="form-group" style="gap:0.15rem; position:relative; z-index:85;">
+                            <label class="form-label" style="font-size:0.7rem;">Tipo de Proyecto</label>
+                            <div class="multiselect-container" id="efe-tipo-multiselect-container">
+                                <button class="multiselect-btn" id="efe-tipo-multiselect-btn">
+                                    <span id="efe-tipo-multiselect-text">Todos los tipos</span>
+                                    <i data-lucide="chevron-down" style="width:12px;height:12px;flex-shrink:0;"></i>
+                                </button>
+                                <div class="multiselect-dropdown" id="efe-tipo-multiselect-dropdown">
+                                    <label class="multiselect-check-all">
+                                        <input type="checkbox" id="efe-tipo-check-all">
+                                        <span>Todos los tipos</span>
+                                    </label>
+                                    <div id="efe-tipo-options-list"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detalle / Cartera Filter -->
+                        <div class="form-group" style="gap:0.15rem; position:relative; z-index:80;">
+                            <label class="form-label" style="font-size:0.7rem;">Detalle / Cartera</label>
+                            <div class="multiselect-container" id="efe-detail-multiselect-container">
+                                <button class="multiselect-btn" id="efe-detail-multiselect-btn">
+                                    <span id="efe-detail-multiselect-text">Todo el portafolio</span>
+                                    <i data-lucide="chevron-down" style="width:12px;height:12px;flex-shrink:0;"></i>
+                                </button>
+                                <div class="multiselect-dropdown" id="efe-detail-multiselect-dropdown">
+                                    <label class="multiselect-check-all">
+                                        <input type="checkbox" id="efe-detail-check-all">
+                                        <span>Todo el portafolio</span>
+                                    </label>
+                                    <div id="efe-detail-options-list"></div>
                                 </div>
                             </div>
                         </div>
@@ -266,7 +328,7 @@
                                 </div>
                                 <span
                                     style="font-size: 0.61rem; color: var(--text-muted); font-style: italic; line-height: 1.1;">
-                                    * Proyectos nacionales divididos equitativamente por filial
+                                    * Proyectos clasificados por filial operativa
                                 </span>
                             </div>
                             <div
@@ -281,26 +343,26 @@
                             </div>
                         </div>
 
-                        <!-- Chart 2: Proyectos por Región -->
+                        <!-- Chart 2: Proyectos por Detalle de Cartera -->
                         <div
                             style="flex: 1.1; min-height: 0; display: flex; flex-direction: column; gap: 0.15rem; border-top: 1px solid var(--border-color); padding-top: 0.3rem;">
                             <div style="display: flex; flex-direction: column; gap: 0.05rem;">
                                 <div
                                     style="font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: flex; align-items: center; gap: 0.3rem;">
-                                    Proyectos por Región
+                                    Proyectos por Detalle de Cartera
                                 </div>
                                 <span
                                     style="font-size: 0.61rem; color: var(--text-muted); font-style: italic; line-height: 1.1;">
-                                    * Proyectos interregionales distribuidos equitativamente por región
+                                    * Estratégicos, Preinversionales y Otros
                                 </span>
                             </div>
                             <div
                                 style="flex: 1; min-height: 0; display: flex; align-items: center; gap: 0.4rem; position: relative;">
                                 <div
                                     style="width: 72px; height: 72px; min-width: 72px; flex-shrink: 0; position: relative; margin: auto 0;">
-                                    <canvas id="efeRegionChart"></canvas>
+                                    <canvas id="efeDetailChart"></canvas>
                                 </div>
-                                <div id="efeRegionChartLegend"
+                                <div id="efeDetailChartLegend"
                                     style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.05rem; overflow: hidden;">
                                 </div>
                             </div>
@@ -351,25 +413,27 @@
                         <!-- Responsive Search Table List -->
                         <div class="table-responsive">
                             <div class="table-header-wrapper">
-                                <table class="data-table">
+                                <table class="data-table" style="table-layout: fixed; width: 100%;">
                                     <thead>
                                         <tr>
-                                            <th class="sortable asc" data-sort="name">Nombre Proyecto</th>
-                                            <th class="sortable" data-sort="region">Región</th>
-                                            <th class="sortable" data-sort="investment_usd" style="text-align: right;">Inversión (USD)</th>
+                                            <th class="sortable" data-sort="name" style="width: 38%;">Nombre Proyecto</th>
+                                            <th class="sortable" data-sort="filial" style="width: 22%;">Filial</th>
+                                            <th class="sortable desc" data-sort="investment_mm_usd" style="width: 20%; text-align: right;">Inversión</th>
+                                            <th class="sortable" data-sort="stage" style="width: 20%;" title="Etapa del proyecto">Etapa</th>
                                         </tr>
                                     </thead>
                                 </table>
                             </div>
                             <div class="table-body-wrapper">
-                                <table class="data-table" id="efe-contracts-table">
+                                <table class="data-table" id="efe-contracts-table" style="table-layout: fixed; width: 100%;">
                                     <tbody id="efe-table-body">
                                         <!-- Dynamic rows inserted here -->
                                     </tbody>
                                 </table>
 
                                 <!-- Empty state representation (hidden by default) -->
-                                <div class="empty-state" id="efe-empty-state" style="display: none; padding: 1.5rem 1rem;">
+                                <div class="empty-state" id="efe-empty-state"
+                                    style="display: none; padding: 1.5rem 1rem;">
                                     <i data-lucide="folder-search" style="width: 28px; height: 28px;"></i>
                                     <h3 style="font-size: 0.9rem;">No se encontraron proyectos</h3>
                                     <p style="font-size: 0.75rem;">Prueba ajustando los filtros.</p>
@@ -420,6 +484,96 @@
                     </div>
                 </section>
 
+                <!-- Full-Width EFE Timeline Panel -->
+                <div id="efe-timeline-full-panel" class="timeline-full-panel" style="display:none; grid-column: 2 / -1;">
+                    <!-- BANNER KPI SUPERIOR (Líneas de Tiempo) -->
+                    <div
+                        style="padding: 0.5rem 0.5rem 0.35rem 0.5rem; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.4rem; flex-shrink: 0; border-bottom: 1px solid var(--border-color);">
+                        <div class="card-kpi">
+                            <div class="kpi-icon">
+                                <i data-lucide="dollar-sign"></i>
+                            </div>
+                            <div class="kpi-val-container">
+                                <span class="kpi-label">Inversión en cartera</span>
+                                <span class="kpi-value" id="efe-kpi-tl-investment" style="font-size: 0.95rem;">-</span>
+                            </div>
+                        </div>
+
+                        <div class="card-kpi">
+                            <div class="kpi-icon">
+                                <i data-lucide="calendar-check"></i>
+                            </div>
+                            <div class="kpi-val-container">
+                                <span class="kpi-label">Proyectos con fecha estimada</span>
+                                <span class="kpi-value" id="efe-kpi-tl-projects" style="font-size: 0.95rem;">-</span>
+                            </div>
+                        </div>
+
+                        <div class="card-kpi">
+                            <div class="kpi-icon">
+                                <i data-lucide="clock"></i>
+                            </div>
+                            <div class="kpi-val-container">
+                                <span class="kpi-label">Horizonte de puesta en marcha</span>
+                                <span class="kpi-value" id="efe-kpi-tl-horizon" style="font-size: 0.95rem;">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Header -->
+                    <div class="timeline-header">
+                        <div class="timeline-header-left">
+                            <i data-lucide="gantt-chart" style="width:14px;height:14px;color:var(--primary);"></i>
+                            <h2 class="timeline-header-title">Línea de Tiempo de Proyectos EFE</h2>
+                            <span id="efe-timeline-count-badge" class="timeline-count-badge">0 Proyectos</span>
+                        </div>
+                        <div class="timeline-header-right">
+                            <span class="timeline-legend-item">
+                                <span class="tl-legend-dot" style="background:#2563eb;"></span>EFE Central
+                            </span>
+                            <span class="timeline-legend-item">
+                                <span class="tl-legend-dot" style="background:#0284c7;"></span>EFE Valparaíso
+                            </span>
+                            <span class="timeline-legend-item">
+                                <span class="tl-legend-dot" style="background:#d97706;"></span>EFE Sur
+                            </span>
+                            <span class="timeline-legend-item">
+                                <span class="tl-legend-dot" style="background:#059669;"></span>EFE Arica
+                            </span>
+                            <span class="timeline-legend-item">
+                                <span class="tl-legend-dot" style="background:#10b981; border-radius:50%; text-align:center; color:#fff; font-size:7px; line-height:10px;">✓</span>Operativo
+                            </span>
+                            <span class="timeline-legend-item">
+                                <span class="tl-legend-dot" style="background:#10b981; transform:rotate(45deg); width:8px; height:8px;"></span>Estimado
+                            </span>
+                            <span class="timeline-legend-item">
+                                <span style="display:inline-block;width:2px;height:12px;background:#ef4444;border-radius:1px;"></span>Hoy
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Year Axis (sticky) -->
+                    <div class="timeline-axis-wrapper">
+                        <div class="timeline-label-col" id="efe-timeline-label-col-header"
+                            style="display: flex; align-items: center; padding-left: 14px; font-family: var(--font-heading); font-weight: 600; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">
+                            PROYECTO FERROVIARIO
+                        </div>
+                        <div class="timeline-axis-scroll" id="efe-timeline-axis-scroll">
+                            <svg id="efe-timeline-axis-svg" style="display:block;"></svg>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Rows (scrollable) -->
+                    <div class="timeline-body" id="efe-timeline-body">
+                        <div class="timeline-rows-wrapper">
+                            <div class="timeline-label-col" id="efe-timeline-label-col"></div>
+                            <div class="timeline-bars-scroll" id="efe-timeline-bars-scroll">
+                                <svg id="efe-timeline-bars-svg" style="display:block;"></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Full-Width EFE Investment Analytics Panel -->
                 <div id="efe-investment-full-panel" class="efe-investment-full-panel"
                     style="display:none; grid-column: 2 / -1; flex-direction: column; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; height: 100%; min-height: 0;">
@@ -461,29 +615,32 @@
                             </div>
                         </div>
 
-                        <!-- CUADRÍCULA PRINCIPAL DE 2 COLUMNAS (Izquierda: Regiones a toda la altura; Derecha: Filiales arriba + Top Proyectos abajo) -->
-                        <div style="display: grid; grid-template-columns: 42% 58%; gap: 0.5rem; flex: 1; min-height: 0; height: 100%;">
+                        <!-- CUADRÍCULA PRINCIPAL DE 2 COLUMNAS (Izquierda: Tipo de Proyecto; Derecha: Filiales arriba + Top Proyectos abajo) -->
+                        <div
+                            style="display: grid; grid-template-columns: 42% 58%; gap: 0.5rem; flex: 1; min-height: 0; height: 100%;">
 
-                            <!-- COLUMNA IZQUIERDA: Inversión por Región -->
+                            <!-- COLUMNA IZQUIERDA: Inversión según Tipo de Proyecto -->
                             <div class="panel-card"
                                 style="padding: 0.45rem 0.5rem 0.35rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
                                 <div
                                     style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
                                     <h3
                                         style="font-size: 0.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
-                                        <i data-lucide="bar-chart-2"
+                                        <i data-lucide="layers"
                                             style="width: 13px; height: 13px; color: var(--primary);"></i>
-                                        Inversión por Región (USD)
+                                        Inversión según Tipo de Proyecto
                                     </h3>
-                                    <span style="font-size: 0.6rem; color: var(--text-muted); font-style: italic;">*Proyectos interregionales distribuidos equitativamente por región</span>
+                                    <span
+                                        style="font-size: 0.6rem; color: var(--text-muted); font-style: italic;">*Inversión acumulada estimada en MM USD por tipología</span>
                                 </div>
                                 <div style="flex: 1; min-height: 0; position: relative;">
-                                    <canvas id="efeChartInvByRegion"></canvas>
+                                    <canvas id="efeChartInvByTipo"></canvas>
                                 </div>
                             </div>
 
                             <!-- COLUMNA DERECHA: Filiales arriba + Top Proyectos abajo -->
-                            <div style="display: flex; flex-direction: column; gap: 0.5rem; height: 100%; min-height: 0;">
+                            <div
+                                style="display: flex; flex-direction: column; gap: 0.5rem; height: 100%; min-height: 0;">
 
                                 <!-- Gráfico Arriba: Inversión por Filial (%) -->
                                 <div class="panel-card"
@@ -496,7 +653,8 @@
                                                 style="width: 12px; height: 12px; color: #0284c7;"></i>
                                             Inversión por Filial (%)
                                         </h3>
-                                        <span style="font-size: 0.6rem; color: var(--text-muted); font-style: italic;">* Proyectos nacionales divididos equitativamente por filial</span>
+                                        <span style="font-size: 0.6rem; color: var(--text-muted); font-style: italic;">*
+                                            Proyectos nacionales divididos equitativamente por filial</span>
                                     </div>
                                     <div
                                         style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; gap: 0.6rem; padding: 0 0.15rem; position: relative;">
@@ -552,18 +710,22 @@
         </div>
     </footer>
 
+    <!-- Timeline Tooltip -->
+    <div id="efe-timeline-tooltip" class="timeline-tooltip" style="display:none;"></div>
+
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <!-- EFE App Logic -->
-    <script src="static/js/EFE/state.js?v=22"></script>
-    <script src="static/js/EFE/charts.js?v=22"></script>
-    <script src="static/js/EFE/investment.js?v=22"></script>
-    <script src="static/js/EFE/map.js?v=22"></script>
-    <script src="static/js/EFE/filters.js?v=22"></script>
-    <script src="static/js/EFE/ui.js?v=22"></script>
+    <script src="static/js/EFE/state.js?v=20260903_1331"></script>
+    <script src="static/js/EFE/charts.js?v=20260903_1331"></script>
+    <script src="static/js/EFE/investment.js?v=20260903_1331"></script>
+    <script src="static/js/EFE/timeline.js?v=20260903_1331"></script>
+    <script src="static/js/EFE/map.js?v=20260903_1331"></script>
+    <script src="static/js/EFE/filters.js?v=20260903_1331"></script>
+    <script src="static/js/EFE/ui.js?v=20260903_1331"></script>
 
     <!-- Nav Menu & View Switcher Logic -->
     <script>
@@ -572,6 +734,7 @@
             const navDropdown = document.getElementById('nav-menu-dropdown');
             const navDgcGroup = document.getElementById('nav-dgc-group');
             const navEfeGroup = document.getElementById('nav-efe-group');
+            const navMetroGroup = document.getElementById('nav-metro-group');
             const navMopGroup = document.getElementById('nav-mop-group');
 
             if (navBtn && navDropdown) {
@@ -584,6 +747,7 @@
                     navDropdown.classList.remove('open');
                     if (navDgcGroup) navDgcGroup.classList.remove('open');
                     if (navEfeGroup) navEfeGroup.classList.remove('open');
+                    if (navMetroGroup) navMetroGroup.classList.remove('open');
                     if (navMopGroup) navMopGroup.classList.remove('open');
                 });
                 navDropdown.addEventListener('click', e => e.stopPropagation());
@@ -620,6 +784,23 @@
                 });
                 navEfeGroup.addEventListener('mouseleave', function () {
                     navEfeGroup.classList.remove('open');
+                });
+            }
+
+            if (navMetroGroup) {
+                const metroTrigger = navMetroGroup.querySelector('.nav-submenu-trigger-icon');
+                if (metroTrigger) {
+                    metroTrigger.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        navMetroGroup.classList.toggle('open');
+                    });
+                }
+                navMetroGroup.addEventListener('mouseenter', function () {
+                    navMetroGroup.classList.add('open');
+                });
+                navMetroGroup.addEventListener('mouseleave', function () {
+                    navMetroGroup.classList.remove('open');
                 });
             }
 
@@ -661,13 +842,21 @@
 
             // ─── Subheader Switcher Buttons ──────────────────────────────────
             const btnMap = document.getElementById('btn-efe-view-map');
+            const btnTl = document.getElementById('btn-efe-view-timeline');
             const btnInv = document.getElementById('btn-efe-view-investment');
             const navSubMap = document.getElementById('nav-efe-sub-map');
+            const navSubTl = document.getElementById('nav-efe-sub-timeline');
             const navSubInv = document.getElementById('nav-efe-sub-investment');
 
             if (btnMap) {
                 btnMap.addEventListener('click', () => {
                     if (typeof hideEfeInvestmentView === 'function') hideEfeInvestmentView();
+                    if (typeof hideEfeTimelineView === 'function') hideEfeTimelineView();
+                });
+            }
+            if (btnTl) {
+                btnTl.addEventListener('click', () => {
+                    if (typeof showEfeTimelineView === 'function') showEfeTimelineView();
                 });
             }
             if (btnInv) {
@@ -680,6 +869,14 @@
                     e.preventDefault();
                     navDropdown.classList.remove('open');
                     if (typeof hideEfeInvestmentView === 'function') hideEfeInvestmentView();
+                    if (typeof hideEfeTimelineView === 'function') hideEfeTimelineView();
+                });
+            }
+            if (navSubTl) {
+                navSubTl.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    navDropdown.classList.remove('open');
+                    if (typeof showEfeTimelineView === 'function') showEfeTimelineView();
                 });
             }
             if (navSubInv) {
@@ -693,10 +890,13 @@
             // Handle URL hash on load and hashchange
             function handleEfeHashRoute() {
                 const hash = window.location.hash;
-                if (hash === '#inversion' || hash === '#investment') {
+                if (hash === '#timeline') {
+                    if (typeof showEfeTimelineView === 'function') showEfeTimelineView();
+                } else if (hash === '#inversion' || hash === '#investment') {
                     if (typeof showEfeInvestmentView === 'function') showEfeInvestmentView();
                 } else {
                     if (typeof hideEfeInvestmentView === 'function') hideEfeInvestmentView();
+                    if (typeof hideEfeTimelineView === 'function') hideEfeTimelineView();
                 }
             }
 

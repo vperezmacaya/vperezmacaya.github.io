@@ -274,6 +274,15 @@ body.light-theme .view-subheader {
     border-color: rgba(59, 130, 246, 0.4);
 }
 
+.nav-db-logo {
+    width: 15px;
+    height: 15px;
+    object-fit: contain;
+    flex-shrink: 0;
+    display: inline-block;
+    vertical-align: middle;
+}
+
 .nav-menu-dropdown {
     display: none;
     position: absolute;

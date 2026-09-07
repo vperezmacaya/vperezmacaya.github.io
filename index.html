@@ -39,7 +39,7 @@
                 <!-- Navigation Menu -->
                 <div class="nav-menu" id="nav-menu">
                     <button class="nav-menu-btn" id="nav-menu-btn" aria-haspopup="true" aria-expanded="false">
-                        <i data-lucide="layers" style="width:13px;height:13px;"></i>
+                        <img src="logo/Gob_chile_logo.svg" alt="Gobierno de Chile" class="nav-db-logo">
                         Seleccionar Base de Datos
                         <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
                     </button>
@@ -49,7 +49,7 @@
                             <div class="nav-menu-item active nav-menu-has-sub" id="nav-dgc-parent-item">
                                 <a href="index.html" id="nav-dgc-main-link" class="nav-menu-parent-link"
                                     style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <i data-lucide="building-2" style="width:13px;height:13px;"></i>
+                                    <img src="logo/Gob_chile_logo.svg" alt="DGC" class="nav-db-logo">
                                     Dirección General de Concesiones (DGC)
                                 </a>
                                 <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
@@ -83,7 +83,7 @@
                             <div class="nav-menu-item nav-menu-has-sub" id="nav-efe-parent-item">
                                 <a href="EFE.html" class="nav-menu-parent-link"
                                     style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <i data-lucide="train-front" style="width:13px;height:13px;"></i>
+                                    <img src="logo/efe_logo.png" alt="EFE" class="nav-db-logo">
                                     Empresas de Ferrocarriles del Estado (EFE)
                                 </a>
                                 <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
@@ -100,12 +100,36 @@
                                 </a>
                             </div>
                         </div>
+                        <!-- Group Metro with Submenu -->
+                        <div class="nav-menu-group" id="nav-metro-group">
+                            <div class="nav-menu-item nav-menu-has-sub" id="nav-metro-parent-item">
+                                <a href="Metro.html" class="nav-menu-parent-link"
+                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
+                                    <img src="logo/metro_logo.png" alt="Metro" class="nav-db-logo">
+                                    Metro de Santiago
+                                </a>
+                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
+                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
+                            </div>
+                            <div class="nav-submenu" id="nav-metro-submenu">
+                                <a class="nav-submenu-item" href="Metro.html">
+                                    <i data-lucide="map" style="width:13px;height:13px;"></i> Mapa
+                                </a>
+                                <a class="nav-submenu-item" href="Metro.html#timeline">
+                                    <i data-lucide="clock" style="width:13px;height:13px;"></i> Líneas de Tiempo
+                                </a>
+                                <a class="nav-submenu-item" href="Metro.html#inversion">
+                                    <i data-lucide="line-chart" style="width:13px;height:13px;"></i> Análisis de Inversión
+                                </a>
+                            </div>
+                        </div>
+
                         <!-- Group MOP with Submenu -->
                         <div class="nav-menu-group" id="nav-mop-group">
                             <div class="nav-menu-item nav-menu-has-sub" id="nav-mop-parent-item">
                                 <a href="MOP.html" class="nav-menu-parent-link"
                                     style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <i data-lucide="hard-hat" style="width:13px;height:13px;"></i>
+                                    <img src="logo/Gob_chile_logo.svg" alt="MOP" class="nav-db-logo">
                                     Ministerio de Obras Públicas (MOP)
                                 </a>
                                 <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
@@ -130,7 +154,7 @@
                             <div class="nav-menu-item nav-menu-has-sub" id="nav-sni-parent-item">
                                 <a href="SNI.html" class="nav-menu-parent-link"
                                     style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <i data-lucide="pie-chart" style="width:13px;height:13px;"></i>
+                                    <img src="logo/Gob_chile_logo.svg" alt="SNI" class="nav-db-logo">
                                     Sistema Nacional de Inversiones (SNI)
                                 </a>
                                 <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
@@ -1284,6 +1308,7 @@
             const navDropdown = document.getElementById('nav-menu-dropdown');
             const navDgcGroup = document.getElementById('nav-dgc-group');
             const navEfeGroup = document.getElementById('nav-efe-group');
+            const navMetroGroup = document.getElementById('nav-metro-group');
             const navMopGroup = document.getElementById('nav-mop-group');
 
             if (navBtn && navDropdown) {
@@ -1296,6 +1321,7 @@
                     navDropdown.classList.remove('open');
                     if (navDgcGroup) navDgcGroup.classList.remove('open');
                     if (navEfeGroup) navEfeGroup.classList.remove('open');
+                    if (navMetroGroup) navMetroGroup.classList.remove('open');
                     if (navMopGroup) navMopGroup.classList.remove('open');
                 });
                 navDropdown.addEventListener('click', function (e) { e.stopPropagation(); });
@@ -1349,6 +1375,25 @@
                 });
                 navEfeGroup.addEventListener('mouseleave', function () {
                     navEfeGroup.classList.remove('open');
+                });
+            }
+
+            // Metro hover & chevron toggle
+            if (navMetroGroup) {
+                const metroTrigger = navMetroGroup.querySelector('.nav-submenu-trigger-icon');
+                if (metroTrigger) {
+                    metroTrigger.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        navMetroGroup.classList.toggle('open');
+                    });
+                }
+
+                navMetroGroup.addEventListener('mouseenter', function () {
+                    navMetroGroup.classList.add('open');
+                });
+                navMetroGroup.addEventListener('mouseleave', function () {
+                    navMetroGroup.classList.remove('open');
                 });
             }
 

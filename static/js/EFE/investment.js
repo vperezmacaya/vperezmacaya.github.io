@@ -4,7 +4,7 @@
  * Harmonized with CATLEC index.html design palette.
  */
 
-let efeChartInvByRegionInstance = null;
+let efeChartInvByTipoInstance = null;
 let efeChartInvByFilialInstance = null;
 let efeChartTopProjectsInstance = null;
 
@@ -13,52 +13,22 @@ const EFE_INV_FILIAL_COLORS = {
     'EFE Central': '#2563eb',
     'EFE Valparaíso': '#0284c7',
     'EFE Sur': '#d97706',
+    'EFE Arica - La Paz': '#059669',
+    'Sin filial específica': '#64748b',
     'Nacional': '#8b5cf6'
 };
 
-// Helper de normalización de nombres de región
-if (typeof shortenRegionName !== 'function') {
-    window.shortenRegionName = function(name) {
-        if (!name) return '';
-        let str = String(name).trim();
-        str = str.replace(/^Región\s+(de\s+la\s+|del\s+|de\s+)?/i, '');
-
-        if (/metropolitana/i.test(str)) return 'Metropolitana';
-        if (/ays[eé]n/i.test(str)) return 'Aysén';
-        if (/magallanes/i.test(str)) return 'Magallanes';
-        if (/o'higgins|bernardo/i.test(str)) return "O'Higgins";
-        if (/biob[ií]o/i.test(str)) return 'Biobío';
-        if (/araucan[ií]a/i.test(str)) return 'La Araucanía';
-        if (/r[ií]os/i.test(str)) return 'Los Ríos';
-        if (/lagos/i.test(str)) return 'Los Lagos';
-        if (/tarapac[aá]/i.test(str)) return 'Tarapacá';
-        if (/valpara[ií]so/i.test(str)) return 'Valparaíso';
-        if (/antofagasta/i.test(str)) return 'Antofagasta';
-        if (/atacama/i.test(str)) return 'Atacama';
-        if (/coquimbo/i.test(str)) return 'Coquimbo';
-        if (/maule/i.test(str)) return 'Maule';
-        if (/ñuble/i.test(str)) return 'Ñuble';
-        if (/arica/i.test(str)) return 'Arica y Parinacota';
-
-        return str;
-    };
-}
-
-// Formato compacto de dólares USD
+// Formato compacto de dólares USD (valores en MM USD)
 function formatEfeUSD(val) {
     if (val == null || isNaN(val) || val === 0) return 'US$ 0';
-    if (val >= 1e9) {
-        const b = val / 1e9;
+    if (val >= 1000) {
+        const b = val / 1000;
         return 'US$ ' + (b % 1 === 0 ? b.toFixed(0) : b.toFixed(2)) + 'B';
     }
-    if (val >= 1e6) {
-        const m = val / 1e6;
-        return 'US$ ' + (m % 1 === 0 ? m.toFixed(0) : m.toFixed(1)) + 'M';
+    if (val >= 1) {
+        return 'US$ ' + Math.round(val).toLocaleString('es-CL') + ' MM';
     }
-    if (val >= 1e3) {
-        return 'US$ ' + (val / 1e3).toFixed(0) + 'K';
-    }
-    return 'US$ ' + Math.round(val).toLocaleString('es-CL');
+    return 'US$ ' + val.toFixed(1) + ' MM';
 }
 
 // Tooltip compartido para los gráficos de inversión EFE (idéntico al de análisis rápido)
@@ -171,6 +141,9 @@ const efeHorizontalBarLabelsPlugin = {
 
 // ── Control de Vistas (Mostrar / Ocultar Panel de Inversión) ───────────────────
 function showEfeInvestmentView() {
+    if (efeState.timelineOpen && typeof hideEfeTimelineView === 'function') {
+        hideEfeTimelineView();
+    }
     efeState.investmentOpen = true;
     const grid = document.querySelector('.efe-dashboard-grid');
     const centerPanel = document.querySelector('.center-panel');
@@ -178,6 +151,7 @@ function showEfeInvestmentView() {
     const invPanel = document.getElementById('efe-investment-full-panel') || document.getElementById('investment-full-panel');
     const btnMap = document.getElementById('btn-efe-view-map');
     const btnInv = document.getElementById('btn-efe-view-investment');
+    const btnTl = document.getElementById('btn-efe-view-timeline');
 
     if (grid) grid.style.gridTemplateColumns = '280px 1fr';
     if (centerPanel) centerPanel.style.display = 'none';
@@ -185,6 +159,7 @@ function showEfeInvestmentView() {
     if (invPanel) invPanel.style.display = 'flex';
 
     if (btnMap) btnMap.classList.remove('active');
+    if (btnTl) btnTl.classList.remove('active');
     if (btnInv) btnInv.classList.add('active');
 
     // Cambiar URL hash limpiamente
@@ -261,117 +236,37 @@ function renderEfeInvestmentAnalytics(projectsList) {
         Chart.defaults.devicePixelRatio = Math.max(2.5, window.devicePixelRatio || 1);
     }
 
-    // 1. Regiones y Filiales operativas de EFE
-    const EFE_OPERATIONAL_FILIALS = ['EFE Sur', 'EFE Central', 'EFE Valparaíso'];
-    const EFE_OPERATIONAL_REGIONS = ['Valparaíso', 'Metropolitana', "O'Higgins", 'Maule', 'Ñuble', 'Biobío', 'La Araucanía', 'Los Lagos'];
-
-    // 2. Determinar si hay un filtro de región activo
-    const hasRegionFilter = efeState.selectedRegions && efeState.selectedRegions.length > 0;
-    const selectedRegionsSet = new Set(hasRegionFilter ? efeState.selectedRegions.map(r => shortenRegionName(r)) : []);
-
-    // Helper: Mapeo de región a filial operativa responsable
-    const getFilialForRegion = (regionName) => {
-        const r = shortenRegionName(regionName);
-        if (r === 'Valparaíso') return 'EFE Valparaíso';
-        if (['Metropolitana', "O'Higgins", 'Maule', 'Ñuble'].includes(r)) return 'EFE Central';
-        if (['Biobío', 'La Araucanía', 'Los Ríos', 'Los Lagos', 'Aysén', 'Magallanes', 'Arica y Parinacota', 'Tarapacá', 'Antofagasta', 'Atacama', 'Coquimbo'].includes(r)) return 'EFE Sur';
-        return null;
-    };
-
-    // Helper: Obtener fracción de inversión atribuible de un proyecto a las regiones seleccionadas
-    const getProjectAttributableFraction = (p) => {
-        if (!hasRegionFilter) return 1.0;
-        const regStr = p.region ? String(p.region).trim() : 'Nacional';
-        if (regStr.toLowerCase().includes('nacional') || !regStr) {
-            const matchedCount = EFE_OPERATIONAL_REGIONS.filter(r => selectedRegionsSet.has(shortenRegionName(r))).length;
-            return matchedCount / EFE_OPERATIONAL_REGIONS.length;
-        }
-        const parts = regStr.split(/[;,/\n]+/).map(r => shortenRegionName(r.trim())).filter(Boolean);
-        if (parts.length === 0) return 1.0;
-        const matchedCount = parts.filter(r => selectedRegionsSet.has(r)).length;
-        return matchedCount / parts.length;
-    };
-
-    // 3. Distribución proporcional por región
-    let totalSampleInv = 0;
-    const regionInv = {};
-
+    // 1. Inversión total
+    let displayTotalInv = 0;
     projectsList.forEach(p => {
-        const inv = p.investment_usd || 0;
-        totalSampleInv += inv;
-
-        const regStr = p.region ? String(p.region).trim() : 'Nacional';
-        if (regStr.toLowerCase().includes('nacional') || !regStr) {
-            // Nacional: dividido equitativamente entre las 8 regiones operativas
-            const regShare = inv / EFE_OPERATIONAL_REGIONS.length;
-            EFE_OPERATIONAL_REGIONS.forEach(r => {
-                const cleanR = shortenRegionName(r);
-                regionInv[cleanR] = (regionInv[cleanR] || 0) + regShare;
-            });
-        } else {
-            const parts = regStr.split(/[;,/\n]+/).map(r => shortenRegionName(r.trim())).filter(Boolean);
-            const invPart = inv / (parts.length || 1);
-            parts.forEach(r => {
-                const cleanR = shortenRegionName(r);
-                regionInv[cleanR] = (regionInv[cleanR] || 0) + invPart;
-            });
-        }
+        displayTotalInv += (p.investment_mm_usd || 0);
     });
 
-    // 4. Calcular inversión total atribuible (base 100%)
-    let displayTotalInv = totalSampleInv;
-    if (hasRegionFilter) {
-        let attributableInv = 0;
-        efeState.selectedRegions.forEach(r => {
-            const cleanR = shortenRegionName(r);
-            attributableInv += (regionInv[cleanR] || 0);
-        });
-        displayTotalInv = attributableInv;
-    }
-
-    // 5. Distribución de inversión atribuible por filial territorial
+    // 2. Distribución de inversión por filial (Lectura exacta de Filial)
     const filialInv = {
         'EFE Central': 0,
+        'EFE Sur': 0,
         'EFE Valparaíso': 0,
-        'EFE Sur': 0
+        'EFE Arica - La Paz': 0,
+        'Sin filial específica': 0
     };
 
     projectsList.forEach(p => {
-        const inv = p.investment_usd || 0;
+        const inv = p.investment_mm_usd || 0;
         if (inv <= 0) return;
 
-        const regStr = p.region ? String(p.region).trim() : 'Nacional';
-        if (regStr.toLowerCase().includes('nacional') || !regStr) {
-            // Proyecto Nacional: dividido equitativamente entre las 8 regiones operativas
-            const regShare = inv / EFE_OPERATIONAL_REGIONS.length;
-            EFE_OPERATIONAL_REGIONS.forEach(r => {
-                const cleanR = shortenRegionName(r);
-                if (!hasRegionFilter || selectedRegionsSet.has(cleanR)) {
-                    const targetFilial = getFilialForRegion(cleanR);
-                    if (targetFilial && filialInv[targetFilial] !== undefined) {
-                        filialInv[targetFilial] += regShare;
-                    }
-                }
-            });
+        const fil = (p.filial && String(p.filial).trim() !== '' && String(p.filial).trim().toLowerCase() !== 'nan')
+            ? String(p.filial).trim()
+            : null;
+
+        if (fil && filialInv[fil] !== undefined) {
+            filialInv[fil] += inv;
         } else {
-            // Proyecto específico / multirregional
-            const parts = regStr.split(/[;,/\n]+/).map(r => shortenRegionName(r.trim())).filter(Boolean);
-            const invPart = inv / (parts.length || 1);
-            parts.forEach(r => {
-                const cleanR = shortenRegionName(r);
-                if (!hasRegionFilter || selectedRegionsSet.has(cleanR)) {
-                    const targetFilial = (p.filial && (p.filial === 'EFE Sur' || p.filial === 'EFE Central' || p.filial === 'EFE Valparaíso'))
-                        ? p.filial
-                        : getFilialForRegion(cleanR);
-                    if (targetFilial && filialInv[targetFilial] !== undefined) {
-                        filialInv[targetFilial] += invPart;
-                    }
-                }
-            });
+            filialInv['Sin filial específica'] += inv;
         }
     });
 
-    const projectsWithInv = projectsList.filter(p => (p.investment_usd || 0) > 0);
+    const projectsWithInv = projectsList.filter(p => (p.investment_mm_usd || 0) > 0);
     const reportedCount = projectsWithInv.length;
     const avgInv = reportedCount > 0 ? (displayTotalInv / reportedCount) : 0;
 
@@ -384,11 +279,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
     const kpiAvg = document.getElementById('efe-kpi-inv-avg');
     const kpiTopFilial = document.getElementById('efe-kpi-inv-top-filial');
 
-    if (kpiTotalLabel) {
-        kpiTotalLabel.textContent = hasRegionFilter
-            ? 'Inversión atribuible a region/es seleccionadas'
-            : 'Inversión total';
-    }
+    if (kpiTotalLabel) kpiTotalLabel.textContent = 'Inversión total';
     if (kpiTotal) kpiTotal.textContent = formatEfeUSD(displayTotalInv);
     if (kpiAvg) kpiAvg.textContent = formatEfeUSD(avgInv);
     if (kpiTopFilial) {
@@ -401,27 +292,36 @@ function renderEfeInvestmentAnalytics(projectsList) {
         }
     }
 
-    // ─── Gráfico 1: Inversión por Región (Barras Horizontales) ────────────────
-    let regionEntries = Object.entries(regionInv);
-    if (hasRegionFilter) {
-        regionEntries = regionEntries.filter(([reg]) => selectedRegionsSet.has(reg));
-    }
-    const sortedRegions = regionEntries.sort((a, b) => b[1] - a[1]);
-    const regLabels = sortedRegions.map(e => e[0]);
-    const regValues = sortedRegions.map(e => e[1]);
+    // ─── Gráfico 1: Inversión según Tipo de Proyecto (Barras Horizontales) ────
+    const tipoInv = {};
+    const tipoCounts = {};
 
-    const canvasRegion = document.getElementById('efeChartInvByRegion');
-    if (canvasRegion) {
-        if (!efeChartInvByRegionInstance) {
-            efeChartInvByRegionInstance = new Chart(canvasRegion.getContext('2d'), {
+    projectsList.forEach(p => {
+        const t = (p.type && String(p.type).trim() !== '' && String(p.type).trim().toLowerCase() !== 'nan')
+            ? String(p.type).trim()
+            : 'Sin tipo';
+        const inv = p.investment_mm_usd || 0;
+        tipoInv[t] = (tipoInv[t] || 0) + inv;
+        tipoCounts[t] = (tipoCounts[t] || 0) + 1;
+    });
+
+    const sortedTipos = Object.entries(tipoInv).sort((a, b) => b[1] - a[1]);
+    const tipoLabels = sortedTipos.map(e => e[0]);
+    const tipoValues = sortedTipos.map(e => e[1]);
+    const tipoColors = tipoLabels.map(t => (typeof EFE_TIPO_COLORS !== 'undefined' && EFE_TIPO_COLORS[t]) ? EFE_TIPO_COLORS[t] : '#2563eb');
+
+    const canvasTipo = document.getElementById('efeChartInvByTipo');
+    if (canvasTipo) {
+        if (!efeChartInvByTipoInstance) {
+            efeChartInvByTipoInstance = new Chart(canvasTipo.getContext('2d'), {
                 type: 'bar',
                 plugins: [efeHorizontalBarLabelsPlugin],
                 data: {
-                    labels: regLabels,
+                    labels: tipoLabels,
                     datasets: [{
-                        label: 'Inversión (USD)',
-                        data: regValues,
-                        backgroundColor: '#2563eb',
+                        label: 'Inversión (MM USD)',
+                        data: tipoValues,
+                        backgroundColor: tipoColors,
                         borderRadius: 4
                     }]
                 },
@@ -436,7 +336,13 @@ function renderEfeInvestmentAnalytics(projectsList) {
                             enabled: false,
                             external: efeInvExternalTooltip,
                             callbacks: {
-                                label: (ctx) => ` Inversión: ${formatEfeUSD(ctx.raw)} (${displayTotalInv > 0 ? ((ctx.raw / displayTotalInv) * 100).toFixed(1) : 0}%)`
+                                label: (ctx) => {
+                                    const val = ctx.raw || 0;
+                                    const tName = ctx.label;
+                                    const cnt = tipoCounts[tName] || 0;
+                                    const pct = displayTotalInv > 0 ? ((val / displayTotalInv) * 100).toFixed(1) : 0;
+                                    return ` Inversión: ${formatEfeUSD(val)} (${pct}%) · ${cnt} proyecto${cnt !== 1 ? 's' : ''}`;
+                                }
                             }
                         }
                     },
@@ -453,7 +359,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
                             grid: { display: false },
                             ticks: {
                                 color: textColor,
-                                font: { size: 10.5, weight: '500' },
+                                font: { size: 10.5, weight: '600' },
                                 autoSkip: false
                             }
                         }
@@ -461,16 +367,22 @@ function renderEfeInvestmentAnalytics(projectsList) {
                 }
             });
         } else {
-            efeChartInvByRegionInstance.data.labels = regLabels;
-            efeChartInvByRegionInstance.data.datasets[0].data = regValues;
-            efeChartInvByRegionInstance.data.datasets[0].backgroundColor = '#2563eb';
-            efeChartInvByRegionInstance.options.scales.x.grid.color = gridColor;
-            efeChartInvByRegionInstance.options.scales.x.ticks.color = textColor;
-            efeChartInvByRegionInstance.options.scales.x.ticks.font = { size: 10 };
-            efeChartInvByRegionInstance.options.scales.y.ticks.color = textColor;
-            efeChartInvByRegionInstance.options.scales.y.ticks.font = { size: 10.5, weight: '500' };
-            efeChartInvByRegionInstance.options.plugins.tooltip.callbacks.label = (ctx) => ` Inversión: ${formatEfeUSD(ctx.raw)} (${displayTotalInv > 0 ? ((ctx.raw / displayTotalInv) * 100).toFixed(1) : 0}%)`;
-            efeChartInvByRegionInstance.update();
+            efeChartInvByTipoInstance.data.labels = tipoLabels;
+            efeChartInvByTipoInstance.data.datasets[0].data = tipoValues;
+            efeChartInvByTipoInstance.data.datasets[0].backgroundColor = tipoColors;
+            efeChartInvByTipoInstance.options.scales.x.grid.color = gridColor;
+            efeChartInvByTipoInstance.options.scales.x.ticks.color = textColor;
+            efeChartInvByTipoInstance.options.scales.x.ticks.font = { size: 10 };
+            efeChartInvByTipoInstance.options.scales.y.ticks.color = textColor;
+            efeChartInvByTipoInstance.options.scales.y.ticks.font = { size: 10.5, weight: '600' };
+            efeChartInvByTipoInstance.options.plugins.tooltip.callbacks.label = (ctx) => {
+                const val = ctx.raw || 0;
+                const tName = ctx.label;
+                const cnt = tipoCounts[tName] || 0;
+                const pct = displayTotalInv > 0 ? ((val / displayTotalInv) * 100).toFixed(1) : 0;
+                return ` Inversión: ${formatEfeUSD(val)} (${pct}%) · ${cnt} proyecto${cnt !== 1 ? 's' : ''}`;
+            };
+            efeChartInvByTipoInstance.update();
         }
     }
 
@@ -545,7 +457,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
     const sortedProjects = [...projectsList]
         .map(p => ({
             ...p,
-            attributableInv: (p.investment_usd || 0) * getProjectAttributableFraction(p)
+            attributableInv: (p.investment_mm_usd || 0)
         }))
         .filter(p => p.attributableInv > 0)
         .sort((a, b) => b.attributableInv - a.attributableInv)
@@ -590,8 +502,8 @@ function renderEfeInvestmentAnalytics(projectsList) {
                                     const entry = topProjRev[ctx.dataIndex];
                                     return [
                                         ` Inversión: ${formatEfeUSD(ctx.raw)}`,
-                                        ` Filial: ${entry.filial || 'Nacional'}`,
-                                        ` Región: ${entry.region || 'Sin información'}`
+                                        ` Filial: ${entry.filial || 'Sin filial específica'}`,
+                                        ` Tipo: ${entry.type || 'Sin tipo'}`
                                     ];
                                 }
                             }
@@ -644,8 +556,8 @@ function renderEfeInvestmentAnalytics(projectsList) {
                 const entry = topProjRev[ctx.dataIndex];
                 return [
                     ` Inversión: ${formatEfeUSD(ctx.raw)}`,
-                    ` Filial: ${entry.filial || 'Nacional'}`,
-                    ` Región: ${entry.region || 'Sin información'}`
+                    ` Filial: ${entry.filial || 'Sin filial específica'}`,
+                    ` Tipo: ${entry.type || 'Sin tipo'}`
                 ];
             };
             efeChartTopProjectsInstance.update();

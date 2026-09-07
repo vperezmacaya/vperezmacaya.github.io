@@ -1,21 +1,67 @@
-# Entorno virtual y Python
-.venv/
-venv/
-__pycache__/
-*.pyc
+# ==========================================
+# CATLEC - .gitignore
+# ==========================================
 
-# Archivos de desarrollo original (Excel, BD sqlite, mapas crudos)
+# ------------------------------------------
+# 1. Bases de Datos y Fuentes de Datos
+# ------------------------------------------
+Bases de dato/
+Bases de datos/
+*.xlsx
+*.xls
+*.csv
+*.db
 caltec.db
 CALTEC.xlsx
 CATLEC.xlsx
 BASE MOP.xlsx
 indicadores_variacion.xlsx
 ~$*
-*.xlsx
+
+# ------------------------------------------
+# 2. Documentación de Contexto y Skills (IA)
+# ------------------------------------------
+GEMINI.md
+CLAUDE.md
+AGENTS.md
+.agents/
+skills/
+plugins/
+
+# ------------------------------------------
+# 3. Documentos y Archivos Pesados / Notebooks
+# ------------------------------------------
+memoria_metro_2025.pdf
+*.pdf
+BASE_MOP.ipynb
+*.ipynb
+
+# ------------------------------------------
+# 4. Capas Vectoriales y Recursos Multimedia
+# ------------------------------------------
 Mapas vectoriales/
 Fotos/
 log_props.txt
 
-# Archivos del sistema operativo
+# ------------------------------------------
+# 5. Entorno Virtual y Caché de Python
+# ------------------------------------------
+.venv/
+venv/
+ENV/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ------------------------------------------
+# 6. Configuración de IDE, Editor y Archivos de Sistema
+# ------------------------------------------
+.vscode/
+.idea/
+.gemini/
 .DS_Store
 Thumbs.db
+*.log
+

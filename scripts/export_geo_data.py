@@ -78,6 +78,7 @@ print(f"Total features DGC: {len(dgc_fc['features'])}")
 
 # 3. Cargar y optimizar capas EFE (líneas y puntos)
 EFE_DIR = os.path.join(MAPS_DIR, 'EFE')
+METRO_DIR = os.path.join(MAPS_DIR, 'Metro')
 efe_fc = {"type": "FeatureCollection", "features": []}
 efe_filenames = ['EFE_line.json', 'EFE_point.json']
 
@@ -89,44 +90,93 @@ for fname in efe_filenames:
             with open(fpath, 'r', encoding='utf-8') as f:
                 raw_efe = json.load(f)
                 features = raw_efe.get('features', [])
-                efe_feat_dict = {}
                 for ft in features:
                     geom = ft.get('geometry')
                     if not geom or not geom.get('coordinates'):
                         continue  # skip features with null/empty geometry
                     ft['geometry']['coordinates'] = round_coords(ft['geometry']['coordinates'])
-
-                    props = ft.get('properties') or {}
-                    fid = props.get('id')
-                    fcod = props.get('COD')
-                    key = (str(fid), str(fcod)) if (fid is not None or fcod is not None) else None
-
-                    if key and key in efe_feat_dict:
-                        existing = efe_feat_dict[key]
-                        ex_props = existing.get('properties') or {}
-                        ex_linea = ex_props.get('linea') or ex_props.get('line') or ex_props.get('LINE') or ex_props.get('LINEA')
-                        cur_linea = props.get('linea') or props.get('line') or props.get('LINE') or props.get('LINEA')
-                        if not ex_linea and cur_linea:
-                            efe_feat_dict[key] = ft
-                    elif key:
-                        efe_feat_dict[key] = ft
-                    else:
-                        efe_fc['features'].append(ft)
-
-                for ft in efe_feat_dict.values():
                     efe_fc['features'].append(ft)
         except Exception as e:
             print(f"⚠ Error al leer {fname}: {e}")
-    else:
-        print(f"⚠ Advertencia: No existe {fpath}")
+# Cargar Metro_line.json (separando comerciales operativas y proyectos futuros)
+metro_fc = {"type": "FeatureCollection", "features": []}
+metro_expansion_features = []
+metro_path = os.path.join(METRO_DIR, 'Metro_line.json')
+if not os.path.exists(metro_path):
+    metro_path = os.path.join(EFE_DIR, 'Metro_line.json')
+if os.path.exists(metro_path):
+    print("Procesando Metro_line.json (líneas operativas y proyectos)...")
+    try:
+        with open(metro_path, 'r', encoding='utf-8') as f:
+            raw_metro = json.load(f)
+            for ft in raw_metro.get('features', []):
+                geom = ft.get('geometry')
+                if not geom or not geom.get('coordinates'):
+                    continue
+                ft['geometry']['coordinates'] = round_coords(ft['geometry']['coordinates'])
+                props = ft.get('properties') or {}
+                if props.get('COD') is not None or props.get('ID Proyecto') is not None:
+                    metro_expansion_features.append(ft)
+                elif props.get('usage') == 'main':
+                    metro_fc['features'].append(ft)
+        print(f"  -> {len(metro_fc['features'])} líneas operativas y {len(metro_expansion_features)} proyectos cargados desde Metro_line.json.")
+    except Exception as e:
+        print(f"⚠ Error al leer Metro_line.json: {e}")
+
+# Cargar Metro_point.json (Estaciones y puntos de Metro)
+metro_all_points_raw = []
+metro_point_path = os.path.join(METRO_DIR, 'Metro_point.json')
+if not os.path.exists(metro_point_path):
+    metro_point_path = os.path.join(EFE_DIR, 'Metro_point.json')
+if os.path.exists(metro_point_path):
+    print("Procesando Metro_point.json (estaciones y puntos de Metro)...")
+    try:
+        with open(metro_point_path, 'r', encoding='utf-8') as f:
+            raw_pts = json.load(f)
+            for ft in raw_pts.get('features', []):
+                geom = ft.get('geometry')
+                if not geom or not geom.get('coordinates'):
+                    continue
+                ft['geometry']['coordinates'] = round_coords(ft['geometry']['coordinates'])
+                metro_all_points_raw.append(ft)
+        print(f"  -> {len(metro_all_points_raw)} puntos de Metro cargados desde Metro_point.json.")
+    except Exception as e:
+        print(f"⚠ Error al leer Metro_point.json: {e}")
+
+# Para EFE, filtrar estaciones operativas (nodos OSM)
+metro_points_fc = {
+    "type": "FeatureCollection",
+    "features": [ft for ft in metro_all_points_raw if str(ft.get('id', '')).startswith('node/')]
+}
+
+# Cargar EFE_estaciones_filtradas.json (Estaciones de EFE con servicio activo de pasajeros)
+efe_estaciones_fc = {"type": "FeatureCollection", "features": []}
+efe_est_path = os.path.join(EFE_DIR, 'EFE_estaciones_filtradas.json')
+if os.path.exists(efe_est_path):
+    print("Procesando EFE_estaciones_filtradas.json (estaciones activas de pasajeros)...")
+    try:
+        with open(efe_est_path, 'r', encoding='utf-8') as f:
+            raw_efe_est = json.load(f)
+            for ft in raw_efe_est.get('features', []):
+                geom = ft.get('geometry')
+                if not geom or not geom.get('coordinates'):
+                    continue
+                ft['geometry']['coordinates'] = round_coords(ft['geometry']['coordinates'])
+                efe_estaciones_fc['features'].append(ft)
+        print(f"  -> {len(efe_estaciones_fc['features'])} estaciones activas de EFE agregadas.")
+    except Exception as e:
+        print(f"⚠ Error al leer EFE_estaciones_filtradas.json: {e}")
 
 out_efe_js = os.path.join(OUT_DIR, 'efe_geo.js')
 with open(out_efe_js, 'w', encoding='utf-8') as f:
-    f.write('window.EFE_GEO_DATA = ' + json.dumps(efe_fc, ensure_ascii=False, separators=(',', ':')) + ';')
+    f.write('window.EFE_GEO_DATA = ' + json.dumps(efe_fc, ensure_ascii=False, separators=(',', ':')) + ';\n' +
+            'window.METRO_GEO_DATA = ' + json.dumps(metro_fc, ensure_ascii=False, separators=(',', ':')) + ';\n' +
+            'window.METRO_POINTS_DATA = ' + json.dumps(metro_points_fc, ensure_ascii=False, separators=(',', ':')) + ';\n' +
+            'window.EFE_ESTACIONES_DATA = ' + json.dumps(efe_estaciones_fc, ensure_ascii=False, separators=(',', ':')) + ';')
 
 size_efe_mb = os.path.getsize(out_efe_js) / 1024 / 1024
 print(f"OK EFE geo exportado: {out_efe_js} ({size_efe_mb:.2f} MB)")
-print(f"Total features EFE: {len(efe_fc['features'])}")
+print(f"Total features EFE: {len(efe_fc['features'])}, Metro Líneas: {len(metro_fc['features'])}, Metro Estaciones: {len(metro_points_fc['features'])}, EFE Estaciones: {len(efe_estaciones_fc['features'])}")
 
 
 # 4. Cargar y optimizar capas SECTRA (Gran Concepción y otros)
@@ -289,6 +339,284 @@ with open(out_sectra_geo_js, 'w', encoding='utf-8') as f:
 size_sectra_geo_mb = os.path.getsize(out_sectra_geo_js) / 1024 / 1024
 print(f"OK SECTRA geo exportado: {out_sectra_geo_js} ({size_sectra_geo_mb:.2f} MB)")
 print(f"Total features SECTRA válidos: {len(sectra_fc['features'])}")
+
+# 5. Capas de Metro de Santiago (Red Existente y Proyectos desde Metro_line y Metro_point)
+print("\nProcesando capas de Metro de Santiago...")
+print(f"  -> {len(metro_expansion_features)} trazados de proyectos y {len(metro_fc['features'])} líneas operativas listos desde Metro_line.json.")
+metro_futuro_stations_features = []
+
+# Cargar datos de Estaciones desde Excel (Bases de dato/Metro.xlsx)
+metro_excel_path = os.path.join(BASE_DIR, 'Bases de dato', 'Metro.xlsx')
+metro_stations_by_shape = {}
+metro_stations_by_line_name = {}
+metro_stations_by_name = {}
+metro_stations_by_comuna = {}
+
+if os.path.exists(metro_excel_path):
+    try:
+        df_est_geo = pd.read_excel(metro_excel_path, sheet_name='Estaciones', header=2)
+        for _, r in df_est_geo.iterrows():
+            st_name = str(r.get('Nombre Estación', '')).strip()
+            if not st_name or st_name == 'nan': continue
+            sh_id = str(r.get('Código Shape', '')).strip()
+            lines_str = str(r.get('Línea', r.get('Líneas que Conecta', ''))).strip()
+            lines_arr = [l.strip() for l in lines_str.split(',') if l.strip()]
+            linea_p = lines_arr[0] if lines_arr else ''
+            is_comb = str(r.get('Es Combinación', '')).strip().lower() in ['sí', 'si', 'true', '1']
+            comunas_str = str(r.get('Comuna', '')).strip()
+            comunas_arr = [c.strip() for c in comunas_str.split(',') if c.strip()]
+            status = str(r.get('Estado', '')).strip()
+            fut_comb = str(r.get('Combinación Futura', '')).strip()
+            color_val = str(r.get('Color Hex', '')).strip()
+            color_hex = color_val if color_val and color_val != 'nan' else '#52525b'
+
+            raw_proj = str(r.get('ID Proyecto', '')).strip()
+            proj_list = [p.strip() for p in raw_proj.split(',') if p.strip()] if raw_proj and raw_proj != 'nan' else []
+
+            st_obj = {
+                'id': str(r.get('ID Estación', '')).strip(),
+                'name': st_name,
+                'shape_id': sh_id,
+                'line': linea_p,
+                'lines': lines_arr if lines_arr else [linea_p],
+                'lines_str': lines_str,
+                'is_combination': is_comb,
+                'future_combination': fut_comb if fut_comb != 'nan' else '',
+                'commune': comunas_str,
+                'communes': comunas_arr,
+                'status': status,
+                'color': color_hex,
+                'project_id': raw_proj if raw_proj and raw_proj != 'nan' else None,
+                'project_ids': proj_list
+            }
+            if sh_id and sh_id != 'nan':
+                metro_stations_by_shape[sh_id] = st_obj
+            
+            norm_st = normalize_key(st_name)
+            for single_l in lines_arr:
+                metro_stations_by_line_name[(normalize_key(single_l), norm_st)] = st_obj
+
+            # Para búsqueda fallback por nombre, priorizar estaciones operativas
+            if norm_st not in metro_stations_by_name or status == 'Operativa':
+                metro_stations_by_name[norm_st] = st_obj
+
+            if status == 'Operativa':
+                for c_item in comunas_arr:
+                    c_k = normalize_key(c_item)
+                    if c_k not in metro_stations_by_comuna:
+                        metro_stations_by_comuna[c_k] = []
+                    if st_name not in metro_stations_by_comuna[c_k]:
+                        metro_stations_by_comuna[c_k].append(st_name)
+
+        print(f"  -> {len(metro_stations_by_shape)} estaciones cargadas desde Excel indexadas por shape_id único.")
+
+        # Enriquecer y separar puntos de Metro (operativos y futuros/proyectos) desde Excel
+        metro_existing_stations_features = []
+        metro_futuro_stations_features = []
+
+        for ft in metro_all_points_raw:
+            fid = str(ft.get('id') or ft.get('properties', {}).get('@id') or ft.get('properties', {}).get('shape_id') or '')
+            fname = ft.get('properties', {}).get('name', '')
+            fline = ft.get('properties', {}).get('linea', '')
+
+            st_info = metro_stations_by_shape.get(fid)
+            if not st_info and fline and fname:
+                st_info = metro_stations_by_line_name.get((normalize_key(fline), normalize_key(fname)))
+            if not st_info and fname:
+                st_info = metro_stations_by_name.get(normalize_key(fname))
+
+            if st_info:
+                ft['id'] = st_info['shape_id']
+                if 'properties' not in ft: ft['properties'] = {}
+                ft['properties']['@id'] = st_info['shape_id']
+                ft['properties']['shape_id'] = st_info['shape_id']
+                ft['properties']['linea'] = st_info['line']
+                ft['properties']['lines'] = st_info['lines']
+                ft['properties']['color'] = st_info['color']
+                ft['properties']['is_combination'] = st_info['is_combination']
+                ft['properties']['future_combination'] = st_info['future_combination']
+                ft['properties']['comuna'] = st_info['commune']
+                ft['properties']['status'] = st_info['status']
+                ft['properties']['project_id'] = st_info['project_id']
+                ft['properties']['project_ids'] = st_info['project_ids']
+
+                if st_info['status'] == 'Operativa':
+                    metro_existing_stations_features.append(ft)
+                else:
+                    metro_futuro_stations_features.append(ft)
+            else:
+                # Punto de proyecto no registrado como estación comercial (ej: taller, subestación)
+                ft['id'] = fid
+                if 'properties' not in ft: ft['properties'] = {}
+                ft['properties']['shape_id'] = fid
+                metro_futuro_stations_features.append(ft)
+
+        metro_points_fc = {"type": "FeatureCollection", "features": metro_existing_stations_features}
+
+    except Exception as e_geo_est:
+        print(f"  ⚠ Error al cargar Estaciones desde Excel en export_geo_data: {e_geo_est}")
+
+# Generar static/data/metro_geo.js
+out_metro_geo_js = os.path.join(OUT_DIR, 'metro_geo.js')
+metro_geo_payload = {
+    "type": "FeatureCollection",
+    "features": metro_expansion_features
+}
+with open(out_metro_geo_js, 'w', encoding='utf-8') as f:
+    f.write('window.METRO_GEO_DATA = ' + json.dumps(metro_geo_payload, ensure_ascii=False, separators=(',', ':')) + ';\n' +
+            'window.METRO_EXISTING_LINES = ' + json.dumps(metro_fc, ensure_ascii=False, separators=(',', ':')) + ';\n' +
+            'window.METRO_EXISTING_STATIONS = ' + json.dumps(metro_points_fc, ensure_ascii=False, separators=(',', ':')) + ';\n' +
+            'window.METRO_FUTURO_STATIONS = ' + json.dumps({"type": "FeatureCollection", "features": metro_futuro_stations_features}, ensure_ascii=False, separators=(',', ':')) + ';')
+
+size_metro_geo_mb = os.path.getsize(out_metro_geo_js) / 1024 / 1024
+print(f"OK Metro geo exportado: {out_metro_geo_js} ({size_metro_geo_mb:.2f} MB)")
+print(f"Total features expansión Metro: {len(metro_expansion_features)}, Líneas existentes: {len(metro_fc['features'])}, Estaciones existentes: {len(metro_points_fc['features'])}, Estaciones futuras: {len(metro_futuro_stations_features)}")
+
+# 6. Procesar Comunas del Gran Santiago (Análisis Espacial y Estadísticas de Cobertura)
+print("\nProcesando comunas del Gran Santiago (Gran_Santiago.geojson)...")
+gran_stgo_path = os.path.join(METRO_DIR, 'Gran_Santiago.geojson')
+
+if os.path.exists(gran_stgo_path):
+    try:
+        from shapely.geometry import shape, Point
+        
+        with open(gran_stgo_path, 'r', encoding='utf-8') as f:
+            raw_comunas = json.load(f)
+            
+        FUTURE_PROJECTS_BY_COMUNA = {
+            'Renca': ['Línea 7 (Renca - Vitacura)'],
+            'Cerro Navia': ['Línea 7 (Renca - Vitacura)', 'Línea A (Acceso Aeropuerto AMB)'],
+            'Vitacura': ['Línea 7 (Renca - Vitacura)', 'Extensión Línea 6 Oriente'],
+            'La Pintana': ['Línea 9 (Cal y Canto - Plaza La Pintana - Puente Alto)'],
+            'Puente Alto': ['Línea 8 (Los Leones - Puente Alto)', 'Línea 9 Tramo 3 (La Pintana - Puente Alto)'],
+            'Providencia': ['Línea 7 (Renca - Vitacura)', 'Línea 8 (Los Leones - Puente Alto)'],
+            'Santiago': ['Línea 7 (Renca - Vitacura)', 'Línea 9 (Cal y Canto - Plaza La Pintana)'],
+            'Recoleta': ['Línea 7 (Renca - Vitacura)', 'Línea 9 (Cal y Canto - Plaza La Pintana)'],
+            'Quinta Normal': ['Línea 7 (Renca - Vitacura)'],
+            'Las Condes': ['Línea 7 (Renca - Vitacura)'],
+            'Cerrillos': ['Extensión Línea 6 Poniente (Cerrillos - Lo Errázuriz)'],
+            'San Miguel': ['Línea 9 (Tramos 1 y 2)'],
+            'San Joaquín': ['Línea 9 (Tramos 1 y 2)'],
+            'La Granja': ['Línea 9 (Tramos 1 y 2)'],
+            'San Ramón': ['Línea 9 (Tramos 1 y 2)'],
+            'Ñuñoa': ['Línea 8 (Los Leones - Puente Alto)'],
+            'Macul': ['Línea 8 (Los Leones - Puente Alto)'],
+            'Peñalolén': ['Línea 8 (Los Leones - Puente Alto)'],
+            'La Florida': ['Línea 8 (Los Leones - Puente Alto)'],
+            'Pudahuel': ['Línea A (Acceso Aeropuerto AMB)'],
+            'Lo Prado': ['Línea A (Acceso Aeropuerto AMB)']
+        }
+        
+        main_lines_geom = []
+        for ft in metro_fc.get('features', []):
+            props = ft.get('properties', {})
+            main_lines_geom.append((shape(ft['geometry']), props.get('name') or props.get('ref') or 'Metro'))
+            
+        def line_length_km(geom):
+            if geom.is_empty:
+                return 0.0
+            if geom.geom_type == 'LineString':
+                coords = list(geom.coords)
+                l = 0.0
+                for i in range(len(coords) - 1):
+                    lon1, lat1 = coords[i]
+                    lon2, lat2 = coords[i+1]
+                    l += (((lon2 - lon1) * 92.8)**2 + ((lat2 - lat1) * 110.9)**2)**0.5
+                return l
+            elif geom.geom_type in ['MultiLineString', 'GeometryCollection']:
+                return sum(line_length_km(g) for g in geom.geoms if g.geom_type in ['LineString', 'MultiLineString'])
+            return 0.0
+
+        stations_pts = []
+        for ft in metro_points_fc.get('features', []):
+            coords = ft['geometry']['coordinates']
+            stations_pts.append((Point(coords[0], coords[1]), ft['properties'].get('name', 'Estación')))
+            
+        comunas_features_out = []
+        comunas_stats_list = []
+        
+        for ft in raw_comunas.get('features', []):
+            c_name = str(ft.get('properties', {}).get('text') or '').strip()
+            poly = shape(ft['geometry'])
+            
+            # Estaciones oficiales de la comuna (definidas en Excel, incluyendo limítrofes)
+            c_norm = normalize_key(c_name)
+            if c_norm in metro_stations_by_comuna:
+                st_in_comuna = metro_stations_by_comuna[c_norm]
+            else:
+                st_in_comuna = [name for pt, name in stations_pts if poly.contains(pt)]
+            
+            # Líneas y km
+            lines_crossing = set()
+            total_km = 0.0
+            for l_geom, l_name in main_lines_geom:
+                if poly.intersects(l_geom):
+                    inter = poly.intersection(l_geom)
+                    k = line_length_km(inter)
+                    if k > 0.05:
+                        total_km += k
+                        lines_crossing.add(l_name)
+                        
+            has_metro = len(st_in_comuna) > 0
+            future_projs = FUTURE_PROJECTS_BY_COMUNA.get(c_name, [])
+            
+            if has_metro:
+                exp_status = 'Servicio Activo'
+            elif len(future_projs) > 0:
+                exp_status = 'En Expansión'
+            else:
+                exp_status = 'Sin Cobertura'
+                
+            props = {
+                'comuna': c_name,
+                'has_metro': has_metro,
+                'estaciones_count': len(st_in_comuna),
+                'estaciones_list': sorted(st_in_comuna),
+                'lineas': sorted(list(lines_crossing)),
+                'km_red': round(total_km, 1),
+                'proyectos_futuros': future_projs,
+                'expansion_status': exp_status
+            }
+            
+            rounded_geom_coords = round_coords(ft['geometry']['coordinates'])
+            comunas_features_out.append({
+                'type': 'Feature',
+                'properties': props,
+                'geometry': {
+                    'type': ft['geometry']['type'],
+                    'coordinates': rounded_geom_coords
+                }
+            })
+            comunas_stats_list.append(props)
+            
+        # Estadísticas resumidas
+        total_c = len(comunas_stats_list)
+        con_m = [c for c in comunas_stats_list if c['has_metro']]
+        sin_m = [c for c in comunas_stats_list if not c['has_metro']]
+        en_exp = [c for c in comunas_stats_list if not c['has_metro'] and len(c['proyectos_futuros']) > 0]
+        
+        comunas_stats_summary = {
+            'total_comunas': total_c,
+            'comunas_con_metro': len(con_m),
+            'comunas_sin_metro': len(sin_m),
+            'comunas_nuevas_expansion': len(en_exp),
+            'comunas_nuevas_expansion_nombres': [c['comuna'] for c in en_exp],
+            'ranking_estaciones': sorted(con_m, key=lambda x: x['estaciones_count'], reverse=True),
+            'lista_sin_metro': sorted(sin_m, key=lambda x: (x['expansion_status'] != 'En Expansión', x['comuna']))
+        }
+        
+        out_metro_comunas_js = os.path.join(OUT_DIR, 'metro_comunas.js')
+        with open(out_metro_comunas_js, 'w', encoding='utf-8') as f:
+            f.write('window.METRO_COMUNAS_GEO = ' + json.dumps({'type': 'FeatureCollection', 'features': comunas_features_out}, ensure_ascii=False, separators=(',', ':')) + ';\n' +
+                    'window.METRO_COMUNAS_STATS = ' + json.dumps(comunas_stats_summary, ensure_ascii=False, indent=2) + ';')
+                    
+        size_comunas_kb = os.path.getsize(out_metro_comunas_js) / 1024
+        print(f"OK Comunas Gran Santiago exportadas: {out_metro_comunas_js} ({size_comunas_kb:.1f} KB)")
+        print(f"  -> Total: {total_c}, Con Metro: {len(con_m)}, Sin Metro: {len(sin_m)}, Nuevas en expansión: {len(en_exp)}")
+    except Exception as e:
+        print(f"⚠ Error al procesar comunas del Gran Santiago: {e}")
+else:
+    print(f"⚠ No se encontró {gran_stgo_path}")
 
 print("\nExportación geográfica completada exitosamente.")
 

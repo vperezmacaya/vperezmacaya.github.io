@@ -425,6 +425,39 @@
             border: 1px solid rgba(37, 99, 235, 0.25);
         }
 
+        /* Micro-leyendas estandarizadas en cabeceras de cards (catlec-bar-chart) */
+        .sni-card-legend {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .sni-card-legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        .sni-legend-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .sni-legend-line {
+            display: inline-block;
+            width: 14px;
+            height: 2px;
+            border-radius: 1px;
+            flex-shrink: 0;
+        }
+
         .sni-chart-wrap {
             flex: 1;
             position: relative;
@@ -613,7 +646,7 @@
                 <!-- Navigation Menu -->
                 <div class="nav-menu" id="nav-menu">
                     <button class="nav-menu-btn" id="nav-menu-btn" aria-haspopup="true" aria-expanded="false">
-                        <i data-lucide="layers" style="width:13px;height:13px;"></i>
+                        <img src="logo/Gob_chile_logo.svg" alt="Gobierno de Chile" class="nav-db-logo">
                         Seleccionar Base de Datos
                         <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
                     </button>
@@ -623,7 +656,7 @@
                             <div class="nav-menu-item nav-menu-has-sub" id="nav-dgc-parent-item">
                                 <a href="index.html" class="nav-menu-parent-link"
                                     style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <i data-lucide="building-2" style="width:13px;height:13px;"></i>
+                                    <img src="logo/Gob_chile_logo.svg" alt="DGC" class="nav-db-logo">
                                     Dirección General de Concesiones (DGC)
                                 </a>
                                 <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
@@ -654,7 +687,7 @@
                             <div class="nav-menu-item nav-menu-has-sub" id="nav-efe-parent-item">
                                 <a href="EFE.html" class="nav-menu-parent-link"
                                     style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <i data-lucide="train-front" style="width:13px;height:13px;"></i>
+                                    <img src="logo/efe_logo.png" alt="EFE" class="nav-db-logo">
                                     Empresas de Ferrocarriles del Estado (EFE)
                                 </a>
                                 <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
@@ -671,12 +704,36 @@
                             </div>
                         </div>
 
+                        <!-- Group Metro with Submenu -->
+                        <div class="nav-menu-group" id="nav-metro-group">
+                            <div class="nav-menu-item nav-menu-has-sub" id="nav-metro-parent-item">
+                                <a href="Metro.html" class="nav-menu-parent-link"
+                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
+                                    <img src="logo/metro_logo.png" alt="Metro" class="nav-db-logo">
+                                    Metro de Santiago
+                                </a>
+                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
+                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
+                            </div>
+                            <div class="nav-submenu" id="nav-metro-submenu">
+                                <a class="nav-submenu-item" href="Metro.html">
+                                    <i data-lucide="map" style="width:13px;height:13px;"></i> Mapa
+                                </a>
+                                <a class="nav-submenu-item" href="Metro.html#timeline">
+                                    <i data-lucide="clock" style="width:13px;height:13px;"></i> Líneas de Tiempo
+                                </a>
+                                <a class="nav-submenu-item" href="Metro.html#inversion">
+                                    <i data-lucide="line-chart" style="width:13px;height:13px;"></i> Análisis de Inversión
+                                </a>
+                            </div>
+                        </div>
+
                         <!-- Group MOP with Submenu -->
                         <div class="nav-menu-group" id="nav-mop-group">
                             <div class="nav-menu-item nav-menu-has-sub" id="nav-mop-parent-item">
                                 <a href="MOP.html" class="nav-menu-parent-link"
                                     style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <i data-lucide="hard-hat" style="width:13px;height:13px;"></i>
+                                    <img src="logo/Gob_chile_logo.svg" alt="MOP" class="nav-db-logo">
                                     Ministerio de Obras Públicas (MOP)
                                 </a>
                                 <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
@@ -702,7 +759,7 @@
                             <div class="nav-menu-item active nav-menu-has-sub" id="nav-sni-parent-item">
                                 <a href="SNI.html" class="nav-menu-parent-link"
                                     style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;font-weight:600;">
-                                    <i data-lucide="pie-chart" style="width:13px;height:13px;color:var(--primary);"></i>
+                                    <img src="logo/Gob_chile_logo.svg" alt="SNI" class="nav-db-logo">
                                     Sistema Nacional de Inversiones (SNI)
                                 </a>
                                 <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
@@ -980,6 +1037,20 @@
                                     <i data-lucide="scale" style="width:14px;height:14px;color:var(--warning);"></i>
                                     Equidad Territorial: Inversión vs Aporte al PIB
                                 </h3>
+                                <div class="sni-card-legend">
+                                    <span class="sni-card-legend-item">
+                                        <span class="sni-legend-dot" style="background: rgba(245, 158, 11, 0.9);"></span>
+                                        % Aporte PIB
+                                    </span>
+                                    <span class="sni-card-legend-item">
+                                        <span class="sni-legend-dot" style="background: rgba(37, 99, 235, 0.9);"></span>
+                                        % Inversión
+                                    </span>
+                                    <span class="sni-card-legend-item">
+                                        <span class="sni-legend-line" style="background: #10b981;"></span>
+                                        Ratio Inv/PIB (Eje Der)
+                                    </span>
+                                </div>
                             </div>
                             <div class="sni-chart-wrap">
                                 <canvas id="chart-pib-balance"></canvas>
@@ -993,6 +1064,16 @@
                                     <i data-lucide="users" style="width:14px;height:14px;color:var(--success);"></i>
                                     Inversión Anual Total vs Inversión Per Cápita por Habitante (Pesos 2024)
                                 </h3>
+                                <div class="sni-card-legend">
+                                    <span class="sni-card-legend-item">
+                                        <span class="sni-legend-dot" style="background: rgba(37, 99, 235, 0.85);"></span>
+                                        Inversión Anual (MM USD)
+                                    </span>
+                                    <span class="sni-card-legend-item">
+                                        <span class="sni-legend-line" style="background: #10b981;"></span>
+                                        Per Cápita CLP (Eje Der)
+                                    </span>
+                                </div>
                             </div>
                             <div class="sni-chart-wrap">
                                 <canvas id="chart-per-capita"></canvas>
@@ -1011,6 +1092,9 @@
                                             style="width:14px;height:14px;color:var(--primary);"></i>
                                         Distribución por Ministerio (MM USD 2024)
                                     </h3>
+                                    <div class="sni-card-legend">
+                                        <span class="sni-badge">Inversión Sectorial</span>
+                                    </div>
                                 </div>
                                 <div class="sni-chart-wrap">
                                     <canvas id="chart-ministry-share"></canvas>
@@ -1025,6 +1109,9 @@
                                             style="width:14px;height:14px;color:var(--secondary);"></i>
                                         Desglose Direcciones MOP
                                     </h3>
+                                    <div class="sni-card-legend">
+                                        <span class="sni-badge" style="background:rgba(59, 130, 246, 0.12); color:#3b82f6; border-color:rgba(59, 130, 246, 0.25);">Top 8 Servicios</span>
+                                    </div>
                                 </div>
                                 <div class="sni-chart-wrap">
                                     <canvas id="chart-mop-services"></canvas>
@@ -1043,6 +1130,7 @@
                                         style="width:14px;height:14px;color:var(--primary);"></i>
                                     Evolución Anual de Inversión Pública por Ministerio (2010–2024)
                                 </h3>
+                                <div id="temporal-evolution-legend" class="sni-card-legend" style="flex-wrap: wrap; gap: 8px;"></div>
                             </div>
                             <div class="sni-chart-wrap">
                                 <canvas id="chart-temporal-evolution"></canvas>
@@ -1057,6 +1145,12 @@
                                         style="width:14px;height:14px;color:var(--accent);"></i>
                                     Comparativa por Períodos Presidenciales (2010–2024)
                                 </h3>
+                                <div class="sni-card-legend" style="flex-wrap: wrap; gap: 8px;">
+                                    <span class="sni-card-legend-item"><span class="sni-legend-dot" style="background:#3b82f6;"></span> Piñera I</span>
+                                    <span class="sni-card-legend-item"><span class="sni-legend-dot" style="background:#f43f5e;"></span> Bachelet II</span>
+                                    <span class="sni-card-legend-item"><span class="sni-legend-dot" style="background:#2563eb;"></span> Piñera II</span>
+                                    <span class="sni-card-legend-item"><span class="sni-legend-dot" style="background:#10b981;"></span> Boric</span>
+                                </div>
                             </div>
                             <div class="sni-chart-wrap">
                                 <canvas id="chart-pre-post-gov"></canvas>

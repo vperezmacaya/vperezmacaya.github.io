@@ -1,13 +1,21 @@
 // ─── EFE Analytics Charts Module ─────────────────────────────────────────────
 var efeFilialChart = null;
-var efeRegionChart = null;
+var efeDetailChart = null;
 
 // Distinct color palettes matching CATLEC index.html aesthetics
 const EFE_FILIAL_COLORS = {
     'EFE Valparaíso': '#0284c7', // Sky Blue
     'EFE Central': '#2563eb',   // Royal Blue
     'EFE Sur': '#d97706',       // Amber / Orange
+    'EFE Arica - La Paz': '#059669', // Emerald
+    'Sin filial específica': '#64748b', // Slate Gray
     'Nacional': '#8b5cf6'       // Purple
+};
+
+const EFE_DETAIL_COLORS = {
+    'Portafolio de Proyectos Estratégicos': '#2563eb', // Royal Blue
+    'Proyectos Preinversionales': '#10b981',           // Emerald
+    'Otros / Extra': '#f59e0b'                         // Amber
 };
 
 const EFE_PALETTE = [
@@ -134,10 +142,10 @@ function efeInitAnalyticsCharts() {
         });
     }
 
-    // Chart 2: Region Pie Chart
-    const ctxRegion = document.getElementById('efeRegionChart');
-    if (ctxRegion && !efeRegionChart) {
-        efeRegionChart = new Chart(ctxRegion, {
+    // Chart 2: Detalle / Cartera Pie Chart (Estratégico vs Preinversional)
+    const ctxDetail = document.getElementById('efeDetailChart');
+    if (ctxDetail && !efeDetailChart) {
+        efeDetailChart = new Chart(ctxDetail, {
             type: 'doughnut',
             data: {
                 labels: [],
@@ -161,7 +169,7 @@ function efeInitAnalyticsCharts() {
                         callbacks: {
                             label: function (context) {
                                 const val = context.parsed || 0;
-                                return ' ' + context.label + ': ' + efeFormatCompactUSD(val);
+                                return ' ' + context.label + ': ' + val + ' proyectos';
                             }
                         }
                     }
@@ -169,15 +177,6 @@ function efeInitAnalyticsCharts() {
             }
         });
     }
-}
-
-function efeGetFilialForRegion(regionName) {
-    if (typeof shortenRegionName === 'undefined') return null;
-    const r = shortenRegionName(regionName);
-    if (r === 'Valparaíso') return 'EFE Valparaíso';
-    if (r === 'Metropolitana' || r === "O'Higgins" || r === 'Maule' || r === 'Ñuble') return 'EFE Central';
-    if (r === 'Biobío' || r === 'La Araucanía' || r === 'Los Lagos') return 'EFE Sur';
-    return null;
 }
 
 function efeUpdateAnalyticsCharts(filteredProjects) {
@@ -190,55 +189,25 @@ function efeUpdateAnalyticsCharts(filteredProjects) {
     const borderColor = isLight ? '#ffffff' : '#0f1626';
 
     const projects = filteredProjects || [];
-    const activeRegions = (typeof efeState !== 'undefined' && efeState.selectedRegions && efeState.selectedRegions.length > 0)
-        ? efeState.selectedRegions.map(r => shortenRegionName(r))
-        : null;
 
-    const EFE_OPERATIONAL_REGIONS = ['Valparaíso', 'Metropolitana', "O'Higgins", 'Maule', 'Ñuble', 'Biobío', 'La Araucanía', 'Los Lagos'];
-
-    // ─── 1. Group Projects Count by Filial (Con atribución territorial) ──────────
-    const EFE_OPERATIONAL_FILIALS = ['EFE Sur', 'EFE Central', 'EFE Valparaíso'];
+    // ─── 1. Group Projects Count by Filial (Lectura exacta de Filial) ──────────
     const filialCounts = {
         'EFE Sur': 0,
         'EFE Central': 0,
-        'EFE Valparaíso': 0
+        'EFE Valparaíso': 0,
+        'EFE Arica - La Paz': 0,
+        'Sin filial específica': 0
     };
 
     projects.forEach(p => {
-        const fil = p.filial ? String(p.filial).trim() : 'Nacional';
-        const regStr = p.region ? String(p.region).trim() : 'Nacional';
+        const fil = (p.filial && String(p.filial).trim() !== '' && String(p.filial).trim().toLowerCase() !== 'nan')
+            ? String(p.filial).trim()
+            : null;
 
-        if (regStr.toLowerCase().includes('nacional') || !regStr) {
-            // Proyecto nacional
-            if (activeRegions && activeRegions.length > 0) {
-                // Solo atribuir a las filiales de las regiones activas seleccionadas
-                const sharePerRegion = 1.0 / EFE_OPERATIONAL_REGIONS.length;
-                activeRegions.forEach(selReg => {
-                    const mappedFilial = efeGetFilialForRegion(selReg);
-                    if (mappedFilial && filialCounts[mappedFilial] !== undefined) {
-                        filialCounts[mappedFilial] += sharePerRegion;
-                    }
-                });
-            } else {
-                const share = 1.0 / EFE_OPERATIONAL_FILIALS.length;
-                EFE_OPERATIONAL_FILIALS.forEach(f => {
-                    filialCounts[f] += share;
-                });
-            }
+        if (fil && filialCounts[fil] !== undefined) {
+            filialCounts[fil]++;
         } else {
-            // Proyecto regional
-            if (fil === 'EFE Sur' || fil === 'EFE Central' || fil === 'EFE Valparaíso') {
-                filialCounts[fil]++;
-            } else {
-                const parts = regStr.split(/[;,/\n]+/).map(r => r.trim()).filter(r => r.length > 0);
-                const partVal = 1.0 / (parts.length || 1);
-                parts.forEach(r => {
-                    const mappedFilial = efeGetFilialForRegion(r);
-                    if (mappedFilial && filialCounts[mappedFilial] !== undefined) {
-                        filialCounts[mappedFilial] += partVal;
-                    }
-                });
-            }
+            filialCounts['Sin filial específica']++;
         }
     });
 
@@ -285,76 +254,60 @@ function efeUpdateAnalyticsCharts(filteredProjects) {
         }).join('');
     }
 
-    // ─── 2. Group Projects Count by Region (Solo regiones seleccionadas si hay filtro) ──
-    const regionCounts = {};
+    // ─── 2. Group Projects Count by Detalle / Portafolio (Estratégico vs Preinversional) ──
+    const detailCounts = {
+        'Portafolio de Proyectos Estratégicos': 0,
+        'Proyectos Preinversionales': 0,
+        'Otros / Extra': 0
+    };
 
     projects.forEach(p => {
-        const regStr = p.region ? String(p.region).trim() : 'Nacional';
-        if (regStr.toLowerCase().includes('nacional') || !regStr) {
-            // Proyecto nacional: dividido entre las regiones
-            const share = 1.0 / EFE_OPERATIONAL_REGIONS.length;
-            EFE_OPERATIONAL_REGIONS.forEach(r => {
-                const cleanReg = shortenRegionName(r);
-                if (!activeRegions || activeRegions.includes(cleanReg)) {
-                    regionCounts[cleanReg] = (regionCounts[cleanReg] || 0) + share;
-                }
-            });
+        const cat = typeof efeGetDetailCategory === 'function' ? efeGetDetailCategory(p.detail) : 'Otros / Extra';
+        if (detailCounts[cat] !== undefined) {
+            detailCounts[cat]++;
         } else {
-            const parts = regStr.split(/[;,/\n]+/).map(r => r.trim()).filter(r => r.length > 0);
-            const partVal = 1.0 / (parts.length || 1);
-            parts.forEach(reg => {
-                const cleanReg = shortenRegionName(reg);
-                if (!activeRegions || activeRegions.includes(cleanReg)) {
-                    regionCounts[cleanReg] = (regionCounts[cleanReg] || 0) + partVal;
-                }
-            });
+            detailCounts['Otros / Extra']++;
         }
     });
 
-    const sortedRegions = Object.keys(regionCounts).sort((a, b) => regionCounts[b] - regionCounts[a]);
+    const detailLabels = Object.keys(detailCounts).filter(k => detailCounts[k] > 0);
+    const detailData = detailLabels.map(k => detailCounts[k]);
+    const totalDetailProjects = detailData.reduce((a, b) => a + b, 0) || 1;
+    const detailColors = detailLabels.map(k => EFE_DETAIL_COLORS[k] || '#64748b');
 
-    let topRegions = sortedRegions.slice(0, 5);
-    let topRegionData = topRegions.map(r => regionCounts[r]);
-
-    if (sortedRegions.length > 5) {
-        const otherSum = sortedRegions.slice(5).reduce((acc, r) => acc + regionCounts[r], 0);
-        if (otherSum > 0) {
-            topRegions.push('Otros');
-            topRegionData.push(otherSum);
-        }
-    }
-
-    const totalRegionProjects = Object.values(regionCounts).reduce((a, b) => a + b, 0) || 1;
-    const regionColors = topRegions.map((_, i) => EFE_PALETTE[i % EFE_PALETTE.length]);
-
-    if (efeRegionChart) {
-        efeRegionChart.data.labels = topRegions;
-        efeRegionChart.data.datasets[0].data = topRegionData;
-        efeRegionChart.data.datasets[0].backgroundColor = regionColors;
-        efeRegionChart.data.datasets[0].borderColor = borderColor;
-        efeRegionChart.options.plugins.tooltip.callbacks = {
+    if (efeDetailChart) {
+        efeDetailChart.data.labels = detailLabels;
+        efeDetailChart.data.datasets[0].data = detailData;
+        efeDetailChart.data.datasets[0].backgroundColor = detailColors;
+        efeDetailChart.data.datasets[0].borderColor = borderColor;
+        efeDetailChart.options.plugins.tooltip.callbacks = {
             label: function (ctx) {
                 const val = ctx.raw || 0;
-                const pct = ((val / totalRegionProjects) * 100).toFixed(0);
-                const displayVal = val % 1 === 0 ? val : (Math.round(val * 10) / 10).toFixed(1);
-                return ` ${ctx.label}: ${displayVal} proyecto${val !== 1 ? 's' : ''} (${pct}%)`;
+                const pct = ((val / totalDetailProjects) * 100).toFixed(0);
+                return ` ${ctx.label}: ${val} proyecto${val !== 1 ? 's' : ''} (${pct}%)`;
             }
         };
-        efeRegionChart.update();
+        efeDetailChart.update();
     }
 
-    // Render Region Custom HTML Legend
-    const legendRegionElem = document.getElementById('efeRegionChartLegend');
-    if (legendRegionElem) {
-        legendRegionElem.innerHTML = topRegions.map((lbl, idx) => {
-            const val = topRegionData[idx];
-            const pct = totalRegionProjects > 0 ? ((val / totalRegionProjects) * 100).toFixed(1).replace(/\.0$/, '') : '0';
-            const col = regionColors[idx];
+    // Render Detail Custom HTML Legend
+    const legendDetailElem = document.getElementById('efeDetailChartLegend');
+    if (legendDetailElem) {
+        legendDetailElem.innerHTML = detailLabels.map((lbl, idx) => {
+            const val = detailData[idx];
+            const pct = totalDetailProjects > 0 ? ((val / totalDetailProjects) * 100).toFixed(1).replace(/\.0$/, '') : '0';
+            const col = detailColors[idx];
+
+            let shortLbl = lbl;
+            if (lbl === 'Portafolio de Proyectos Estratégicos') shortLbl = 'Estratégicos';
+            else if (lbl === 'Proyectos Preinversionales') shortLbl = 'Preinversionales';
+            else if (lbl === 'Otros / Extra') shortLbl = 'Otros / Extra';
+
             return `
-                <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.68rem; padding:0.08rem 0; color:var(--text-primary);">
+                <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.68rem; padding:0.08rem 0; color:var(--text-primary);" title="${lbl}: ${val} proyecto${val !== 1 ? 's' : ''} (${pct}%)">
                     <div style="display:flex; align-items:center; gap:0.3rem; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                         <span style="width:7px; height:7px; border-radius:50%; background-color:${col}; flex-shrink:0;"></span>
-                        <span style="color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${lbl}</span>
+                        <span style="color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${shortLbl}</span>
                     </div>
                     <span style="font-size:0.68rem; color:var(--text-secondary); font-weight:700; font-variant-numeric:tabular-nums; flex-shrink:0; margin-left:0.25rem;">
                         ${pct}%
