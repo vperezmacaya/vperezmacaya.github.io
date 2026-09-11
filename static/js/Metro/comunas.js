@@ -107,14 +107,14 @@ function metroRenderComunasPanel() {
     const sinCob = sinMetro - enExp;
 
     const demo = (metroData && metroData.summary && metroData.summary.demographics) ? metroData.summary.demographics : null;
-    const pctPobCon = demo ? `${demo.pct_pop_with_metro}% pob` : '65,9% com';
-    const pctPobExp = demo ? `${demo.pct_pop_in_expansion}% pob` : '4 com';
-    const pctPobSin = demo ? `${demo.pct_pop_without_metro}% pob` : '10 com';
+    const pctPobCon = demo ? demo.pct_pop_with_metro : '80.3';
+    const pctPobExp = demo ? demo.pct_pop_in_expansion : '7.8';
+    const pctPobSin = demo ? demo.pct_pop_without_metro : '11.9';
 
-    if (elTotal) elTotal.textContent = demo ? `${totalCom} (${(demo.total_population / 1000000).toFixed(2)}M hab)` : `${totalCom} comunas`;
-    if (elConMetro) elConMetro.textContent = `${conMetro} com · ${pctPobCon}`;
-    if (elEnExp) elEnExp.textContent = `${enExp} com · ${pctPobExp}`;
-    if (elSinMetro) elSinMetro.textContent = `${sinCob} com · ${pctPobSin}`;
+    if (elTotal) elTotal.textContent = `${totalCom} (${demo ? (demo.total_population / 1000000).toFixed(2) : '7.58'}M de habitantes)`;
+    if (elConMetro) elConMetro.textContent = `${conMetro} (${pctPobCon}% de la población)`;
+    if (elEnExp) elEnExp.textContent = `${enExp} (${pctPobExp}% de la población)`;
+    if (elSinMetro) elSinMetro.textContent = `${sinCob} (${pctPobSin}% de la población)`;
 
     // Renderizar los gráficos comunales
     metroRenderComunasCharts();
@@ -257,13 +257,26 @@ function metroRenderPoblacionChart() {
                 mode: 'index',
                 intersect: true
             },
+            onHover: (event, elements) => {
+                const canvas = event?.native?.target || ctx;
+                if (canvas) {
+                    const hasHoveredBar = elements && elements.length > 0 && elements.some(el => el.index > 0 && el.index <= list.length);
+                    canvas.style.cursor = hasHoveredBar ? 'pointer' : 'default';
+                }
+            },
             onClick: (e, elements) => {
                 if (elements && elements.length > 0) {
                     const rawIdx = elements[0].index;
                     if (rawIdx <= 0 || rawIdx > list.length) return;
                     const c = list[rawIdx - 1];
-                    if (c && typeof metroZoomToComuna === 'function') {
-                        metroZoomToComuna(c.name);
+                    if (c) {
+                        const comunaName = c.name || c.comuna;
+                        metroState.selectedComuna = null;
+                        if (typeof metroOnClickComunaFromTable === 'function') {
+                            metroOnClickComunaFromTable(comunaName);
+                        } else if (typeof metroZoomToComuna === 'function') {
+                            metroZoomToComuna(comunaName);
+                        }
                     }
                 }
             },
@@ -418,6 +431,10 @@ function metroRenderPoblacionChart() {
         ]
     });
 
+    ctx.onmouseleave = () => {
+        ctx.style.cursor = 'default';
+    };
+
     attachPinnedAxesWheelHandlers();
     setTimeout(() => {
         if (metroChartPoblacionInstance) {
@@ -477,7 +494,7 @@ function syncPinnedYAxes(chart) {
     const scrollContainer = document.getElementById('metroComunasScrollContainer');
     if (!leftCanvas || !rightCanvas || !scrollContainer) return;
 
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = chart.currentDevicePixelRatio || window.devicePixelRatio || 1;
     const opaqueBg = getOpaqueCardBgColor();
     const isLight = document.body.classList.contains('light-theme');
 
@@ -870,7 +887,12 @@ function metroZoomToComuna(comunaName) {
         hideMetroComunasView();
     }
 
-    if (!metroMap || !metroComunasLayer) return;
+    if (!metroMap) return;
+    if (typeof metroMap.invalidateSize === 'function') {
+        metroMap.invalidateSize({ animate: false });
+    }
+
+    if (!metroComunasLayer) return;
 
     if (!metroShowComunas && typeof metroToggleComunas === 'function') {
         metroToggleComunas(true);
@@ -883,19 +905,32 @@ function metroZoomToComuna(comunaName) {
         metroComunasLayer.resetStyle(layer);
     });
 
+    const normTarget = typeof metroNormalizeComunaText === 'function'
+        ? metroNormalizeComunaText(comunaName)
+        : (typeof metroNormalizeText === 'function' ? metroNormalizeText(comunaName) : (comunaName ? comunaName.toString().toLowerCase().trim() : ''));
+
     let targetLayer = null;
     metroComunasLayer.eachLayer(layer => {
-        if (layer.feature && layer.feature.properties && layer.feature.properties.comuna === comunaName) {
-            targetLayer = layer;
+        if (layer.feature && layer.feature.properties) {
+            const propComuna = layer.feature.properties.comuna || '';
+            const normProp = typeof metroNormalizeComunaText === 'function'
+                ? metroNormalizeComunaText(propComuna)
+                : (typeof metroNormalizeText === 'function' ? metroNormalizeText(propComuna) : propComuna.toString().toLowerCase().trim());
+            if (normProp === normTarget) {
+                targetLayer = layer;
+            }
         }
     });
 
     if (targetLayer) {
         if (targetLayer.getBounds) {
-            if (typeof metroMap.flyToBounds === 'function') {
-                metroMap.flyToBounds(targetLayer.getBounds(), { padding: [50, 50], maxZoom: 14, duration: 0.8 });
-            } else {
-                metroMap.fitBounds(targetLayer.getBounds(), { padding: [50, 50], maxZoom: 14 });
+            const bounds = targetLayer.getBounds();
+            if (bounds && bounds.isValid && bounds.isValid()) {
+                if (typeof metroMap.flyToBounds === 'function') {
+                    metroMap.flyToBounds(bounds, { padding: [50, 50], maxZoom: 14, duration: 0.8 });
+                } else {
+                    metroMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+                }
             }
         }
         // Resaltar la comuna seleccionada

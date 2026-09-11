@@ -13,7 +13,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <!-- CSS Custom stylesheet -->
-    <link rel="stylesheet" href="static/css/styles.css?v=20260907_v2">
+    <link rel="stylesheet" href="static/css/styles.css?v=20260910">
     <!-- Chart.js for premium chart renders -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- SheetJS for Client-Side Excel Export -->
@@ -29,17 +29,24 @@
         <!-- Top Navigation Banner -->
         <header class="top-navbar">
             <div class="top-navbar-left">
-                <img src="logo/cropped-Logo-CATLEC-horizontal-sin-fondo-1.png" alt="Logo CATLEC"
-                    class="top-navbar-logo" height="26" style="height:26px;width:auto;max-height:26px;object-fit:contain;">
+                <img src="logo/cropped-Logo-CATLEC-horizontal-sin-fondo-1.png" alt="Logo CATLEC" class="top-navbar-logo"
+                    height="26" style="height:26px;width:auto;max-height:26px;object-fit:contain;">
                 <span class="top-navbar-title">Plataforma de visualización logística de datos - Concesiones</span>
                 <span class="top-navbar-divider"></span>
                 <span class="top-navbar-proto">Prototipo en desarrollo</span>
             </div>
-            <div class="top-navbar-right">
+            <div class="top-navbar-right" style="display: flex; align-items: center; gap: 0.45rem;">
+                <button class="top-navbar-btn" id="btn-open-about"
+                    title="Acerca de este módulo (Fuentes oficiales y Metodología de cálculo)">
+                    <i data-lucide="info" style="width: 13px; height: 13px;"></i>
+                    <span>Acerca de</span>
+                </button>
                 <!-- Navigation Menu -->
                 <div class="nav-menu" id="nav-menu">
                     <button class="nav-menu-btn" id="nav-menu-btn" aria-haspopup="true" aria-expanded="false">
-                        <img src="logo/Gob_chile_logo.svg" alt="Gobierno de Chile" class="nav-db-logo" width="15" height="15" style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
+                        <img src="logo/Gob_chile_logo.svg" alt="Gobierno de Chile" class="nav-db-logo" width="15"
+                            height="15"
+                            style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
                         Seleccionar Base de Datos
                         <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
                     </button>
@@ -49,7 +56,9 @@
                             <div class="nav-menu-item active nav-menu-has-sub" id="nav-dgc-parent-item">
                                 <a href="index.html" id="nav-dgc-main-link" class="nav-menu-parent-link"
                                     style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <img src="logo/Gob_chile_logo.svg" alt="DGC" class="nav-db-logo" width="15" height="15" style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
+                                    <img src="logo/Gob_chile_logo.svg" alt="DGC" class="nav-db-logo" width="15"
+                                        height="15"
+                                        style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
                                     Dirección General de Concesiones (DGC)
                                 </a>
                                 <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
@@ -83,7 +92,8 @@
                             <div class="nav-menu-item nav-menu-has-sub" id="nav-efe-parent-item">
                                 <a href="EFE.html" class="nav-menu-parent-link"
                                     style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <img src="logo/efe_logo.png" alt="EFE" class="nav-db-logo" width="15" height="15" style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
+                                    <img src="logo/efe_logo.png" alt="EFE" class="nav-db-logo" width="15" height="15"
+                                        style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
                                     Empresas de Ferrocarriles del Estado (EFE)
                                 </a>
                                 <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
@@ -109,7 +119,9 @@
                             <div class="nav-menu-item nav-menu-has-sub" id="nav-metro-parent-item">
                                 <a href="Metro.html" class="nav-menu-parent-link"
                                     style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <img src="logo/metro_logo.png" alt="Metro" class="nav-db-logo" width="15" height="15" style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
+                                    <img src="logo/metro_logo.png" alt="Metro" class="nav-db-logo" width="15"
+                                        height="15"
+                                        style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
                                     Metro de Santiago
                                 </a>
                                 <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
@@ -123,10 +135,12 @@
                                     <i data-lucide="clock" style="width:13px;height:13px;"></i> Líneas de Tiempo
                                 </a>
                                 <a class="nav-submenu-item" href="Metro.html#comunas">
-                                    <i data-lucide="building-2" style="width:13px;height:13px;"></i> Estadísticas Comunales
+                                    <i data-lucide="building-2" style="width:13px;height:13px;"></i> Estadísticas
+                                    Comunales
                                 </a>
                                 <a class="nav-submenu-item" href="Metro.html#demanda">
-                                    <i data-lucide="trending-up" style="width:13px;height:13px;"></i> Demanda y Operación
+                                    <i data-lucide="trending-up" style="width:13px;height:13px;"></i> Demanda y
+                                    Operación
                                 </a>
                             </div>
                         </div>
@@ -136,7 +150,9 @@
                             <div class="nav-menu-item nav-menu-has-sub" id="nav-mop-parent-item">
                                 <a href="MOP.html" class="nav-menu-parent-link"
                                     style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <img src="logo/Gob_chile_logo.svg" alt="MOP" class="nav-db-logo" width="15" height="15" style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
+                                    <img src="logo/Gob_chile_logo.svg" alt="MOP" class="nav-db-logo" width="15"
+                                        height="15"
+                                        style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
                                     Ministerio de Obras Públicas (MOP)
                                 </a>
                                 <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
@@ -161,7 +177,9 @@
                             <div class="nav-menu-item nav-menu-has-sub" id="nav-sni-parent-item">
                                 <a href="SNI.html" class="nav-menu-parent-link"
                                     style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <img src="logo/Gob_chile_logo.svg" alt="SNI" class="nav-db-logo" width="15" height="15" style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
+                                    <img src="logo/Gob_chile_logo.svg" alt="SNI" class="nav-db-logo" width="15"
+                                        height="15"
+                                        style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
                                     Sistema Nacional de Inversiones (SNI)
                                 </a>
                                 <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
@@ -172,10 +190,12 @@
                                     <i data-lucide="map" style="width:13px;height:13px;"></i> Mapa Regional
                                 </a>
                                 <a class="nav-submenu-item" href="SNI.html#territorial">
-                                    <i data-lucide="bar-chart-2" style="width:13px;height:13px;"></i> Análisis Territorial
+                                    <i data-lucide="bar-chart-2" style="width:13px;height:13px;"></i> Análisis
+                                    Territorial
                                 </a>
                                 <a class="nav-submenu-item" href="SNI.html#ministries">
-                                    <i data-lucide="landmark" style="width:13px;height:13px;"></i> Ministerios y Sectores
+                                    <i data-lucide="landmark" style="width:13px;height:13px;"></i> Ministerios y
+                                    Sectores
                                 </a>
                                 <a class="nav-submenu-item" href="SNI.html#temporal">
                                     <i data-lucide="clock" style="width:13px;height:13px;"></i> Evolución Temporal
@@ -327,12 +347,20 @@
                                 <i data-lucide="rotate-ccw" style="width: 12px; height: 12px;"></i>
                                 Restablecer Filtros
                             </button>
-                            <button class="btn-reset" id="btn-export-excel"
-                                style="padding: 0.28rem 0.4rem; font-size: 0.72rem; justify-content: center; width: 100%; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); color: #10b981; font-weight: 600; cursor: pointer; transition: all 0.15s ease;"
-                                title="Descargar base de datos filtrada o completa en Excel (.xlsx)">
-                                <i data-lucide="file-spreadsheet" style="width: 12px; height: 12px;"></i>
-                                Exportar a Excel (.xlsx)
-                            </button>
+                            <div style="display: flex; gap: 0.25rem; width: 100%;">
+                                <button class="btn-reset" id="btn-export-excel"
+                                    style="flex: 1; padding: 0.28rem 0.4rem; font-size: 0.72rem; justify-content: center; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); color: #10b981; font-weight: 600; cursor: pointer; transition: all 0.15s ease;"
+                                    title="Descargar base de datos filtrada o completa en Excel (.xlsx)">
+                                    <i data-lucide="file-spreadsheet" style="width: 12px; height: 12px;"></i>
+                                    Exportar Excel
+                                </button>
+                                <button class="btn-reset" id="btn-export-geojson"
+                                    style="flex: 1; padding: 0.28rem 0.4rem; font-size: 0.72rem; justify-content: center; background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.3); color: #6366f1; font-weight: 600; cursor: pointer; transition: all 0.15s ease;"
+                                    title="Descargar geometrías oficiales de concesiones en GeoJSON">
+                                    <i data-lucide="map-pin" style="width: 12px; height: 12px;"></i>
+                                    Exportar GeoJSON
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -1560,6 +1588,384 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal: Acerca de (Fuentes de Datos y Metodología de Cálculo) -->
+    <div id="about-modal" class="about-modal-backdrop" style="display: none;">
+        <div class="about-modal-container">
+            <!-- Modal Header -->
+            <div class="about-modal-header">
+                <div style="display: flex; align-items: center; gap: 0.75rem; min-width: 0;">
+                    <i data-lucide="info" style="width: 20px; height: 20px; color: #2563eb; flex-shrink: 0;"></i>
+                    <div style="min-width: 0;">
+                        <h3 class="about-modal-title">
+                            Módulo Dirección General de Concesiones (DGC)
+                        </h3>
+                    </div>
+                </div>
+                <button id="btn-close-about-modal" class="about-modal-close-btn" title="Cerrar (Esc)">
+                    <i data-lucide="x" style="width: 17px; height: 17px;"></i>
+                </button>
+            </div>
+
+            <!-- Modal Scrollable Body -->
+            <div class="about-modal-body">
+                <!-- SECCIÓN 1: DESCRIPCIÓN Y OBJETIVO DEL MÓDULO -->
+                <div class="about-section">
+                    <div class="about-section-header">
+                        <h4 class="about-section-title">1. Descripción y Objetivo del Módulo</h4>
+                    </div>
+                    <div
+                        style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.9rem 1.1rem; display: flex; flex-direction: column; gap: 0.65rem;">
+                        <p style="margin: 0; font-size: 0.78rem; line-height: 1.55; color: #334155;">
+                            Este módulo agrupa la cartera histórica y
+                            vigente de contratos del sistema de <strong>Concesiones de Infraestructura Pública</strong>
+                            en Chile, gestionado por la Dirección General de Concesiones (DGC) del Ministerio de Obras
+                            Públicas (MOP).
+                        </p>
+
+                        <div
+                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 0.75rem; margin-top: 0.2rem;">
+                            <!-- Lo que mapea -->
+                            <div
+                                style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem 0.9rem; display: flex; flex-direction: column; gap: 0.3rem;">
+                                <div
+                                    style="font-size: 0.78rem; font-weight: 700; color: #1e3a8a; display: flex; align-items: center; gap: 0.35rem;">
+                                    <i data-lucide="map-pin" style="width: 14px; height: 14px; color: #2563eb;"></i>
+                                    ¿Qué mapea este módulo?
+                                </div>
+                                <p style="margin: 0; font-size: 0.73rem; color: #475569; line-height: 1.5;">
+                                    Mapea y georreferencia las obras e infraestructuras concesionadas a nivel nacional
+                                    (autopistas interurbanas y urbanas, aeropuertos, hospitales, recintos
+                                    penitenciarios, embalses, transporte público y teleféricos), detallando sus trazados
+                                    y ubicaciones, montos de inversión oficial (UF), etapas del ciclo de vida
+                                    contractual (licitación, construcción, PSP, PSD, explotación) y los consorcios y
+                                    sociedades concesionarias adjudicatarias.
+                                </p>
+                            </div>
+
+                            <!-- Objetivo -->
+                            <div
+                                style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem 0.9rem; display: flex; flex-direction: column; gap: 0.3rem;">
+                                <div
+                                    style="font-size: 0.78rem; font-weight: 700; color: #1e3a8a; display: flex; align-items: center; gap: 0.35rem;">
+                                    <i data-lucide="target" style="width: 14px; height: 14px; color: #2563eb;"></i>
+                                    Objetivo
+                                </div>
+                                <p style="margin: 0; font-size: 0.73rem; color: #475569; line-height: 1.5;">
+                                    Facilitar el análisis interactivo, geoespacial y temporal de la infraestructura
+                                    concesionada en Chile, permitiendo examinar la distribución territorial de los
+                                    proyectos, la evolución del flujo de inversiones en el tiempo, los plazos de
+                                    tramitación y desarrollo, así como la concurrencia competitiva y concentración de
+                                    mercado entre oferentes y licitantes.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 2: FUENTES DE DATOS -->
+                <div class="about-section">
+                    <div class="about-section-header"
+                        style="display: flex; align-items: center; justify-content: space-between;">
+                        <h4 class="about-section-title">2. Fuentes de Datos</h4>
+                        <span style="font-size: 0.68rem; color: #64748b; font-weight: 500;">Última actualización: Agosto
+                            2026</span>
+                    </div>
+
+                    <!-- Fuente Base Principal -->
+                    <div class="about-source-card" style="background: #f8fafc; padding: 0.85rem 1rem;">
+                        <div class="about-source-top" style="margin-bottom: 0.25rem;">
+                            <span class="about-source-name"
+                                style="font-size: 0.82rem; font-weight: 700; color: #0f172a;">
+                                <i data-lucide="folder-git-2" style="width: 15px; height: 15px; color: #0284c7;"></i>
+                                Base de Datos original:
+                            </span>
+                        </div>
+                        <p style="margin: 0; font-size: 0.77rem; line-height: 1.45; color: #334155;">
+                            <a href="https://datos.gob.cl/dataset/contratos-adjudicados-concesiones-de-infraestructura-publica-01-01-1993-10-07-2026"
+                                target="_blank" rel="noopener noreferrer"
+                                style="color: #0284c7; font-weight: 600; text-decoration: underline; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                Contratos Adjudicados Concesiones de Infraestructura Pública (01/01/1993 - 10/07/2026)
+                                <i data-lucide="external-link" style="width: 12px; height: 12px;"></i>
+                            </a>
+                        </p>
+                    </div>
+
+                    <!-- Subtítulo Complementado con: -->
+                    <div
+                        style="margin-top: 0.25rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.85rem 1rem;">
+                        <h5
+                            style="margin: 0 0 0.55rem 0; font-size: 0.78rem; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.03em; display: flex; align-items: center; gap: 0.35rem;">
+                            <i data-lucide="plus-circle" style="width: 13px; height: 13px; color: #2563eb;"></i>
+                            Complementado con:
+                        </h5>
+                        <ol
+                            style="margin: 0; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.76rem; color: #334155;">
+                            <li style="line-height: 1.45;">
+                                Documentación oficial Dirección General de Concesiones:
+                                <a href="https://concesiones.mop.gob.cl/" target="_blank" rel="noopener noreferrer"
+                                    style="color: #2563eb; font-weight: 600; text-decoration: underline; margin-left: 0.25rem; display: inline-flex; align-items: center; gap: 0.2rem;">
+                                    https://concesiones.mop.gob.cl/
+                                    <i data-lucide="external-link" style="width: 11px; height: 11px;"></i>
+                                </a>
+                            </li>
+                            <li style="line-height: 1.45;">
+                                <a href="https://geomop.mop.gob.cl/descargas/" target="_blank" rel="noopener noreferrer"
+                                    style="color: #2563eb; font-weight: 600; text-decoration: underline; display: inline-flex; align-items: center; gap: 0.2rem;">
+                                    https://geomop.mop.gob.cl/descargas/
+                                    <i data-lucide="external-link" style="width: 11px; height: 11px;"></i>
+                                </a>
+                                <span style="color: #64748b; margin-left: 0.25rem;">(base para coordenadas de contratos
+                                    concesionados).</span>
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 3: METODOLOGÍA Y FÓRMULAS POR VISUALIZACIÓN -->
+                <div class="about-section">
+                    <div class="about-section-header">
+                        <h4 class="about-section-title">3. Metodología y Criterios por Visualización</h4>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 0.85rem; margin-top: 0.25rem;">
+
+                        <!-- 1. VISUALIZACIÓN MAPA -->
+                        <div class="formula-card">
+                            <div class="formula-card-title">
+                                <i data-lucide="map" style="width: 15px; height: 15px; color: #2563eb;"></i>
+                                Visualización: Mapa
+                            </div>
+
+                            <div class="formula-subtitle">
+                                <i data-lucide="gauge" style="width: 13px; height: 13px; color: #2563eb;"></i>
+                                Indicadores Clave (KPIs superiores):
+                            </div>
+                            <ul
+                                style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
+                                <li><strong>Contratos totales:</strong> Cantidad neta total de concesiones
+                                    presentes en las regiones seleccionadas según los filtros activos (sin distribución
+                                    fraccionada; si un contrato interregional abarca la región, se contabiliza como 1
+                                    contrato completo).</li>
+                                <li><strong>Inversión (UF):</strong> Suma acumulada de la inversión estimada oficial de
+                                    los contratos seleccionados. Al aplicar un filtro regional, computa la
+                                    <strong>inversión neta total completa</strong> de cada contrato presente en dicha
+                                    región (sin distribución ni prorrateo interregional).
+                                </li>
+                                <li><strong>Infraestructuras totales:</strong> Conteo de obras o recintos físicos
+                                    individuales (aeropuertos, hospitales, cárceles, tramos viales).</li>
+                                <li><strong>Participaciones de oferentes:</strong> Total de empresas y consorcios que
+                                    presentaron ofertas en los procesos de licitación.</li>
+                            </ul>
+                        </div>
+
+                        <!-- 2. VISUALIZACIÓN LÍNEAS DE TIEMPO -->
+                        <div class="formula-card">
+                            <div class="formula-card-title">
+                                <i data-lucide="clock" style="width: 15px; height: 15px; color: #7c3aed;"></i>
+                                Visualización: Líneas de Tiempo
+                            </div>
+
+                            <div class="formula-subtitle">
+                                <i data-lucide="gauge" style="width: 13px; height: 13px; color: #7c3aed;"></i>
+                                Indicadores Clave (KPIs superiores):
+                            </div>
+                            <ul
+                                style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
+                                <li><strong>Duración promedio:</strong> Tiempo medio de vigencia contractual calculado
+                                    como la diferencia entre la fecha de término oficial y la fecha de inicio del
+                                    contrato.</li>
+                                <li><strong>Llamado a licitación ➔ Inicio:</strong> Promedio de años/meses transcurridos
+                                    desde la publicación del concurso público hasta la toma de razón e inicio del
+                                    contrato.</li>
+                                <li><strong>Adjudicación ➔ Inicio:</strong> Tiempo medio desde el Decreto Supremo de
+                                    Adjudicación hasta la entrada en vigencia del contrato.</li>
+                            </ul>
+                        </div>
+
+                        <!-- 3. VISUALIZACIÓN ANÁLISIS DE INVERSIÓN -->
+                        <div class="formula-card">
+                            <div class="formula-card-title">
+                                <i data-lucide="line-chart" style="width: 15px; height: 15px; color: #0284c7;"></i>
+                                Visualización: Análisis de Inversión
+                            </div>
+
+                            <div class="formula-subtitle">
+                                <i data-lucide="gauge" style="width: 13px; height: 13px; color: #0284c7;"></i>
+                                Indicadores Clave (KPIs superiores):
+                            </div>
+                            <ul
+                                style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
+                                <li><strong>Inversión total / Inversión atribuible a regiones seleccionadas:</strong>
+                                    A nivel general refleja la inversión acumulada total. Al seleccionar una o más
+                                    regiones en el filtro, el KPI cambia automáticamente a <em>Inversión
+                                        atribuible</em>,
+                                    aplicando el cálculo de proyectos interregionales distribuidos equitativamente. A
+                                    diferencia de la vista de Mapa (donde se asigna la inversión neta total del
+                                    contrato),
+                                    aquí solo se imputa la fracción proporcional ($1/N$) correspondiente a las regiones
+                                    filtradas.</li>
+                                <li><strong>Promedio inversión / contrato:</strong> Inversión media en UF por cada
+                                    contrato de concesión.</li>
+                                <li><strong>Contratos totales:</strong> Cantidad de contratos contemplados en el
+                                    análisis financiero.</li>
+                            </ul>
+
+                            <div class="formula-subtitle">
+                                <i data-lucide="split" style="width: 13px; height: 13px; color: #0284c7;"></i>
+                                Fórmula: Reparto Equitativo de Inversión por Región (UF):
+                            </div>
+                            <div class="formula-box">
+                                Inversión(Región r) = &Sigma; [ Inversión_Total(c) / N_regiones(c) ]
+                            </div>
+                            <p class="formula-explanation">
+                                Para evitar duplicación presupuestaria en proyectos interregionales (ej. tramos de la
+                                Ruta 5 que cruzan múltiples regiones o la Red Aeroportuaria Austral), la inversión en UF
+                                se prorratea equitativamente (1/<em>N</em>) entre las <em>N</em> regiones involucradas.
+                            </p>
+
+                        </div>
+
+                        <!-- 4. VISUALIZACIÓN ANÁLISIS DE CONTRATOS -->
+                        <div class="formula-card">
+                            <div class="formula-card-title">
+                                <i data-lucide="layers" style="width: 15px; height: 15px; color: #059669;"></i>
+                                Visualización: Análisis de Contratos
+                            </div>
+
+                            <div class="formula-subtitle">
+                                <i data-lucide="gauge" style="width: 13px; height: 13px; color: #059669;"></i>
+                                Indicadores Clave (KPIs superiores):
+                            </div>
+                            <ul
+                                style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
+                                <li><strong>Contratos totales / Contratos atribuibles a regiones seleccionadas:</strong>
+                                    A nivel general refleja el número total de contratos únicos adjudicados. Al
+                                    seleccionar una o más regiones en el filtro, el KPI cambia automáticamente a
+                                    <em>Contratos atribuibles</em>, aplicando la fórmula de asignación fraccionada
+                                    ($1/N$). A diferencia de la vista de Mapa (donde el proyecto interregional se cuenta
+                                    como 1 contrato entero para la región), aquí solo se atribuye la cuota proporcional
+                                    ($1/N$) por cada región seleccionada, asegurando consistencia matemática con el
+                                    total de contratos únicos.
+                                </li>
+                                <li><strong>Contratos vigentes:</strong> Proyectos activos actualmente en fase de
+                                    construcción o explotación.</li>
+                                <li><strong>Contratos interregionales:</strong> Concesiones cuya infraestructura abarca
+                                    dos o más regiones del país.</li>
+                            </ul>
+
+                            <div class="formula-subtitle">
+                                <i data-lucide="pie-chart" style="width: 13px; height: 13px; color: #059669;"></i>
+                                Fórmula: Asignación Fraccionada de Contratos por Región:
+                            </div>
+                            <div class="formula-box">
+                                Contratos(Región r) = &Sigma; [ 1 / N_regiones(c) ]
+                            </div>
+                            <p class="formula-explanation">
+                                Cada proyecto interregional aporta una fracción 1/<em>N</em> a cada una de sus regiones.
+                                Esto asegura que la suma de las barras regionales coincida exactamente con el total real
+                                de contratos únicos analizados.
+                            </p>
+
+                        </div>
+
+                        <!-- 5. VISUALIZACIÓN ANÁLISIS DE OFERENTES -->
+                        <div class="formula-card">
+                            <div class="formula-card-title">
+                                <i data-lucide="users" style="width: 15px; height: 15px; color: #d97706;"></i>
+                                Visualización: Análisis de Oferentes
+                            </div>
+
+                            <div class="formula-subtitle">
+                                <i data-lucide="gauge" style="width: 13px; height: 13px; color: #d97706;"></i>
+                                Indicadores Clave (KPIs superiores):
+                            </div>
+                            <ul
+                                style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
+                                <li><strong>Licitante con más adjudicaciones:</strong> Empresa o grupo económico líder
+                                    en contratos ganados.</li>
+                                <li><strong>Participaciones de oferentes:</strong> Total de ofertas válidas registradas
+                                    en las licitaciones públicas.</li>
+                                <li><strong>Promedio licitantes / concesión:</strong> Nivel de concurrencia media de
+                                    competidores por proceso licitatorio.</li>
+                            </ul>
+
+                            <div class="formula-subtitle">
+                                <i data-lucide="calculator" style="width: 13px; height: 13px; color: #d97706;"></i>
+                                Fórmula: Adjudicaciones Netas vs. Adjudicaciones Ponderadas por Consorcio:
+                            </div>
+                            <div class="formula-box">
+                                Adj_Ponderada(Empresa e) = &Sigma; [ (% Participación_Consorcio(e, c) / 100) ]
+                            </div>
+                            <p class="formula-explanation">
+                                La métrica <strong>Neta</strong> computa 1 adjudicación completa a la empresa por cada
+                                concesión ganada (individual o en consorcio). La métrica <strong>Ponderada</strong>
+                                ajusta el valor según el porcentaje accionario de la empresa dentro del grupo licitante
+                                adjudicatario al momento de la adjudicación.
+                            </p>
+
+                        </div>
+
+                    </div>
+                </div>
+
+
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Controlador del Modal Acerca de -->
+    <script>
+        (function () {
+            const btnOpen = document.getElementById('btn-open-about');
+            const btnClose = document.getElementById('btn-close-about-modal');
+            const modal = document.getElementById('about-modal');
+
+            function openAboutModal() {
+                if (modal) {
+                    modal.style.display = 'flex';
+                    if (window.lucide) {
+                        lucide.createIcons();
+                    }
+                }
+            }
+
+            function closeAboutModal() {
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+            }
+
+            if (btnOpen) {
+                btnOpen.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    openAboutModal();
+                });
+            }
+
+            if (btnClose) {
+                btnClose.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    closeAboutModal();
+                });
+            }
+
+            if (modal) {
+                modal.addEventListener('click', function (e) {
+                    if (e.target === modal) {
+                        closeAboutModal();
+                    }
+                });
+            }
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && modal && modal.style.display === 'flex') {
+                    closeAboutModal();
+                }
+            });
+        })();
+    </script>
 
 </body>
 

@@ -15,7 +15,6 @@ let sniChartInstances = {
     mapMetricRanking: null,
     regionRanking: null,
     pibBalance: null,
-    perCapita: null,
     ministryShare: null,
     mopServices: null,
     temporalEvolution: null,
@@ -24,8 +23,9 @@ let sniChartInstances = {
 
 // Configurar defaults globales de Chart.js idénticos a index.html (investment.js L215-216)
 if (typeof Chart !== 'undefined') {
-    Chart.defaults.font.family = "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif";
-    Chart.defaults.devicePixelRatio = Math.max(2, window.devicePixelRatio || 1);
+    Chart.defaults.font.family = "'Inter', system-ui, -apple-system, sans-serif";
+    Chart.defaults.font.size = 10;
+    Chart.defaults.devicePixelRatio = Math.max(2.5, window.devicePixelRatio || 1);
 }
 
 // Tooltip externo negro compartido para todos los gráficos SNI
@@ -61,9 +61,10 @@ function sniExternalTooltip(context) {
     const wasVisible = parseFloat(el.style.opacity || '0') > 0.05;
 
     // Title
-    const title = (tooltip.title || []).join('\n');
+    const titleLines = (tooltip.title || []).flatMap(t => Array.isArray(t) ? t : [t]);
+    const title = titleLines.map(t => String(t).trim()).filter(Boolean).join(' ');
     // Body lines
-    const bodyLines = (tooltip.body || []).flatMap(b => b.lines);
+    const bodyLines = (tooltip.body || []).flatMap(b => b.lines).flatMap(l => Array.isArray(l) ? l : [l]);
 
     el.innerHTML = [
         title ? `<div style="font-weight:700;margin-bottom:3px">${title}</div>` : '',
@@ -113,7 +114,7 @@ const sniHorizontalBarLabelsPlugin = {
         const formatter = (pluginOptions && pluginOptions.formatter) || ((v) => String(v));
 
         ctx.save();
-        ctx.font = "600 9px 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif";
+        ctx.font = "600 9px 'Inter', system-ui, -apple-system, sans-serif";
         ctx.textBaseline = 'middle';
 
         meta.data.forEach((bar, index) => {
@@ -142,13 +143,14 @@ const sniHorizontalBarLabelsPlugin = {
 // Opciones comunes y tema unificado (idéntico a index.html)
 function getChartThemeOptions() {
     const isDark = !document.body.classList.contains('light-theme');
-    const textColor = isDark ? '#cbd5e1' : '#475569';
-    const textMuted = isDark ? '#94a3b8' : '#64748b';
-    const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
+    const textColor = isDark ? '#cbd5e1' : '#334155';
+    const textMuted = isDark ? '#94a3b8' : '#334155';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
 
     return {
         responsive: true,
         maintainAspectRatio: false,
+        devicePixelRatio: Math.max(2.5, window.devicePixelRatio || 1),
         animation: {
             duration: 450,
             easing: 'easeOutQuart'
@@ -169,14 +171,14 @@ function getChartThemeOptions() {
             x: {
                 ticks: {
                     color: textMuted,
-                    font: { family: "'Plus Jakarta Sans', sans-serif", size: 10, weight: '500' }
+                    font: { family: "'Inter', sans-serif", size: 10 }
                 },
                 grid: { color: gridColor, drawBorder: false }
             },
             y: {
                 ticks: {
                     color: textMuted,
-                    font: { family: "'Plus Jakarta Sans', sans-serif", size: 10, weight: '500' }
+                    font: { family: "'Inter', sans-serif", size: 10 }
                 },
                 grid: { color: gridColor, drawBorder: false }
             }
@@ -192,7 +194,6 @@ function updateSNICharts() {
     try { updateMapMetricRankingChart(); } catch (e) { console.error('Error in updateMapMetricRankingChart:', e); }
     try { updateRegionRankingChart(); } catch (e) { console.error('Error in updateRegionRankingChart:', e); }
     try { updatePibBalanceChart(); } catch (e) { console.error('Error in updatePibBalanceChart:', e); }
-    try { updatePerCapitaChart(); } catch (e) { console.error('Error in updatePerCapitaChart:', e); }
     try { updateMinistryShareChart(); } catch (e) { console.error('Error in updateMinistryShareChart:', e); }
     try { updateMopServicesChart(); } catch (e) { console.error('Error in updateMopServicesChart:', e); }
     try { updateTemporalEvolutionChart(); } catch (e) { console.error('Error in updateTemporalEvolutionChart:', e); }
@@ -486,19 +487,41 @@ function updateRegionRankingChart() {
 // ─────────────────────────────────────────────────────────────────────────────
 // 2. Matriz de Equidad Territorial: Inversión vs Aporte al PIB
 // ─────────────────────────────────────────────────────────────────────────────
+function wrapRegionLabel(name) {
+    if (!name || typeof name !== 'string') return name;
+    const clean = name.replace(/^\d+_/, '').trim();
+    if (clean === 'Arica y Parinacota') return ['Arica y', 'Parinacota'];
+    if (clean === 'Los Ríos') return ['Los', 'Ríos'];
+    if (clean === 'Los Lagos') return ['Los', 'Lagos'];
+    if (clean.startsWith('La ')) return ['La', clean.slice(3)];
+    if (clean.includes(' ') && clean.length > 9) {
+        const words = clean.split(' ');
+        const mid = Math.ceil(words.length / 2);
+        return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')];
+    }
+    return clean;
+}
+
 function updatePibBalanceChart() {
     const ctx = document.getElementById('chart-pib-balance');
     if (!ctx) return;
 
     const { regions } = getRegionalAggregates();
     const valid = regions.filter(r => r.region !== '17_No Regionalizada' && r.pib_pct > 0);
-    const labels = valid.map(r => r.region.replace(/^\d+_/, ''));
+    const rawLabels = valid.map(r => r.region.replace(/^\d+_/, ''));
+    const labels = rawLabels.map(wrapRegionLabel);
 
     const pibData = valid.map(r => r.pib_pct);
     const invData = valid.map(r => r.inv_pct);
     const ratioData = valid.map(r => r.pib_ratio);
 
     const baseOpts = getChartThemeOptions();
+
+    const titleCb = (items) => {
+        if (!items || !items.length) return '';
+        const idx = items[0].dataIndex;
+        return rawLabels[idx] || (Array.isArray(items[0].label) ? items[0].label.join(' ') : items[0].label);
+    };
 
     if (!sniChartInstances.pibBalance) {
         sniChartInstances.pibBalance = new Chart(ctx, {
@@ -515,7 +538,8 @@ function updatePibBalanceChart() {
                         borderWidth: 1,
                         borderRadius: 3,
                         barPercentage: 0.75,
-                        categoryPercentage: 0.8
+                        categoryPercentage: 0.8,
+                        order: 2
                     },
                     {
                         type: 'bar',
@@ -526,7 +550,8 @@ function updatePibBalanceChart() {
                         borderWidth: 1,
                         borderRadius: 3,
                         barPercentage: 0.75,
-                        categoryPercentage: 0.8
+                        categoryPercentage: 0.8,
+                        order: 2
                     },
                     {
                         type: 'line',
@@ -534,22 +559,31 @@ function updatePibBalanceChart() {
                         data: ratioData,
                         borderColor: '#10b981',
                         backgroundColor: '#10b981',
-                        borderWidth: 2,
+                        borderWidth: 2.2,
+                        pointBackgroundColor: '#10b981',
+                        pointBorderColor: '#10b981',
+                        pointBorderWidth: 0,
                         yAxisID: 'y1',
-                        pointRadius: 3.5,
-                        pointHoverRadius: 5.5,
-                        tension: 0.25
+                        pointRadius: 2.5,
+                        pointHoverRadius: 4.5,
+                        tension: 0,
+                        order: 1
                     }
                 ]
             },
             options: {
                 ...baseOpts,
+                interaction: {
+                    mode: 'nearest',
+                    intersect: true
+                },
                 plugins: {
                     ...baseOpts.plugins,
                     legend: { display: false },
                     tooltip: {
                         ...baseOpts.plugins.tooltip,
                         callbacks: {
+                            title: titleCb,
                             label: (c) => {
                                 if (c.dataset.type === 'line') {
                                     return ` Ratio Redistributivo: ${c.raw.toFixed(2)}x ${c.raw > 1 ? '(Receptor neto)' : '(Aportante neto)'}`;
@@ -560,24 +594,35 @@ function updatePibBalanceChart() {
                     }
                 },
                 scales: {
-                    x: baseOpts.scales.x,
+                    x: {
+                        ...baseOpts.scales.x,
+                        ticks: {
+                            ...baseOpts.scales.x.ticks,
+                            font: { family: "'Inter', sans-serif", size: 9.5, weight: '500' },
+                            maxRotation: 0,
+                            minRotation: 0,
+                            autoSkip: false,
+                            padding: 3
+                        }
+                    },
                     y: {
                         ...baseOpts.scales.y,
                         ticks: {
                             ...baseOpts.scales.y.ticks,
+                            font: { family: "'Inter', sans-serif", size: 10 },
                             callback: (v) => `${v}%`
                         },
-                        title: { display: true, text: '% Participación', color: baseOpts.scales.y.ticks.color, font: { size: 10, weight: '600' } }
+                        title: { display: true, text: '% Participación', color: baseOpts.scales.y.ticks.color, font: { size: 9.5, weight: '600' } }
                     },
                     y1: {
                         position: 'right',
                         grid: { drawOnChartArea: false },
                         ticks: {
                             color: '#10b981',
-                            font: { family: "'Plus Jakarta Sans', sans-serif", size: 10, weight: '600' },
+                            font: { family: "'Inter', sans-serif", size: 10, weight: '600' },
                             callback: (v) => `${v}x`
                         },
-                        title: { display: true, text: 'Ratio Inversión / PIB', color: '#10b981', font: { size: 10, weight: '600' } }
+                        title: { display: true, text: 'Ratio Inversión / PIB', color: '#10b981', font: { size: 9.5, weight: '600' } }
                     }
                 }
             }
@@ -586,9 +631,17 @@ function updatePibBalanceChart() {
         const chart = sniChartInstances.pibBalance;
         chart.data.labels = labels;
         chart.data.datasets[0].data = pibData;
+        chart.data.datasets[0].order = 2;
         chart.data.datasets[1].data = invData;
+        chart.data.datasets[1].order = 2;
         chart.data.datasets[2].data = ratioData;
+        chart.data.datasets[2].order = 1;
         chart.options.plugins.legend = { display: false };
+        chart.options.plugins.tooltip.callbacks.title = titleCb;
+        chart.options.scales.x.ticks.maxRotation = 0;
+        chart.options.scales.x.ticks.minRotation = 0;
+        chart.options.scales.x.ticks.autoSkip = false;
+        chart.options.scales.x.ticks.font = { family: "'Inter', sans-serif", size: 9.5, weight: '500' };
         chart.options.scales.x.ticks.color = baseOpts.scales.x.ticks.color;
         chart.options.scales.x.grid.color = baseOpts.scales.x.grid.color;
         chart.options.scales.y.ticks.color = baseOpts.scales.y.ticks.color;
@@ -598,109 +651,7 @@ function updatePibBalanceChart() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3. Inversión Total vs Inversión Per Cápita (Pesos por habitante)
-// ─────────────────────────────────────────────────────────────────────────────
-function updatePerCapitaChart() {
-    const ctx = document.getElementById('chart-per-capita');
-    if (!ctx) return;
-
-    const { regions } = getRegionalAggregates();
-    const valid = regions.filter(r => r.region !== '17_No Regionalizada' && r.poblacion > 0);
-    const labels = valid.map(r => r.region.replace(/^\d+_/, ''));
-
-    const totalUsd = valid.map(r => r.avg_usd_year);
-    const perCapita = valid.map(r => r.per_capita_clp);
-
-    const baseOpts = getChartThemeOptions();
-
-    if (!sniChartInstances.perCapita) {
-        sniChartInstances.perCapita = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        type: 'bar',
-                        label: 'Inversión Prom. Anual (MM USD)',
-                        data: totalUsd,
-                        backgroundColor: 'rgba(37, 99, 235, 0.75)',
-                        borderColor: 'rgba(37, 99, 235, 1)',
-                        borderWidth: 1,
-                        borderRadius: 3,
-                        barPercentage: 0.72,
-                        categoryPercentage: 0.8,
-                        yAxisID: 'y'
-                    },
-                    {
-                        type: 'line',
-                        label: 'Gasto Anual Per Cápita (Pesos 2024 / hab)',
-                        data: perCapita,
-                        borderColor: '#10b981',
-                        backgroundColor: '#10b981',
-                        borderWidth: 2,
-                        yAxisID: 'y1',
-                        pointRadius: 3.5,
-                        pointHoverRadius: 5.5,
-                        tension: 0.25
-                    }
-                ]
-            },
-            options: {
-                ...baseOpts,
-                plugins: {
-                    ...baseOpts.plugins,
-                    legend: { display: false },
-                    tooltip: {
-                        ...baseOpts.plugins.tooltip,
-                        callbacks: {
-                            label: (c) => {
-                                if (c.dataset.type === 'line') {
-                                    return ` Per Cápita: $${Math.round(c.raw).toLocaleString('es-CL')} CLP / hab`;
-                                }
-                                return ` Inversión Anual: US$ ${c.raw.toLocaleString('es-CL', { minimumFractionDigits: 1 })} MM`;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: baseOpts.scales.x,
-                    y: {
-                        ...baseOpts.scales.y,
-                        ticks: {
-                            ...baseOpts.scales.y.ticks,
-                            callback: (v) => `US$ ${v}M`
-                        },
-                        title: { display: true, text: 'Promedio Anual (MM USD)', color: baseOpts.scales.y.ticks.color, font: { size: 10, weight: '600' } }
-                    },
-                    y1: {
-                        position: 'right',
-                        grid: { drawOnChartArea: false },
-                        ticks: {
-                            color: '#10b981',
-                            font: { family: "'Plus Jakarta Sans', sans-serif", size: 10, weight: '600' },
-                            callback: (v) => `$${(v / 1000).toFixed(0)}k`
-                        },
-                        title: { display: true, text: 'Pesos 2024 / Habitante', color: '#10b981', font: { size: 10, weight: '600' } }
-                    }
-                }
-            }
-        });
-    } else {
-        const chart = sniChartInstances.perCapita;
-        chart.data.labels = labels;
-        chart.data.datasets[0].data = totalUsd;
-        chart.data.datasets[1].data = perCapita;
-        chart.options.plugins.legend = { display: false };
-        chart.options.scales.x.ticks.color = baseOpts.scales.x.ticks.color;
-        chart.options.scales.x.grid.color = baseOpts.scales.x.grid.color;
-        chart.options.scales.y.ticks.color = baseOpts.scales.y.ticks.color;
-        chart.options.scales.y.grid.color = baseOpts.scales.y.grid.color;
-        chart.update();
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 4. Distribución por Ministerio (Horizontal Bar Chart)
+// 3. Distribución por Ministerio (Horizontal Bar Chart)
 // ─────────────────────────────────────────────────────────────────────────────
 function updateMinistryShareChart() {
     const ctx = document.getElementById('chart-ministry-share');
@@ -759,7 +710,7 @@ function updateMinistryShareChart() {
                     sniHorizontalBarLabelsPlugin: {
                         formatter: (val) => {
                             const pct = totalUsd > 0 ? ((val / totalUsd) * 100).toFixed(1) : '0';
-                            return `US$ ${val.toLocaleString('es-CL', { minimumFractionDigits: 1 })} MM (${pct}%)`;
+                            return `${val.toLocaleString('es-CL', { minimumFractionDigits: 1 })} (${pct}%)`;
                         }
                     }
                 },
@@ -768,13 +719,15 @@ function updateMinistryShareChart() {
                         ...baseOpts.scales.x,
                         ticks: {
                             ...baseOpts.scales.x.ticks,
-                            callback: (v) => `US$ ${v}M`
-                        }
+                            font: { family: "'Inter', sans-serif", size: 10 },
+                            callback: (v) => v.toLocaleString('es-CL')
+                        },
+                        title: { display: true, text: 'Inversión (MM USD 2024)', color: baseOpts.scales.x.ticks.color, font: { size: 9.5, weight: '600' } }
                     },
                     y: {
                         ...baseOpts.scales.y,
                         grid: { display: false },
-                        ticks: { ...baseOpts.scales.y.ticks, autoSkip: false }
+                        ticks: { ...baseOpts.scales.y.ticks, font: { family: "'Inter', sans-serif", size: 10, weight: '600' }, autoSkip: false }
                     }
                 }
             }
@@ -785,10 +738,11 @@ function updateMinistryShareChart() {
         chart.data.datasets[0].data = data;
         chart.data.datasets[0].backgroundColor = colors;
         chart.options.plugins.tooltip.callbacks.label = tooltipCb;
+        chart.options.scales.x.ticks.callback = (v) => v.toLocaleString('es-CL');
         if (chart.options.plugins.sniHorizontalBarLabelsPlugin) {
             chart.options.plugins.sniHorizontalBarLabelsPlugin.formatter = (val) => {
                 const pct = totalUsd > 0 ? ((val / totalUsd) * 100).toFixed(1) : '0';
-                return `US$ ${val.toLocaleString('es-CL', { minimumFractionDigits: 1 })} MM (${pct}%)`;
+                return `${val.toLocaleString('es-CL', { minimumFractionDigits: 1 })} (${pct}%)`;
             };
         }
         chart.options.scales.x.ticks.color = baseOpts.scales.x.ticks.color;
@@ -801,6 +755,21 @@ function updateMinistryShareChart() {
 // ─────────────────────────────────────────────────────────────────────────────
 // 5. Desglose Direcciones MOP
 // ─────────────────────────────────────────────────────────────────────────────
+function wrapMopServiceLabel(label) {
+    if (!label || typeof label !== 'string') return label;
+    const words = label.split(' ');
+    if (words.length <= 1) return label;
+
+    // Si empieza con "Dirección de", dividir en exactamente 2 renglones
+    if (label.startsWith('Dirección de ') && words.length > 2) {
+        return ['Dirección de', words.slice(2).join(' ')];
+    }
+
+    // Para cualquier otro nombre, dividir en exactamente 2 renglones equilibrados
+    const mid = Math.ceil(words.length / 2);
+    return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')];
+}
+
 function updateMopServicesChart() {
     const ctx = document.getElementById('chart-mop-services');
     if (!ctx) return;
@@ -827,7 +796,8 @@ function updateMopServicesChart() {
         .sort((a, b) => b[1] - a[1])
         .slice(0, 8);
 
-    const labels = sorted.map(s => s[0]);
+    const rawLabels = sorted.map(s => s[0]);
+    const labels = rawLabels.map(wrapMopServiceLabel);
     const data = sorted.map(s => Math.round(s[1] * 100) / 100);
 
     const baseOpts = getChartThemeOptions();
@@ -835,7 +805,13 @@ function updateMopServicesChart() {
     const tooltipCb = (c) => {
         const val = c.raw;
         const pct = totalMop > 0 ? ((val / totalMop) * 100).toFixed(1) : '0';
-        return ` ${c.label}: US$ ${val.toLocaleString('es-CL')} MM (${pct}% MOP)`;
+        return ` Inversión: US$ ${val.toLocaleString('es-CL', { minimumFractionDigits: 1 })} MM (${pct}% MOP)`;
+    };
+
+    const titleCb = (items) => {
+        if (!items || !items.length) return '';
+        const idx = items[0].dataIndex;
+        return rawLabels[idx] || (Array.isArray(items[0].label) ? items[0].label.join(' ') : items[0].label);
     };
 
     if (!sniChartInstances.mopServices) {
@@ -862,12 +838,15 @@ function updateMopServicesChart() {
                     legend: { display: false },
                     tooltip: {
                         ...baseOpts.plugins.tooltip,
-                        callbacks: { label: tooltipCb }
+                        callbacks: {
+                            title: titleCb,
+                            label: tooltipCb
+                        }
                     },
                     sniHorizontalBarLabelsPlugin: {
                         formatter: (val) => {
                             const pct = totalMop > 0 ? ((val / totalMop) * 100).toFixed(1) : '0';
-                            return `US$ ${val.toLocaleString('es-CL', { minimumFractionDigits: 1 })} MM (${pct}%)`;
+                            return `${val.toLocaleString('es-CL', { minimumFractionDigits: 1 })} (${pct}%)`;
                         }
                     }
                 },
@@ -876,13 +855,15 @@ function updateMopServicesChart() {
                         ...baseOpts.scales.x,
                         ticks: {
                             ...baseOpts.scales.x.ticks,
-                            callback: (v) => `US$ ${v}M`
-                        }
+                            font: { family: "'Inter', sans-serif", size: 10 },
+                            callback: (v) => v.toLocaleString('es-CL')
+                        },
+                        title: { display: true, text: 'Inversión MOP (MM USD)', color: baseOpts.scales.x.ticks.color, font: { size: 9.5, weight: '600' } }
                     },
                     y: {
                         ...baseOpts.scales.y,
                         grid: { display: false },
-                        ticks: { ...baseOpts.scales.y.ticks, autoSkip: false }
+                        ticks: { ...baseOpts.scales.y.ticks, font: { family: "'Inter', sans-serif", size: 9.5, weight: '600' }, autoSkip: false }
                     }
                 }
             }
@@ -891,11 +872,13 @@ function updateMopServicesChart() {
         const chart = sniChartInstances.mopServices;
         chart.data.labels = labels;
         chart.data.datasets[0].data = data;
+        chart.options.plugins.tooltip.callbacks.title = titleCb;
         chart.options.plugins.tooltip.callbacks.label = tooltipCb;
+        chart.options.scales.x.ticks.callback = (v) => v.toLocaleString('es-CL');
         if (chart.options.plugins.sniHorizontalBarLabelsPlugin) {
             chart.options.plugins.sniHorizontalBarLabelsPlugin.formatter = (val) => {
                 const pct = totalMop > 0 ? ((val / totalMop) * 100).toFixed(1) : '0';
-                return `US$ ${val.toLocaleString('es-CL', { minimumFractionDigits: 1 })} MM (${pct}%)`;
+                return `${val.toLocaleString('es-CL', { minimumFractionDigits: 1 })} (${pct}%)`;
             };
         }
         chart.options.scales.x.ticks.color = baseOpts.scales.x.ticks.color;
@@ -936,6 +919,8 @@ function updateTemporalEvolutionChart() {
             data: data,
             backgroundColor: color,
             borderRadius: 2,
+            borderWidth: 1,
+            borderColor: 'rgba(255, 255, 255, 0.2)',
             stack: 'total'
         };
     });
@@ -954,6 +939,8 @@ function updateTemporalEvolutionChart() {
             data: otrosData,
             backgroundColor: '#94a3b8',
             borderRadius: 2,
+            borderWidth: 1,
+            borderColor: 'rgba(255, 255, 255, 0.2)',
             stack: 'total'
         });
     }
@@ -991,15 +978,24 @@ function updateTemporalEvolutionChart() {
                     }
                 },
                 scales: {
-                    x: { ...baseOpts.scales.x, stacked: true },
+                    x: {
+                        ...baseOpts.scales.x,
+                        stacked: true,
+                        grid: { display: false },
+                        ticks: {
+                            ...baseOpts.scales.x.ticks,
+                            font: { family: "'Inter', sans-serif", size: 10 }
+                        }
+                    },
                     y: {
                         ...baseOpts.scales.y,
                         stacked: true,
                         ticks: {
                             ...baseOpts.scales.y.ticks,
+                            font: { family: "'Inter', sans-serif", size: 10 },
                             callback: (v) => `US$ ${v}M`
                         },
-                        title: { display: true, text: 'Inversión Anual (MM USD 2024)', color: baseOpts.scales.y.ticks.color, font: { size: 10, weight: '600' } }
+                        title: { display: true, text: 'Inversión Anual (MM USD 2024)', color: baseOpts.scales.y.ticks.color, font: { size: 9.5, weight: '600' } }
                     }
                 }
             }
@@ -1072,14 +1068,22 @@ function updatePrePostGovChart() {
                     }
                 },
                 scales: {
-                    x: baseOpts.scales.x,
+                    x: {
+                        ...baseOpts.scales.x,
+                        grid: { display: false },
+                        ticks: {
+                            ...baseOpts.scales.x.ticks,
+                            font: { family: "'Inter', sans-serif", size: 10, weight: '600' }
+                        }
+                    },
                     y: {
                         ...baseOpts.scales.y,
                         ticks: {
                             ...baseOpts.scales.y.ticks,
+                            font: { family: "'Inter', sans-serif", size: 10 },
                             callback: (v) => `US$ ${v}M`
                         },
-                        title: { display: true, text: 'Promedio Anual (MM USD 2024)', color: baseOpts.scales.y.ticks.color, font: { size: 10, weight: '600' } }
+                        title: { display: true, text: 'Promedio Anual (MM USD 2024)', color: baseOpts.scales.y.ticks.color, font: { size: 9.5, weight: '600' } }
                     }
                 }
             }

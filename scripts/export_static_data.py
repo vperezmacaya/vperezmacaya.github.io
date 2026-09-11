@@ -296,6 +296,10 @@ for _, row in df_contracts.iterrows():
         'status':         sanitize_value(row.get('ESTADO')),
         'sector':         sanitize_value(row.get('Sector del proyecto')),
         'shapes':         parse_shapes_list(get_row_shapes_val(row_dict)),
+        'lat_inicio':     sanitize_value(row.get('Latitud Inicio')),
+        'lon_inicio':     sanitize_value(row.get('Longitud Inicio')),
+        'lat_fin':        sanitize_value(row.get('Latitud Fin')),
+        'lon_fin':        sanitize_value(row.get('Longitud Fin')),
         'group_timeline': BASE_GROUPS.get(base_code, [])
     })
 
@@ -385,10 +389,18 @@ try:
     col_id          = _find_efe_col('id', 'proyecto') or 'ID Proyecto'
 
     def _safe_parse_operation_year(val):
-        """Parse operation year from values like 2030, '2030 + ', etc."""
+        """Parse operation year from values like 2030, '2030 + ', '2030-2032', etc.
+        Returns a string when the value contains '+' or a range ('-'),
+        preserving the original format so the JS timeline can render
+        open_range or range milestones. Otherwise returns an int."""
         if val is None or (isinstance(val, float) and np.isnan(val)):
             return None
         s = str(val).strip()
+        if not s:
+            return None
+        # Preserve formats like "2030+", "2030 +", "2030 - 2032"
+        if re.search(r'\d{4}\s*\+', s) or re.search(r'\d{4}\s*[-–—]\s*\d{4}', s):
+            return s
         m = re.search(r'(\d{4})', s)
         return int(m.group(1)) if m else None
 

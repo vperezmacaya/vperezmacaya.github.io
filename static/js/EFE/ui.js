@@ -10,7 +10,7 @@ function efeDebounce(fn, delay) {
 
 function efeFormatFilialCell(filialStr) {
     if (!filialStr || String(filialStr).trim() === '' || String(filialStr).trim().toLowerCase() === 'nan' || String(filialStr).trim().toLowerCase() === 'null') {
-        return '<span style="color:var(--text-muted);font-style:italic;font-size:0.75rem;">—</span>';
+        return '<span style="color:var(--text-muted);font-style:italic;font-size:0.75rem;">Sin filial específica</span>';
     }
     const str = String(filialStr).trim();
     return `<span style="font-size:0.75rem; font-weight:600; color:var(--text-primary);">${str}</span>`;
@@ -144,7 +144,7 @@ function efeShowProjectDetailView(proj, currentFilteredProjects) {
     const linkSource = hasSource ? `
         <div class="detail-actions" style="margin-top: 0.5rem; gap: 0.4rem;">
             <a href="${String(rawSource).trim()}" target="_blank" class="btn-action-link" style="font-size: 0.72rem; padding: 0.3rem 0.6rem;">
-                <i data-lucide="globe" style="width: 13px; height: 13px;"></i> Web EFE Proyectos
+                <i data-lucide="globe"></i> Web EFE Proyectos
             </a>
         </div>
     ` : '';
@@ -369,12 +369,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Export to Excel
+    // Export to Excel & GeoJSON
     const efeBtnExportExcel = document.getElementById('efe-btn-export-excel');
     if (efeBtnExportExcel) {
         efeBtnExportExcel.addEventListener('click', () => {
             if (typeof exportEFEToExcel === 'function') {
                 exportEFEToExcel();
+            }
+        });
+    }
+
+    const efeBtnExportGeoJSON = document.getElementById('efe-btn-export-geojson');
+    if (efeBtnExportGeoJSON) {
+        efeBtnExportGeoJSON.addEventListener('click', () => {
+            if (typeof exportEFEToGeoJSON === 'function') {
+                exportEFEToGeoJSON();
             }
         });
     }

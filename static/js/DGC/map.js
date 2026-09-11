@@ -239,32 +239,6 @@ function onEachRegionFeature(feature, layer) {
     }
 }
 
-function getProjectPopupContent(code, sector) {
-    const cleanCode = code ? code.toString().trim() : '';
-    const proj = projectMetadata[cleanCode];
-
-    if (proj) {
-        const investmentFormatted = formatUFComplete(proj.investment);
-        const secCfg = getSectorConfig(proj.sector);
-        return `
-            <div style="font-family: var(--font-sans); min-width: 220px;">
-                <h3 style="margin: 0 0 6px 0; font-size: 0.9rem; font-weight: 600; color: var(--text-primary); line-height: 1.35; font-family: var(--font-heading);">${proj.name}</h3>
-                <div style="font-size: 0.76rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.35rem; border-top: 1px solid var(--border-color); padding-top: 6px;">
-                    <div><b>Estado:</b> <span class="badge ${proj.status === 'Operación' ? 'badge-success' : proj.status === 'Construcción' ? 'badge-info' : 'badge-warning'}" style="font-size: 0.68rem; padding: 0.1rem 0.35rem;">${proj.status}</span></div>
-                    <div><b>Región:</b> ${proj.region}</div>
-                </div>
-            </div>
-        `;
-    } else {
-        return `
-            <div style="font-family: var(--font-sans); min-width: 180px;">
-                <h3 style="margin: 0 0 6px 0; font-size: 0.85rem; font-weight: 600; color: var(--text-primary); font-family: var(--font-heading);">Capa: ${sector}</h3>
-                <p style="font-size: 0.72rem; color: var(--text-muted); margin: 0; border-top: 1px solid var(--border-color); padding-top: 6px;">No se encontró información detallada en los contratos activos / filtrados.</p>
-            </div>
-        `;
-    }
-}
-
 function onEachProjectFeature(feature, layer, sector) {
     const code = feature.properties && feature.properties.COD ? feature.properties.COD.toString().trim() : '';
 

@@ -17,7 +17,7 @@
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <!-- CSS Custom stylesheet -->
-    <link rel="stylesheet" href="static/css/styles.css?v=20260907_v2">
+    <link rel="stylesheet" href="static/css/styles.css?v=20260910">
 
     <!-- Chart.js for premium chart renders -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -55,6 +55,14 @@
             overflow: hidden;
             width: 100vw;
             box-sizing: border-box;
+        }
+
+        .sni-layout.no-sidebar {
+            grid-template-columns: 1fr;
+        }
+
+        .sni-layout.no-sidebar .sni-sidebar {
+            display: none !important;
         }
 
         .sni-sidebar {
@@ -387,10 +395,9 @@
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md, 12px);
-            padding: 0.65rem 0.8rem;
+            padding: 0.45rem 0.5rem 0.35rem;
             display: flex;
             flex-direction: column;
-            gap: 0.4rem;
             min-height: 0;
             overflow: hidden;
             box-shadow: var(--shadow-main);
@@ -401,18 +408,29 @@
             align-items: center;
             justify-content: space-between;
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 0.35rem;
+            padding-bottom: 0.15rem;
+            margin-bottom: 0.15rem;
             flex-shrink: 0;
+            gap: 0.5rem;
         }
 
         .sni-card-title {
-            font-size: 0.78rem;
+            font-size: 0.75rem;
             font-weight: 700;
             color: var(--text-primary);
             display: flex;
             align-items: center;
-            gap: 0.4rem;
+            gap: 0.3rem;
             margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sni-card-title i, .sni-card-title svg {
+            width: 13px;
+            height: 13px;
+            flex-shrink: 0;
         }
 
         .sni-badge {
@@ -429,30 +447,31 @@
         .sni-card-legend {
             display: flex;
             align-items: center;
-            gap: 12px;
-            font-size: 11px;
-            color: var(--text-muted);
+            gap: 0.5rem;
+            font-size: 0.6rem;
+            color: var(--text-secondary);
             font-weight: 500;
+            flex-shrink: 0;
         }
 
         .sni-card-legend-item {
             display: inline-flex;
             align-items: center;
-            gap: 5px;
+            gap: 0.25rem;
             white-space: nowrap;
         }
 
         .sni-legend-dot {
             display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 2px;
+            width: 7px;
+            height: 7px;
+            border-radius: 1.5px;
             flex-shrink: 0;
         }
 
         .sni-legend-line {
             display: inline-block;
-            width: 14px;
+            width: 9px;
             height: 2px;
             border-radius: 1px;
             flex-shrink: 0;
@@ -642,7 +661,12 @@
                 <span class="top-navbar-divider"></span>
                 <span class="top-navbar-proto">Prototipo en desarrollo</span>
             </div>
-            <div class="top-navbar-right">
+            <div class="top-navbar-right" style="display: flex; align-items: center; gap: 0.45rem;">
+                <button class="top-navbar-btn" id="btn-open-about"
+                    title="Acerca de este módulo (Fuentes oficiales y Metodología de cálculo)">
+                    <i data-lucide="info" style="width: 13px; height: 13px;"></i>
+                    <span>Acerca de</span>
+                </button>
                 <!-- Navigation Menu -->
                 <div class="nav-menu" id="nav-menu">
                     <button class="nav-menu-btn" id="nav-menu-btn" aria-haspopup="true" aria-expanded="false">
@@ -893,7 +917,7 @@
                     </div>
 
                     <!-- Botón de Exportación a Excel en el Sidebar -->
-                    <div
+                    <div class="sni-sidebar-export-wrap"
                         style="padding-top: 8px; border-top: 1px solid var(--border-color); margin-top: 4px; flex-shrink: 0;">
                         <button class="btn-reset" id="btn-export-excel"
                             style="padding: 0.35rem 0.5rem; font-size: 0.74rem; justify-content: center; width: 100%; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); color: #10b981; font-weight: 600; cursor: pointer; transition: all 0.15s ease; border-radius: 6px; display: flex; align-items: center; gap: 6px;"
@@ -1036,7 +1060,7 @@
                     <div class="sni-view-container" id="view-territorial"
                         style="display: none; flex-direction: column;">
                         <!-- Matriz PIB vs Inversión (Equidad Territorial) -->
-                        <div class="sni-card" style="flex: 1;">
+                        <div class="sni-card" style="flex: 1; width: 100%; height: 100%; min-height: 0;">
                             <div class="sni-card-header">
                                 <h3 class="sni-card-title">
                                     <i data-lucide="scale" style="width:14px;height:14px;color:var(--warning);"></i>
@@ -1057,31 +1081,8 @@
                                     </span>
                                 </div>
                             </div>
-                            <div class="sni-chart-wrap">
+                            <div class="sni-chart-wrap" style="flex: 1; position: relative; min-height: 0; width: 100%; height: 100%;">
                                 <canvas id="chart-pib-balance"></canvas>
-                            </div>
-                        </div>
-
-                        <!-- Inversión Per Cápita -->
-                        <div class="sni-card" style="height: 45%; flex-shrink: 0;">
-                            <div class="sni-card-header">
-                                <h3 class="sni-card-title">
-                                    <i data-lucide="users" style="width:14px;height:14px;color:var(--success);"></i>
-                                    Inversión Anual Total vs Inversión Per Cápita por Habitante (Pesos 2024)
-                                </h3>
-                                <div class="sni-card-legend">
-                                    <span class="sni-card-legend-item">
-                                        <span class="sni-legend-dot" style="background: rgba(37, 99, 235, 0.85);"></span>
-                                        Inversión Anual (MM USD)
-                                    </span>
-                                    <span class="sni-card-legend-item">
-                                        <span class="sni-legend-line" style="background: #10b981;"></span>
-                                        Per Cápita CLP (Eje Der)
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="sni-chart-wrap">
-                                <canvas id="chart-per-capita"></canvas>
                             </div>
                         </div>
                     </div>
@@ -1097,9 +1098,6 @@
                                             style="width:14px;height:14px;color:var(--primary);"></i>
                                         Distribución por Ministerio (MM USD 2024)
                                     </h3>
-                                    <div class="sni-card-legend">
-                                        <span class="sni-badge">Inversión Sectorial</span>
-                                    </div>
                                 </div>
                                 <div class="sni-chart-wrap">
                                     <canvas id="chart-ministry-share"></canvas>
@@ -1114,9 +1112,6 @@
                                             style="width:14px;height:14px;color:var(--secondary);"></i>
                                         Desglose Direcciones MOP
                                     </h3>
-                                    <div class="sni-card-legend">
-                                        <span class="sni-badge" style="background:rgba(59, 130, 246, 0.12); color:#3b82f6; border-color:rgba(59, 130, 246, 0.25);">Top 8 Servicios</span>
-                                    </div>
                                 </div>
                                 <div class="sni-chart-wrap">
                                     <canvas id="chart-mop-services"></canvas>
@@ -1277,6 +1272,248 @@
         </div>
         <span id="sni-export-toast-text" style="font-weight: 500;">Preparando exportación a Excel...</span>
     </div>
+
+    <!-- Modal: Acerca de (Fuentes de Datos y Metodología de Cálculo) -->
+    <div id="about-modal" class="about-modal-backdrop" style="display: none;">
+        <div class="about-modal-container">
+            <!-- Modal Header -->
+            <div class="about-modal-header">
+                <div style="display: flex; align-items: center; gap: 0.75rem; min-width: 0;">
+                    <i data-lucide="info" style="width: 20px; height: 20px; color: #2563eb; flex-shrink: 0;"></i>
+                    <div style="min-width: 0;">
+                        <h3 class="about-modal-title">
+                            Módulo Sistema Nacional de Inversiones (SNI)
+                        </h3>
+                    </div>
+                </div>
+                <button id="btn-close-about-modal" class="about-modal-close-btn" title="Cerrar (Esc)">
+                    <i data-lucide="x" style="width: 17px; height: 17px;"></i>
+                </button>
+            </div>
+
+            <!-- Modal Scrollable Body -->
+            <div class="about-modal-body">
+                <!-- SECCIÓN 1: DESCRIPCIÓN Y OBJETIVO DEL MÓDULO -->
+                <div class="about-section">
+                    <div class="about-section-header">
+                        <h4 class="about-section-title">1. Descripción y Objetivo del Módulo</h4>
+                    </div>
+                    <div
+                        style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.9rem 1.1rem; display: flex; flex-direction: column; gap: 0.65rem;">
+                        <p style="margin: 0; font-size: 0.78rem; line-height: 1.55; color: #334155;">
+                            Este módulo consolida la base de datos histórica de la <strong>Inversión Pública en Infraestructura</strong> en Chile para el período <strong>2010–2024</strong>, sistematizada a partir de las iniciativas evaluadas y recomendadas en el <strong>Sistema Nacional de Inversiones (SNI)</strong> administrado por el Ministerio de Desarrollo Social y Familia (MDSF) y la Dirección de Presupuestos (DIPRES).
+                        </p>
+
+                        <div
+                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 0.75rem; margin-top: 0.2rem;">
+                            <!-- Lo que mapea -->
+                            <div
+                                style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem 0.9rem; display: flex; flex-direction: column; gap: 0.3rem;">
+                                <div
+                                    style="font-size: 0.78rem; font-weight: 700; color: #1e3a8a; display: flex; align-items: center; gap: 0.35rem;">
+                                    <i data-lucide="map-pin" style="width: 14px; height: 14px; color: #2563eb;"></i>
+                                    ¿Qué mapea este módulo?
+                                </div>
+                                <p style="margin: 0; font-size: 0.73rem; color: #475569; line-height: 1.5;">
+                                    Mapea y analiza territorialmente los flujos de inversión pública a escala nacional y regional, integrando montos totales (MM USD y CLP), indicadores per cápita (USD/Hab.), densidad de inversión por superficie (USD/km²), ratio de inversión frente al PIB regional (%), fuentes de financiamiento (Sectorial, FNDR, Mixto, Concesiones), subtítulos presupuestarios y ministerios ejecutores.
+                                </p>
+                            </div>
+
+                            <!-- Objetivo -->
+                            <div
+                                style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem 0.9rem; display: flex; flex-direction: column; gap: 0.3rem;">
+                                <div
+                                    style="font-size: 0.78rem; font-weight: 700; color: #1e3a8a; display: flex; align-items: center; gap: 0.35rem;">
+                                    <i data-lucide="target" style="width: 14px; height: 14px; color: #2563eb;"></i>
+                                    Objetivo
+                                </div>
+                                <p style="margin: 0; font-size: 0.73rem; color: #475569; line-height: 1.5;">
+                                    Proporcionar una herramienta interactiva para el estudio cuantitativo, territorial y temporal de la asignación de recursos fiscales en infraestructura en Chile, permitiendo comparar disparidades regionales, analizar la evolución del gasto por administración presidencial y evaluar la priorización sectorial entre ministerios.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 2: FUENTES DE DATOS -->
+                <div class="about-section">
+                    <div class="about-section-header"
+                        style="display: flex; align-items: center; justify-content: space-between;">
+                        <h4 class="about-section-title">2. Fuentes de Datos</h4>
+                        <span style="font-size: 0.68rem; color: #64748b; font-weight: 500;">Período analizado: 2010–2024</span>
+                    </div>
+
+                    <!-- Contenedor Único de Fuentes de Datos -->
+                    <div class="about-source-card" style="background: #f8fafc; padding: 0.9rem 1.1rem; display: flex; flex-direction: column; gap: 0.45rem;">
+                        <div class="about-source-top" style="margin-bottom: 0.15rem;">
+                            <span class="about-source-name"
+                                style="font-size: 0.82rem; font-weight: 700; color: #0f172a;">
+                                <i data-lucide="file-text" style="width: 15px; height: 15px; color: #0284c7;"></i>
+                                Paper e Investigación Académica:
+                            </span>
+                        </div>
+                        <p style="margin: 0; font-size: 0.78rem; line-height: 1.5; color: #1e293b; font-weight: 600;">
+                            «Análisis de asignación de recursos en infraestructura pública en Chile»
+                        </p>
+                        <p style="margin: 0; font-size: 0.75rem; line-height: 1.45; color: #475569;">
+                            Autor: <strong>Benjamín Fornerod Navarro (2025)</strong> — Base de datos construida y procesada por el autor para el análisis cuantitativo y territorial de las inversiones públicas en infraestructura en Chile.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 3: METODOLOGÍA Y FÓRMULAS POR VISUALIZACIÓN -->
+                <div class="about-section">
+                    <div class="about-section-header">
+                        <h4 class="about-section-title">3. Metodología y Criterios por Visualización</h4>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 0.85rem; margin-top: 0.25rem;">
+
+                        <!-- 1. VISUALIZACIÓN MAPA REGIONAL -->
+                        <div class="formula-card">
+                            <div class="formula-card-title">
+                                <i data-lucide="map" style="width: 15px; height: 15px; color: #2563eb;"></i>
+                                Visualización: Mapa Regional
+                            </div>
+
+                            <div class="formula-subtitle">
+                                <i data-lucide="gauge" style="width: 13px; height: 13px; color: #2563eb;"></i>
+                                Indicadores Clave (KPIs superiores):
+                            </div>
+                            <ul
+                                style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
+                                <li><strong>Inversión Total (USD):</strong> Suma acumulada del presupuesto de proyectos de inversión pública en el filtro seleccionado.</li>
+                                <li><strong>Inversión Per Cápita (USD / Hab.):</strong> Inversión promedio por habitante, calculada dividiendo el monto acumulado por la población regional oficial proyectada por el INE.</li>
+                                <li><strong>Inversión / Superficie (USD / km²):</strong> Densidad presupuestaria territorial en relación al área geográfica de cada región.</li>
+                                <li><strong>Inversión / PIB Regional (%):</strong> Proporción de la inversión pública respecto al Producto Interno Bruto regional anualizado.</li>
+                                <li><strong>Proyectos con RS / Total:</strong> Cantidad de iniciativas que obtuvieron Recomendación Favorable (RS) frente al total de postulaciones evaluadas.</li>
+                            </ul>
+
+                            <div class="formula-subtitle">
+                                <i data-lucide="layers" style="width: 13px; height: 13px; color: #2563eb;"></i>
+                                Capa Coroplética Interactiva:
+                            </div>
+                            <p class="formula-explanation">
+                                El mapa cartográfico permite alternar la escala cromática entre las 4 métricas territoriales (Total, Per Cápita, Por km² y Ratio PIB), facilitando la comparación visual de la equidad espacial y el esfuerzo inversor fiscal.
+                            </p>
+                        </div>
+
+                        <!-- 2. VISUALIZACIÓN ANÁLISIS TERRITORIAL -->
+                        <div class="formula-card">
+                            <div class="formula-card-title">
+                                <i data-lucide="bar-chart-2" style="width: 15px; height: 15px; color: #0284c7;"></i>
+                                Visualización: Análisis Territorial
+                            </div>
+
+                            <div class="formula-subtitle">
+                                <i data-lucide="gauge" style="width: 13px; height: 13px; color: #0284c7;"></i>
+                                Métricas y Gráficos Comparativos:
+                            </div>
+                            <ul
+                                style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
+                                <li><strong>Inversión Acumulada por Región:</strong> Comparativa del volumen total de financiamiento recibido por cada una de las 16 regiones del país ordenadas de norte a sur.</li>
+                                <li><strong>Inversión Per Cápita Regional vs Promedio Nacional:</strong> Análisis de divergencia regional respecto a la media nacional per cápita para evaluar la focalización redistributiva del Estado.</li>
+                                <li><strong>Inversión por km²:</strong> Intensidad del desarrollo de infraestructura por unidad de superficie territorial.</li>
+                            </ul>
+                        </div>
+
+                        <!-- 3. VISUALIZACIÓN MINISTERIOS Y SECTORES -->
+                        <div class="formula-card">
+                            <div class="formula-card-title">
+                                <i data-lucide="landmark" style="width: 15px; height: 15px; color: #059669;"></i>
+                                Visualización: Ministerios y Sectores
+                            </div>
+
+                            <div class="formula-subtitle">
+                                <i data-lucide="gauge" style="width: 13px; height: 13px; color: #059669;"></i>
+                                Desglose Institucional y Financiero:
+                            </div>
+                            <ul
+                                style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
+                                <li><strong>Inversión por Ministerio / Sector:</strong> Distribución porcentual y absoluta de recursos asignados a las carteras de Obras Públicas (MOP), Salud (MINSAL), Concesiones, Interior/SUBDERE, Vivienda (MINVU), Educación (MINEDUC), Transportes (MTT) y Empresas del Estado.</li>
+                                <li><strong>Subtítulos Presupuestarios:</strong> Agrupación según clasificadores fiscales: <em>Subtítulo 31</em> (Iniciativas de Inversión), <em>Subtítulo 29</em> (Adquisición de Activos No Financieros) y <em>Subtítulo 33</em> (Transferencias de Capital).</li>
+                                <li><strong>Fuentes de Financiamiento:</strong> Comparación entre fondos sectoriales de ministerios y el Fondo Nacional de Desarrollo Regional (FNDR).</li>
+                            </ul>
+                        </div>
+
+                        <!-- 4. VISUALIZACIÓN EVOLUCIÓN TEMPORAL -->
+                        <div class="formula-card">
+                            <div class="formula-card-title">
+                                <i data-lucide="clock" style="width: 15px; height: 15px; color: #7c3aed;"></i>
+                                Visualización: Evolución Temporal
+                            </div>
+
+                            <div class="formula-subtitle">
+                                <i data-lucide="gauge" style="width: 13px; height: 13px; color: #7c3aed;"></i>
+                                Series de Tiempo y Ciclos Políticos:
+                            </div>
+                            <ul
+                                style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
+                                <li><strong>Evolución Anual (2010–2024):</strong> Análisis longitudinal del flujo de inversión pública y la cantidad de proyectos ingresados anualmente al sistema.</li>
+                                <li><strong>Comparativa por Períodos Presidenciales:</strong> Agrupación del gasto acumulado en infraestructura durante los mandatos de Sebastián Piñera (2010–2014), Michelle Bachelet (2014–2018), Sebastián Piñera (2018–2022) y Gabriel Boric (2022–2024).</li>
+                            </ul>
+                        </div>
+
+                    </div>
+                </div>
+
+
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Controlador del Modal Acerca de -->
+    <script>
+        (function () {
+            const btnOpen = document.getElementById('btn-open-about');
+            const btnClose = document.getElementById('btn-close-about-modal');
+            const modal = document.getElementById('about-modal');
+
+            function openAboutModal() {
+                if (modal) {
+                    modal.style.display = 'flex';
+                    if (window.lucide) {
+                        lucide.createIcons();
+                    }
+                }
+            }
+
+            function closeAboutModal() {
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+            }
+
+            if (btnOpen) {
+                btnOpen.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    openAboutModal();
+                });
+            }
+
+            if (btnClose) {
+                btnClose.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    closeAboutModal();
+                });
+            }
+
+            if (modal) {
+                modal.addEventListener('click', function (e) {
+                    if (e.target === modal) {
+                        closeAboutModal();
+                    }
+                });
+            }
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && modal && modal.style.display === 'flex') {
+                    closeAboutModal();
+                }
+            });
+        })();
+    </script>
 </body>
 
 </html>

@@ -546,16 +546,11 @@ if os.path.exists(gran_stgo_path):
             else:
                 st_in_comuna = [name for pt, name in stations_pts if poly.contains(pt)]
             
-            # Líneas y km
+            # Líneas que cruzan
             lines_crossing = set()
-            total_km = 0.0
             for l_geom, l_name in main_lines_geom:
                 if poly.intersects(l_geom):
-                    inter = poly.intersection(l_geom)
-                    k = line_length_km(inter)
-                    if k > 0.05:
-                        total_km += k
-                        lines_crossing.add(l_name)
+                    lines_crossing.add(l_name)
                         
             has_metro = len(st_in_comuna) > 0
             future_projs = FUTURE_PROJECTS_BY_COMUNA.get(c_name, [])
@@ -573,7 +568,6 @@ if os.path.exists(gran_stgo_path):
                 'estaciones_count': len(st_in_comuna),
                 'estaciones_list': sorted(st_in_comuna),
                 'lineas': sorted(list(lines_crossing)),
-                'km_red': round(total_km, 1),
                 'proyectos_futuros': future_projs,
                 'expansion_status': exp_status
             }

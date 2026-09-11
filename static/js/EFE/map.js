@@ -7,7 +7,9 @@ function efeInitLeafletMap() {
         zoomControl: true,
         scrollWheelZoom: true,
         doubleClickZoom: true,
-    }).setView([-36.5000, -71.8000], 6);
+        zoomSnap: 0.5,
+        zoomDelta: 0.5
+    }).setView([-35.6751, -71.5430], 5);
 
     // Light CartoDB tile layer
     efeTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=cb1_2j8c_1_dacb4df364cf092be679e47d', {
@@ -363,6 +365,17 @@ function efeLoadMapLayers() {
     if (typeof efeFetchData === 'function') {
         efeFetchData();
     }
+
+    // Encuadre inicial idéntico al botón Restablecer Mapa
+    efeApplyDefaultMapView(false);
+    setTimeout(() => {
+        if (efeMap) {
+            efeMap.invalidateSize({ animate: false });
+            if (!efeState.selectedProjectName) {
+                efeApplyDefaultMapView(false);
+            }
+        }
+    }, 100);
 }
 
 // ─── Zoom-dependent Visibility for Stations (Metro & EFE) (Zoom >= 11) ─────────
@@ -1084,25 +1097,39 @@ function efeGetProjectsExtentBounds() {
     return bounds;
 }
 
-// ─── Zoom to Project (Fly to bounds or midpoint) ────────────────────────────
-function efeZoomToProject(proj) {
-    if (!efeMap || !proj) return;
-
-    const isNacional = (!proj.shapes || proj.shapes.length === 0) || (proj.filial && String(proj.filial).toLowerCase().includes('nacional'));
-    if (isNacional) {
-        const extentBounds = efeGetProjectsExtentBounds();
-        if (extentBounds.isValid()) {
+// ─── Apply Default Map View (Synchronized between initial load and reset) ───
+function efeApplyDefaultMapView(animate = false) {
+    if (!efeMap) return;
+    const extentBounds = efeGetProjectsExtentBounds();
+    if (extentBounds && extentBounds.isValid()) {
+        if (animate && efeMap.flyToBounds) {
             efeMap.flyToBounds(extentBounds, {
                 animate: true,
                 duration: 1.2,
                 padding: [40, 40],
                 maxZoom: 10
             });
-            return;
         } else {
-            efeMap.setView([-36.5000, -71.8000], 6);
-            return;
+            efeMap.fitBounds(extentBounds, {
+                padding: [40, 40],
+                maxZoom: 10,
+                animate: false
+            });
         }
+    } else {
+        efeMap.setView([-35.6751, -71.5430], 5, { animate: animate });
+    }
+}
+window.efeApplyDefaultMapView = efeApplyDefaultMapView;
+
+// ─── Zoom to Project (Fly to bounds or midpoint) ────────────────────────────
+function efeZoomToProject(proj) {
+    if (!efeMap || !proj) return;
+
+    const isNacional = (!proj.shapes || proj.shapes.length === 0) || (proj.filial && String(proj.filial).toLowerCase().includes('nacional'));
+    if (isNacional) {
+        efeApplyDefaultMapView(true);
+        return;
     }
 
     let matchedLayers = [];
@@ -1141,30 +1168,24 @@ function efeZoomToProject(proj) {
     if (midpoint) {
         efeMap.flyTo(midpoint, 10, { animate: true, duration: 1.2 });
     } else {
-        const extentBounds = efeGetProjectsExtentBounds();
-        if (extentBounds.isValid()) {
-            efeMap.flyToBounds(extentBounds, {
-                animate: true,
-                duration: 1.2,
-                padding: [50, 50],
-                maxZoom: 9
-            });
-        }
+        efeApplyDefaultMapView(true);
     }
 }
 
 function efeResetMap() {
     efeState.selectedProjectName = null;
     efeState.hoveredProjectName = null;
+    efeProjectMarkers.forEach(m => {
+        if (m.clusterState) m.clusterState.isClickedDeployed = false;
+    });
     efeUpdateMapStyles();
-    if (efeMap) {
-        const extentBounds = efeGetProjectsExtentBounds();
-        if (extentBounds.isValid()) {
-            efeMap.flyToBounds(extentBounds, { animate: true, duration: 1.2, padding: [40, 40], maxZoom: 10 });
-        } else {
-            efeMap.setView([-35.6751, -71.5430], 5);
-        }
+    if (typeof efeShowTableListView === 'function') {
+        efeShowTableListView();
     }
+    if (typeof efeFetchData === 'function') {
+        efeFetchData();
+    }
+    efeApplyDefaultMapView(true);
 }
 
 function efeHighlightProjectShapes(shapes) {

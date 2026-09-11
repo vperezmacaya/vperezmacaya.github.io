@@ -1,20 +1,3 @@
-function toggleChartTabStyles() {
-    if (appState.chartType === 'sector') {
-        btnChartSector.style.backgroundColor = 'var(--primary)';
-        btnChartSector.style.color = '#ffffff';
-        btnChartSector.style.borderColor = 'var(--primary)';
-        btnChartStatus.style.backgroundColor = 'var(--bg-card)';
-        btnChartStatus.style.color = 'var(--text-secondary)';
-        btnChartStatus.style.borderColor = 'var(--border-color)';
-    } else {
-        btnChartStatus.style.backgroundColor = 'var(--primary)';
-        btnChartStatus.style.color = '#ffffff';
-        btnChartStatus.style.borderColor = 'var(--primary)';
-        btnChartSector.style.backgroundColor = 'var(--bg-card)';
-        btnChartSector.style.color = 'var(--text-secondary)';
-        btnChartSector.style.borderColor = 'var(--border-color)';
-    }
-}
 
 function updateSelectedRegions() {
     const checkedCbs = Array.from(document.querySelectorAll('.region-checkbox:checked'));
@@ -473,144 +456,82 @@ function renderChart(statsData, currentThemeMode) {
     const sectorCounts = sectorEntries.map(e => e[1]);
     const sectorColorsList = sectorLabels.map(secName => getSectorConfig(secName).color);
 
-    if (!sectorChartInstance) {
-        sectorChartInstance = new Chart(sectorCanvas.getContext('2d'), {
-            type: 'doughnut',
-            data: {
-                labels: sectorLabels,
-                datasets: [{
-                    label: 'Contratos',
-                    data: sectorCounts,
-                    backgroundColor: sectorColorsList,
-                    borderColor: currentThemeMode === 'dark' ? '#0f1626' : '#ffffff',
-                    borderWidth: 2,
-                    hoverOffset: 3
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '68%',
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        enabled: false,
-                        external: customChartTooltip,
-                        callbacks: {
-                            label: (ctx) => {
-                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0) || 1;
-                                const pct = ((ctx.raw / total) * 100).toFixed(1);
-                                return ` ${ctx.label}: ${pct}% (${ctx.raw} contratos)`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    } else {
-        sectorChartInstance.data.labels = sectorLabels;
-        sectorChartInstance.data.datasets[0].data = sectorCounts;
-        sectorChartInstance.data.datasets[0].backgroundColor = sectorColorsList;
-        sectorChartInstance.data.datasets[0].borderColor = currentThemeMode === 'dark' ? '#0f1626' : '#ffffff';
-        sectorChartInstance.update();
-    }
-
-    // Populate custom HTML Legend for Sector Chart (Non-scrollable, all visible)
-    if (sectorLegendEl) {
-        sectorLegendEl.innerHTML = '';
-        const totalSectorCount = sectorCounts.reduce((acc, v) => acc + v, 0) || 1;
-        sectorLabels.forEach((label, i) => {
-            const count = sectorCounts[i];
-            const pct = totalSectorCount > 0 ? ((count / totalSectorCount) * 100).toFixed(1) : '0.0';
-            const secCfg = getSectorConfig(label);
-            const itemEl = document.createElement('div');
-            itemEl.className = 'sector-legend-item';
-            itemEl.style.cssText = 'display: flex; align-items: center; justify-content: space-between; font-size: 0.66rem; color: var(--text-primary); cursor: pointer; gap: 0.2rem; padding: 0.05rem 0.1rem; border-radius: 3px; line-height: 1.15;';
-            itemEl.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 0.3rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                    <span style="width: 7px; height: 7px; border-radius: 50%; background-color: ${secCfg.color}; flex-shrink: 0;"></span>
-                    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.66rem;">${label}</span>
-                </div>
-                <span style="font-weight: 700; color: var(--text-secondary); flex-shrink: 0; font-size: 0.66rem;">${pct}%</span>
-            `;
-
-            itemEl.addEventListener('mouseenter', () => {
-                if (sectorChartInstance) {
-                    sectorChartInstance.setActiveElements([{ datasetIndex: 0, index: i }]);
-                    sectorChartInstance.update();
-                }
-            });
-            itemEl.addEventListener('mouseleave', () => {
-                if (sectorChartInstance) {
-                    sectorChartInstance.setActiveElements([]);
-                    sectorChartInstance.update();
-                }
-            });
-
-            sectorLegendEl.appendChild(itemEl);
-        });
-    }
+    // 1. Sector Doughnut Chart (Sorted descending by count: mayor a menor)
+    sectorChartInstance = renderDgcDoughnutChart({
+        canvasId: sectorCanvas,
+        instance: sectorChartInstance,
+        labels: sectorLabels,
+        data: sectorCounts,
+        colors: sectorColorsList,
+        cutout: '68%',
+        borderWidth: 2,
+        isDark: currentThemeMode === 'dark',
+        hoverOffset: 3,
+        externalTooltip: customChartTooltip,
+        tooltipLabelCallback: (ctx) => {
+            const total = ctx.dataset.data.reduce((a, b) => a + b, 0) || 1;
+            const pct = ((ctx.raw / total) * 100).toFixed(1);
+            return ` ${ctx.label}: ${pct}% (${ctx.raw} contratos)`;
+        },
+        legendContainerId: 'sectorChartLegend',
+        legendFontSize: '0.66rem',
+        legendItemPadding: '0.05rem 0.1rem',
+        onLegendHover: (chart, idx, action) => {
+            chart.setActiveElements(action === 'enter' ? [{ datasetIndex: 0, index: idx }] : []);
+            chart.update();
+        }
+    });
 
     // 2. Status Bar Chart (Uniform single color for all bars)
     const statusLabels = Object.keys(statsData.status || {});
     const statusCounts = Object.values(statsData.status || {});
     const uniformBarColor = currentThemeMode === 'dark' ? '#3b82f6' : '#2563eb';
 
-    if (!statusChartInstance) {
-        statusChartInstance = new Chart(statusCanvas.getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: statusLabels,
-                datasets: [{
-                    label: 'Contratos',
-                    data: statusCounts,
-                    backgroundColor: uniformBarColor,
-                    borderColor: 'transparent',
-                    borderWidth: 0,
-                    borderRadius: 4
-                }]
+    statusChartInstance = createOrUpdateChart(statusCanvas, statusChartInstance, {
+        type: 'bar',
+        data: {
+            labels: statusLabels,
+            datasets: [{
+                label: 'Contratos',
+                data: statusCounts,
+                backgroundColor: uniformBarColor,
+                borderColor: 'transparent',
+                borderWidth: 0,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    enabled: false,
+                    external: customChartTooltip,
+                    callbacks: {
+                        label: (ctx) => ` ${ctx.label}: ${ctx.raw} contratos`
+                    }
+                }
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        enabled: false,
-                        external: customChartTooltip,
-                        callbacks: {
-                            label: (ctx) => ` ${ctx.label}: ${ctx.raw} contratos`
-                        }
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        color: themeConfig.text,
+                        font: { size: 7.5 }
                     }
                 },
-                scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: {
-                            color: themeConfig.text,
-                            font: { size: 7.5 }
-                        }
-                    },
-                    y: {
-                        grid: { color: themeConfig.grid },
-                        ticks: {
-                            color: themeConfig.text,
-                            font: { size: 8 },
-                            precision: 0
-                        }
+                y: {
+                    grid: { color: themeConfig.grid },
+                    ticks: {
+                        color: themeConfig.text,
+                        font: { size: 8 },
+                        precision: 0
                     }
                 }
             }
-        });
-    } else {
-        statusChartInstance.data.labels = statusLabels;
-        statusChartInstance.data.datasets[0].data = statusCounts;
-        statusChartInstance.data.datasets[0].backgroundColor = uniformBarColor;
-        statusChartInstance.options.scales.x.ticks.color = themeConfig.text;
-        statusChartInstance.options.scales.y.grid.color = themeConfig.grid;
-        statusChartInstance.options.scales.y.ticks.color = themeConfig.text;
-        statusChartInstance.update();
-    }
+        }
+    });
 }
 
 // Formatting utilities

@@ -25,14 +25,6 @@ function _parseRegionsFromVal(regionStr) {
     }).filter(Boolean);
 }
 
-function getStatusColor(statusName) {
-    const s = (statusName || '').toLowerCase();
-    if (s.includes('operac') && s.includes('construc')) return '#d97706';
-    if (s.includes('operac')) return '#059669';
-    if (s.includes('construc')) return '#0284c7';
-    return '#64748b';
-}
-
 // Generate Chart.js display (Dual charts displayed simultaneously)
 
 function formatUF(val) {
@@ -144,58 +136,16 @@ function getSectorConfig(sector) {
     }
 }
 
-// --- MAP INITIALIZATION AND STYLE LOGIC ---
-
-function mapGeojsonRegionToDbRegion(geojsonName) {
-    if (!geojsonName) return '';
-
-    const name = geojsonName.trim();
-    const lowerName = name.toLowerCase();
-
-    if (lowerName.includes('bío-bío') || lowerName.includes('biobío') || lowerName.includes('del bío')) {
-        return 'Biobío';
-    }
-    if (lowerName.includes('magallanes')) {
-        return 'Magallanes y de la Antártica Chilena';
-    }
-    if (lowerName.includes('aysén') || lowerName.includes('aysen') || lowerName.includes('ibáñez') || lowerName.includes('ibañez')) {
-        const found = availableRegionsList.find(reg => reg.toLowerCase().includes('aysén') || reg.toLowerCase().includes('aysen'));
-        if (found) return found;
-    }
-
-    const cleanGeo = name.toLowerCase()
-        .replace(/región de |región del |región metropolitana de /g, '')
-        .replace(/ del gral\.ibañez del campo/g, '')
-        .replace(/libertador bernardo o['’]higgins/g, "o'higgins")
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .replace(/-/g, '')
-        .trim();
-
-    for (let regVal of availableRegionsList) {
-        if (!regVal) continue;
-        const cleanOpt = regVal.toLowerCase().trim()
-            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-            .replace(/-/g, '');
-
-        if (cleanOpt.includes(cleanGeo) || cleanGeo.includes(cleanOpt)) {
-            return regVal;
-        }
-    }
-    return '';
-}
 
 function getRegionStyle(feature) {
-    const regionName = feature.properties ? feature.properties.Region : '';
-    const dbRegionValue = mapGeojsonRegionToDbRegion(regionName);
-    const isSelected = appState.selectedRegions && appState.selectedRegions.length > 0 && dbRegionValue && appState.selectedRegions.includes(dbRegionValue);
-
     return {
-        className: 'region-boundary',
-        color: 'var(--primary)',
-        weight: isSelected ? 2.5 : 0.8,
-        opacity: isSelected ? 0.95 : 0.25,
-        fillColor: isSelected ? 'var(--primary)' : 'var(--bg-card)',
-        fillOpacity: isSelected ? 0.32 : 0.08
+        color: '#3b82f6',
+        weight: 1,
+        opacity: 0.25,
+        fillColor: '#3b82f6',
+        fillOpacity: 0.03,
+        className: 'efe-region-path',
+        interactive: false
     };
 }
 
@@ -237,4 +187,127 @@ function svgEl(tag, attrs = {}) {
     return el;
 }
 
-// ── Main render function ──────────────────────────────────────────────
+// ── Chart.js Helper Utilities (DGC Dashboard) ───────────────────────────
+
+/**
+ * Creates a new Chart.js instance or safely updates an existing one in-place.
+ * Prevents canvas recreation, eliminates code duplication, and preserves animations.
+ */
+function createOrUpdateChart(canvasOrId, instance, config) {
+    const canvas = typeof canvasOrId === 'string' ? document.getElementById(canvasOrId) : canvasOrId;
+    if (!canvas) return null;
+
+    if (instance && typeof instance.destroy === 'function') {
+        instance.destroy();
+    }
+
+    return new Chart(canvas.getContext('2d'), config);
+}
+
+/**
+ * Specialized helper for DGC Doughnut Charts with decoupled HTML Legends.
+ */
+function renderDgcDoughnutChart({
+    canvasId,
+    instance,
+    labels = [],
+    data = [],
+    colors = [],
+    cutout = '65%',
+    borderWidth = 1.5,
+    isDark = false,
+    hoverOffset = 0,
+    externalTooltip = null,
+    tooltipLabelCallback = null,
+    legendContainerId = null,
+    legendTotal = null,
+    legendFontSize = '0.75rem',
+    legendItemPadding = '0.04rem 0',
+    onLegendHover = null,
+    emptyLegendHtml = null,
+    extraLegendHtml = null
+}) {
+    const borderColor = isDark ? '#0f172a' : '#ffffff';
+
+    const config = {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors,
+                borderColor: borderColor,
+                borderWidth: borderWidth,
+                hoverOffset: hoverOffset
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: cutout,
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    };
+
+    if (externalTooltip || tooltipLabelCallback) {
+        config.options.plugins.tooltip = {
+            enabled: false,
+            external: externalTooltip
+        };
+        if (tooltipLabelCallback) {
+            config.options.plugins.tooltip.callbacks = {
+                label: tooltipLabelCallback
+            };
+        }
+    }
+
+    const chart = createOrUpdateChart(canvasId, instance, config);
+
+    // Render HTML Legend if container provided
+    if (legendContainerId) {
+        const legendEl = document.getElementById(legendContainerId);
+        if (legendEl) {
+            legendEl.innerHTML = '';
+            if (emptyLegendHtml) {
+                legendEl.innerHTML = emptyLegendHtml;
+            } else {
+                const total = (legendTotal !== null && legendTotal !== undefined)
+                    ? legendTotal
+                    : (data.reduce((acc, v) => acc + (Number(v) || 0), 0) || 1);
+
+                labels.forEach((lbl, idx) => {
+                    const val = data[idx] !== undefined ? data[idx] : 0;
+                    const pct = total > 0 ? ((val / total) * 100).toFixed(1) : '0.0';
+                    const col = colors[idx] || '#64748b';
+
+                    const itemDiv = document.createElement('div');
+                    itemDiv.style.cssText = `display:flex; align-items:center; justify-content:space-between; gap:0.2rem; font-size:${legendFontSize}; padding:${legendItemPadding}; cursor:pointer;`;
+                    itemDiv.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:0.3rem; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">
+                            <span style="width:7px; height:7px; border-radius:50%; background-color:${col}; flex-shrink:0;"></span>
+                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:${legendFontSize};">${lbl}</span>
+                        </div>
+                        <span style="font-weight:700; color:var(--text-primary); flex-shrink:0; font-size:${legendFontSize};">${pct}%</span>
+                    `;
+
+                    if (typeof onLegendHover === 'function' && chart) {
+                        itemDiv.addEventListener('mouseenter', () => onLegendHover(chart, idx, 'enter'));
+                        itemDiv.addEventListener('mouseleave', () => onLegendHover(chart, idx, 'leave'));
+                    }
+
+                    legendEl.appendChild(itemDiv);
+                });
+
+                if (extraLegendHtml) {
+                    const extraDiv = document.createElement('div');
+                    extraDiv.innerHTML = extraLegendHtml;
+                    legendEl.appendChild(extraDiv.firstElementChild || extraDiv);
+                }
+            }
+        }
+    }
+
+    return chart;
+}

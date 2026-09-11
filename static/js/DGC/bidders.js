@@ -183,130 +183,92 @@ function renderBiddersAnalytics(contractsList) {
 
     const budgetLineColor = isDark ? '#e2e8f0' : '#000000';
 
-    const canvasHist = document.getElementById('chartBiddersHistogram');
-    if (canvasHist) {
-        if (!chartBiddersHistogramInstance) {
-            chartBiddersHistogramInstance = new Chart(canvasHist.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: histLabels,
-                    datasets: [
-                        {
-                            type: 'bar',
-                            label: 'Promedio Licitantes / Concesión',
-                            data: histDataBidders,
-                            backgroundColor: 'rgba(99,102,241,0.78)',
-                            borderColor: '#6366f1',
-                            borderWidth: 1,
-                            borderRadius: 3,
-                            yAxisID: 'y',
-                            order: 2
-                        },
-                        {
-                            type: 'line',
-                            label: 'Presupuesto Promedio (UF)',
-                            data: histDataBudget,
-                            borderColor: budgetLineColor,
-                            backgroundColor: 'rgba(0,0,0,0.05)',
-                            borderWidth: 2.2,
-                            tension: 0,
-                            pointRadius: 2.5,
-                            pointHoverRadius: 4.5,
-                            pointBackgroundColor: budgetLineColor,
-                            fill: false,
-                            yAxisID: 'y1',
-                            order: 1
-                        }
-                    ]
+    chartBiddersHistogramInstance = createOrUpdateChart('chartBiddersHistogram', chartBiddersHistogramInstance, {
+        type: 'bar',
+        data: {
+            labels: histLabels,
+            datasets: [
+                {
+                    type: 'bar',
+                    label: 'Promedio Licitantes / Concesión',
+                    data: histDataBidders,
+                    backgroundColor: 'rgba(99,102,241,0.78)',
+                    borderColor: '#6366f1',
+                    borderWidth: 1,
+                    borderRadius: 3,
+                    yAxisID: 'y',
+                    order: 2
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            enabled: false,
-                            external: investmentExternalTooltip,
-                            callbacks: {
-                                title: (items) => `Período ${items[0].label}`,
-                                label: (ctx) => {
-                                    const p = ctx.label;
-                                    const d = byPeriodSnapshot[p];
-                                    const avgB = d && d.concessionCount > 0 ? (d.bidderCount / d.concessionCount).toFixed(2) : 0;
-                                    const avgBud = d && d.budgetCount > 0 ? Math.round(d.totalBudget / d.budgetCount) : 0;
-                                    return [
-                                        ` Licitantes promedio: ${avgB} licitantes/concesión`,
-                                        ` Presupuesto promedio: ${formatUF(avgBud)} UF`,
-                                        ` Concesiones adjudicadas: ${d ? d.concessionCount : 0}`,
-                                        ` Total licitantes: ${d ? d.bidderCount : 0}`
-                                    ];
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: textColor, font: { size: 10 } }
-                        },
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            grid: { color: gridColor },
-                            ticks: { color: textColor, font: { size: 10 }, callback: (v) => v.toFixed(1) },
-                            title: { display: true, text: 'Promedio licitantes', color: textColor, font: { size: 9.5, weight: '600' } }
-                        },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            grid: { display: false },
-                            ticks: {
-                                color: budgetLineColor,
-                                font: { size: 10 },
-                                callback: (v) => formatUF(v)
-                            },
-                            title: { display: true, text: 'Presupuesto prom. (UF)', color: budgetLineColor, font: { size: 9.5, weight: '600' } }
+                {
+                    type: 'line',
+                    label: 'Presupuesto Promedio (UF)',
+                    data: histDataBudget,
+                    borderColor: budgetLineColor,
+                    backgroundColor: 'rgba(0,0,0,0.05)',
+                    borderWidth: 2.2,
+                    tension: 0,
+                    pointRadius: 2.5,
+                    pointHoverRadius: 4.5,
+                    pointBackgroundColor: budgetLineColor,
+                    fill: false,
+                    yAxisID: 'y1',
+                    order: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    enabled: false,
+                    external: investmentExternalTooltip,
+                    callbacks: {
+                        title: (items) => `Período ${items[0].label}`,
+                        label: (ctx) => {
+                            const p = ctx.label;
+                            const d = byPeriodSnapshot[p];
+                            const avgB = d && d.concessionCount > 0 ? (d.bidderCount / d.concessionCount).toFixed(2) : 0;
+                            const avgBud = d && d.budgetCount > 0 ? Math.round(d.totalBudget / d.budgetCount) : 0;
+                            return [
+                                ` Licitantes promedio: ${avgB} licitantes/concesión`,
+                                ` Presupuesto promedio: ${formatUF(avgBud)} UF`,
+                                ` Concesiones adjudicadas: ${d ? d.concessionCount : 0}`,
+                                ` Total licitantes: ${d ? d.bidderCount : 0}`
+                            ];
                         }
                     }
                 }
-            });
-        } else {
-            chartBiddersHistogramInstance.data.labels = histLabels;
-            chartBiddersHistogramInstance.data.datasets[0].data = histDataBidders;
-            chartBiddersHistogramInstance.data.datasets[1].data = histDataBudget;
-            chartBiddersHistogramInstance.data.datasets[1].borderColor = budgetLineColor;
-            chartBiddersHistogramInstance.data.datasets[1].pointBackgroundColor = budgetLineColor;
-            chartBiddersHistogramInstance.options.scales.x.ticks.color = textColor;
-            chartBiddersHistogramInstance.options.scales.x.ticks.font = { size: 10 };
-            chartBiddersHistogramInstance.options.scales.y.grid.color = gridColor;
-            chartBiddersHistogramInstance.options.scales.y.ticks.color = textColor;
-            chartBiddersHistogramInstance.options.scales.y.ticks.font = { size: 10 };
-            chartBiddersHistogramInstance.options.scales.y.title.color = textColor;
-            chartBiddersHistogramInstance.options.scales.y.title.font = { size: 9.5, weight: '600' };
-            if (chartBiddersHistogramInstance.options.scales.y1) {
-                chartBiddersHistogramInstance.options.scales.y1.ticks.color = budgetLineColor;
-                chartBiddersHistogramInstance.options.scales.y1.ticks.font = { size: 10 };
-                chartBiddersHistogramInstance.options.scales.y1.title.color = budgetLineColor;
-                chartBiddersHistogramInstance.options.scales.y1.title.font = { size: 9.5, weight: '600' };
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { color: textColor, font: { size: 10 } }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    grid: { color: gridColor },
+                    ticks: { color: textColor, font: { size: 10 }, callback: (v) => v.toFixed(1) },
+                    title: { display: true, text: 'Promedio licitantes', color: textColor, font: { size: 9.5, weight: '600' } }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: { display: false },
+                    ticks: {
+                        color: budgetLineColor,
+                        font: { size: 10 },
+                        callback: (v) => formatUF(v)
+                    },
+                    title: { display: true, text: 'Presupuesto prom. (UF)', color: budgetLineColor, font: { size: 9.5, weight: '600' } }
+                }
             }
-            chartBiddersHistogramInstance.options.plugins.tooltip.callbacks.title = (items) => `Período ${items[0].label}`;
-            chartBiddersHistogramInstance.options.plugins.tooltip.callbacks.label = (ctx) => {
-                const p = ctx.label;
-                const d = byPeriodSnapshot[p];
-                const avgB = d && d.concessionCount > 0 ? (d.bidderCount / d.concessionCount).toFixed(2) : 0;
-                const avgBud = d && d.budgetCount > 0 ? Math.round(d.totalBudget / d.budgetCount) : 0;
-                return [
-                    ` Licitantes promedio: ${avgB} licitantes/concesión`,
-                    ` Presupuesto promedio: ${formatUF(avgBud)} UF`,
-                    ` Concesiones adjudicadas: ${d ? d.concessionCount : 0}`,
-                    ` Total licitantes: ${d ? d.bidderCount : 0}`
-                ];
-            };
-            chartBiddersHistogramInstance.update();
         }
-    }
+    });
 
     // ── Chart 2: Doughnut — Adjudicados: Consorcio vs Empresa Única ──────────
     const hasAdjData = totalAdjudicados > 0;
@@ -314,81 +276,33 @@ function renderBiddersAnalytics(contractsList) {
     const pieData = [consorcioCnt, noConsorcioCnt];
     const pieColors = ['#8b5cf6', '#10b981'];
 
-    const canvasPie = document.getElementById('chartBiddersPie');
-    if (canvasPie) {
-        if (!chartBiddersPieInstance) {
-            chartBiddersPieInstance = new Chart(canvasPie.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: hasAdjData ? pieLabels : ['Sin datos'],
-                    datasets: [{
-                        data: hasAdjData ? pieData : [1],
-                        backgroundColor: hasAdjData ? pieColors : ['rgba(148,163,184,0.2)'],
-                        borderColor: isDark ? '#0f172a' : '#ffffff',
-                        borderWidth: 2,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '62%',
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            enabled: false,
-                            external: investmentExternalTooltip,
-                            callbacks: {
-                                label: (ctx) => {
-                                    if (!hasAdjData) return ' Sin datos';
-                                    const pct = ((ctx.raw / (totalAdjudicados || 1)) * 100).toFixed(1);
-                                    return ` ${ctx.label}: ${ctx.raw} (${pct}%)`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        } else {
-            chartBiddersPieInstance.data.labels = hasAdjData ? pieLabels : ['Sin datos'];
-            chartBiddersPieInstance.data.datasets[0].data = hasAdjData ? pieData : [1];
-            chartBiddersPieInstance.data.datasets[0].backgroundColor = hasAdjData ? pieColors : ['rgba(148,163,184,0.2)'];
-            chartBiddersPieInstance.data.datasets[0].borderColor = isDark ? '#0f172a' : '#ffffff';
-            chartBiddersPieInstance.options.plugins.tooltip.callbacks.label = (ctx) => {
-                if (!hasAdjData) return ' Sin datos';
-                const pct = ((ctx.raw / (totalAdjudicados || 1)) * 100).toFixed(1);
-                return ` ${ctx.label}: ${ctx.raw} (${pct}%)`;
-            };
-            chartBiddersPieInstance.update();
-        }
+    const extraFooterHtml = hasAdjData
+        ? `<div style="display:flex; align-items:center; justify-content:space-between; font-size:0.74rem; padding-top:0.2rem; margin-top:0.15rem; border-top:1px solid var(--border-color);"><span style="color:var(--text-muted);">Total adjudicados:</span><span style="font-weight:700; color:var(--text-primary);">${totalAdjudicados}</span></div>`
+        : null;
 
-        // Custom HTML Legend for pie
-        const pieLegendEl = document.getElementById('chartBiddersPieLegend');
-        if (pieLegendEl) {
-            pieLegendEl.innerHTML = '';
-            if (hasAdjData) {
-                pieLabels.forEach((lbl, i) => {
-                    const val = pieData[i];
-                    const pct = ((val / (totalAdjudicados || 1)) * 100).toFixed(1);
-                    const col = pieColors[i];
-                    const itemDiv = document.createElement('div');
-                    itemDiv.style.cssText = 'display:flex; align-items:center; gap:0.35rem; font-size:0.78rem; padding:0.08rem 0;';
-                    itemDiv.innerHTML = `
-                        <span style="width:8px; height:8px; border-radius:50%; background-color:${col}; flex-shrink:0;"></span>
-                        <span style="color:var(--text-secondary); flex:1;">${lbl}</span>
-                        <span style="font-weight:700; color:var(--text-primary);">${val} <span style="font-weight:400; color:var(--text-muted);">(${pct}%)</span></span>
-                    `;
-                    pieLegendEl.appendChild(itemDiv);
-                });
-                const totalDiv = document.createElement('div');
-                totalDiv.style.cssText = 'display:flex; align-items:center; justify-content:space-between; font-size:0.74rem; padding-top:0.2rem; margin-top:0.15rem; border-top:1px solid var(--border-color);';
-                totalDiv.innerHTML = `<span style="color:var(--text-muted);">Total adjudicados:</span><span style="font-weight:700; color:var(--text-primary);">${totalAdjudicados}</span>`;
-                pieLegendEl.appendChild(totalDiv);
-            } else {
-                pieLegendEl.innerHTML = `<p style="font-size:0.74rem; color:var(--text-muted); font-style:italic; text-align:center; margin:0;">Sin datos de adjudicaciones</p>`;
-            }
-        }
-    }
+    chartBiddersPieInstance = renderDgcDoughnutChart({
+        canvasId: 'chartBiddersPie',
+        instance: chartBiddersPieInstance,
+        labels: hasAdjData ? pieLabels : ['Sin datos'],
+        data: hasAdjData ? pieData : [1],
+        colors: hasAdjData ? pieColors : ['rgba(148,163,184,0.2)'],
+        cutout: '62%',
+        borderWidth: 2,
+        hoverOffset: 4,
+        isDark: isDark,
+        externalTooltip: investmentExternalTooltip,
+        tooltipLabelCallback: (ctx) => {
+            if (!hasAdjData) return ' Sin datos';
+            const pct = ((ctx.raw / (totalAdjudicados || 1)) * 100).toFixed(1);
+            return ` ${ctx.label}: ${ctx.raw} (${pct}%)`;
+        },
+        legendContainerId: 'chartBiddersPieLegend',
+        legendTotal: totalAdjudicados,
+        legendFontSize: '0.78rem',
+        legendItemPadding: '0.08rem 0',
+        emptyLegendHtml: hasAdjData ? null : `<p style="font-size:0.74rem; color:var(--text-muted); font-style:italic; text-align:center; margin:0;">Sin datos de adjudicaciones</p>`,
+        extraLegendHtml: extraFooterHtml
+    });
 
     // ── Chart 3: Horizontal Bar — Top 10 Empresas (Participaciones vs Adjudicaciones Ponderadas) ──────────
     const mode = appState.topCompaniesMode || 'participaciones';
@@ -439,140 +353,86 @@ function renderBiddersAnalytics(contractsList) {
         const totalSum = companyScores.reduce((s, c) => s + c.score, 0);
         const xTitle = isParticipaciones ? 'Adj. netas' : 'Adj. ponderadas';
 
-        if (!chartTopCompaniesInstance) {
-            chartTopCompaniesInstance = new Chart(canvasBar.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: barLabels,
-                    datasets: [{
-                        label: isParticipaciones ? 'Concesiones adjudicadas' : 'Adjudicaciones (ponderadas)',
-                        data: barData,
-                        backgroundColor: barColors,
-                        borderColor: borderCol,
-                        borderWidth: 1,
-                        borderRadius: 2,
-                    }]
+        chartTopCompaniesInstance = createOrUpdateChart('chartTopCompanies', chartTopCompaniesInstance, {
+            type: 'bar',
+            data: {
+                labels: barLabels,
+                datasets: [{
+                    label: isParticipaciones ? 'Concesiones adjudicadas' : 'Adjudicaciones (ponderadas)',
+                    data: barData,
+                    backgroundColor: barColors,
+                    borderColor: borderCol,
+                    borderWidth: 1,
+                    borderRadius: 2,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                onClick: (event, elements, chart) => {
+                    let elems = elements;
+                    if (!elems || elems.length === 0) {
+                        elems = chart.getElementsAtEventForMode(event, 'nearest', { intersect: false }, true);
+                    }
+                    if (!elems || elems.length === 0) return;
+                    const dataIndex = elems[0].index;
+                    const entry = top10rev[dataIndex];
+                    if (entry && entry.name) {
+                        openCompanyDetailsModal(entry.name, contractsList);
+                    }
                 },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    onClick: (event, elements, chart) => {
-                        let elems = elements;
-                        if (!elems || elems.length === 0) {
-                            elems = chart.getElementsAtEventForMode(event, 'nearest', { intersect: false }, true);
-                        }
-                        if (!elems || elems.length === 0) return;
-                        const dataIndex = elems[0].index;
-                        const entry = top10rev[dataIndex];
-                        if (entry && entry.name) {
-                            openCompanyDetailsModal(entry.name, contractsList);
-                        }
-                    },
-                    onHover: (event, chartElement) => {
-                        event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            enabled: false,
-                            external: investmentExternalTooltip,
-                            callbacks: {
-                                title: (items) => {
-                                    const entry = top10rev[items[0].dataIndex];
-                                    return entry ? entry.name : items[0].label;
-                                },
-                                label: (ctx) => {
-                                    const entry = top10rev[ctx.dataIndex];
-                                    const pct = totalSum > 0 ? ((entry.score / totalSum) * 100).toFixed(1) : '0';
-                                    return [
-                                        ` ${isParticipaciones ? 'Concesiones adjudicadas' : 'Adjudicaciones (ponderadas)'}: ${ctx.raw}`,
-                                        ` Participación: ${pct}% del total`,
-                                        ` Haz click para ver las concesiones`
-                                    ];
-                                }
+                onHover: (event, chartElement) => {
+                    event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        enabled: false,
+                        external: investmentExternalTooltip,
+                        callbacks: {
+                            title: (items) => {
+                                const entry = top10rev[items[0].dataIndex];
+                                return entry ? entry.name : items[0].label;
+                            },
+                            label: (ctx) => {
+                                const entry = top10rev[ctx.dataIndex];
+                                const pct = totalSum > 0 ? ((entry.score / totalSum) * 100).toFixed(1) : '0';
+                                return [
+                                    ` ${isParticipaciones ? 'Concesiones adjudicadas' : 'Adjudicaciones (ponderadas)'}: ${ctx.raw}`,
+                                    ` Participación: ${pct}% del total`,
+                                    ` Haz click para ver las concesiones`
+                                ];
                             }
                         }
-                    },
-                    scales: {
-                        x: {
-                            grid: { color: gridColor },
-                            ticks: {
-                                color: textColor,
-                                font: { size: 10 },
-                                callback: (v) => isParticipaciones ? (v % 1 === 0 ? v : '') : (v % 1 === 0 ? v : v.toFixed(1))
-                            },
-                            title: { display: true, text: xTitle, color: textColor, font: { size: 9.5, weight: '600' } }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: gridColor },
+                        ticks: {
+                            color: textColor,
+                            font: { size: 10 },
+                            callback: (v) => isParticipaciones ? (v % 1 === 0 ? v : '') : (v % 1 === 0 ? v : v.toFixed(1))
                         },
-                        y: {
-                            grid: { display: false },
-                            ticks: {
-                                color: textColor,
-                                font: { size: 9.5, weight: '500' },
-                                autoSkip: false,
-                                callback: function (val, idx) {
-                                    const entry = top10rev[idx];
-                                    if (!entry) return this.getLabelForValue(val);
-                                    return wrapTextToLines(entry.name, 20);
-                                }
+                        title: { display: true, text: xTitle, color: textColor, font: { size: 9.5, weight: '600' } }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: {
+                            color: textColor,
+                            font: { size: 9.5, weight: '500' },
+                            autoSkip: false,
+                            callback: function (val, idx) {
+                                const entry = top10rev[idx];
+                                if (!entry) return this.getLabelForValue(val);
+                                return wrapTextToLines(entry.name, 20);
                             }
                         }
                     }
                 }
-            });
-        } else {
-            chartTopCompaniesInstance.data.labels = barLabels;
-            chartTopCompaniesInstance.data.datasets[0].label = isParticipaciones ? 'Concesiones adjudicadas' : 'Adjudicaciones (ponderadas)';
-            chartTopCompaniesInstance.data.datasets[0].data = barData;
-            chartTopCompaniesInstance.data.datasets[0].backgroundColor = barColors;
-            chartTopCompaniesInstance.data.datasets[0].borderColor = borderCol;
-            chartTopCompaniesInstance.options.scales.x.grid.color = gridColor;
-            chartTopCompaniesInstance.options.scales.x.ticks.color = textColor;
-            chartTopCompaniesInstance.options.scales.x.ticks.font = { size: 10 };
-            chartTopCompaniesInstance.options.scales.x.title.text = xTitle;
-            chartTopCompaniesInstance.options.scales.x.title.color = textColor;
-            chartTopCompaniesInstance.options.scales.x.title.font = { size: 9.5, weight: '600' };
-            chartTopCompaniesInstance.options.scales.x.ticks.callback = (v) => isParticipaciones ? (v % 1 === 0 ? v : '') : (v % 1 === 0 ? v : v.toFixed(1));
-
-            chartTopCompaniesInstance.options.scales.y.ticks.color = textColor;
-            chartTopCompaniesInstance.options.scales.y.ticks.font = { size: 9.5, weight: '500' };
-            chartTopCompaniesInstance.options.scales.y.ticks.callback = function (val, idx) {
-                const entry = top10rev[idx];
-                if (!entry) return this.getLabelForValue(val);
-                return wrapTextToLines(entry.name, 20);
-            };
-
-            chartTopCompaniesInstance.options.onClick = (event, elements, chart) => {
-                let elems = elements;
-                if (!elems || elems.length === 0) {
-                    elems = chart.getElementsAtEventForMode(event, 'nearest', { intersect: false }, true);
-                }
-                if (!elems || elems.length === 0) return;
-                const dataIndex = elems[0].index;
-                const entry = top10rev[dataIndex];
-                if (entry && entry.name) {
-                    openCompanyDetailsModal(entry.name, contractsList);
-                }
-            };
-            chartTopCompaniesInstance.options.onHover = (event, chartElement) => {
-                event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
-            };
-
-            chartTopCompaniesInstance.options.plugins.tooltip.callbacks.title = (items) => {
-                const entry = top10rev[items[0].dataIndex];
-                return entry ? entry.name : items[0].label;
-            };
-            chartTopCompaniesInstance.options.plugins.tooltip.callbacks.label = (ctx) => {
-                const entry = top10rev[ctx.dataIndex];
-                const pct = totalSum > 0 ? ((entry.score / totalSum) * 100).toFixed(1) : '0';
-                return [
-                    ` ${isParticipaciones ? 'Concesiones adjudicadas' : 'Adjudicaciones (ponderadas)'}: ${ctx.raw}`,
-                    ` Participación: ${pct}% del total`,
-                    ` Haz click para ver las concesiones`
-                ];
-            };
-            chartTopCompaniesInstance.update();
-        }
+            }
+        });
 
         // Direct canvas click handler for guaranteed responsiveness
         canvasBar.onclick = (evt) => {

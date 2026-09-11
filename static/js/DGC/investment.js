@@ -292,102 +292,69 @@ function renderInvestmentAnalytics(contractsList) {
     const invLabels = sortedInvRegions.map(e => e[0]);
     const invValues = sortedInvRegions.map(e => e[1]);
 
-    const canvasInv = document.getElementById('chartInvByRegion');
-    if (canvasInv) {
-        if (!chartInvByRegionInstance) {
-            chartInvByRegionInstance = new Chart(canvasInv.getContext('2d'), {
-                type: 'bar',
-                plugins: [horizontalBarDataLabelsPlugin],
-                data: {
-                    labels: invLabels,
-                    datasets: [{
-                        label: 'Inversión (UF)',
-                        data: invValues,
-                        backgroundColor: '#2563eb',
-                        borderRadius: 3,
-                    }]
+    chartInvByRegionInstance = createOrUpdateChart('chartInvByRegion', chartInvByRegionInstance, {
+        type: 'bar',
+        plugins: [horizontalBarDataLabelsPlugin],
+        data: {
+            labels: invLabels,
+            datasets: [{
+                label: 'Inversión (UF)',
+                data: invValues,
+                backgroundColor: '#2563eb',
+                borderRadius: 3,
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+                padding: { top: 0, bottom: 0, left: 0, right: 0 }
+            },
+            plugins: {
+                legend: { display: false },
+                horizontalBarDataLabelsPlugin: {
+                    formatter: (val) => formatUF(val)
                 },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    layout: {
-                        padding: { top: 0, bottom: 0, left: 0, right: 0 }
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        horizontalBarDataLabelsPlugin: {
-                            formatter: (val) => formatUF(val)
-                        },
-                        tooltip: {
-                            enabled: false,
-                            external: investmentExternalTooltip,
-                            callbacks: {
-                                label: (ctx) => ` Inversión: ${formatUFComplete(ctx.raw)} UF (${((ctx.raw / (displayTotalInv || 1)) * 100).toFixed(1)}%)`
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Inversión (UF)',
-                                color: textColor,
-                                font: { size: 10, weight: '600' }
-                            },
-                            grid: { color: gridColor },
-                            ticks: {
-                                color: textColor,
-                                font: { size: 10 },
-                                callback: (val) => {
-                                    if (val === 0) return '0';
-                                    if (val >= 1000000) return `${(val / 1000000).toFixed(1).replace(/\.0$/, '')}M`;
-                                    if (val >= 1000) return `${(val / 1000).toFixed(1).replace(/\.0$/, '')}k`;
-                                    return val.toLocaleString('es-CL');
-                                }
-                            }
-                        },
-                        y: {
-                            grid: { display: false },
-                            ticks: {
-                                color: textColor,
-                                font: { size: 10.5, weight: '500' },
-                                autoSkip: false
-                            }
-                        }
+                tooltip: {
+                    enabled: false,
+                    external: investmentExternalTooltip,
+                    callbacks: {
+                        label: (ctx) => ` Inversión: ${formatUFComplete(ctx.raw)} UF (${((ctx.raw / (displayTotalInv || 1)) * 100).toFixed(1)}%)`
                     }
                 }
-            });
-        } else {
-            chartInvByRegionInstance.data.labels = invLabels;
-            chartInvByRegionInstance.data.datasets[0].data = invValues;
-            if (chartInvByRegionInstance.options.scales.x.max !== undefined) {
-                delete chartInvByRegionInstance.options.scales.x.max;
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Inversión (UF)',
+                        color: textColor,
+                        font: { size: 10, weight: '600' }
+                    },
+                    grid: { color: gridColor },
+                    ticks: {
+                        color: textColor,
+                        font: { size: 10 },
+                        callback: (val) => {
+                            if (val === 0) return '0';
+                            if (val >= 1000000) return `${(val / 1000000).toFixed(1).replace(/\.0$/, '')}M`;
+                            if (val >= 1000) return `${(val / 1000).toFixed(1).replace(/\.0$/, '')}k`;
+                            return val.toLocaleString('es-CL');
+                        }
+                    }
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: {
+                        color: textColor,
+                        font: { size: 10.5, weight: '500' },
+                        autoSkip: false
+                    }
+                }
             }
-            if (!chartInvByRegionInstance.options.scales.x.title) {
-                chartInvByRegionInstance.options.scales.x.title = {
-                    display: true,
-                    text: 'Inversión (UF)',
-                    color: textColor,
-                    font: { size: 10, weight: '600' }
-                };
-            }
-            chartInvByRegionInstance.options.scales.x.grid.color = gridColor;
-            chartInvByRegionInstance.options.scales.x.ticks.color = textColor;
-            chartInvByRegionInstance.options.scales.x.ticks.font = { size: 10 };
-            chartInvByRegionInstance.options.scales.x.ticks.callback = (val) => {
-                if (val === 0) return '0';
-                if (val >= 1000000) return `${(val / 1000000).toFixed(1).replace(/\.0$/, '')}M`;
-                if (val >= 1000) return `${(val / 1000).toFixed(1).replace(/\.0$/, '')}k`;
-                return val.toLocaleString('es-CL');
-            };
-            chartInvByRegionInstance.options.scales.y.ticks.color = textColor;
-            chartInvByRegionInstance.options.scales.y.ticks.font = { size: 10.5, weight: '500' };
-            chartInvByRegionInstance.options.scales.y.ticks.autoSkip = false;
-            chartInvByRegionInstance.options.plugins.tooltip.callbacks.label = (ctx) => ` Inversión: ${formatUFComplete(ctx.raw)} UF (${((ctx.raw / (displayTotalInv || 1)) * 100).toFixed(1)}%)`;
-            chartInvByRegionInstance.update();
         }
-    }
+    });
 
     // Función auxiliar para obtener la fracción de inversión atribuible a la(s) región(es) seleccionada(s)
     const getContractAttributableFraction = (item) => {
@@ -416,64 +383,21 @@ function renderInvestmentAnalytics(contractsList) {
     const secColors = secLabels.map(s => getSectorConfig(s).color);
     const totalSecInv = secValues.reduce((s, v) => s + v, 0) || displayTotalInv || 1;
 
-    const canvasShare = document.getElementById('chartInvShareRegion');
-    if (canvasShare) {
-        if (!chartInvShareRegionInstance) {
-            chartInvShareRegionInstance = new Chart(canvasShare.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: secLabels,
-                    datasets: [{
-                        data: secValues,
-                        backgroundColor: secColors,
-                        borderColor: isDark ? '#0f172a' : '#ffffff',
-                        borderWidth: 1.5
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '65%',
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            enabled: false,
-                            external: investmentExternalTooltip,
-                            callbacks: {
-                                label: (ctx) => ` ${((ctx.raw / totalSecInv) * 100).toFixed(1)}% (${formatUF(ctx.raw)})`
-                            }
-                        }
-                    }
-                }
-            });
-        } else {
-            chartInvShareRegionInstance.data.labels = secLabels;
-            chartInvShareRegionInstance.data.datasets[0].data = secValues;
-            chartInvShareRegionInstance.data.datasets[0].backgroundColor = secColors;
-            chartInvShareRegionInstance.data.datasets[0].borderColor = isDark ? '#0f172a' : '#ffffff';
-            chartInvShareRegionInstance.options.plugins.tooltip.callbacks.label = (ctx) => ` ${((ctx.raw / totalSecInv) * 100).toFixed(1)}% (${formatUF(ctx.raw)})`;
-            chartInvShareRegionInstance.update();
-        }
-    }
-
-    // Render Custom HTML Legend for Sector Investment Chart (Non-jumpy fixed layout)
-    const legendSecEl = document.getElementById('chartInvShareRegionLegend');
-    if (legendSecEl) {
-        legendSecEl.innerHTML = '';
-        secLabels.forEach((lbl, idx) => {
-            const val = secValues[idx];
-            const pct = totalSecInv > 0 ? ((val / totalSecInv) * 100).toFixed(1) : 0;
-            const col = secColors[idx];
-            const itemDiv = document.createElement('div');
-            itemDiv.style.cssText = 'display:flex; align-items:center; gap:0.3rem; font-size:0.75rem; padding:0.04rem 0;';
-            itemDiv.innerHTML = `
-                <span style="width:7px; height:7px; border-radius:50%; background-color:${col}; flex-shrink:0;"></span>
-                <span style="color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0;">${lbl}</span>
-                <span style="font-weight:700; color:var(--text-primary); flex-shrink:0; white-space:nowrap;">${pct}%</span>
-            `;
-            legendSecEl.appendChild(itemDiv);
-        });
-    }
+    chartInvShareRegionInstance = renderDgcDoughnutChart({
+        canvasId: 'chartInvShareRegion',
+        instance: chartInvShareRegionInstance,
+        labels: secLabels,
+        data: secValues,
+        colors: secColors,
+        cutout: '65%',
+        borderWidth: 1.5,
+        isDark: isDark,
+        externalTooltip: investmentExternalTooltip,
+        tooltipLabelCallback: (ctx) => ` ${((ctx.raw / totalSecInv) * 100).toFixed(1)}% (${formatUF(ctx.raw)})`,
+        legendContainerId: 'chartInvShareRegionLegend',
+        legendTotal: totalSecInv,
+        legendFontSize: '0.75rem'
+    });
 
     // 3) Gráfico 3: Pie / Donut Chart (% Inversión por Tipo de Iniciativa)
     const invByIniciativa = { 'Iniciativa Pública': 0, 'Iniciativa Privada': 0 };
@@ -491,64 +415,22 @@ function renderInvestmentAnalytics(contractsList) {
     const initColors = ['#2563eb', '#10b981'];
     const totalInitInv = (initValues[0] + initValues[1]) || displayTotalInv || 1;
 
-    const canvasInit = document.getElementById('chartInvIniciativa');
-    if (canvasInit) {
-        if (!chartInvIniciativaInstance) {
-            chartInvIniciativaInstance = new Chart(canvasInit.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: initLabels,
-                    datasets: [{
-                        data: initValues,
-                        backgroundColor: initColors,
-                        borderColor: isDark ? '#0f172a' : '#ffffff',
-                        borderWidth: 1.5
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '65%',
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            enabled: false,
-                            external: investmentExternalTooltip,
-                            callbacks: {
-                                label: (ctx) => ` ${((ctx.raw / totalInitInv) * 100).toFixed(1)}% (${formatUF(ctx.raw)})`
-                            }
-                        }
-                    }
-                }
-            });
-        } else {
-            chartInvIniciativaInstance.data.labels = initLabels;
-            chartInvIniciativaInstance.data.datasets[0].data = initValues;
-            chartInvIniciativaInstance.data.datasets[0].backgroundColor = initColors;
-            chartInvIniciativaInstance.data.datasets[0].borderColor = isDark ? '#0f172a' : '#ffffff';
-            chartInvIniciativaInstance.options.plugins.tooltip.callbacks.label = (ctx) => ` ${((ctx.raw / totalInitInv) * 100).toFixed(1)}% (${formatUF(ctx.raw)})`;
-            chartInvIniciativaInstance.update();
-        }
-    }
-
-    // Render Custom HTML Legend for Iniciativa Chart
-    const legendInitEl = document.getElementById('chartInvIniciativaLegend');
-    if (legendInitEl) {
-        legendInitEl.innerHTML = '';
-        initLabels.forEach((lbl, idx) => {
-            const val = initValues[idx];
-            const pct = totalInitInv > 0 ? ((val / totalInitInv) * 100).toFixed(1) : 0;
-            const col = initColors[idx];
-            const itemDiv = document.createElement('div');
-            itemDiv.style.cssText = 'display:flex; align-items:center; gap:0.3rem; font-size:0.78rem; padding:0.06rem 0;';
-            itemDiv.innerHTML = `
-                <span style="width:7px; height:7px; border-radius:50%; background-color:${col}; flex-shrink:0;"></span>
-                <span style="color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0;">${lbl}</span>
-                <span style="font-weight:700; color:var(--text-primary); flex-shrink:0; white-space:nowrap;">${pct}%</span>
-            `;
-            legendInitEl.appendChild(itemDiv);
-        });
-    }
+    chartInvIniciativaInstance = renderDgcDoughnutChart({
+        canvasId: 'chartInvIniciativa',
+        instance: chartInvIniciativaInstance,
+        labels: initLabels,
+        data: initValues,
+        colors: initColors,
+        cutout: '65%',
+        borderWidth: 1.5,
+        isDark: isDark,
+        externalTooltip: investmentExternalTooltip,
+        tooltipLabelCallback: (ctx) => ` ${((ctx.raw / totalInitInv) * 100).toFixed(1)}% (${formatUF(ctx.raw)})`,
+        legendContainerId: 'chartInvIniciativaLegend',
+        legendTotal: totalInitInv,
+        legendFontSize: '0.78rem',
+        legendItemPadding: '0.06rem 0'
+    });
 
     // 4) Histograma Temporal: Inversión Activa por Año
     const yearlyInvestment = {};
@@ -580,59 +462,45 @@ function renderInvestmentAnalytics(contractsList) {
     const activeInvData = yearsArr.map(y => yearlyInvestment[y] || 0);
 
     // 5) Gráfico 5: Inversión Activa por Año (Histograma)
-    const canvasActiveInv = document.getElementById('chartActiveInvYear');
-    if (canvasActiveInv) {
-        if (!chartActiveInvYearInstance) {
-            chartActiveInvYearInstance = new Chart(canvasActiveInv.getContext('2d'), {
-                type: 'bar',
-                plugins: [todayLineChartPlugin],
-                data: {
-                    labels: yearsArr,
-                    datasets: [{
-                        label: 'Inversión Activa (UF)',
-                        data: activeInvData,
-                        backgroundColor: '#8b5cf6',
-                        borderRadius: 2,
-                        barThickness: 7,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            enabled: false,
-                            external: investmentExternalTooltip,
-                            callbacks: {
-                                label: (ctx) => ` Año ${ctx.label}: ${formatUFComplete(ctx.raw)} UF activas`
-                            }
-                        }
-                    },
-                    scales: {
-                        x: { grid: { display: false }, ticks: { color: textColor, font: { size: 9.5 } } },
-                        y: {
-                            grid: { color: gridColor },
-                            ticks: {
-                                color: textColor,
-                                font: { size: 9.5 },
-                                callback: (val) => formatUF(val)
-                            }
-                        }
+    chartActiveInvYearInstance = createOrUpdateChart('chartActiveInvYear', chartActiveInvYearInstance, {
+        type: 'bar',
+        plugins: [todayLineChartPlugin],
+        data: {
+            labels: yearsArr,
+            datasets: [{
+                label: 'Inversión Activa (UF)',
+                data: activeInvData,
+                backgroundColor: '#8b5cf6',
+                borderRadius: 2,
+                barThickness: 7,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    enabled: false,
+                    external: investmentExternalTooltip,
+                    callbacks: {
+                        label: (ctx) => ` Año ${ctx.label}: ${formatUFComplete(ctx.raw)} UF activas`
                     }
                 }
-            });
-        } else {
-            chartActiveInvYearInstance.data.labels = yearsArr;
-            chartActiveInvYearInstance.data.datasets[0].data = activeInvData;
-            chartActiveInvYearInstance.options.scales.x.ticks.color = textColor;
-            chartActiveInvYearInstance.options.scales.x.ticks.font = { size: 9.5 };
-            chartActiveInvYearInstance.options.scales.y.grid.color = gridColor;
-            chartActiveInvYearInstance.options.scales.y.ticks.color = textColor;
-            chartActiveInvYearInstance.options.scales.y.ticks.font = { size: 9.5 };
-            chartActiveInvYearInstance.update();
+            },
+            scales: {
+                x: { grid: { display: false }, ticks: { color: textColor, font: { size: 9.5 } } },
+                y: {
+                    grid: { color: gridColor },
+                    ticks: {
+                        color: textColor,
+                        font: { size: 9.5 },
+                        callback: (val) => formatUF(val)
+                    }
+                }
+            }
         }
-    }
+    });
 
     lucide.createIcons();
 }

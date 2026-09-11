@@ -211,83 +211,56 @@ const horizontalBarDataLabelsPlugin = {
     }
 };
 
-    const canvasCnt = document.getElementById('chartContractsByRegion');
-    if (canvasCnt) {
-        if (!chartContractsByRegionInstance) {
-            chartContractsByRegionInstance = new Chart(canvasCnt.getContext('2d'), {
-                type: 'bar',
-                plugins: [horizontalBarDataLabelsPlugin],
-                data: {
-                    labels: cntLabels,
-                    datasets: [{
-                        label: 'Contratos (Proporcional)',
-                        data: cntValues,
-                        backgroundColor: '#059669',
-                        borderRadius: 3,
-                    }]
+    chartContractsByRegionInstance = createOrUpdateChart('chartContractsByRegion', chartContractsByRegionInstance, {
+        type: 'bar',
+        plugins: [horizontalBarDataLabelsPlugin],
+        data: {
+            labels: cntLabels,
+            datasets: [{
+                label: 'Contratos (Proporcional)',
+                data: cntValues,
+                backgroundColor: '#059669',
+                borderRadius: 3,
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+                padding: { top: 0, bottom: 0, left: 0, right: 0 }
+            },
+            plugins: {
+                legend: { display: false },
+                horizontalBarDataLabelsPlugin: {
+                    formatter: (val) => formatContractVal(val)
                 },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    layout: {
-                        padding: { top: 0, bottom: 0, left: 0, right: 0 }
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        horizontalBarDataLabelsPlugin: {
-                            formatter: (val) => formatContractVal(val)
-                        },
-                        tooltip: {
-                            enabled: false,
-                            external: investmentExternalTooltip,
-                            callbacks: {
-                                label: (ctx) => ` Contratos: ${formatContractVal(ctx.raw)} (${((ctx.raw / (displayTotalContracts || 1)) * 100).toFixed(1)}%)`
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Número de contratos atribuibles',
-                                color: textColor,
-                                font: { size: 10, weight: '600' }
-                            },
-                            grid: { color: gridColor },
-                            ticks: { color: textColor, font: { size: 10 } }
-                        },
-                        y: {
-                            grid: { display: false },
-                            ticks: { color: textColor, font: { size: 10.5, weight: '500' }, autoSkip: false }
-                        }
+                tooltip: {
+                    enabled: false,
+                    external: investmentExternalTooltip,
+                    callbacks: {
+                        label: (ctx) => ` Contratos: ${formatContractVal(ctx.raw)} (${((ctx.raw / (displayTotalContracts || 1)) * 100).toFixed(1)}%)`
                     }
                 }
-            });
-        } else {
-            chartContractsByRegionInstance.data.labels = cntLabels;
-            chartContractsByRegionInstance.data.datasets[0].data = cntValues;
-            if (chartContractsByRegionInstance.options.scales.x.max !== undefined) {
-                delete chartContractsByRegionInstance.options.scales.x.max;
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Número de contratos atribuibles',
+                        color: textColor,
+                        font: { size: 10, weight: '600' }
+                    },
+                    grid: { color: gridColor },
+                    ticks: { color: textColor, font: { size: 10 } }
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: { color: textColor, font: { size: 10.5, weight: '500' }, autoSkip: false }
+                }
             }
-            if (!chartContractsByRegionInstance.options.scales.x.title) {
-                chartContractsByRegionInstance.options.scales.x.title = {
-                    display: true,
-                    text: 'Número de contratos atribuibles',
-                    color: textColor,
-                    font: { size: 10, weight: '600' }
-                };
-            }
-            chartContractsByRegionInstance.options.scales.x.grid.color = gridColor;
-            chartContractsByRegionInstance.options.scales.x.ticks.color = textColor;
-            chartContractsByRegionInstance.options.scales.x.ticks.font = { size: 10 };
-            chartContractsByRegionInstance.options.scales.y.ticks.color = textColor;
-            chartContractsByRegionInstance.options.scales.y.ticks.font = { size: 10.5, weight: '500' };
-            chartContractsByRegionInstance.options.scales.y.ticks.autoSkip = false;
-            chartContractsByRegionInstance.options.plugins.tooltip.callbacks.label = (ctx) => ` Contratos: ${formatContractVal(ctx.raw)} (${((ctx.raw / (displayTotalContracts || 1)) * 100).toFixed(1)}%)`;
-            chartContractsByRegionInstance.update();
         }
-    }
+    });
 
     // 2) Gráfico 2: Pie / Donut Chart (% Contratos por Método de Licitación)
     const cntByMetodo = {};
@@ -319,64 +292,21 @@ const horizontalBarDataLabelsPlugin = {
     const metColors = metLabels.map(m => metodoColorMap[m] || '#3b82f6');
     const totalMetCnt = metValues.reduce((s, v) => s + v, 0) || displayTotalContracts || 1;
 
-    const canvasMet = document.getElementById('chartContractsByMetodo');
-    if (canvasMet) {
-        if (!chartContractsByMetodoInstance) {
-            chartContractsByMetodoInstance = new Chart(canvasMet.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: metLabels,
-                    datasets: [{
-                        data: metValues,
-                        backgroundColor: metColors,
-                        borderColor: isDark ? '#0f172a' : '#ffffff',
-                        borderWidth: 1.5
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '65%',
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            enabled: false,
-                            external: investmentExternalTooltip,
-                            callbacks: {
-                                label: (ctx) => ` ${((ctx.raw / totalMetCnt) * 100).toFixed(1)}% (${formatContractVal(ctx.raw)} contratos)`
-                            }
-                        }
-                    }
-                }
-            });
-        } else {
-            chartContractsByMetodoInstance.data.labels = metLabels;
-            chartContractsByMetodoInstance.data.datasets[0].data = metValues;
-            chartContractsByMetodoInstance.data.datasets[0].backgroundColor = metColors;
-            chartContractsByMetodoInstance.data.datasets[0].borderColor = isDark ? '#0f172a' : '#ffffff';
-            chartContractsByMetodoInstance.options.plugins.tooltip.callbacks.label = (ctx) => ` ${((ctx.raw / totalMetCnt) * 100).toFixed(1)}% (${formatContractVal(ctx.raw)} contratos)`;
-            chartContractsByMetodoInstance.update();
-        }
-    }
-
-    // Custom HTML Legend for Metodo Chart
-    const legendMetEl = document.getElementById('chartContractsByMetodoLegend');
-    if (legendMetEl) {
-        legendMetEl.innerHTML = '';
-        metLabels.forEach((lbl, idx) => {
-            const val = metValues[idx];
-            const pct = totalMetCnt > 0 ? ((val / totalMetCnt) * 100).toFixed(1) : 0;
-            const col = metColors[idx];
-            const itemDiv = document.createElement('div');
-            itemDiv.style.cssText = 'display:flex; align-items:center; gap:0.3rem; font-size:0.75rem; padding:0.04rem 0;';
-            itemDiv.innerHTML = `
-                <span style="width:7px; height:7px; border-radius:50%; background-color:${col}; flex-shrink:0;"></span>
-                <span style="color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0;">${lbl}</span>
-                <span style="font-weight:700; color:var(--text-primary); flex-shrink:0; white-space:nowrap;">${pct}%</span>
-            `;
-            legendMetEl.appendChild(itemDiv);
-        });
-    }
+    chartContractsByMetodoInstance = renderDgcDoughnutChart({
+        canvasId: 'chartContractsByMetodo',
+        instance: chartContractsByMetodoInstance,
+        labels: metLabels,
+        data: metValues,
+        colors: metColors,
+        cutout: '65%',
+        borderWidth: 1.5,
+        isDark: isDark,
+        externalTooltip: investmentExternalTooltip,
+        tooltipLabelCallback: (ctx) => ` ${((ctx.raw / totalMetCnt) * 100).toFixed(1)}% (${formatContractVal(ctx.raw)} contratos)`,
+        legendContainerId: 'chartContractsByMetodoLegend',
+        legendTotal: totalMetCnt,
+        legendFontSize: '0.75rem'
+    });
 
     // 3) Gráfico 3: Pie / Donut Chart (% Contratos por Tipo de Iniciativa)
     const cntByIniciativa = { 'Iniciativa Pública': 0, 'Iniciativa Privada': 0 };
@@ -392,64 +322,22 @@ const horizontalBarDataLabelsPlugin = {
     const initColors = ['#2563eb', '#10b981'];
     const totalInitCnt = (initValues[0] + initValues[1]) || displayTotalContracts || 1;
 
-    const canvasInit = document.getElementById('chartContractsByIniciativa');
-    if (canvasInit) {
-        if (!chartContractsByIniciativaInstance) {
-            chartContractsByIniciativaInstance = new Chart(canvasInit.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: initLabels,
-                    datasets: [{
-                        data: initValues,
-                        backgroundColor: initColors,
-                        borderColor: isDark ? '#0f172a' : '#ffffff',
-                        borderWidth: 1.5
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '65%',
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            enabled: false,
-                            external: investmentExternalTooltip,
-                            callbacks: {
-                                label: (ctx) => ` ${((ctx.raw / totalInitCnt) * 100).toFixed(1)}% (${formatContractVal(ctx.raw)} contratos)`
-                            }
-                        }
-                    }
-                }
-            });
-        } else {
-            chartContractsByIniciativaInstance.data.labels = initLabels;
-            chartContractsByIniciativaInstance.data.datasets[0].data = initValues;
-            chartContractsByIniciativaInstance.data.datasets[0].backgroundColor = initColors;
-            chartContractsByIniciativaInstance.data.datasets[0].borderColor = isDark ? '#0f172a' : '#ffffff';
-            chartContractsByIniciativaInstance.options.plugins.tooltip.callbacks.label = (ctx) => ` ${((ctx.raw / totalInitCnt) * 100).toFixed(1)}% (${formatContractVal(ctx.raw)} contratos)`;
-            chartContractsByIniciativaInstance.update();
-        }
-    }
-
-    // Custom HTML Legend for Iniciativa Chart
-    const legendInitEl = document.getElementById('chartContractsByIniciativaLegend');
-    if (legendInitEl) {
-        legendInitEl.innerHTML = '';
-        initLabels.forEach((lbl, idx) => {
-            const val = initValues[idx];
-            const pct = totalInitCnt > 0 ? ((val / totalInitCnt) * 100).toFixed(1) : 0;
-            const col = initColors[idx];
-            const itemDiv = document.createElement('div');
-            itemDiv.style.cssText = 'display:flex; align-items:center; gap:0.3rem; font-size:0.78rem; padding:0.06rem 0;';
-            itemDiv.innerHTML = `
-                <span style="width:7px; height:7px; border-radius:50%; background-color:${col}; flex-shrink:0;"></span>
-                <span style="color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0;">${lbl}</span>
-                <span style="font-weight:700; color:var(--text-primary); flex-shrink:0; white-space:nowrap;">${pct}%</span>
-            `;
-            legendInitEl.appendChild(itemDiv);
-        });
-    }
+    chartContractsByIniciativaInstance = renderDgcDoughnutChart({
+        canvasId: 'chartContractsByIniciativa',
+        instance: chartContractsByIniciativaInstance,
+        labels: initLabels,
+        data: initValues,
+        colors: initColors,
+        cutout: '65%',
+        borderWidth: 1.5,
+        isDark: isDark,
+        externalTooltip: investmentExternalTooltip,
+        tooltipLabelCallback: (ctx) => ` ${((ctx.raw / totalInitCnt) * 100).toFixed(1)}% (${formatContractVal(ctx.raw)} contratos)`,
+        legendContainerId: 'chartContractsByIniciativaLegend',
+        legendTotal: totalInitCnt,
+        legendFontSize: '0.78rem',
+        legendItemPadding: '0.06rem 0'
+    });
 
     // 4) Gráfico 4: Contratos Vigentes por Año (Histograma Temporal)
     const yearlyContracts = {};
@@ -472,53 +360,38 @@ const horizontalBarDataLabelsPlugin = {
     for (let y = 1993; y <= 2055; y++) { yearsArr.push(y); }
     const activeCntData = yearsArr.map(y => yearlyContracts[y] || 0);
 
-    const canvasActiveCnt = document.getElementById('chartActiveContractsYear');
-    if (canvasActiveCnt) {
-        if (!chartActiveContractsYearInstance) {
-            chartActiveContractsYearInstance = new Chart(canvasActiveCnt.getContext('2d'), {
-                type: 'bar',
-                plugins: [todayLineChartPlugin],
-                data: {
-                    labels: yearsArr,
-                    datasets: [{
-                        label: 'Contratos Vigentes',
-                        data: activeCntData,
-                        backgroundColor: '#3b82f6',
-                        borderRadius: 2,
-                        barThickness: 7,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            enabled: false,
-                            external: investmentExternalTooltip,
-                            callbacks: {
-                                label: (ctx) => ` Año ${ctx.label}: ${formatContractVal(ctx.raw)} contratos vigentes`
-                            }
-                        }
-                    },
-                    scales: {
-                        x: { grid: { display: false }, ticks: { color: textColor, font: { size: 9.5 } } },
-                        y: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 9.5 } } }
+    chartActiveContractsYearInstance = createOrUpdateChart('chartActiveContractsYear', chartActiveContractsYearInstance, {
+        type: 'bar',
+        plugins: [todayLineChartPlugin],
+        data: {
+            labels: yearsArr,
+            datasets: [{
+                label: 'Contratos Vigentes',
+                data: activeCntData,
+                backgroundColor: '#3b82f6',
+                borderRadius: 2,
+                barThickness: 7,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    enabled: false,
+                    external: investmentExternalTooltip,
+                    callbacks: {
+                        label: (ctx) => ` Año ${ctx.label}: ${formatContractVal(ctx.raw)} contratos vigentes`
                     }
                 }
-            });
-        } else {
-            chartActiveContractsYearInstance.data.labels = yearsArr;
-            chartActiveContractsYearInstance.data.datasets[0].data = activeCntData;
-            chartActiveContractsYearInstance.options.scales.x.ticks.color = textColor;
-            chartActiveContractsYearInstance.options.scales.x.ticks.font = { size: 9.5 };
-            chartActiveContractsYearInstance.options.scales.y.grid.color = gridColor;
-            chartActiveContractsYearInstance.options.scales.y.ticks.color = textColor;
-            chartActiveContractsYearInstance.options.scales.y.ticks.font = { size: 9.5 };
-            chartActiveContractsYearInstance.options.plugins.tooltip.callbacks.label = (ctx) => ` Año ${ctx.label}: ${formatContractVal(ctx.raw)} contratos vigentes`;
-            chartActiveContractsYearInstance.update();
+            },
+            scales: {
+                x: { grid: { display: false }, ticks: { color: textColor, font: { size: 9.5 } } },
+                y: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 9.5 } } }
+            }
         }
-    }
+    });
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }

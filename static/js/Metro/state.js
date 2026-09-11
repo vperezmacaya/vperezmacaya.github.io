@@ -15,6 +15,7 @@ var metroState = {
     pageSize: 50,
     tableMode: 'projects', // 'projects', 'lines' or 'comunas'
     selectedComuna: null,
+    userExplicitlyEnabledComunas: false,
     timelineOpen: false,
     comunasOpen: false,
     demandaOpen: false
@@ -111,6 +112,7 @@ var metroShowExistingLines = true;
 var metroShowStations = true;
 var metroComunasLayer = null;
 var metroShowComunas = false;
+var metroUserExplicitlyEnabledComunas = false;
 var metroSelectedComuna = null;
 var metroHoveredComuna = null;
 

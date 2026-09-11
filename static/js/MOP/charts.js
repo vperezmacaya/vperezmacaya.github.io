@@ -69,38 +69,6 @@
     function labelColor() { return isDark() ? '#94a3b8' : '#374151'; }
     function titleColor() { return isDark() ? '#cbd5e1' : '#334155'; }
 
-    // Plugin para dibujar la línea vertical de "Hoy" en los histogramas temporales (idéntico a index.html)
-    const todayLineChartPlugin = {
-        id: 'todayLineChartPlugin',
-        afterDraw: (chart) => {
-            const currentYear = new Date().getFullYear();
-            const labels = chart.data.labels || [];
-            const index = labels.indexOf(currentYear);
-            if (index !== -1) {
-                const xAxis = chart.scales.x;
-                const yAxis = chart.scales.y;
-                const x = xAxis.getPixelForValue(index);
-                const ctx = chart.ctx;
-
-                ctx.save();
-                ctx.beginPath();
-                ctx.setLineDash([4, 3]);
-                ctx.lineWidth = 1.8;
-                ctx.strokeStyle = '#ef4444';
-                ctx.moveTo(x, yAxis.top);
-                ctx.lineTo(x, yAxis.bottom);
-                ctx.stroke();
-
-                // Etiqueta "Hoy" en la parte superior
-                ctx.fillStyle = '#ef4444';
-                ctx.font = 'bold 8.5px Inter, system-ui, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(`Hoy (${currentYear})`, x, Math.max(10, yAxis.top - 3));
-                ctx.restore();
-            }
-        }
-    };
-
     // Plugin para dibujar etiquetas de valor en barras horizontales (idéntico a index.html)
     const horizontalBarDataLabelsPlugin = {
         id: 'horizontalBarDataLabelsPlugin',
@@ -1048,16 +1016,23 @@
         const totalCost = data.reduce((sum, d) => sum + d.total, 0);
         const labels = data.map(d => shortRegion(d.label));
         const values = data.map(d => +d.total.toFixed(1));
-        const bgColors = '#2563eb';
+        const bgColors = 'rgba(37, 99, 235, 0.8)';
+        const borderColors = '#2563eb';
 
         if (charts.region) {
             charts.region.data.labels = labels;
             charts.region.data.datasets[0].data = values;
             charts.region.data.datasets[0].backgroundColor = bgColors;
+            charts.region.data.datasets[0].borderColor = borderColors;
+            charts.region.options.scales.x.title.text = 'Inversión (Millones CLP)';
             charts.region.options.scales.x.title.color = titleColor();
             charts.region.options.scales.x.grid.color = gridColor();
             charts.region.options.scales.x.ticks.color = labelColor();
+            charts.region.options.scales.x.ticks.callback = v => v.toLocaleString('es-CL');
             charts.region.options.scales.y.ticks.color = labelColor();
+            if (charts.region.options.plugins.horizontalBarDataLabelsPlugin) {
+                charts.region.options.plugins.horizontalBarDataLabelsPlugin.formatter = (v) => `${Number(v).toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} (${((v / (totalCost || 1)) * 100).toFixed(1)}%)`;
+            }
             charts.region.options.plugins.tooltip.callbacks.label = (ctx) => ` Inversión: $${Number(ctx.raw).toLocaleString('es-CL')} MM CLP (${((ctx.raw / (totalCost || 1)) * 100).toFixed(1)}%)`;
             delete charts.region.options.onClick;
             charts.region.update();
@@ -1071,6 +1046,8 @@
                         label:           'Inversión (MM CLP)',
                         data:            values,
                         backgroundColor: bgColors,
+                        borderColor:     borderColors,
+                        borderWidth:     1,
                         borderRadius:    3,
                         borderSkipped:   false,
                     }]
@@ -1083,7 +1060,7 @@
                     plugins: {
                         legend: { display: false },
                         horizontalBarDataLabelsPlugin: {
-                            formatter: (v) => formatMM(v)
+                            formatter: (v) => `${Number(v).toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} (${((v / (totalCost || 1)) * 100).toFixed(1)}%)`
                         },
                         tooltip: {
                             enabled: false,
@@ -1098,22 +1075,22 @@
                         x: {
                             title: {
                                 display: true,
-                                text: 'Inversión (MM CLP)',
+                                text: 'Inversión (Millones CLP)',
                                 color: titleColor(),
-                                font: { size: 10, weight: '600' }
+                                font: { size: 9.5, weight: '600' }
                             },
                             grid:  { color: gridColor() },
                             ticks: {
                                 color: labelColor(),
                                 font: { size: 10 },
-                                callback: v => `$${v.toLocaleString('es-CL')}M`
+                                callback: v => v.toLocaleString('es-CL')
                             }
                         },
                         y: {
                             grid:  { display: false },
                             ticks: {
                                 color: labelColor(),
-                                font: { size: 10.5, weight: '500' },
+                                font: { size: 10, weight: '600' },
                                 autoSkip: false
                             }
                         }
@@ -1146,10 +1123,15 @@
             charts[id].data.labels = labels;
             charts[id].data.datasets[0].data = values;
             charts[id].data.datasets[0].backgroundColor = colors;
+            charts[id].options.scales.x.title.text = 'Inversión (Millones CLP)';
             charts[id].options.scales.x.title.color = titleColor();
             charts[id].options.scales.x.grid.color = gridColor();
             charts[id].options.scales.x.ticks.color = labelColor();
+            charts[id].options.scales.x.ticks.callback = v => v.toLocaleString('es-CL');
             charts[id].options.scales.y.ticks.color = labelColor();
+            if (charts[id].options.plugins.horizontalBarDataLabelsPlugin) {
+                charts[id].options.plugins.horizontalBarDataLabelsPlugin.formatter = (v) => `${Number(v).toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} (${((v / (totalCost || 1)) * 100).toFixed(1)}%)`;
+            }
             charts[id].options.plugins.tooltip.callbacks.label = (ctx) => ` Inversión: $${Number(ctx.raw).toLocaleString('es-CL')} MM CLP (${((ctx.raw / (totalCost || 1)) * 100).toFixed(1)}%)`;
             charts[id].update();
         } else {
@@ -1162,6 +1144,7 @@
                         label:           'Inversión (MM CLP)',
                         data:            values,
                         backgroundColor: colors,
+                        borderWidth:     1,
                         borderRadius:    3,
                         borderSkipped:   false,
                     }]
@@ -1174,7 +1157,7 @@
                     plugins: {
                         legend: { display: false },
                         horizontalBarDataLabelsPlugin: {
-                            formatter: (v) => formatMM(v)
+                            formatter: (v) => `${Number(v).toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} (${((v / (totalCost || 1)) * 100).toFixed(1)}%)`
                         },
                         tooltip: {
                             enabled: false,
@@ -1195,22 +1178,22 @@
                         x: {
                             title: {
                                 display: true,
-                                text: 'Inversión (MM CLP)',
+                                text: 'Inversión (Millones CLP)',
                                 color: titleColor(),
-                                font: { size: 10, weight: '600' }
+                                font: { size: 9.5, weight: '600' }
                             },
                             grid:  { color: gridColor() },
                             ticks: {
                                 color: labelColor(),
                                 font: { size: 10 },
-                                callback: v => `$${v.toLocaleString('es-CL')}M`
+                                callback: v => v.toLocaleString('es-CL')
                             }
                         },
                         y: {
                             grid:  { display: false },
                             ticks: {
                                 color: labelColor(),
-                                font: { size: 10.5, weight: '500' },
+                                font: { size: 10, weight: '600' },
                                 autoSkip: false
                             }
                         }
@@ -1236,18 +1219,26 @@
             return;
         }
 
+        const totalCost = data.reduce((sum, d) => sum + d.total, 0);
         const labels = data.map(d => d.label.length > 32 ? d.label.slice(0, 31) + '…' : d.label);
         const values = data.map(d => +d.total.toFixed(1));
-        const barColor = '#f59e0b';
+        const barColor = 'rgba(245, 158, 11, 0.85)';
+        const borderColor = '#f59e0b';
 
         if (charts[id]) {
             charts[id].data.labels = labels;
             charts[id].data.datasets[0].data = values;
             charts[id].data.datasets[0].backgroundColor = barColor;
+            charts[id].data.datasets[0].borderColor = borderColor;
+            charts[id].options.scales.x.title.text = 'Inversión (Millones CLP)';
             charts[id].options.scales.x.title.color = titleColor();
             charts[id].options.scales.x.grid.color = gridColor();
             charts[id].options.scales.x.ticks.color = labelColor();
+            charts[id].options.scales.x.ticks.callback = v => v.toLocaleString('es-CL');
             charts[id].options.scales.y.ticks.color = labelColor();
+            if (charts[id].options.plugins.horizontalBarDataLabelsPlugin) {
+                charts[id].options.plugins.horizontalBarDataLabelsPlugin.formatter = (v) => `${Number(v).toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} (${((v / (totalCost || 1)) * 100).toFixed(1)}%)`;
+            }
             charts[id].update();
         } else {
             charts[id] = new Chart(canvas, {
@@ -1259,6 +1250,8 @@
                         label:           'Inversión (MM CLP)',
                         data:            values,
                         backgroundColor: barColor,
+                        borderColor:     borderColor,
+                        borderWidth:     1,
                         borderRadius:    3,
                         borderSkipped:   false,
                     }]
@@ -1271,7 +1264,7 @@
                     plugins: {
                         legend: { display: false },
                         horizontalBarDataLabelsPlugin: {
-                            formatter: (v) => formatMM(v)
+                            formatter: (v) => `${Number(v).toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} (${((v / (totalCost || 1)) * 100).toFixed(1)}%)`
                         },
                         tooltip: {
                             enabled: false,
@@ -1284,7 +1277,7 @@
                                     }
                                     return '';
                                 },
-                                label: ctx => ` Inversión: $${Number(ctx.raw).toLocaleString('es-CL')} MM CLP`
+                                label: ctx => ` Inversión: $${Number(ctx.raw).toLocaleString('es-CL')} MM CLP (${((ctx.raw / (totalCost || 1)) * 100).toFixed(1)}%)`
                             }
                         }
                     },
@@ -1292,22 +1285,22 @@
                         x: {
                             title: {
                                 display: true,
-                                text: 'Inversión (MM CLP)',
+                                text: 'Inversión (Millones CLP)',
                                 color: titleColor(),
-                                font: { size: 10, weight: '600' }
+                                font: { size: 9.5, weight: '600' }
                             },
                             grid:  { color: gridColor() },
                             ticks: {
                                 color: labelColor(),
                                 font: { size: 10 },
-                                callback: v => `$${v.toLocaleString('es-CL')}M`
+                                callback: v => v.toLocaleString('es-CL')
                             }
                         },
                         y: {
                             grid:  { display: false },
                             ticks: {
                                 color: labelColor(),
-                                font: { size: 9.5, weight: '500' },
+                                font: { size: 9.5, weight: '600' },
                                 autoSkip: false
                             }
                         }
@@ -1333,12 +1326,14 @@
         const totalProjects = data.reduce((sum, d) => sum + d.count, 0);
         const labels = data.map(d => shortRegion(d.label));
         const values = data.map(d => d.count);
-        const bgColors = '#10b981';
+        const bgColors = 'rgba(16, 185, 129, 0.85)';
+        const borderColors = '#10b981';
 
         if (charts['region-count']) {
             charts['region-count'].data.labels = labels;
             charts['region-count'].data.datasets[0].data = values;
             charts['region-count'].data.datasets[0].backgroundColor = bgColors;
+            charts['region-count'].data.datasets[0].borderColor = borderColors;
             charts['region-count'].options.scales.x.title.color = titleColor();
             charts['region-count'].options.scales.x.grid.color = gridColor();
             charts['region-count'].options.scales.x.ticks.color = labelColor();
@@ -1356,6 +1351,8 @@
                         label:           'Nº Proyectos',
                         data:            values,
                         backgroundColor: bgColors,
+                        borderColor:     borderColors,
+                        borderWidth:     1,
                         borderRadius:    3,
                         borderSkipped:   false,
                     }]
@@ -1385,7 +1382,7 @@
                                 display: true,
                                 text: 'Número de Proyectos',
                                 color: titleColor(),
-                                font: { size: 10, weight: '600' }
+                                font: { size: 9.5, weight: '600' }
                             },
                             grid:  { color: gridColor() },
                             ticks: {
@@ -1398,7 +1395,7 @@
                             grid:  { display: false },
                             ticks: {
                                 color: labelColor(),
-                                font: { size: 10, weight: '500' },
+                                font: { size: 10, weight: '600' },
                                 autoSkip: false
                             }
                         }
@@ -1408,7 +1405,7 @@
         }
     }
 
-    // ── 4. Barras: Proyectos por Etapa (Sin línea amarilla de inversión) ────────
+    // ── 4. Barras: Proyectos por Etapa ─────────────────────────────────────────
     function renderEtapaBar() {
         const id = 'chart-etapa-tab';
         const canvas = document.getElementById(id);
@@ -1425,7 +1422,8 @@
         const totalProjects = data.reduce((sum, d) => sum + d.count, 0);
         const labels = data.map(d => d.label);
         const countValues = data.map(d => d.count);
-        const barColor = '#2563eb';
+        const barColor = 'rgba(37, 99, 235, 0.8)';
+        const borderColor = '#2563eb';
 
         if (charts[id]) {
             charts[id].data.labels = labels;
@@ -1433,6 +1431,8 @@
                 label:           'Nº Proyectos',
                 data:            countValues,
                 backgroundColor: barColor,
+                borderColor:     borderColor,
+                borderWidth:     1,
                 borderRadius:    3,
                 borderSkipped:   false,
             }];
@@ -1452,6 +1452,8 @@
                         label:           'Nº Proyectos',
                         data:            countValues,
                         backgroundColor: barColor,
+                        borderColor:     borderColor,
+                        borderWidth:     1,
                         borderRadius:    3,
                         borderSkipped:   false,
                     }]
@@ -1486,7 +1488,7 @@
                                 display: true,
                                 text: 'Nº Proyectos',
                                 color: titleColor(),
-                                font: { size: 10, weight: '600' }
+                                font: { size: 9.5, weight: '600' }
                             },
                             grid: { color: gridColor() },
                             ticks: {
@@ -1500,7 +1502,7 @@
         }
     }
 
-    // ── 5. Línea: Evolución por año de primera postulación (Plugin Hoy exacto a index.html) ──
+    // ── 5. Línea Combo: Evolución por año de primera postulación (Standard index.html) ──
     function renderYearLine() {
         const canvas = document.getElementById('chart-year');
         if (!canvas) return;
@@ -1538,29 +1540,34 @@
         } else {
             charts.year = new Chart(canvas, {
                 type: 'bar',
-                plugins: [todayLineChartPlugin],
                 data: {
                     labels: years,
                     datasets: [
                         {
                             label:           'Nº Proyectos',
                             data:            countValues,
-                            backgroundColor: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.8)',
+                            borderColor:     '#2563eb',
+                            borderWidth:     1,
                             borderRadius:    3,
                             borderSkipped:   false,
                             yAxisID:         'y',
+                            order:           2,
                         },
                         {
                             label:           'Inversión (MM CLP)',
                             data:            costValues,
                             type:            'line',
                             borderColor:     '#f59e0b',
-                            backgroundColor: 'transparent',
-                            borderWidth:     2,
-                            pointRadius:     4,
-                            pointHoverRadius:6,
-                            tension:         0.25,
+                            backgroundColor: '#f59e0b',
+                            borderWidth:     2.2,
+                            pointRadius:     2.5,
+                            pointHoverRadius:4.5,
+                            pointBackgroundColor: '#f59e0b',
+                            fill:            false,
+                            tension:         0,
                             yAxisID:         'y2',
+                            order:           1,
                         }
                     ]
                 },
@@ -1568,24 +1575,11 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     animation: { duration: 450, easing: 'easeOutQuart' },
-                    interaction: { mode: 'index', intersect: false },
+                    interaction: { mode: 'nearest', intersect: true },
                     plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top',
-                            align: 'end',
-                            labels: {
-                                boxWidth: 10,
-                                boxHeight: 10,
-                                padding: 12,
-                                color: labelColor(),
-                                font: { size: 10 }
-                            }
-                        },
+                        legend: { display: false },
                         tooltip: {
                             enabled: false,
-                            mode: 'index',
-                            intersect: false,
                             external: mopExternalTooltip,
                             callbacks: {
                                 title: (items) => items.length ? `Año ${items[0].label}` : '',
@@ -1598,18 +1592,20 @@
                     },
                     scales: {
                         x: {
-                            grid: { color: gridColor() },
+                            grid: { display: false },
                             ticks: {
                                 color: labelColor(),
                                 font: { size: 10 }
                             }
                         },
                         y: {
+                            type: 'linear',
+                            position: 'left',
                             title: {
                                 display: true,
                                 text: 'Nº Proyectos',
                                 color: titleColor(),
-                                font: { size: 10, weight: '600' }
+                                font: { size: 9.5, weight: '600' }
                             },
                             grid: { color: gridColor() },
                             ticks: {
@@ -1618,14 +1614,15 @@
                             }
                         },
                         y2: {
+                            type: 'linear',
                             position: 'right',
                             title: {
                                 display: true,
                                 text: 'Inversión (MM CLP)',
                                 color: '#f59e0b',
-                                font: { size: 10, weight: '600' }
+                                font: { size: 9.5, weight: '600' }
                             },
-                            grid: { display: false },
+                            grid: { drawOnChartArea: false },
                             ticks: {
                                 color: '#f59e0b',
                                 font: { size: 10 },

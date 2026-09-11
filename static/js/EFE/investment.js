@@ -202,6 +202,9 @@ function hideEfeInvestmentView() {
         setTimeout(() => {
             if (typeof efeMap !== 'undefined' && efeMap) {
                 efeMap.invalidateSize({ animate: false });
+                if (!efeState.selectedProjectName && typeof efeApplyDefaultMapView === 'function') {
+                    efeApplyDefaultMapView(false);
+                }
             }
         }, 100);
     }
@@ -344,6 +347,12 @@ function renderEfeInvestmentAnalytics(projectsList) {
                                     return ` Inversión: ${formatEfeUSD(val)} (${pct}%) · ${cnt} proyecto${cnt !== 1 ? 's' : ''}`;
                                 }
                             }
+                        },
+                        efeHorizontalBarLabelsPlugin: {
+                            formatter: (val) => {
+                                const pct = displayTotalInv > 0 ? ((val / displayTotalInv) * 100).toFixed(1) : 0;
+                                return `${val.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} (${pct}%)`;
+                            }
                         }
                     },
                     scales: {
@@ -352,7 +361,13 @@ function renderEfeInvestmentAnalytics(projectsList) {
                             ticks: {
                                 color: textColor,
                                 font: { size: 10 },
-                                callback: (val) => formatEfeUSD(val)
+                                callback: (val) => val.toLocaleString('es-CL')
+                            },
+                            title: {
+                                display: true,
+                                text: 'Inversión (MM USD)',
+                                color: textColor,
+                                font: { size: 9.5, weight: '600' }
                             }
                         },
                         y: {
@@ -373,6 +388,13 @@ function renderEfeInvestmentAnalytics(projectsList) {
             efeChartInvByTipoInstance.options.scales.x.grid.color = gridColor;
             efeChartInvByTipoInstance.options.scales.x.ticks.color = textColor;
             efeChartInvByTipoInstance.options.scales.x.ticks.font = { size: 10 };
+            efeChartInvByTipoInstance.options.scales.x.ticks.callback = (val) => val.toLocaleString('es-CL');
+            efeChartInvByTipoInstance.options.scales.x.title = {
+                display: true,
+                text: 'Inversión (MM USD)',
+                color: textColor,
+                font: { size: 9.5, weight: '600' }
+            };
             efeChartInvByTipoInstance.options.scales.y.ticks.color = textColor;
             efeChartInvByTipoInstance.options.scales.y.ticks.font = { size: 10.5, weight: '600' };
             efeChartInvByTipoInstance.options.plugins.tooltip.callbacks.label = (ctx) => {
@@ -382,6 +404,12 @@ function renderEfeInvestmentAnalytics(projectsList) {
                 const pct = displayTotalInv > 0 ? ((val / displayTotalInv) * 100).toFixed(1) : 0;
                 return ` Inversión: ${formatEfeUSD(val)} (${pct}%) · ${cnt} proyecto${cnt !== 1 ? 's' : ''}`;
             };
+            if (efeChartInvByTipoInstance.options.plugins.efeHorizontalBarLabelsPlugin) {
+                efeChartInvByTipoInstance.options.plugins.efeHorizontalBarLabelsPlugin.formatter = (val) => {
+                    const pct = displayTotalInv > 0 ? ((val / displayTotalInv) * 100).toFixed(1) : 0;
+                    return `${val.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} (${pct}%)`;
+                };
+            }
             efeChartInvByTipoInstance.update();
         }
     }
@@ -507,6 +535,9 @@ function renderEfeInvestmentAnalytics(projectsList) {
                                     ];
                                 }
                             }
+                        },
+                        efeHorizontalBarLabelsPlugin: {
+                            formatter: (val) => val.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
                         }
                     },
                     scales: {
@@ -515,7 +546,13 @@ function renderEfeInvestmentAnalytics(projectsList) {
                             ticks: {
                                 color: textColor,
                                 font: { size: 10 },
-                                callback: (val) => formatEfeUSD(val)
+                                callback: (val) => val.toLocaleString('es-CL')
+                            },
+                            title: {
+                                display: true,
+                                text: 'Inversión (MM USD)',
+                                color: textColor,
+                                font: { size: 9.5, weight: '600' }
                             }
                         },
                         y: {
@@ -541,6 +578,13 @@ function renderEfeInvestmentAnalytics(projectsList) {
             efeChartTopProjectsInstance.options.scales.x.grid.color = gridColor;
             efeChartTopProjectsInstance.options.scales.x.ticks.color = textColor;
             efeChartTopProjectsInstance.options.scales.x.ticks.font = { size: 10 };
+            efeChartTopProjectsInstance.options.scales.x.ticks.callback = (val) => val.toLocaleString('es-CL');
+            efeChartTopProjectsInstance.options.scales.x.title = {
+                display: true,
+                text: 'Inversión (MM USD)',
+                color: textColor,
+                font: { size: 9.5, weight: '600' }
+            };
             efeChartTopProjectsInstance.options.scales.y.ticks.color = textColor;
             efeChartTopProjectsInstance.options.scales.y.ticks.font = { size: 9.5, weight: '500' };
             efeChartTopProjectsInstance.options.scales.y.ticks.callback = function (val, idx) {
@@ -560,6 +604,9 @@ function renderEfeInvestmentAnalytics(projectsList) {
                     ` Tipo: ${entry.type || 'Sin tipo'}`
                 ];
             };
+            if (efeChartTopProjectsInstance.options.plugins.efeHorizontalBarLabelsPlugin) {
+                efeChartTopProjectsInstance.options.plugins.efeHorizontalBarLabelsPlugin.formatter = (val) => val.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+            }
             efeChartTopProjectsInstance.update();
         }
     }

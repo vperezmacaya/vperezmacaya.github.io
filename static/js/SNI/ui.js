@@ -110,6 +110,16 @@ function switchViewContainer(viewName) {
         activeContainer.style.display = viewName === 'map' ? 'grid' : 'flex';
     }
 
+    // Ocultar barra lateral en Análisis Territorial para que los gráficos ocupen toda la pantalla
+    const layout = document.querySelector('.sni-layout');
+    if (layout) {
+        if (viewName === 'territorial') {
+            layout.classList.add('no-sidebar');
+        } else {
+            layout.classList.remove('no-sidebar');
+        }
+    }
+
     if (viewName === 'map') {
         if (sniLeafletMap) {
             setTimeout(() => {

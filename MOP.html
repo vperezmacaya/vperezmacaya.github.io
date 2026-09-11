@@ -9,7 +9,7 @@
     <link rel="icon" type="image/png" href="logo/favicon.png">
     <link rel="shortcut icon" href="logo/favicon.ico">
     <!-- Shared stylesheet (navbar, footer, panel-card, forms, etc.) -->
-    <link rel="stylesheet" href="static/css/styles.css?v=20260907_v2">
+    <link rel="stylesheet" href="static/css/styles.css?v=20260910">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- SheetJS for Client-Side Excel Export -->
@@ -259,7 +259,12 @@
                 <span class="top-navbar-divider"></span>
                 <span class="top-navbar-proto">Prototipo en desarrollo</span>
             </div>
-            <div class="top-navbar-right">
+            <div class="top-navbar-right" style="display: flex; align-items: center; gap: 0.45rem;">
+                <button class="top-navbar-btn" id="btn-open-about"
+                    title="Acerca de este módulo (Fuentes oficiales y Metodología de cálculo)">
+                    <i data-lucide="info" style="width: 13px; height: 13px;"></i>
+                    <span>Acerca de</span>
+                </button>
                 <div class="nav-menu" id="nav-menu">
                     <button class="nav-menu-btn" id="nav-menu-btn" aria-haspopup="true" aria-expanded="false">
                         <img src="logo/Gob_chile_logo.svg" alt="Gobierno de Chile" class="nav-db-logo" width="15" height="15" style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
@@ -694,40 +699,40 @@
 
                     <!-- ── TAB 2: Inversión por Región, Servicio y Programa ────────── -->
                     <div class="mop-view-container hidden" data-mop-view="inversion" style="display: flex; flex-direction: column; height: 100%; min-height: 0;">
-                        <div style="display: grid; grid-template-columns: 1.15fr 1fr; grid-template-rows: 1fr 1fr; gap: 0.6rem; height: 100%; min-height: 0;">
+                        <div style="display: grid; grid-template-columns: 1.15fr 1fr; grid-template-rows: 1fr 1fr; gap: 0.5rem; height: 100%; min-height: 0;">
                             <!-- Chart 1: Inversión por Región (Ocupa ambas filas para máxima legibilidad de las 16 regiones) -->
-                            <div class="panel-card" style="grid-row: span 2; padding: 0.75rem; display: flex; flex-direction: column; height: 100%; min-height: 0;">
-                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.35rem; margin-bottom: 0.35rem; flex-shrink: 0;">
-                                    <h3 class="panel-title" style="font-size:0.8rem;">
-                                        <i data-lucide="bar-chart-2" style="width:14px;height:14px;color:#3b82f6;"></i>
+                            <div class="panel-card" style="grid-row: span 2; padding: 0.45rem 0.5rem 0.35rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
+                                    <h3 style="font-size: 0.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
+                                        <i data-lucide="bar-chart-2" style="width: 13px; height: 13px; color: #3b82f6;"></i>
                                         Inversión Acumulada por Región (Millones CLP)
                                     </h3>
                                 </div>
-                                <div class="chart-wrap" style="flex:1; position:relative; min-height:0;">
+                                <div style="flex: 1; min-height: 0; position: relative;">
                                     <canvas id="chart-region"></canvas>
                                 </div>
                             </div>
                             <!-- Chart 2: Inversión por Servicio MOP -->
-                            <div class="panel-card" style="padding: 0.75rem; display: flex; flex-direction: column; height: 100%; min-height: 0;">
-                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.35rem; margin-bottom: 0.35rem; flex-shrink: 0;">
-                                    <h3 class="panel-title" style="font-size:0.8rem;">
-                                        <i data-lucide="building-2" style="width:14px;height:14px;color:#0d9488;"></i>
+                            <div class="panel-card" style="padding: 0.45rem 0.5rem 0.35rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
+                                    <h3 style="font-size: 0.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
+                                        <i data-lucide="building-2" style="width: 13px; height: 13px; color: #0d9488;"></i>
                                         Inversión por Servicio MOP (Millones CLP)
                                     </h3>
                                 </div>
-                                <div class="chart-wrap" style="flex:1; position:relative; min-height:0;">
+                                <div style="flex: 1; min-height: 0; position: relative;">
                                     <canvas id="chart-servicio-inversion"></canvas>
                                 </div>
                             </div>
                             <!-- Chart 3: Inversión por Programa MOP -->
-                            <div class="panel-card" style="padding: 0.75rem; display: flex; flex-direction: column; height: 100%; min-height: 0;">
-                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.35rem; margin-bottom: 0.35rem; flex-shrink: 0;">
-                                    <h3 class="panel-title" style="font-size:0.8rem;">
-                                        <i data-lucide="layers" style="width:14px;height:14px;color:#f59e0b;"></i>
+                            <div class="panel-card" style="padding: 0.45rem 0.5rem 0.35rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
+                                    <h3 style="font-size: 0.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
+                                        <i data-lucide="layers" style="width: 13px; height: 13px; color: #f59e0b;"></i>
                                         Inversión por Programa (Top 10 Millones CLP)
                                     </h3>
                                 </div>
-                                <div class="chart-wrap" style="flex:1; position:relative; min-height:0;">
+                                <div style="flex: 1; min-height: 0; position: relative;">
                                     <canvas id="chart-programa-inversion"></canvas>
                                 </div>
                             </div>
@@ -736,40 +741,51 @@
 
                     <!-- ── TAB 3: Programas y Etapas + Evolución Anual ────────────────── -->
                     <div class="mop-view-container hidden" data-mop-view="programas" style="display: flex; flex-direction: column; height: 100%; min-height: 0;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 0.6rem; height: 100%; min-height: 0;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 0.5rem; height: 100%; min-height: 0;">
                             <!-- Chart 1: Proyectos por Etapa -->
-                            <div class="panel-card" style="padding: 0.75rem; display: flex; flex-direction: column; height: 100%; min-height: 0;">
-                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.35rem; margin-bottom: 0.35rem; flex-shrink: 0;">
-                                    <h3 class="panel-title" style="font-size:0.8rem;">
-                                        <i data-lucide="git-commit-vertical" style="width:14px;height:14px;color:#f97316;"></i>
+                            <div class="panel-card" style="padding: 0.45rem 0.5rem 0.35rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
+                                    <h3 style="font-size: 0.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
+                                        <i data-lucide="git-commit-vertical" style="width: 13px; height: 13px; color: #f97316;"></i>
                                         Proyectos por Etapa del Ciclo de Vida
                                     </h3>
                                 </div>
-                                <div class="chart-wrap" style="flex:1; position:relative; min-height:0;">
+                                <div style="flex: 1; min-height: 0; position: relative;">
                                     <canvas id="chart-etapa-tab"></canvas>
                                 </div>
                             </div>
                             <!-- Chart 2: Número de Proyectos por Región -->
-                            <div class="panel-card" style="padding: 0.75rem; display: flex; flex-direction: column; height: 100%; min-height: 0;">
-                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.35rem; margin-bottom: 0.35rem; flex-shrink: 0;">
-                                    <h3 class="panel-title" style="font-size:0.8rem;">
-                                        <i data-lucide="map-pin" style="width:14px;height:14px;color:#10b981;"></i>
+                            <div class="panel-card" style="padding: 0.45rem 0.5rem 0.35rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
+                                    <h3 style="font-size: 0.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
+                                        <i data-lucide="map-pin" style="width: 13px; height: 13px; color: #10b981;"></i>
                                         Número de Proyectos por Región
                                     </h3>
                                 </div>
-                                <div class="chart-wrap" style="flex:1; position:relative; min-height:0;">
+                                <div style="flex: 1; min-height: 0; position: relative;">
                                     <canvas id="chart-region-count"></canvas>
                                 </div>
                             </div>
                             <!-- Chart 3: Evolución Anual (Traspasado a esta visualización) -->
-                            <div class="panel-card" style="grid-column: span 2; padding: 0.75rem; display: flex; flex-direction: column; height: 100%; min-height: 0;">
-                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.35rem; margin-bottom: 0.35rem; flex-shrink: 0;">
-                                    <h3 class="panel-title" style="font-size:0.8rem;">
-                                        <i data-lucide="trending-up" style="width:14px;height:14px;color:#10b981;"></i>
+                            <div class="panel-card" style="grid-column: span 2; padding: 0.45rem 0.5rem 0.35rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0; gap: 0.5rem;">
+                                    <h3 style="font-size: 0.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">
+                                        <i data-lucide="trending-up" style="width: 13px; height: 13px; color: #10b981;"></i>
                                         Evolución Anual (Primera Postulación)
                                     </h3>
+                                    <!-- Micro-Leyenda -->
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.6rem; flex-shrink: 0;">
+                                        <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: var(--text-secondary);">
+                                            <span style="width: 7px; height: 7px; background: #2563eb; border-radius: 1.5px; display: inline-block;"></span>
+                                            Nº Proyectos (Izq)
+                                        </span>
+                                        <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: var(--text-primary); font-weight: 600;">
+                                            <span style="width: 9px; height: 2px; background: #f59e0b; display: inline-block;"></span>
+                                            Inversión MM$ (Der)
+                                        </span>
+                                    </div>
                                 </div>
-                                <div class="chart-wrap" style="flex:1; position:relative; min-height:0;">
+                                <div style="flex: 1; min-height: 0; position: relative;">
                                     <canvas id="chart-year"></canvas>
                                 </div>
                             </div>
@@ -964,6 +980,255 @@
         document.addEventListener('DOMContentLoaded', function () {
             if (typeof lucide !== 'undefined') lucide.createIcons();
         });
+    </script>
+
+    <!-- Modal: Acerca de (Fuentes de Datos y Metodología de Cálculo) -->
+    <div id="about-modal" class="about-modal-backdrop" style="display: none;">
+        <div class="about-modal-container">
+            <!-- Modal Header -->
+            <div class="about-modal-header">
+                <div style="display: flex; align-items: center; gap: 0.75rem; min-width: 0;">
+                    <i data-lucide="info" style="width: 20px; height: 20px; color: #2563eb; flex-shrink: 0;"></i>
+                    <div style="min-width: 0;">
+                        <h3 class="about-modal-title">
+                            Módulo Ministerio de Obras Públicas (MOP)
+                        </h3>
+                    </div>
+                </div>
+                <button id="btn-close-about-modal" class="about-modal-close-btn" title="Cerrar (Esc)">
+                    <i data-lucide="x" style="width: 17px; height: 17px;"></i>
+                </button>
+            </div>
+
+            <!-- Modal Scrollable Body -->
+            <div class="about-modal-body">
+                <!-- SECCIÓN 1: DESCRIPCIÓN Y OBJETIVO DEL MÓDULO -->
+                <div class="about-section">
+                    <div class="about-section-header">
+                        <h4 class="about-section-title">1. Descripción y Objetivo del Módulo</h4>
+                    </div>
+                    <div
+                        style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.9rem 1.1rem; display: flex; flex-direction: column; gap: 0.65rem;">
+                        <p style="margin: 0; font-size: 0.78rem; line-height: 1.55; color: #334155;">
+                            Este módulo agrupa la cartera histórica y planificada de proyectos e iniciativas de inversión del <strong>Ministerio de Obras Públicas (MOP)</strong> de Chile, integrando las obras gestionadas por sus distintas direcciones sectoriales (Dirección de Vialidad, Dirección de Obras Portuarias, Subdirección de Servicios Sanitarios Rurales, Dirección de Obras Hidráulicas, Dirección de Aeropuertos y Dirección de Arquitectura).
+                        </p>
+
+                        <div
+                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 0.75rem; margin-top: 0.2rem;">
+                            <!-- Lo que mapea -->
+                            <div
+                                style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem 0.9rem; display: flex; flex-direction: column; gap: 0.3rem;">
+                                <div
+                                    style="font-size: 0.78rem; font-weight: 700; color: #1e3a8a; display: flex; align-items: center; gap: 0.35rem;">
+                                    <i data-lucide="map-pin" style="width: 14px; height: 14px; color: #2563eb;"></i>
+                                    ¿Qué sistematiza este módulo?
+                                </div>
+                                <p style="margin: 0; font-size: 0.73rem; color: #475569; line-height: 1.5;">
+                                    Registra y sistematiza la cartera de proyectos de inversión en infraestructura pública sectorial a nivel nacional, detallando sus códigos BIP (Banco Integrado de Proyectos), montos presupuestarios en millones de pesos (MM CLP), direcciones o servicios ejecutores, programas sectoriales, etapas del ciclo de vida (Perfil, Prefactibilidad, Factibilidad, Diseño y Ejecución), y los años de primera y última postulación presupuestaria.
+                                </p>
+                            </div>
+
+                            <!-- Objetivo -->
+                            <div
+                                style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem 0.9rem; display: flex; flex-direction: column; gap: 0.3rem;">
+                                <div
+                                    style="font-size: 0.78rem; font-weight: 700; color: #1e3a8a; display: flex; align-items: center; gap: 0.35rem;">
+                                    <i data-lucide="target" style="width: 14px; height: 14px; color: #2563eb;"></i>
+                                    Objetivo
+                                </div>
+                                <p style="margin: 0; font-size: 0.73rem; color: #475569; line-height: 1.5;">
+                                    Facilitar el análisis interactivo, territorial, temporal y sectorial de la inversión pública ejecutada y planificada por el MOP en todas las regiones del país, permitiendo examinar la distribución del gasto fiscal por servicio técnico, los programas prioritarios de conectividad y recursos hídricos, y el avance de las iniciativas dentro del Sistema Nacional de Inversiones (SNI).
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 2: FUENTES DE DATOS -->
+                <div class="about-section">
+                    <div class="about-section-header"
+                        style="display: flex; align-items: center; justify-content: space-between;">
+                        <h4 class="about-section-title">2. Fuentes de Datos</h4>
+                        <span style="font-size: 0.68rem; color: #64748b; font-weight: 500;">Última actualización: Agosto 2026</span>
+                    </div>
+
+                    <!-- Contenedor Único de Fuentes de Datos -->
+                    <div class="about-source-card" style="background: #f8fafc; padding: 0.9rem 1.1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                        <!-- 1. Cartera Oficial MOP -->
+                        <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                            <div class="about-source-top" style="margin-bottom: 0.15rem;">
+                                <span class="about-source-name"
+                                    style="font-size: 0.82rem; font-weight: 700; color: #0f172a;">
+                                    <i data-lucide="folder-git-2" style="width: 15px; height: 15px; color: #0284c7;"></i>
+                                    Cartera Oficial de Proyectos MOP:
+                                </span>
+                            </div>
+                            <p style="margin: 0; font-size: 0.77rem; line-height: 1.45; color: #334155;">
+                                <a href="https://proyectos.mop.gob.cl/Default.asp?buscar=true"
+                                    target="_blank" rel="noopener noreferrer"
+                                    style="color: #0284c7; font-weight: 600; text-decoration: underline; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                    https://proyectos.mop.gob.cl/Default.asp?buscar=true
+                                    <i data-lucide="external-link" style="width: 12px; height: 12px;"></i>
+                                </a>
+                            </p>
+                        </div>
+
+                        <!-- 2. Banco Integrado de Proyectos -->
+                        <div style="border-top: 1px solid #e2e8f0; padding-top: 0.65rem; display: flex; flex-direction: column; gap: 0.3rem;">
+                            <div class="about-source-top" style="margin-bottom: 0.15rem;">
+                                <span class="about-source-name"
+                                    style="font-size: 0.82rem; font-weight: 700; color: #0f172a;">
+                                    <i data-lucide="database" style="width: 15px; height: 15px; color: #2563eb;"></i>
+                                    Banco Integrado de Proyectos (BIP):
+                                </span>
+                            </div>
+                            <p style="margin: 0; font-size: 0.77rem; line-height: 1.45; color: #334155;">
+                                <a href="https://bip.ministeriodesarrollosocial.gob.cl/bip2-consulta/app/parent-flow;jsessionid=026A6AFF8B6241D3A8AF8F5BAAF8D4D2?execution=e1s1"
+                                    target="_blank" rel="noopener noreferrer"
+                                    style="color: #2563eb; font-weight: 600; text-decoration: underline; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                    https://bip.ministeriodesarrollosocial.gob.cl/bip2-consulta/
+                                    <i data-lucide="external-link" style="width: 12px; height: 12px;"></i>
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 3: METODOLOGÍA Y FÓRMULAS POR VISUALIZACIÓN -->
+                <div class="about-section">
+                    <div class="about-section-header">
+                        <h4 class="about-section-title">3. Metodología y Criterios por Visualización</h4>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 0.85rem; margin-top: 0.25rem;">
+
+                        <!-- 1. VISUALIZACIÓN TABLA DE PROYECTOS -->
+                        <div class="formula-card">
+                            <div class="formula-card-title">
+                                <i data-lucide="layout-dashboard" style="width: 15px; height: 15px; color: #2563eb;"></i>
+                                Visualización: Tabla de proyectos (Resumen General)
+                            </div>
+
+                            <div class="formula-subtitle">
+                                <i data-lucide="gauge" style="width: 13px; height: 13px; color: #2563eb;"></i>
+                                Indicadores Clave (KPIs superiores):
+                            </div>
+                            <ul
+                                style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
+                                <li><strong>Proyectos Totales:</strong> Conteo total neto de iniciativas de inversión pública del MOP registradas según los filtros activos de búsqueda, región geográfica, servicio ejecutor y etapa del proyecto.</li>
+                                <li><strong>Inversión Total (MM CLP):</strong> Suma acumulada del costo total oficial estimado en millones de pesos chilenos ($MM CLP) de los proyectos seleccionados.</li>
+                                <li><strong>Servicio Principal:</strong> Dirección técnica u operativa del MOP con mayor cantidad de proyectos o concentración dentro del portafolio filtrado.</li>
+                                <li><strong>En Ejecución:</strong> Cantidad de proyectos cuya fase del ciclo de vida se encuentra actualmente en ejecución material de obras.</li>
+                            </ul>
+
+                            <div class="formula-subtitle">
+                                <i data-lucide="pie-chart" style="width: 13px; height: 13px; color: #2563eb;"></i>
+                                Panel Lateral de Análisis (Dual Donut):
+                            </div>
+                            <ul
+                                style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
+                                <li><strong>Distribución por Servicio:</strong> Proporción y conteo de iniciativas por cada dirección técnica (Vialidad, Obras Portuarias, SSR, Aeropuertos, Obras Hidráulicas, Arquitectura).</li>
+                                <li><strong>Inversión por Servicio:</strong> Distribución del volumen presupuestario agregado en MM CLP correspondiente a cada servicio ejecutor.</li>
+                            </ul>
+                        </div>
+
+                        <!-- 2. VISUALIZACIÓN ANÁLISIS DE INVERSIÓN -->
+                        <div class="formula-card">
+                            <div class="formula-card-title">
+                                <i data-lucide="bar-chart-2" style="width: 15px; height: 15px; color: #0284c7;"></i>
+                                Visualización: Análisis de inversión
+                            </div>
+
+                            <div class="formula-subtitle">
+                                <i data-lucide="gauge" style="width: 13px; height: 13px; color: #0284c7;"></i>
+                                Métricas y Gráficos Comparativos:
+                            </div>
+                            <ul
+                                style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
+                                <li><strong>Inversión Acumulada por Región (Millones CLP):</strong> Muestra el volumen total de inversión asignado territorialmente a cada una de las 16 regiones del país ordenadas de norte a sur, permitiendo contrastar la distribución presupuestaria geográfica.</li>
+                                <li><strong>Inversión por Servicio MOP (Millones CLP):</strong> Desglose del presupuesto acumulado según el servicio técnico ejecutor responsable.</li>
+                                <li><strong>Inversión por Programa (Top 10 Millones CLP):</strong> Clasificación del gasto fiscal en las líneas y programas estratégicos de mayor envergadura presupuestaria (Conservación Vial, Red Austral, Caminos Nacionales, Grandes Obras de Riego, etc.).</li>
+                            </ul>
+                        </div>
+
+                        <!-- 3. VISUALIZACIÓN PROGRAMAS Y ETAPAS -->
+                        <div class="formula-card">
+                            <div class="formula-card-title">
+                                <i data-lucide="layers" style="width: 15px; height: 15px; color: #059669;"></i>
+                                Visualización: Programas y Etapas
+                            </div>
+
+                            <div class="formula-subtitle">
+                                <i data-lucide="gauge" style="width: 13px; height: 13px; color: #059669;"></i>
+                                Métricas y Gráficos de Ciclo de Vida:
+                            </div>
+                            <ul
+                                style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
+                                <li><strong>Proyectos por Etapa del Ciclo de Vida:</strong> Cuantificación de proyectos en fases de <em>Perfil</em>, <em>Prefactibilidad</em>, <em>Factibilidad</em>, <em>Diseño</em> y <em>Ejecución</em> dentro del Sistema Nacional de Inversiones.</li>
+                                <li><strong>Número de Proyectos por Región:</strong> Distribución física neta de la cantidad de iniciativas emplazadas en cada región.</li>
+                                <li><strong>Evolución Anual (Primera Postulación):</strong> Serie temporal que refleja la cantidad de proyectos y el flujo de inversión según su año inicial de ingreso al banco de proyectos.</li>
+                            </ul>
+                        </div>
+
+                    </div>
+                </div>
+
+
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Controlador del Modal Acerca de -->
+    <script>
+        (function () {
+            const btnOpen = document.getElementById('btn-open-about');
+            const btnClose = document.getElementById('btn-close-about-modal');
+            const modal = document.getElementById('about-modal');
+
+            function openAboutModal() {
+                if (modal) {
+                    modal.style.display = 'flex';
+                    if (window.lucide) {
+                        lucide.createIcons();
+                    }
+                }
+            }
+
+            function closeAboutModal() {
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+            }
+
+            if (btnOpen) {
+                btnOpen.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    openAboutModal();
+                });
+            }
+
+            if (btnClose) {
+                btnClose.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    closeAboutModal();
+                });
+            }
+
+            if (modal) {
+                modal.addEventListener('click', function (e) {
+                    if (e.target === modal) {
+                        closeAboutModal();
+                    }
+                });
+            }
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && modal && modal.style.display === 'flex') {
+                    closeAboutModal();
+                }
+            });
+        })();
     </script>
 
 </body>

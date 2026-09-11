@@ -4,19 +4,211 @@
  * Harmonized with CATLEC index.html design palette, fonts, and SVG styling.
  */
 
-const EFE_TIMELINE_FILIAL_COLORS = {
-    'EFE Central': '#2563eb',       // Royal Blue
-    'EFE Valparaíso': '#0284c7',     // Sky Blue
-    'EFE Sur': '#d97706',           // Amber / Orange
-    'EFE Arica - La Paz': '#059669', // Emerald
-    'Nacional': '#8b5cf6'           // Purple
+// ── Parse date string → fractional year number (standard CATLEC) ──────
+function dateToYear(str) {
+    if (!str) return null;
+    const d = new Date(str);
+    if (isNaN(d.getTime())) return null;
+    const y = d.getFullYear();
+    const start = new Date(y, 0, 1);
+    const end = new Date(y + 1, 0, 1);
+    return y + (d - start) / (end - start);
+}
+
+// ── Paleta de Colores por Etapa (CATLEC EFE) ──────────────────────────────────
+const EFE_STAGE_COLORS = {
+    'ejecución': '#2563eb',      // Azul Real
+    'ejecucion': '#2563eb',
+    'diseño': '#ea580c',         // Naranja Intenso
+    'diseno': '#ea580c',
+    'factibilidad': '#0891b2',   // Turquesa / Cian profundo
+    'prefactibilidad': '#8b5cf6',// Violeta
+    'estudio básico': '#6366f1', // Índigo
+    'estudio basico': '#6366f1',
+    'estudio': '#6366f1',
+    'operación': '#10b981',      // Verde Esmeralda
+    'operacion': '#10b981',
+    'programa con componentes en distintas fases': 'rgba(100, 116, 139, 0.45)', // Gris transparente
+    'programa con componentes en distinta fase': 'rgba(100, 116, 139, 0.45)',
+    'programa con compenentes en distintas fases': 'rgba(100, 116, 139, 0.45)',
+    'programa con compenentes en distinta fase': 'rgba(100, 116, 139, 0.45)'
 };
+
+function getEfeStageSingleColor(stageStr) {
+    if (!stageStr) return '#2563eb';
+    const clean = String(stageStr).trim().toLowerCase();
+    const norm = clean.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (norm.includes('programa') || norm.includes('componente') || norm.includes('compenente')) {
+        return 'rgba(100, 116, 139, 0.45)';
+    }
+    return EFE_STAGE_COLORS[clean] || EFE_STAGE_COLORS[norm] || '#2563eb';
+}
+
+/**
+ * Analiza la etapa de un proyecto.
+ * Para casos con 2 etapas al mismo tiempo (ej: "Ejecución - diseño", "Diseño - Ejecución", "Factibilidad - Ejecución"):
+ * Configura un patrón SVG con franjas diagonales a 45° con ambos colores.
+ */
+function parseEfeStageInfo(stageRaw) {
+    const raw = (stageRaw && String(stageRaw).trim()) ? String(stageRaw).trim() : 'Sin Etapa';
+    let parts = [raw];
+    if (/\s+[-–/]\s+/.test(raw)) {
+        parts = raw.split(/\s+[-–/]\s+/).map(s => s.trim()).filter(Boolean);
+    }
+    if (parts.length >= 2) {
+        const c1 = getEfeStageSingleColor(parts[0]);
+        const c2 = getEfeStageSingleColor(parts[1]);
+        const safeKey1 = parts[0].toLowerCase().normalize('NFD').replace(/[^a-z0-9]/g, '');
+        const safeKey2 = parts[1].toLowerCase().normalize('NFD').replace(/[^a-z0-9]/g, '');
+        const patternId = `efe-pattern-${safeKey1}-${safeKey2}`;
+        return {
+            isCompound: true,
+            stages: parts,
+            color1: c1,
+            color2: c2,
+            patternId: patternId,
+            fill: `url(#${patternId})`,
+            stroke: c1,
+            label: raw,
+            legendGradient: `repeating-linear-gradient(45deg, ${c1}, ${c1} 4px, ${c2} 4px, ${c2} 8px)`
+        };
+    } else {
+        const c = getEfeStageSingleColor(parts[0] || raw);
+        const isTransp = typeof c === 'string' && c.startsWith('rgba');
+        return {
+            isCompound: false,
+            stages: [raw],
+            color1: c,
+            color2: null,
+            patternId: null,
+            fill: c,
+            stroke: isTransp ? '#64748b' : c,
+            label: raw,
+            legendGradient: c
+        };
+    }
+}
+
+/** Actualiza dinámicamente la leyenda del timeline mostrando solo los colores base de las etapas presentes */
+function updateEfeTimelineLegend(projects) {
+    const legendEl = document.getElementById('efe-timeline-header-legend');
+    if (!legendEl) return;
+
+    const uniqueBaseStages = [];
+    const seen = new Set();
+
+    (projects || []).forEach(p => {
+        const raw = (p.stage && String(p.stage).trim()) ? String(p.stage).trim() : 'Sin Etapa';
+        const parts = /\s+[-–/]\s+/.test(raw)
+            ? raw.split(/\s+[-–/]\s+/).map(s => s.trim()).filter(Boolean)
+            : [raw];
+
+        parts.forEach(st => {
+            const key = st.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            if (!seen.has(key)) {
+                seen.add(key);
+                uniqueBaseStages.push(st);
+            }
+        });
+    });
+
+    let html = '';
+    uniqueBaseStages.forEach(stName => {
+        const color = getEfeStageSingleColor(stName);
+        const isTransp = typeof color === 'string' && color.startsWith('rgba');
+        const borderStyle = isTransp ? 'border: 1px solid #94a3b8;' : '';
+        html += `
+            <span class="timeline-legend-item">
+                <span class="tl-legend-dot" style="background:${color}; width:11px; height:7px; border-radius:2px; ${borderStyle}"></span>${stName}
+            </span>
+        `;
+    });
+
+    html += `
+        <span class="timeline-legend-item">
+            <span class="tl-legend-dot" style="background:#10b981; border-radius:50%; text-align:center; color:#fff; font-size:7px; line-height:10px; width:10px; height:10px;">✓</span>Operativo
+        </span>
+        <span class="timeline-legend-item">
+            <span class="tl-legend-dot" style="background:#10b981; transform:rotate(45deg); width:7px; height:7px; border-radius:1px;"></span>Puesta en Operación
+        </span>
+        <span class="timeline-legend-item">
+            <span style="display:inline-block;width:2px;height:12px;background:#ef4444;border-radius:1px;"></span>Hoy
+        </span>
+    `;
+
+    legendEl.innerHTML = html;
+}
 
 const EFE_TL_ROW_PAD_V = 7;
 const EFE_TL_BAR_H = 14;
 const EFE_TL_AXIS_H = 36;
 const EFE_TL_LABEL_W = 240;
 const EFE_TL_MILESTONE_R = 6.5;
+
+// ── Parsea el valor de la columna "Operación estimada" (Excel) y determina la tipología del hito ──
+/**
+ * Soporta:
+ * 1. Año solo ('2028', '2032'): Hito puntual (rombo esmeralda en ese año).
+ * 2. Rango de años ('2025-2026', '2030 - 2032'): Barra de periodo entre esos años.
+ * 3. Formato sin fin claro ('2030+', '2030 +'): Barra abierta con concepto matemático [a, [.
+ */
+function parseEfeMilestone(val) {
+    if (val == null) return null;
+    const s = String(val).trim();
+    if (!s) return null;
+
+    // Caso 3: Formato '2030+', '2030 +', etc. (Intervalo abierto)
+    const mOpen = s.match(/(20\d\d)\s*\+/);
+    if (mOpen) {
+        const startYr = parseInt(mOpen[1], 10);
+        return {
+            type: 'open_range',
+            start: startYr,
+            label: `Puesta en Operación Estimada ${s}`,
+            displayTag: s,
+            raw: s
+        };
+    }
+
+    // Caso 2: Formato '2025-2026', '2027 - 2028', '2030 - 2032' (Barra de periodo)
+    const mRange = s.match(/(20\d\d)\s*[-/–—]\s*(20\d\d)/);
+    if (mRange) {
+        const y1 = parseInt(mRange[1], 10);
+        const y2 = parseInt(mRange[2], 10);
+        return {
+            type: 'range',
+            start: y1,
+            end: y2,
+            label: `Puesta en Operación Estimada ${s}`,
+            displayTag: s,
+            raw: s
+        };
+    }
+
+    // Caso 1: Año solo '2028', '2032' (Hito puntual)
+    const mSingle = s.match(/(20\d\d)/);
+    if (mSingle) {
+        const y = parseInt(mSingle[1], 10);
+        return {
+            type: 'point',
+            year: y,
+            label: `Puesta en Operación Estimada ${y}`,
+            displayTag: String(y),
+            raw: s
+        };
+    }
+
+    return null;
+}
+
+/** Extrae un número de año desde el operation_year (que puede ser int, string, etc.) */
+function efeGetNumericYear(val) {
+    if (val == null) return null;
+    if (typeof val === 'number') return val;
+    const m = String(val).match(/(20\d\d)/);
+    return m ? parseInt(m[1], 10) : null;
+}
+
 
 function showEfeTimelineView() {
     if (efeState.investmentOpen && typeof hideEfeInvestmentView === 'function') {
@@ -79,6 +271,9 @@ function hideEfeTimelineView() {
     if (typeof efeMap !== 'undefined' && efeMap) {
         setTimeout(() => {
             efeMap.invalidateSize({ animate: false });
+            if (!efeState.selectedProjectName && typeof efeApplyDefaultMapView === 'function') {
+                efeApplyDefaultMapView(false);
+            }
         }, 50);
     }
 }
@@ -117,46 +312,36 @@ function renderEfeTimeline(projects, highlightName = null) {
     const badge = document.getElementById('efe-timeline-count-badge');
     if (badge) badge.textContent = `${data.length} proyecto${data.length !== 1 ? 's' : ''}`;
 
-    const currentYear = new Date().getFullYear();
+    // Actualizar dinámicamente la leyenda con las etapas presentes
+    updateEfeTimelineLegend(data);
 
-    // ── Update Timeline KPI Banner ──────────────────────────────────────────
-    const totalInvMM = data.reduce((sum, p) => sum + (p.investment_mm_usd || 0), 0);
-    const projectsWithOp = data.filter(p => p.operation_year != null);
-    const opYears = projectsWithOp.map(p => Number(p.operation_year)).filter(y => !isNaN(y));
-    const minOp = opYears.length > 0 ? Math.min(...opYears) : currentYear;
-    const maxOp = opYears.length > 0 ? Math.max(...opYears) : currentYear;
+    const todayYear = dateToYear(new Date().toISOString().slice(0, 10));
 
-    const elInv = document.getElementById('efe-kpi-tl-investment');
-    const elProjects = document.getElementById('efe-kpi-tl-projects');
-    const elHorizon = document.getElementById('efe-kpi-tl-horizon');
+    const opYears = data.map(p => efeGetNumericYear(p.operation_year)).filter(y => y != null && !isNaN(y));
+    const maxOp = opYears.length > 0 ? Math.max(...opYears) : Math.floor(todayYear);
 
-    if (elInv) elInv.textContent = typeof efeFormatInvestment === 'function' ? efeFormatInvestment(totalInvMM) : `US$ ${Math.round(totalInvMM)} MM`;
-    if (elProjects) elProjects.textContent = `${projectsWithOp.length} de ${data.length}`;
-    if (elHorizon) elHorizon.textContent = opYears.length > 0 ? `${minOp} – ${maxOp}` : '—';
-
-    if (typeof lucide !== 'undefined' && lucide.createIcons) {
-        lucide.createIcons();
-    }
-
-    // ── Sort projects for timeline display ───────────────────────────────────
+    // ── Sort projects for timeline display (ascendente por operación estimada) ──
     const sortedData = [...data].sort((a, b) => {
-        const opA = a.operation_year != null ? Number(a.operation_year) : Infinity;
-        const opB = b.operation_year != null ? Number(b.operation_year) : Infinity;
+        const numA = efeGetNumericYear(a.operation_year);
+        const numB = efeGetNumericYear(b.operation_year);
+        if (numA == null && numB == null) return 0;
+        if (numA == null) return 1;
+        if (numB == null) return -1;
+        if (numA !== numB) return numA - numB;
+        // Desempate: si dos proyectos tienen fecha "2030" y "2030 +", aparece primero el año a secas
+        const hasPlusA = String(a.operation_year).includes('+') ? 1 : 0;
+        const hasPlusB = String(b.operation_year).includes('+') ? 1 : 0;
+        if (hasPlusA !== hasPlusB) return hasPlusA - hasPlusB;
+        return 0;
+    });
 
-        const isOpA = opA <= currentYear;
-        const isOpB = opB <= currentYear;
-
-        const getGroup = (y, isOp) => {
-            if (y === Infinity) return 3;
-            if (isOp) return 2;
-            return 1;
-        };
-
-        const gA = getGroup(opA, isOpA);
-        const gB = getGroup(opB, isOpB);
-
-        if (gA !== gB) return gA - gB;
-        return opA - opB;
+    // Recolectar patrones diagonales para etapas compuestas presentes en los proyectos
+    const compoundPatterns = new Map();
+    sortedData.forEach(p => {
+        const stInfo = parseEfeStageInfo(p.stage);
+        if (stInfo.isCompound && !compoundPatterns.has(stInfo.patternId)) {
+            compoundPatterns.set(stInfo.patternId, stInfo);
+        }
     });
 
     // ── Calculate Year Range for Axis ───────────────────────────────────────
@@ -210,6 +395,22 @@ function renderEfeTimeline(projects, highlightName = null) {
     labelSvg.setAttribute('height', totalH);
     labelSvg.style.display = 'block';
 
+    // Inyectar defs para dots con patrones diagonales en labelSvg
+    const labelDefs = efeSvgEl('defs');
+    compoundPatterns.forEach(st => {
+        const pat = efeSvgEl('pattern', {
+            id: `lbl-${st.patternId}`,
+            width: 8,
+            height: 8,
+            patternUnits: 'userSpaceOnUse',
+            patternTransform: 'rotate(45)'
+        });
+        pat.appendChild(efeSvgEl('rect', { x: 0, y: 0, width: 4, height: 8, fill: st.color1 }));
+        pat.appendChild(efeSvgEl('rect', { x: 4, y: 0, width: 4, height: 8, fill: st.color2 }));
+        labelDefs.appendChild(pat);
+    });
+    labelSvg.appendChild(labelDefs);
+
     sortedData.forEach((p, i) => {
         const rowY = rowYOffsets[i];
         const rowH = rowMetrics[i].height;
@@ -238,10 +439,13 @@ function renderEfeTimeline(projects, highlightName = null) {
             stroke: isHighlighted ? 'rgba(37, 99, 235, 0.3)' : sepColor, 'stroke-width': 1
         }));
 
-        // Filial color indicator dot
-        const filColor = EFE_TIMELINE_FILIAL_COLORS[p.filial] || '#3b82f6';
+        // Stage color indicator dot (coloreado según etapa)
+        const stageInfo = parseEfeStageInfo(p.stage);
         labelSvg.appendChild(efeSvgEl('circle', {
-            cx: 14, cy: rowY + rowH / 2, r: 3.5, fill: filColor
+            cx: 14, cy: rowY + rowH / 2, r: 3.5,
+            fill: stageInfo.isCompound ? `url(#lbl-${stageInfo.patternId})` : stageInfo.color1,
+            stroke: stageInfo.isCompound ? 'rgba(0,0,0,0.2)' : 'none',
+            'stroke-width': stageInfo.isCompound ? 0.8 : 0
         }));
 
         // Multiline project text
@@ -313,8 +517,8 @@ function renderEfeTimeline(projects, highlightName = null) {
     }
 
     // Today indicator line in axis
-    if (currentYear >= minYear && currentYear <= maxYear) {
-        const tx = toPx(currentYear);
+    if (todayYear >= minYear && todayYear <= maxYear) {
+        const tx = toPx(todayYear);
         axisSvg.appendChild(efeSvgEl('line', {
             x1: tx, y1: 0, x2: tx, y2: EFE_TL_AXIS_H,
             stroke: '#ef4444', 'stroke-width': 1.5, 'stroke-dasharray': '3,3'
@@ -337,6 +541,34 @@ function renderEfeTimeline(projects, highlightName = null) {
     barsSvg.setAttribute('width', chartW);
     barsSvg.setAttribute('height', totalH || 1);
     barsSvg.innerHTML = '';
+
+    // Inyectar definiciones de gradientes para hitos SVG (open_range y range) y patrones diagonales de etapas
+    const efeDefs = efeSvgEl('defs');
+    efeDefs.innerHTML = `
+        <linearGradient id="efe-grad-open-range" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#10b981" stop-opacity="0.88"/>
+            <stop offset="50%" stop-color="#34d399" stop-opacity="0.45"/>
+            <stop offset="100%" stop-color="#10b981" stop-opacity="0.06"/>
+        </linearGradient>
+        <linearGradient id="efe-milestone-range-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#10b981" stop-opacity="0.95"/>
+            <stop offset="100%" stop-color="#34d399" stop-opacity="0.95"/>
+        </linearGradient>
+    `;
+
+    compoundPatterns.forEach(st => {
+        const pat = efeSvgEl('pattern', {
+            id: st.patternId,
+            width: 16,
+            height: 16,
+            patternUnits: 'userSpaceOnUse',
+            patternTransform: 'rotate(45)'
+        });
+        pat.appendChild(efeSvgEl('rect', { x: 0, y: 0, width: 8, height: 16, fill: st.color1 }));
+        pat.appendChild(efeSvgEl('rect', { x: 8, y: 0, width: 8, height: 16, fill: st.color2 }));
+        efeDefs.appendChild(pat);
+    });
+    barsSvg.appendChild(efeDefs);
 
     sortedData.forEach((p, i) => {
         const rowY = rowYOffsets[i];
@@ -367,44 +599,49 @@ function renderEfeTimeline(projects, highlightName = null) {
         }
 
         // "Hoy" vertical dashed line across the row
-        if (currentYear >= minYear && currentYear <= maxYear) {
+        if (todayYear >= minYear && todayYear <= maxYear) {
             barsSvg.appendChild(efeSvgEl('line', {
-                x1: toPx(currentYear), y1: rowY,
-                x2: toPx(currentYear), y2: rowY + rowH,
+                x1: toPx(todayYear), y1: rowY,
+                x2: toPx(todayYear), y2: rowY + rowH,
                 stroke: '#ef4444', 'stroke-width': 1.2,
                 'stroke-dasharray': '3,3', 'pointer-events': 'none'
             }));
         }
 
-        // Bar and Milestones rendering logic
-        const filColor = EFE_TIMELINE_FILIAL_COLORS[p.filial] || '#2563eb';
+        // Bar and Milestones rendering logic (coloreado según etapa)
+        const stageInfo = parseEfeStageInfo(p.stage);
         const barY = rowY + (rowH - EFE_TL_BAR_H) / 2;
-        const opYear = p.operation_year != null ? Number(p.operation_year) : null;
-        const isOperational = opYear != null && opYear <= currentYear;
-        const hasFutureOp = opYear != null && opYear > currentYear;
+        const numericOpYear = efeGetNumericYear(p.operation_year);
+        const ms = parseEfeMilestone(p.operation_year);
+        const isOperational = numericOpYear != null && numericOpYear <= Math.floor(todayYear);
+        const hasFutureOp = numericOpYear != null && numericOpYear > Math.floor(todayYear);
 
         if (hasFutureOp) {
-            // ── SCENARIO A: Future Operation (extends right from currentYear) ───
-            const startYear = currentYear;
-            const endYear = opYear;
+            // ── SCENARIO A: Future Operation (extends right from todayYear) ───
+            const startYear = todayYear;
+            const endYear = numericOpYear;
             const bx = toPx(startYear);
-            const bw = Math.max(toPx(endYear) - bx, 6);
+            // Extend bar to mid-year for point milestones so it reaches the diamond
+            const barEndX = (ms && ms.type === 'point') ? toPx(endYear + 0.5) : toPx(endYear);
+            const bw = Math.max(barEndX - bx, 6);
 
             const rect = efeSvgEl('rect', {
                 x: bx, y: barY, width: bw, height: EFE_TL_BAR_H,
-                rx: 3, ry: 3, fill: filColor,
-                opacity: 0.88,
+                rx: 3, ry: 3, fill: stageInfo.fill,
+                opacity: 0.92,
+                stroke: stageInfo.isCompound ? 'rgba(0,0,0,0.22)' : 'none',
+                'stroke-width': stageInfo.isCompound ? 1 : 0,
                 style: 'cursor: pointer; transition: opacity 0.15s ease;'
             });
 
             rect.addEventListener('mouseenter', (e) => {
                 rect.setAttribute('opacity', '1');
                 rect.setAttribute('filter', 'drop-shadow(0 2px 6px rgba(0,0,0,0.25))');
-                showEfeTimelineTooltip(e, p, filColor);
+                showEfeTimelineTooltip(e, p, stageInfo.color1);
             });
             rect.addEventListener('mousemove', (e) => moveEfeTimelineTooltip(e));
             rect.addEventListener('mouseleave', () => {
-                rect.setAttribute('opacity', '0.88');
+                rect.setAttribute('opacity', '0.92');
                 rect.removeAttribute('filter');
                 hideEfeTimelineTooltip();
             });
@@ -425,58 +662,198 @@ function renderEfeTimeline(projects, highlightName = null) {
                     fill: '#ffffff',
                     'font-family': "'Plus Jakarta Sans', sans-serif",
                     'font-size': '8.5', 'font-weight': '700',
-                    'pointer-events': 'none'
+                    'pointer-events': 'none',
+                    style: 'text-shadow: 0 1px 2px rgba(0,0,0,0.85), 0 0 3px rgba(0,0,0,0.6);'
                 });
                 barTxt.textContent = p.stage || `${endYear}`;
                 barsSvg.appendChild(barTxt);
             }
 
-            // Milestone Marker at Operation Year (Diamond)
-            const mx = toPx(endYear);
-            const my = barY + EFE_TL_BAR_H / 2;
-            const d = EFE_TL_MILESTONE_R;
-            const milestone = efeSvgEl('polygon', {
-                points: `${mx},${my - d} ${mx + d},${my} ${mx},${my + d} ${mx - d},${my}`,
-                fill: '#10b981', stroke: '#ffffff', 'stroke-width': 1.5,
-                style: 'cursor: pointer; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.25));'
-            });
+            // ── Hito de Puesta en Operación (Mapeo dinámico según valor del Excel) ──
+            if (ms && ms.type === 'point') {
+                // Caso 1: Año solo (ej. 2028, 2032) -> Hito puntual (rombo esmeralda)
+                const mx = toPx(ms.year + 0.5);
+                const my = barY + EFE_TL_BAR_H / 2;
+                const d = EFE_TL_MILESTONE_R;
+                const milestone = efeSvgEl('polygon', {
+                    points: `${mx},${my - d} ${mx + d},${my} ${mx},${my + d} ${mx - d},${my}`,
+                    fill: '#10b981', stroke: '#ffffff', 'stroke-width': 1.5,
+                    style: 'cursor: pointer; filter: drop-shadow(0 2px 4px rgba(16, 185, 129, 0.45));'
+                });
 
-            milestone.addEventListener('mouseenter', (e) => {
-                milestone.setAttribute('stroke-width', '2.5');
-                milestone.setAttribute('fill', '#34d399');
-                showEfeMilestoneTooltip(e, p.name, `Puesta en Operación Estimada`, `${endYear}`, '#10b981');
-            });
-            milestone.addEventListener('mousemove', (e) => moveEfeTimelineTooltip(e));
-            milestone.addEventListener('mouseleave', () => {
-                milestone.setAttribute('stroke-width', '1.5');
-                milestone.setAttribute('fill', '#10b981');
-                hideEfeTimelineTooltip();
-            });
-            milestone.addEventListener('click', (e) => {
-                e.stopPropagation();
-                hideEfeTimelineTooltip();
-                hideEfeTimelineView();
-                if (typeof efeSelectProject === 'function') efeSelectProject(p);
-            });
+                milestone.addEventListener('mouseenter', (e) => {
+                    milestone.setAttribute('stroke-width', '2.5');
+                    milestone.setAttribute('fill', '#34d399');
+                    showEfeMilestoneTooltip(e, p.name, 'Puesta en Operación Estimada', `${ms.year}`, '#10b981');
+                });
+                milestone.addEventListener('mousemove', (e) => moveEfeTimelineTooltip(e));
+                milestone.addEventListener('mouseleave', () => {
+                    milestone.setAttribute('stroke-width', '1.5');
+                    milestone.setAttribute('fill', '#10b981');
+                    hideEfeTimelineTooltip();
+                });
+                milestone.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    hideEfeTimelineTooltip();
+                    hideEfeTimelineView();
+                    if (typeof efeSelectProject === 'function') efeSelectProject(p);
+                });
+                barsSvg.appendChild(milestone);
 
-            barsSvg.appendChild(milestone);
+                // Label at the end showing year
+                const yearLbl = efeSvgEl('text', {
+                    x: mx + d + 5, y: my + 0.5,
+                    'dominant-baseline': 'middle',
+                    fill: isLight ? '#059669' : '#34d399',
+                    'font-family': "'Plus Jakarta Sans', sans-serif",
+                    'font-size': '9', 'font-weight': '700',
+                    'pointer-events': 'none'
+                });
+                yearLbl.textContent = `${ms.year}`;
+                barsSvg.appendChild(yearLbl);
 
-            // Label at the end showing year
-            const yearLbl = efeSvgEl('text', {
-                x: mx + d + 5, y: my + 0.5,
-                'dominant-baseline': 'middle',
-                fill: isLight ? '#059669' : '#34d399',
-                'font-family': "'Plus Jakarta Sans', sans-serif",
-                'font-size': '9', 'font-weight': '700',
-                'pointer-events': 'none'
-            });
-            yearLbl.textContent = `${endYear}`;
-            barsSvg.appendChild(yearLbl);
+            } else if (ms && ms.type === 'range') {
+                // Caso 2: Formato '2025-2026' / '2027 - 2028' (Barra de periodo para el hito)
+                const mx1 = toPx(ms.start);
+                const mx2 = toPx(ms.end + 1.0);
+                const mw = Math.max(mx2 - mx1, 24);
 
-        } else if (isOperational) {
-            // ── SCENARIO B: Already Operational (<= currentYear) ───────────────
-            const startYear = Math.max(minYear, opYear);
-            const endYear = currentYear;
+                const rangeG = efeSvgEl('g', { style: 'cursor: pointer;' });
+
+                const rangeRect = efeSvgEl('rect', {
+                    x: mx1, y: barY, width: mw, height: EFE_TL_BAR_H,
+                    rx: 4, ry: 4,
+                    fill: 'url(#efe-milestone-range-grad)',
+                    stroke: '#6ee7b7', 'stroke-width': 1.2,
+                    opacity: 0.95,
+                    style: 'filter: drop-shadow(0 2px 6px rgba(16, 185, 129, 0.35));'
+                });
+                rangeG.appendChild(rangeRect);
+
+                // Mini icono rombo blanco al inicio de la barra
+                const dMini = 3.5;
+                const rmx = mx1 + 7;
+                const rmy = barY + EFE_TL_BAR_H / 2;
+                const rPoly = efeSvgEl('polygon', {
+                    points: `${rmx},${rmy - dMini} ${rmx + dMini},${rmy} ${rmx},${rmy + dMini} ${rmx - dMini},${rmy}`,
+                    fill: '#ffffff', opacity: 0.95
+                });
+                rangeG.appendChild(rPoly);
+
+                // Texto informativo del periodo
+                if (mw > 35) {
+                    const rangeTxt = efeSvgEl('text', {
+                        x: mx1 + 15, y: barY + EFE_TL_BAR_H / 2 + 0.5,
+                        'dominant-baseline': 'middle',
+                        fill: '#ffffff',
+                        'font-family': "'Plus Jakarta Sans', sans-serif",
+                        'font-size': '8', 'font-weight': '700',
+                        'pointer-events': 'none'
+                    });
+                    const rTxt = ms.raw || ms.displayTag;
+                    rangeTxt.textContent = (mw >= 70) ? `P. Operación ${rTxt}` : rTxt;
+                    rangeG.appendChild(rangeTxt);
+                }
+
+                rangeG.addEventListener('mouseenter', (e) => {
+                    rangeRect.setAttribute('opacity', '1');
+                    rangeRect.setAttribute('stroke', '#ffffff');
+                    showEfeMilestoneTooltip(e, p.name, 'Puesta en Operación Estimada', ms.raw || `${ms.start} - ${ms.end}`, '#10b981');
+                });
+                rangeG.addEventListener('mousemove', (e) => moveEfeTimelineTooltip(e));
+                rangeG.addEventListener('mouseleave', () => {
+                    rangeRect.setAttribute('opacity', '0.95');
+                    rangeRect.setAttribute('stroke', '#6ee7b7');
+                    hideEfeTimelineTooltip();
+                });
+                rangeG.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    hideEfeTimelineTooltip();
+                    hideEfeTimelineView();
+                    if (typeof efeSelectProject === 'function') efeSelectProject(p);
+                });
+                barsSvg.appendChild(rangeG);
+
+            } else if (ms && ms.type === 'open_range') {
+                // Caso 3: Formato '2030+' / '2030 +' (Barra sin fin con concepto matemático [a, [)
+                const mx1 = toPx(ms.start);
+                const mx2 = chartW - PADDING_RIGHT;
+                const mw = Math.max(mx2 - mx1, 40);
+
+                const openG = efeSvgEl('g', { style: 'cursor: pointer;' });
+
+                // 1. Relleno degradado esmeralda hacia la derecha (desvanecimiento al infinito)
+                const openRect = efeSvgEl('rect', {
+                    x: mx1, y: barY, width: mw, height: EFE_TL_BAR_H,
+                    fill: 'url(#efe-grad-open-range)'
+                });
+                openG.appendChild(openRect);
+
+                // 2. Líneas superior e inferior punteadas para indicar continuidad indefinida
+                const topLine = efeSvgEl('line', {
+                    x1: mx1, y1: barY, x2: mx2, y2: barY,
+                    stroke: '#6ee7b7', 'stroke-width': 1.2, 'stroke-dasharray': '4,3'
+                });
+                const botLine = efeSvgEl('line', {
+                    x1: mx1, y1: barY + EFE_TL_BAR_H, x2: mx2, y2: barY + EFE_TL_BAR_H,
+                    stroke: '#6ee7b7', 'stroke-width': 1.2, 'stroke-dasharray': '4,3'
+                });
+                openG.appendChild(topLine);
+                openG.appendChild(botLine);
+
+                // 3. Corchete cerrado '[' en el inicio del hito
+                const bracketLeft = efeSvgEl('path', {
+                    d: `M ${mx1 + 6} ${barY} L ${mx1} ${barY} L ${mx1} ${barY + EFE_TL_BAR_H} L ${mx1 + 6} ${barY + EFE_TL_BAR_H}`,
+                    stroke: '#ffffff', 'stroke-width': 2.4, fill: 'none', 'stroke-linecap': 'square'
+                });
+                openG.appendChild(bracketLeft);
+
+                // 4. Corchete abierto '[' al extremo derecho
+                const bracketRight = efeSvgEl('path', {
+                    d: `M ${mx2} ${barY} L ${mx2 - 6} ${barY} M ${mx2 - 6} ${barY} L ${mx2 - 6} ${barY + EFE_TL_BAR_H} M ${mx2 - 6} ${barY + EFE_TL_BAR_H} L ${mx2} ${barY + EFE_TL_BAR_H}`,
+                    stroke: '#6ee7b7', 'stroke-width': 2.4, fill: 'none', 'stroke-linecap': 'square'
+                });
+                openG.appendChild(bracketRight);
+
+                // 5. Etiqueta con 'P. Operación ' + texto del Excel (ej. P. Operación 2030+)
+                const openTxt = efeSvgEl('text', {
+                    x: mx1 + 14, y: barY + EFE_TL_BAR_H / 2 + 0.5,
+                    'dominant-baseline': 'middle',
+                    fill: '#ffffff',
+                    'font-family': "'Plus Jakarta Sans', sans-serif",
+                    'font-size': '8.5', 'font-weight': '700',
+                    'letter-spacing': '0.3px',
+                    'pointer-events': 'none'
+                });
+                const excelText = ms.raw || `${ms.start}+`;
+                openTxt.textContent = `P. Operación ${excelText}`;
+                openG.appendChild(openTxt);
+
+                openG.addEventListener('mouseenter', (e) => {
+                    openRect.setAttribute('opacity', '1');
+                    bracketLeft.setAttribute('stroke-width', '3');
+                    bracketRight.setAttribute('stroke-width', '3');
+                    showEfeMilestoneTooltip(e, p.name, 'Puesta en Operación Estimada', ms.raw || `${ms.start}+`, '#10b981');
+                });
+                openG.addEventListener('mousemove', (e) => moveEfeTimelineTooltip(e));
+                openG.addEventListener('mouseleave', () => {
+                    bracketLeft.setAttribute('stroke-width', '2.4');
+                    bracketRight.setAttribute('stroke-width', '2.4');
+                    hideEfeTimelineTooltip();
+                });
+                openG.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    hideEfeTimelineTooltip();
+                    hideEfeTimelineView();
+                    if (typeof efeSelectProject === 'function') efeSelectProject(p);
+                });
+                barsSvg.appendChild(openG);
+            }
+
+        } else if (isOperational && numericOpYear != null) {
+            // ── SCENARIO B: Already Operational (<= todayYear) ───────────────
+            const startYear = Math.max(minYear, numericOpYear);
+            const endYear = todayYear;
             const bx = toPx(startYear);
             const bw = Math.max(toPx(endYear + 0.2) - bx, 24);
 
@@ -510,7 +887,7 @@ function renderEfeTimeline(projects, highlightName = null) {
             barsSvg.appendChild(rect);
 
             // Checkmark circle milestone at operation year
-            const cx = toPx(opYear);
+            const cx = toPx(numericOpYear);
             const cy = barY + EFE_TL_BAR_H / 2;
 
             // Adaptive text inside operative bar
@@ -523,9 +900,9 @@ function renderEfeTimeline(projects, highlightName = null) {
                 'pointer-events': 'none'
             });
             if (bw > 85) {
-                opLabel.textContent = `✓ Operativo (${opYear})`;
+                opLabel.textContent = `✓ Operativo (${numericOpYear})`;
             } else if (bw > 42) {
-                opLabel.textContent = `✓ ${opYear}`;
+                opLabel.textContent = `✓ ${numericOpYear}`;
             } else {
                 opLabel.textContent = '✓';
             }
@@ -533,26 +910,27 @@ function renderEfeTimeline(projects, highlightName = null) {
 
         } else {
             // ── SCENARIO C: Study / Prefeasibility (no op year reported) ────────
-            const bx = toPx(currentYear);
-            const bw = Math.max(toPx(currentYear + 0.8) - bx, 20);
+            const bx = toPx(todayYear);
+            const bw = Math.max(toPx(todayYear + 0.8) - bx, 20);
 
+            const isTranspFill = typeof stageInfo.fill === 'string' && stageInfo.fill.startsWith('rgba');
             const rect = efeSvgEl('rect', {
                 x: bx, y: barY, width: bw, height: EFE_TL_BAR_H,
-                rx: 3, ry: 3, fill: filColor,
-                opacity: 0.45,
+                rx: 3, ry: 3, fill: stageInfo.fill,
+                opacity: isTranspFill ? 1 : 0.55,
                 'stroke-dasharray': '3,2',
-                stroke: filColor,
+                stroke: stageInfo.stroke || stageInfo.color1,
                 'stroke-width': 1,
                 style: 'cursor: pointer;'
             });
 
             rect.addEventListener('mouseenter', (e) => {
-                rect.setAttribute('opacity', '0.8');
-                showEfeTimelineTooltip(e, p, filColor);
+                rect.setAttribute('opacity', '1');
+                showEfeTimelineTooltip(e, p, stageInfo.stroke || stageInfo.color1);
             });
             rect.addEventListener('mousemove', (e) => moveEfeTimelineTooltip(e));
             rect.addEventListener('mouseleave', () => {
-                rect.setAttribute('opacity', '0.45');
+                rect.setAttribute('opacity', isTranspFill ? '1' : '0.55');
                 hideEfeTimelineTooltip();
             });
             rect.addEventListener('click', (e) => {
@@ -606,6 +984,12 @@ function showEfeTimelineTooltip(e, p, color) {
         ? `${p.operation_year}`
         : 'Por definir (En etapa de estudio)';
 
+    const stInfo = parseEfeStageInfo(p.stage);
+    const isTransp = typeof stInfo.color1 === 'string' && stInfo.color1.startsWith('rgba');
+    const stageBadgeHtml = stInfo.isCompound
+        ? `<span style="display:inline-block;width:12px;height:7px;border-radius:2px;background:${stInfo.legendGradient};border:1px solid rgba(0,0,0,0.15);vertical-align:middle;margin-right:5px;"></span>`
+        : `<span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${stInfo.color1};${isTransp ? 'border:1px solid #94a3b8;' : ''}vertical-align:middle;margin-right:5px;"></span>`;
+
     tip.innerHTML = `
         <span class="timeline-tooltip-name" style="color:${color}; font-weight:700; font-size:0.78rem; margin-bottom:0.3rem; display:block;">${p.name || 'Sin nombre'}</span>
         <div class="timeline-tooltip-row" style="display:flex;justify-content:space-between;gap:0.75rem;font-size:0.72rem;margin-bottom:0.15rem;">
@@ -618,7 +1002,7 @@ function showEfeTimelineTooltip(e, p, color) {
         </div>
         <div class="timeline-tooltip-row" style="display:flex;justify-content:space-between;gap:0.75rem;font-size:0.72rem;margin-bottom:0.15rem;">
             <span class="timeline-tooltip-label" style="color:var(--text-secondary);">Etapa Actual:</span>
-            <span class="timeline-tooltip-val" style="font-weight:600;color:var(--text-primary);">${p.stage || '—'}</span>
+            <span class="timeline-tooltip-val" style="font-weight:600;color:var(--text-primary);display:flex;align-items:center;">${stageBadgeHtml}${p.stage || '—'}</span>
         </div>
         <div class="timeline-tooltip-row" style="display:flex;justify-content:space-between;gap:0.75rem;font-size:0.72rem;margin-bottom:0.15rem;">
             <span class="timeline-tooltip-label" style="color:var(--text-secondary);">Inversión estimada:</span>

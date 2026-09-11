@@ -91,7 +91,7 @@ function metroInitLeafletMap() {
         const target = e.originalEvent && e.originalEvent.target;
         const isInteractivePathOrMarker = target && (
             (target.tagName === 'path' && target.classList && target.classList.contains('leaflet-interactive')) ||
-            (target.closest && (target.closest('.leaflet-marker-icon') || target.closest('.metro-tooltip')))
+            (target.closest && (target.closest('.leaflet-marker-icon') || target.closest('.leaflet-tooltip')))
         );
 
         if (!isInteractivePathOrMarker) {
@@ -220,6 +220,24 @@ function metroGetStationStyle(feature) {
 function metroStationServesLine(stationOrFeature, targetLineName) {
     if (!targetLineName || !stationOrFeature) return false;
     const targetNorm = typeof metroNormalizeText === 'function' ? metroNormalizeText(targetLineName) : targetLineName.toLowerCase().trim();
+    const targetRef = targetNorm.replace(/^linea\s*/, '').trim();
+
+    function lineMatches(candidateLine) {
+        if (!candidateLine) return false;
+        const candNorm = typeof metroNormalizeText === 'function' ? metroNormalizeText(candidateLine) : String(candidateLine).toLowerCase().trim();
+        const candRef = candNorm.replace(/^linea\s*/, '').trim();
+
+        if (targetRef === '4a') {
+            return candRef === '4a' || candNorm.includes('4a');
+        }
+        if (targetRef === '4') {
+            return (candRef === '4' || candNorm === 'linea 4') && candRef !== '4a' && !candNorm.includes('4a');
+        }
+
+        if (candNorm === targetNorm) return true;
+        if (candRef && targetRef && candRef === targetRef) return true;
+        return candNorm.includes(targetNorm) || targetNorm.includes(candNorm);
+    }
 
     let stInfo = null;
     let featProps = null;
@@ -237,34 +255,40 @@ function metroStationServesLine(stationOrFeature, targetLineName) {
     // A. Si se resolvió estación exacta en el Excel (por shape_id o composite key)
     if (stInfo) {
         if (stInfo.lines && Array.isArray(stInfo.lines)) {
-            if (stInfo.lines.some(l => metroNormalizeText(l) === targetNorm)) return true;
+            if (stInfo.lines.some(lineMatches)) return true;
         }
-        if (stInfo.line && metroNormalizeText(stInfo.line) === targetNorm) return true;
+        if (stInfo.line && lineMatches(stInfo.line)) return true;
         if (stInfo.future_combination) {
-            if (Array.isArray(stInfo.future_combination) && stInfo.future_combination.some(l => metroNormalizeText(l) === targetNorm)) return true;
-            if (typeof stInfo.future_combination === 'string' && metroNormalizeText(stInfo.future_combination).includes(targetNorm)) return true;
+            if (Array.isArray(stInfo.future_combination) && stInfo.future_combination.some(lineMatches)) return true;
+            if (typeof stInfo.future_combination === 'string' && lineMatches(stInfo.future_combination)) return true;
         }
+        if (stInfo.future_combination_str && lineMatches(stInfo.future_combination_str)) return true;
     }
 
     // B. Si hay propiedades directas del feature
     if (featProps) {
         if (featProps.lines && Array.isArray(featProps.lines)) {
-            if (featProps.lines.some(l => metroNormalizeText(l) === targetNorm)) return true;
+            if (featProps.lines.some(lineMatches)) return true;
         }
-        if (featProps.linea && metroNormalizeText(featProps.linea) === targetNorm) return true;
+        if (featProps.linea && lineMatches(featProps.linea)) return true;
+        if (featProps.line && lineMatches(featProps.line)) return true;
         const futComb = featProps.future_combination || featProps.combinacion;
-        if (futComb && metroNormalizeText(String(futComb)).includes(targetNorm)) return true;
+        if (futComb) {
+            if (Array.isArray(futComb) && futComb.some(lineMatches)) return true;
+            if (typeof futComb === 'string' && lineMatches(futComb)) return true;
+        }
     }
 
     // C. Fallback por nombre en mapas globales
     const clean = typeof metroNormalizeText === 'function' ? metroNormalizeText(stationName) : stationName.toLowerCase().trim();
     const combLineMap = window.METRO_COMBINATION_LINE_MAP || METRO_COMBINATION_LINE_MAP;
     if (combLineMap && combLineMap[clean]) {
-        return combLineMap[clean].some(l => metroNormalizeText(l) === targetNorm);
+        if (Array.isArray(combLineMap[clean]) && combLineMap[clean].some(lineMatches)) return true;
+        if (typeof combLineMap[clean] === 'string' && lineMatches(combLineMap[clean])) return true;
     }
     const stationLineMap = window.METRO_STATION_LINE_MAP || METRO_STATION_LINE_MAP;
     if (stationLineMap && stationLineMap[clean]) {
-        return metroNormalizeText(stationLineMap[clean]) === targetNorm;
+        if (lineMatches(stationLineMap[clean])) return true;
     }
     return false;
 }
@@ -388,9 +412,9 @@ function metroLoadMapLayers() {
                     window.metroOperatingLineLayers[numOnly].push(layer);
                 }
 
-                layer.bindTooltip(`<strong>Red Actual:</strong> ${name}`, {
+                layer.bindTooltip(`<strong>${name}</strong><br><span style="font-size:10.5px;color:#38bdf8;">Red Metro de Santiago</span>`, {
                     sticky: true,
-                    className: 'metro-line-tooltip'
+                    className: 'catlec-map-tooltip'
                 });
 
                 layer.on('click', (e) => {
@@ -430,6 +454,8 @@ function metroLoadMapLayers() {
                 const servedLines = (stInfo && stInfo.lines) || p.lines || [style.line];
                 const futCombStr = (stInfo && (stInfo.future_combination_str || (Array.isArray(stInfo.future_combination) ? stInfo.future_combination.join(', ') : stInfo.future_combination))) || p.future_combination || '';
 
+                let lineText = '';
+                let lineColor = style.fillColor || '#60a5fa';
                 if (style.isCombination) {
                     let combLabel = 'Combinación';
                     if (servedLines.length > 1) {
@@ -438,25 +464,22 @@ function metroLoadMapLayers() {
                     if (futCombStr) {
                         combLabel += ` + Fut. [${futCombStr.replace(/Línea\s*/g, 'L')}]`;
                     }
-                    badge = `<span style="display:inline-block; margin-top:2px; font-size:0.68rem; font-weight:700; color:#0f172a; background:rgba(15,23,42,0.08); padding:1px 5px; border-radius:3px;">${combLabel}</span>`;
+                    lineText = combLabel;
+                    lineColor = '#60a5fa';
                 } else {
-                    badge = `<span style="display:inline-block; margin-top:2px; font-size:0.68rem; font-weight:700; color:${style.fillColor};">${style.line}</span>`;
+                    lineText = style.line;
                 }
 
+                const lineHtml = `<span style="color:#38bdf8;font-size:0.72rem;font-weight:600;">${lineText}</span>`;
                 const comunaHtml = comuna
-                    ? `<div style="font-size:0.64rem; color:#64748b; margin-top:2px;">Comuna: <span style="font-weight:600; color:#334155;">${comuna}</span></div>`
-                    : '';
+                    ? `<br><span style="color:#94a3b8;font-size:0.68rem;">${comuna}</span>`
+                    : `<br><span style="color:#94a3b8;font-size:0.68rem;">Red Metro de Santiago</span>`;
 
-                layer.bindTooltip(`
-                    <div style="font-family: inherit; font-size: 0.76rem; line-height: 1.25; padding: 1px 2px;">
-                        <strong>${name}</strong><br>
-                        ${badge}
-                        ${comunaHtml}
-                    </div>
-                `, {
+                layer.bindTooltip(`<strong>${name}</strong><br>${lineHtml}${comunaHtml}`, {
                     direction: 'top',
                     offset: [0, -4],
-                    className: 'metro-station-tooltip'
+                    sticky: true,
+                    className: 'catlec-map-tooltip'
                 });
 
                 layer.on('click', (e) => {
@@ -496,30 +519,32 @@ function metroLoadMapLayers() {
                 const ubicacion = p.ubicacion || '';
                 const comuna = (stInfo && (stInfo.commune || (stInfo.communes && stInfo.communes.join(', ')))) || p.comuna || '';
                 const futCombStr = (stInfo && (stInfo.future_combination_str || (Array.isArray(stInfo.future_combination) ? stInfo.future_combination.join(', ') : stInfo.future_combination))) || p.combinacion || '';
-                const combHtml = futCombStr ? `<div style="margin-top:2px; font-size:0.68rem; color:#0f172a; font-weight:600;">Comb.: ${futCombStr}</div>` : '';
                 const inauguracion = (stInfo && stInfo.inauguration)
-                    ? `<span style="font-size:0.68rem; color:var(--text-secondary); margin-left:4px;">(est. ${stInfo.inauguration})</span>`
-                    : (p.inauguracion ? `<span style="font-size:0.68rem; color:var(--text-secondary); margin-left:4px;">(est. ${p.inauguracion})</span>` : '');
-
-                let badge = '';
+                    ? `(est. ${stInfo.inauguration})`
+                    : (p.inauguracion ? `(est. ${p.inauguracion})` : '');
+                let lineText = '';
+                let displayColor = lineColor;
                 if (style.isCombination) {
-                    const badgeText = futCombStr ? `Combinación [${futCombStr}]` : 'Combinación';
-                    badge = `<span style="display:inline-block; margin-top:2px; font-size:0.68rem; font-weight:700; color:#0f172a; background:rgba(15,23,42,0.08); padding:1px 5px; border-radius:3px;">${badgeText}</span>`;
+                    const badgeText = futCombStr ? `Combinación [${futCombStr.replace(/Línea\s*/g, 'L')}]` : 'Combinación';
+                    lineText = badgeText;
+                    displayColor = '#60a5fa';
                 } else {
-                    badge = `<span style="display:inline-block; margin-top:2px; font-size:0.68rem; font-weight:700; color:${lineColor};">${lineName} ${inauguracion}</span>`;
+                    lineText = `${lineName}${inauguracion ? ' ' + inauguracion : ''}`;
                 }
 
-                layer.bindTooltip(`
-                    <div style="font-family: inherit; font-size: 0.76rem; line-height: 1.3; padding: 2px 3px;">
-                        <strong>${name}</strong><br>
-                        ${badge}
-                        <div style="font-size:0.70rem; color:var(--text-secondary); margin-top:1px;">${ubicacion ? ubicacion + ' · ' : ''}<em>${comuna}</em></div>
-                        ${combHtml}
-                    </div>
-                `, {
+                const lineHtml = `<span style="color:${displayColor};font-size:0.72rem;font-weight:600;">${lineText}</span>`;
+                const locationHtml = (ubicacion || comuna)
+                    ? `<br><span style="color:#94a3b8;font-size:0.68rem;">${ubicacion ? ubicacion + ' · ' : ''}${comuna}</span>`
+                    : '';
+                const combHtml = (futCombStr && !style.isCombination)
+                    ? `<br><span style="color:#38bdf8;font-size:0.68rem;font-weight:600;">Comb.: ${futCombStr}</span>`
+                    : '';
+
+                layer.bindTooltip(`<strong>${name}</strong><br>${lineHtml}${locationHtml}${combHtml}`, {
                     direction: 'top',
                     offset: [0, -4],
-                    className: 'metro-station-tooltip'
+                    sticky: true,
+                    className: 'catlec-map-tooltip'
                 });
 
                 layer.on('click', (e) => {
@@ -572,13 +597,8 @@ function metroLoadMapLayers() {
                 const projLine = projs.length > 0 ? projs[0].line : props.linea;
                 const projCol = (typeof metroGetProjectColor === 'function') ? metroGetProjectColor(projLine) : (props.color || '#52525b');
 
-                layer.bindTooltip(`
-                    <div style="font-family: inherit; font-size: 0.78rem; padding: 2px;">
-                        <strong style="color: ${projCol};">${projLine}</strong><br>
-                        <span style="font-weight: 600;">${projName}</span><br>
-                        <span style="font-size: 0.7rem; color: var(--text-secondary);">${projStage}</span>
-                    </div>
-                `, { sticky: true, className: 'metro-tooltip' });
+                const tooltipContent = `<strong>${projName}</strong><br><span style="color:#60a5fa;font-size:0.72rem;font-weight:600;">Etapa: ${projStage || 'En desarrollo'}</span><br><span style="color:#94a3b8;font-size:0.68rem;">${projLine || 'Metro de Santiago'}</span>`;
+                layer.bindTooltip(tooltipContent, { sticky: true, className: 'catlec-map-tooltip' });
 
                 layer.on('click', (e) => {
                     L.DomEvent.stopPropagation(e);
@@ -778,6 +798,8 @@ function metroCreateSubwayMarker(proj, latLng, isMiniDot = false, clusterCount =
 
     const marker = L.marker(latLng, { icon: customIcon });
     marker.projectName = proj.name;
+    marker.projectStage = proj.stage || proj.type || 'Proyecto de Expansión';
+    marker.projectLine = proj.line || 'Metro de Santiago';
     marker.projectColor = projectColor;
 
     const invText = (proj.investment_mm_usd != null && Number(proj.investment_mm_usd) > 0)
@@ -785,9 +807,9 @@ function metroCreateSubwayMarker(proj, latLng, isMiniDot = false, clusterCount =
         : '—';
     const tooltipContent = clusterCount > 1
         ? `<strong>${clusterCount} proyectos en este lugar</strong>`
-        : `<strong>${proj.name}</strong><br><span style="color:${projectColor};font-size:0.72rem;font-weight:600;">${proj.line || 'Metro de Santiago'}</span><br><span style="color:#94a3b8;font-size:0.68rem;">Inversión: ${invText}</span>`;
+        : `<strong>${proj.name}</strong><br><span style="color:#60a5fa;font-size:0.72rem;font-weight:600;">Etapa: ${marker.projectStage}</span><br><span style="color:#94a3b8;font-size:0.68rem;">${marker.projectLine}</span>`;
 
-    marker.bindTooltip(tooltipContent, { sticky: true, className: 'metro-tooltip' });
+    marker.bindTooltip(tooltipContent, { sticky: true, className: 'catlec-map-tooltip' });
 
     return marker;
 }
@@ -1000,9 +1022,6 @@ function metroLoadComunasLayer() {
                     <div style="color:#475569;font-size:0.7rem;margin-bottom:2px;">
                         Líneas: <strong>${p.lineas && p.lineas.length ? p.lineas.join(', ') : 'Metro'}</strong>
                     </div>
-                    <div style="color:#64748b;font-size:0.68rem;">
-                        Trazado aprox: ~${p.km_red} km de vías
-                    </div>
                 `;
                 if (p.proyectos_futuros && p.proyectos_futuros.length > 0) {
                     content += `
@@ -1063,6 +1082,16 @@ function metroLoadComunasLayer() {
                                 weight: 1.0,
                                 color: '#94a3b8',
                                 opacity: 0.25,
+                                fillOpacity: 0.02
+                            });
+                        } else if (metroState.selectedProjectName || metroState.selectedOperatingLine) {
+                            const defStyle = metroGetComunaStyle(layer.feature);
+                            layer.setStyle({
+                                color: defStyle.color,
+                                weight: defStyle.weight,
+                                fillColor: defStyle.fillColor,
+                                dashArray: defStyle.dashArray,
+                                opacity: 0.20,
                                 fillOpacity: 0.02
                             });
                         } else {
@@ -1410,6 +1439,29 @@ function metroUpdateMapStyles(filteredProjects) {
                         fillColor: baseStyle.fillColor
                     });
                 }
+            } else if (selectedLine) {
+                // Línea operativa seleccionada -> resaltar estaciones pertenecientes a esta línea; atenuar las demás
+                const servesLine = metroStationServesLine(feat, selectedLine);
+                if (servesLine) {
+                    layer.setStyle({
+                        opacity: 1.0,
+                        fillOpacity: 1.0,
+                        radius: baseStyle.isCombination ? 5.5 : 4.8,
+                        weight: baseStyle.isCombination ? 2.5 : 2.0,
+                        color: baseStyle.color,
+                        fillColor: baseStyle.fillColor
+                    });
+                    if (layer.bringToFront) layer.bringToFront();
+                } else {
+                    layer.setStyle({
+                        opacity: 0.35,
+                        fillOpacity: 0.35,
+                        radius: Math.max(2.8, baseStyle.radius - 0.5),
+                        weight: 1.0,
+                        color: baseStyle.color,
+                        fillColor: baseStyle.fillColor
+                    });
+                }
             } else if (hoveredLine) {
                 const servesLine = metroStationServesLine(feat, hoveredLine);
                 if (servesLine) {
@@ -1457,6 +1509,29 @@ function metroUpdateMapStyles(filteredProjects) {
             if (selectedProjId) {
                 const isProjMatch = metroStationBelongsToProject(feat, selectedProjId);
                 if (isProjMatch) {
+                    layer.setStyle({
+                        opacity: 1.0,
+                        fillOpacity: 1.0,
+                        radius: baseStyle.isCombination ? 5.5 : 4.8,
+                        weight: baseStyle.isCombination ? 2.5 : 2.0,
+                        color: baseStyle.color,
+                        fillColor: baseStyle.fillColor
+                    });
+                    if (layer.bringToFront) layer.bringToFront();
+                } else {
+                    layer.setStyle({
+                        opacity: 0.35,
+                        fillOpacity: 0.35,
+                        radius: 2.8,
+                        weight: 1.0,
+                        color: baseStyle.color,
+                        fillColor: baseStyle.fillColor
+                    });
+                }
+            } else if (selectedLine) {
+                // Línea operativa seleccionada -> resaltar si combina con esta línea; de lo contrario atenuar
+                const servesLine = metroStationServesLine(feat, selectedLine);
+                if (servesLine) {
                     layer.setStyle({
                         opacity: 1.0,
                         fillOpacity: 1.0,
@@ -1532,7 +1607,12 @@ function metroUpdateMapStyles(filteredProjects) {
                 });
                 if (layer.bringToFront) layer.bringToFront();
             } else if (selectedName || selectedLine) {
+                const defStyle = metroGetComunaStyle(layer.feature);
                 layer.setStyle({
+                    color: defStyle.color,
+                    weight: defStyle.weight,
+                    fillColor: defStyle.fillColor,
+                    dashArray: defStyle.dashArray,
                     opacity: 0.20,
                     fillOpacity: 0.02
                 });
@@ -1545,8 +1625,7 @@ function metroUpdateMapStyles(filteredProjects) {
                     fillOpacity: 0.02
                 });
             } else {
-                const defStyle = metroGetComunaStyle(layer.feature);
-                layer.setStyle(defStyle);
+                metroComunasLayer.resetStyle(layer);
             }
         });
     }
@@ -1682,6 +1761,15 @@ function metroUpdateMapStyles(filteredProjects) {
                 scaleStr = 'scale(1.0)';
                 opacityVal = '1.0';
                 if (marker.setZIndexOffset) marker.setZIndexOffset(0);
+            }
+        }
+ 
+        const N = clusterMembers.length;
+        if (marker.setTooltipContent) {
+            if (N > 1 && !isClusterActive) {
+                marker.setTooltipContent(`<strong>${N} proyectos en este lugar</strong>`);
+            } else {
+                marker.setTooltipContent(`<strong>${marker.projectName}</strong><br><span style="color:#60a5fa;font-size:0.72rem;font-weight:600;">Etapa: ${marker.projectStage || 'Proyecto de Expansión'}</span><br><span style="color:#94a3b8;font-size:0.68rem;">${marker.projectLine || 'Metro de Santiago'}</span>`);
             }
         }
 
@@ -1830,6 +1918,10 @@ function metroAddMapLegend() {
         const chkComunas = div.querySelector('#metro-toggle-comunas');
         if (chkComunas) {
             chkComunas.addEventListener('change', (e) => {
+                metroUserExplicitlyEnabledComunas = e.target.checked;
+                if (window.metroState) {
+                    window.metroState.userExplicitlyEnabledComunas = e.target.checked;
+                }
                 metroToggleComunas(e.target.checked);
             });
         }

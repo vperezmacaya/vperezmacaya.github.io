@@ -104,6 +104,17 @@ function wrapMetroTimelineText(text, maxCharsPerLine = 28) {
     return lines.length > 0 ? lines : [text];
 }
 
+// ── Parse date string → fractional year number (standard CATLEC) ──────
+function dateToYear(str) {
+    if (!str) return null;
+    const d = new Date(str);
+    if (isNaN(d.getTime())) return null;
+    const y = d.getFullYear();
+    const start = new Date(y, 0, 1);
+    const end = new Date(y + 1, 0, 1);
+    return y + (d - start) / (end - start);
+}
+
 // ── Convierte fechas / años de proyectos Metro a año decimal ──
 function parseMetroYear(val, fallback = null) {
     if (!val) return fallback;
@@ -384,7 +395,7 @@ function renderMetroTimeline(projects, highlightId = null) {
             if (ms.start && ms.start > maxYear - 1) maxYear = ms.start + 2;
         }
     });
-    const todayYear = 2026.17; // Fecha actual / representativa
+    const todayYear = dateToYear(new Date().toISOString().slice(0, 10));
 
     // DOM references
     const barsEl = document.getElementById('metro-timeline-bars-scroll');
@@ -542,7 +553,7 @@ function renderMetroTimeline(projects, highlightId = null) {
             'font-family': "'Plus Jakarta Sans', sans-serif",
             'font-size': '9', 'font-weight': '700'
         });
-        todayLbl.textContent = 'Hoy (2026)';
+        todayLbl.textContent = 'Hoy';
         axisSvg.appendChild(todayLbl);
     }
 

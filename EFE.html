@@ -15,8 +15,9 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-    <!-- EFE Custom Stylesheet -->
-    <link rel="stylesheet" href="static/css/efe_styles.css?v=33">
+    <!-- CATLEC Global Stylesheet & EFE Addon -->
+    <link rel="stylesheet" href="static/css/styles.css?v=20260910">
+    <link rel="stylesheet" href="static/css/efe_addons.css?v=20260910">
 
     <!-- SheetJS for Client-Side Excel Export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -40,11 +41,17 @@
                 <span class="top-navbar-divider"></span>
                 <span class="top-navbar-proto">Prototipo en desarrollo</span>
             </div>
-            <div class="top-navbar-right">
+            <div class="top-navbar-right" style="display: flex; align-items: center; gap: 0.45rem;">
+                <button class="top-navbar-btn" id="btn-open-about"
+                    title="Acerca de este módulo (Fuentes oficiales y Metodología de cálculo)">
+                    <i data-lucide="info" style="width: 13px; height: 13px;"></i>
+                    <span>Acerca de</span>
+                </button>
                 <!-- Navigation Menu -->
                 <div class="nav-menu" id="nav-menu">
                     <button class="nav-menu-btn" id="nav-menu-btn" aria-haspopup="true" aria-expanded="false">
-                        <img src="logo/efe_logo.png" alt="EFE" class="nav-db-logo" width="15" height="15" style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
+                        <img src="logo/efe_logo.png" alt="EFE" class="nav-db-logo" width="15" height="15"
+                            style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
                         Seleccionar Base de Datos
                         <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
                     </button>
@@ -54,7 +61,9 @@
                             <div class="nav-menu-item nav-menu-has-sub" id="nav-dgc-parent-item">
                                 <a href="index.html" class="nav-menu-parent-link"
                                     style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <img src="logo/Gob_chile_logo.svg" alt="DGC" class="nav-db-logo" width="15" height="15" style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
+                                    <img src="logo/Gob_chile_logo.svg" alt="DGC" class="nav-db-logo" width="15"
+                                        height="15"
+                                        style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
                                     Dirección General de Concesiones (DGC)
                                 </a>
                                 <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
@@ -89,7 +98,8 @@
                             <div class="nav-menu-item active nav-menu-has-sub" id="nav-efe-parent-item">
                                 <a href="EFE.html" class="nav-menu-parent-link"
                                     style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <img src="logo/efe_logo.png" alt="EFE" class="nav-db-logo" width="15" height="15" style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
+                                    <img src="logo/efe_logo.png" alt="EFE" class="nav-db-logo" width="15" height="15"
+                                        style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
                                     Empresas de Ferrocarriles del Estado (EFE)
                                 </a>
                                 <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
@@ -116,7 +126,9 @@
                             <div class="nav-menu-item nav-menu-has-sub" id="nav-metro-parent-item">
                                 <a href="Metro.html" class="nav-menu-parent-link"
                                     style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <img src="logo/metro_logo.png" alt="Metro" class="nav-db-logo" width="15" height="15" style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
+                                    <img src="logo/metro_logo.png" alt="Metro" class="nav-db-logo" width="15"
+                                        height="15"
+                                        style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
                                     Metro de Santiago
                                 </a>
                                 <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
@@ -130,10 +142,12 @@
                                     <i data-lucide="clock" style="width:13px;height:13px;"></i> Líneas de Tiempo
                                 </a>
                                 <a class="nav-submenu-item" href="Metro.html#comunas">
-                                    <i data-lucide="building-2" style="width:13px;height:13px;"></i> Estadísticas Comunales
+                                    <i data-lucide="building-2" style="width:13px;height:13px;"></i> Estadísticas
+                                    Comunales
                                 </a>
                                 <a class="nav-submenu-item" href="Metro.html#demanda">
-                                    <i data-lucide="trending-up" style="width:13px;height:13px;"></i> Demanda y Operación
+                                    <i data-lucide="trending-up" style="width:13px;height:13px;"></i> Demanda y
+                                    Operación
                                 </a>
                             </div>
                         </div>
@@ -143,7 +157,9 @@
                             <div class="nav-menu-item nav-menu-has-sub" id="nav-mop-parent-item">
                                 <a href="MOP.html" class="nav-menu-parent-link"
                                     style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <img src="logo/Gob_chile_logo.svg" alt="MOP" class="nav-db-logo" width="15" height="15" style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
+                                    <img src="logo/Gob_chile_logo.svg" alt="MOP" class="nav-db-logo" width="15"
+                                        height="15"
+                                        style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
                                     Ministerio de Obras Públicas (MOP)
                                 </a>
                                 <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
@@ -168,7 +184,9 @@
                             <div class="nav-menu-item nav-menu-has-sub" id="nav-sni-parent-item">
                                 <a href="SNI.html" class="nav-menu-parent-link"
                                     style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <img src="logo/Gob_chile_logo.svg" alt="SNI" class="nav-db-logo" width="15" height="15" style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
+                                    <img src="logo/Gob_chile_logo.svg" alt="SNI" class="nav-db-logo" width="15"
+                                        height="15"
+                                        style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
                                     Sistema Nacional de Inversiones (SNI)
                                 </a>
                                 <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
@@ -297,19 +315,27 @@
                             </div>
                         </div>
 
-                        <!-- Reset & Export buttons -->
-                        <div style="display:flex;flex-direction:column;gap:0.25rem;margin-top:0.1rem;">
-                            <button class="btn btn-ghost" id="efe-btn-reset"
-                                style="font-size:0.72rem;padding:0.28rem 0.5rem;justify-content:center;width:100%;">
-                                <i data-lucide="rotate-ccw" style="width:12px;height:12px;"></i>
-                                Restablecer
+                        <!-- Reset & Export Buttons -->
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.1rem;">
+                            <button class="btn-reset" id="efe-btn-reset"
+                                style="padding: 0.28rem 0.4rem; font-size: 0.72rem; justify-content: center; width: 100%;">
+                                <i data-lucide="rotate-ccw" style="width: 12px; height: 12px;"></i>
+                                Restablecer Filtros
                             </button>
-                            <button class="btn btn-ghost" id="efe-btn-export-excel"
-                                style="font-size:0.72rem;padding:0.28rem 0.5rem;justify-content:center;width:100%;background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.3);color:#10b981;font-weight:600;cursor:pointer;transition:all 0.15s ease;"
-                                title="Descargar proyectos EFE filtrados o completos en Excel (.xlsx)">
-                                <i data-lucide="file-spreadsheet" style="width:12px;height:12px;"></i>
-                                Exportar a Excel (.xlsx)
-                            </button>
+                            <div style="display: flex; gap: 0.25rem; width: 100%;">
+                                <button class="btn-reset" id="efe-btn-export-excel"
+                                    style="flex: 1; padding: 0.28rem 0.4rem; font-size: 0.72rem; justify-content: center; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); color: #10b981; font-weight: 600; cursor: pointer; transition: all 0.15s ease;"
+                                    title="Descargar proyectos EFE filtrados o completos en Excel (.xlsx)">
+                                    <i data-lucide="file-spreadsheet" style="width: 12px; height: 12px;"></i>
+                                    Exportar Excel
+                                </button>
+                                <button class="btn-reset" id="efe-btn-export-geojson"
+                                    style="flex: 1; padding: 0.28rem 0.4rem; font-size: 0.72rem; justify-content: center; background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.3); color: #6366f1; font-weight: 600; cursor: pointer; transition: all 0.15s ease;"
+                                    title="Descargar red e infraestructura ferroviaria oficial en formato GeoJSON (.geojson)">
+                                    <i data-lucide="map-pin" style="width: 12px; height: 12px;"></i>
+                                    Exportar GeoJSON
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -419,16 +445,20 @@
                                 <table class="data-table" style="table-layout: fixed; width: 100%;">
                                     <thead>
                                         <tr>
-                                            <th class="sortable" data-sort="name" style="width: 38%;">Nombre Proyecto</th>
+                                            <th class="sortable" data-sort="name" style="width: 38%;">Nombre Proyecto
+                                            </th>
                                             <th class="sortable" data-sort="filial" style="width: 22%;">Filial</th>
-                                            <th class="sortable desc" data-sort="investment_mm_usd" style="width: 20%; text-align: right;">Inversión</th>
-                                            <th class="sortable" data-sort="stage" style="width: 20%;" title="Etapa del proyecto">Etapa</th>
+                                            <th class="sortable desc" data-sort="investment_mm_usd"
+                                                style="width: 20%; text-align: right;">Inversión</th>
+                                            <th class="sortable" data-sort="stage" style="width: 20%;"
+                                                title="Etapa del proyecto">Etapa</th>
                                         </tr>
                                     </thead>
                                 </table>
                             </div>
                             <div class="table-body-wrapper">
-                                <table class="data-table" id="efe-contracts-table" style="table-layout: fixed; width: 100%;">
+                                <table class="data-table" id="efe-contracts-table"
+                                    style="table-layout: fixed; width: 100%;">
                                     <tbody id="efe-table-body">
                                         <!-- Dynamic rows inserted here -->
                                     </tbody>
@@ -488,40 +518,8 @@
                 </section>
 
                 <!-- Full-Width EFE Timeline Panel -->
-                <div id="efe-timeline-full-panel" class="timeline-full-panel" style="display:none; grid-column: 2 / -1;">
-                    <!-- BANNER KPI SUPERIOR (Líneas de Tiempo) -->
-                    <div
-                        style="padding: 0.5rem 0.5rem 0.35rem 0.5rem; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.4rem; flex-shrink: 0; border-bottom: 1px solid var(--border-color);">
-                        <div class="card-kpi">
-                            <div class="kpi-icon">
-                                <i data-lucide="dollar-sign"></i>
-                            </div>
-                            <div class="kpi-val-container">
-                                <span class="kpi-label">Inversión en cartera</span>
-                                <span class="kpi-value" id="efe-kpi-tl-investment" style="font-size: 0.95rem;">-</span>
-                            </div>
-                        </div>
-
-                        <div class="card-kpi">
-                            <div class="kpi-icon">
-                                <i data-lucide="calendar-check"></i>
-                            </div>
-                            <div class="kpi-val-container">
-                                <span class="kpi-label">Proyectos con fecha estimada</span>
-                                <span class="kpi-value" id="efe-kpi-tl-projects" style="font-size: 0.95rem;">-</span>
-                            </div>
-                        </div>
-
-                        <div class="card-kpi">
-                            <div class="kpi-icon">
-                                <i data-lucide="clock"></i>
-                            </div>
-                            <div class="kpi-val-container">
-                                <span class="kpi-label">Horizonte de puesta en marcha</span>
-                                <span class="kpi-value" id="efe-kpi-tl-horizon" style="font-size: 0.95rem;">-</span>
-                            </div>
-                        </div>
-                    </div>
+                <div id="efe-timeline-full-panel" class="timeline-full-panel"
+                    style="display:none; grid-column: 2 / -1;">
 
                     <!-- Timeline Header -->
                     <div class="timeline-header">
@@ -530,27 +528,40 @@
                             <h2 class="timeline-header-title">Línea de Tiempo de Proyectos EFE</h2>
                             <span id="efe-timeline-count-badge" class="timeline-count-badge">0 Proyectos</span>
                         </div>
-                        <div class="timeline-header-right">
+                        <div class="timeline-header-right" id="efe-timeline-header-legend">
                             <span class="timeline-legend-item">
-                                <span class="tl-legend-dot" style="background:#2563eb;"></span>EFE Central
+                                <span class="tl-legend-dot"
+                                    style="background:#2563eb; width:11px; height:7px; border-radius:2px;"></span>Ejecución
                             </span>
                             <span class="timeline-legend-item">
-                                <span class="tl-legend-dot" style="background:#0284c7;"></span>EFE Valparaíso
+                                <span class="tl-legend-dot"
+                                    style="background:#ea580c; width:11px; height:7px; border-radius:2px;"></span>Diseño
                             </span>
                             <span class="timeline-legend-item">
-                                <span class="tl-legend-dot" style="background:#d97706;"></span>EFE Sur
+                                <span class="tl-legend-dot"
+                                    style="background:#0891b2; width:11px; height:7px; border-radius:2px;"></span>Factibilidad
                             </span>
                             <span class="timeline-legend-item">
-                                <span class="tl-legend-dot" style="background:#059669;"></span>EFE Arica
+                                <span class="tl-legend-dot"
+                                    style="background:#8b5cf6; width:11px; height:7px; border-radius:2px;"></span>Prefactibilidad
                             </span>
                             <span class="timeline-legend-item">
-                                <span class="tl-legend-dot" style="background:#10b981; border-radius:50%; text-align:center; color:#fff; font-size:7px; line-height:10px;">✓</span>Operativo
+                                <span class="tl-legend-dot"
+                                    style="background:#6366f1; width:11px; height:7px; border-radius:2px;"></span>Estudio
+                                Básico
                             </span>
                             <span class="timeline-legend-item">
-                                <span class="tl-legend-dot" style="background:#10b981; transform:rotate(45deg); width:8px; height:8px;"></span>Estimado
+                                <span class="tl-legend-dot"
+                                    style="background:#10b981; border-radius:50%; text-align:center; color:#fff; font-size:7px; line-height:10px; width:10px; height:10px;">✓</span>Operativo
                             </span>
                             <span class="timeline-legend-item">
-                                <span style="display:inline-block;width:2px;height:12px;background:#ef4444;border-radius:1px;"></span>Hoy
+                                <span class="tl-legend-dot"
+                                    style="background:#10b981; transform:rotate(45deg); width:7px; height:7px; border-radius:1px;"></span>Puesta
+                                en Operación
+                            </span>
+                            <span class="timeline-legend-item">
+                                <span
+                                    style="display:inline-block;width:2px;height:12px;background:#ef4444;border-radius:1px;"></span>Hoy
                             </span>
                         </div>
                     </div>
@@ -634,7 +645,8 @@
                                         Inversión según Tipo de Proyecto
                                     </h3>
                                     <span
-                                        style="font-size: 0.6rem; color: var(--text-muted); font-style: italic;">*Inversión acumulada estimada en MM USD por tipología</span>
+                                        style="font-size: 0.6rem; color: var(--text-muted); font-style: italic;">*Inversión
+                                        acumulada estimada en MM USD por tipología</span>
                                 </div>
                                 <div style="flex: 1; min-height: 0; position: relative;">
                                     <canvas id="efeChartInvByTipo"></canvas>
@@ -722,13 +734,13 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <!-- EFE App Logic -->
-    <script src="static/js/EFE/state.js?v=20260903_1331"></script>
-    <script src="static/js/EFE/charts.js?v=20260903_1331"></script>
-    <script src="static/js/EFE/investment.js?v=20260903_1331"></script>
-    <script src="static/js/EFE/timeline.js?v=20260903_1331"></script>
-    <script src="static/js/EFE/map.js?v=20260903_1331"></script>
-    <script src="static/js/EFE/filters.js?v=20260903_1331"></script>
-    <script src="static/js/EFE/ui.js?v=20260903_1331"></script>
+    <script src="static/js/EFE/state.js?v=20260908_1240"></script>
+    <script src="static/js/EFE/charts.js?v=20260908_1240"></script>
+    <script src="static/js/EFE/investment.js?v=20260908_1240"></script>
+    <script src="static/js/EFE/timeline.js?v=20260908_1240"></script>
+    <script src="static/js/EFE/map.js?v=20260908_1240"></script>
+    <script src="static/js/EFE/filters.js?v=20260908_1240"></script>
+    <script src="static/js/EFE/ui.js?v=20260910_1"></script>
 
     <!-- Nav Menu & View Switcher Logic -->
     <script>
@@ -906,6 +918,309 @@
 
             window.addEventListener('hashchange', handleEfeHashRoute);
             setTimeout(handleEfeHashRoute, 150);
+        })();
+    </script>
+    <!-- Modal: Acerca de (Fuentes de Datos y Metodología de Cálculo) -->
+    <div id="about-modal" class="about-modal-backdrop" style="display: none;">
+        <div class="about-modal-container">
+            <!-- Modal Header -->
+            <div class="about-modal-header">
+                <div style="display: flex; align-items: center; gap: 0.75rem; min-width: 0;">
+                    <i data-lucide="info" style="width: 20px; height: 20px; color: #2563eb; flex-shrink: 0;"></i>
+                    <div style="min-width: 0;">
+                        <h3 class="about-modal-title">
+                            Módulo Empresa de los Ferrocarriles del Estado (EFE)
+                        </h3>
+                    </div>
+                </div>
+                <button id="btn-close-about-modal" class="about-modal-close-btn" title="Cerrar (Esc)">
+                    <i data-lucide="x" style="width: 17px; height: 17px;"></i>
+                </button>
+            </div>
+
+            <!-- Modal Scrollable Body -->
+            <div class="about-modal-body">
+                <!-- SECCIÓN 1: DESCRIPCIÓN Y OBJETIVO DEL MÓDULO -->
+                <div class="about-section">
+                    <div class="about-section-header">
+                        <h4 class="about-section-title">1. Descripción y Objetivo del Módulo</h4>
+                    </div>
+                    <div
+                        style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.9rem 1.1rem; display: flex; flex-direction: column; gap: 0.65rem;">
+                        <p style="margin: 0; font-size: 0.78rem; line-height: 1.55; color: #334155;">
+                            Este módulo agrupa la cartera histórica y vigente del portafolio de proyectos e inversiones
+                            estratégicas de <strong>EFE Trenes de Chile</strong> (Empresa de los Ferrocarriles del
+                            Estado)
+                            y sus empresas filiales operativas (EFE Central, EFE Valparaíso, EFE Sur y EFE Arica-La
+                            Paz).
+                        </p>
+
+                        <div
+                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 0.75rem; margin-top: 0.2rem;">
+                            <!-- Lo que mapea -->
+                            <div
+                                style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem 0.9rem; display: flex; flex-direction: column; gap: 0.3rem;">
+                                <div
+                                    style="font-size: 0.78rem; font-weight: 700; color: #1e3a8a; display: flex; align-items: center; gap: 0.35rem;">
+                                    <i data-lucide="map-pin" style="width: 14px; height: 14px; color: #2563eb;"></i>
+                                    ¿Qué mapea este módulo?
+                                </div>
+                                <p style="margin: 0; font-size: 0.73rem; color: #475569; line-height: 1.5;">
+                                    Georreferencia y mapea las iniciativas y proyectos ferroviarios que cuentan con
+                                    trazados o información espacial disponible a nivel nacional, detallando sus montos
+                                    de inversión estimada (MM USD), etapas del ciclo de vida (Estudio Básico,
+                                    Prefactibilidad, Factibilidad, Diseño, Ejecución, Operativo), año estimado de puesta
+                                    en operación y avances reportados.
+                                </p>
+                            </div>
+
+                            <!-- Objetivo -->
+                            <div
+                                style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem 0.9rem; display: flex; flex-direction: column; gap: 0.3rem;">
+                                <div
+                                    style="font-size: 0.78rem; font-weight: 700; color: #1e3a8a; display: flex; align-items: center; gap: 0.35rem;">
+                                    <i data-lucide="target" style="width: 14px; height: 14px; color: #2563eb;"></i>
+                                    Objetivo
+                                </div>
+                                <p style="margin: 0; font-size: 0.73rem; color: #475569; line-height: 1.5;">
+                                    Facilitar el análisis interactivo, geoespacial, temporal y financiero de los
+                                    proyectos
+                                    ferroviarios en Chile, permitiendo monitorear el avance de las obras, la
+                                    distribución de
+                                    la inversión por filial y tipología de proyecto, los plazos y horizontes de
+                                    inauguración
+                                    comercial y la evolución presupuestaria reportada en los ejercicios anuales de EFE.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 2: FUENTES DE DATOS -->
+                <div class="about-section">
+                    <div class="about-section-header"
+                        style="display: flex; align-items: center; justify-content: space-between;">
+                        <h4 class="about-section-title">2. Fuentes de Datos</h4>
+                        <span style="font-size: 0.68rem; color: #64748b; font-weight: 500;">Última actualización:
+                            Memoria Integrada 2025</span>
+                    </div>
+
+                    <!-- Fuente Base Principal -->
+                    <div class="about-source-card" style="background: #f8fafc; padding: 0.85rem 1rem;">
+                        <div class="about-source-top" style="margin-bottom: 0.25rem;">
+                            <span class="about-source-name"
+                                style="font-size: 0.82rem; font-weight: 700; color: #0f172a;">
+                                <i data-lucide="folder-git-2" style="width: 15px; height: 15px; color: #0284c7;"></i>
+                                Base de Datos construida a partir de Memorias Anuales EFE.
+                            </span>
+                        </div>
+                        <p style="margin: 0; font-size: 0.77rem; line-height: 1.45; color: #334155;">
+                            <a href="https://www.efe.cl/corporativo/documentos/memorias-anuales/efe-trenes-de-chile/"
+                                target="_blank" rel="noopener noreferrer"
+                                style="color: #0284c7; font-weight: 600; text-decoration: underline; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                Memorias Integradas y Reportes Anuales EFE Trenes de Chile (2023 - 2025)
+                                <i data-lucide="external-link" style="width: 12px; height: 12px;"></i>
+                            </a>
+                        </p>
+                    </div>
+
+                    <!-- Subtítulo Complementado con: -->
+                    <div
+                        style="margin-top: 0.25rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.85rem 1rem;">
+                        <h5
+                            style="margin: 0 0 0.55rem 0; font-size: 0.78rem; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.03em; display: flex; align-items: center; gap: 0.35rem;">
+                            <i data-lucide="plus-circle" style="width: 13px; height: 13px; color: #2563eb;"></i>
+                            Complementado con:
+                        </h5>
+                        <ol
+                            style="margin: 0; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.76rem; color: #334155;">
+                            <li style="line-height: 1.45;">
+                                Portal oficial de proyectos corporativos EFE:
+                                <a href="https://www.efe.cl/proyectos/" target="_blank" rel="noopener noreferrer"
+                                    style="color: #2563eb; font-weight: 600; text-decoration: underline; margin-left: 0.25rem; display: inline-flex; align-items: center; gap: 0.2rem;">
+                                    https://www.efe.cl/proyectos/
+                                    <i data-lucide="external-link" style="width: 11px; height: 11px;"></i>
+                                </a>
+                                <span style="color: #64748b; margin-left: 0.25rem;">(especificaciones técnicas,
+                                    trazados, estaciones y avances).</span>
+                            </li>
+                            <li style="line-height: 1.45;">
+                                Red de Infraestructura Ferroviaria (Capa GeoJSON base):
+                                <a href="https://geoportal.cl/geoportal/catalog/36403/Red%20Ferroviaria" target="_blank"
+                                    rel="noopener noreferrer"
+                                    style="color: #2563eb; font-weight: 600; text-decoration: underline; margin-left: 0.25rem; display: inline-flex; align-items: center; gap: 0.2rem;">
+                                    GeoPortal de Chile - Red Ferroviaria
+                                    <i data-lucide="external-link" style="width: 11px; height: 11px;"></i>
+                                </a>
+                                <span style="color: #64748b; margin-left: 0.25rem;">(base filtrada para considerar
+                                    exclusivamente las redes, servicios y proyectos de EFE en función de sus trazados
+                                    oficiales).</span>
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 3: METODOLOGÍA Y FÓRMULAS POR VISUALIZACIÓN -->
+                <div class="about-section">
+                    <div class="about-section-header">
+                        <h4 class="about-section-title">3. Metodología y Criterios por Visualización</h4>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 0.85rem; margin-top: 0.25rem;">
+
+                        <!-- 1. VISUALIZACIÓN MAPA -->
+                        <div class="formula-card">
+                            <div class="formula-card-title">
+                                <i data-lucide="map" style="width: 15px; height: 15px; color: #2563eb;"></i>
+                                Visualización: Mapa
+                            </div>
+
+                            <div class="formula-subtitle">
+                                <i data-lucide="gauge" style="width: 13px; height: 13px; color: #2563eb;"></i>
+                                Indicadores Clave (KPIs superiores):
+                            </div>
+                            <ul
+                                style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
+                                <li><strong>Proyectos totales:</strong> Cantidad neta de iniciativas y contratos
+                                    ferroviarios
+                                    que cumplen con los filtros seleccionados (Filial, Tipo de Proyecto, Cartera/Detalle
+                                    y búsqueda de texto).</li>
+                                <li><strong>Inversión total (MM USD):</strong> Suma acumulada del presupuesto oficial
+                                    estimado
+                                    en millones de dólares estadounidenses (MM USD) de los proyectos activos según el
+                                    filtro aplicado.</li>
+                                <li><strong>Georreferenciación y Trazados:</strong> Representación cartográfica
+                                    interactiva de
+                                    las líneas férreas y estaciones. Al seleccionar un proyecto de la lista, el mapa
+                                    centra automáticamente su vista y resalta el trazado correspondiente.</li>
+                            </ul>
+                        </div>
+
+                        <!-- 2. VISUALIZACIÓN LÍNEAS DE TIEMPO -->
+                        <div class="formula-card">
+                            <div class="formula-card-title">
+                                <i data-lucide="clock" style="width: 15px; height: 15px; color: #7c3aed;"></i>
+                                Visualización: Líneas de Tiempo
+                            </div>
+
+                            <div class="formula-subtitle">
+                                <i data-lucide="gauge" style="width: 13px; height: 13px; color: #7c3aed;"></i>
+                                Cronograma y Etapas del Ciclo de Vida:
+                            </div>
+                            <ul
+                                style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
+                                <li><strong>Diagrama de Gantt Interactivo:</strong> Muestra la secuencia y duración
+                                    temporal
+                                    estimada de las distintas fases de cada iniciativa: <em>Estudio Básico</em>,
+                                    <em>Prefactibilidad</em>, <em>Factibilidad</em>, <em>Diseño</em> y
+                                    <em>Ejecución</em>.
+                                </li>
+                                <li><strong>Criterio de Inicio y Extensión de Barra:</strong> El inicio de cada barra se
+                                    define tomando como referencia la fecha actual ("Hoy") y extendiéndose
+                                    temporalmente hasta la fecha estimada de puesta en operación en base a la etapa
+                                    actual del proyecto. La barra no representa el ciclo histórico o etapa total que
+                                    abarca el proyecto, sino el horizonte estimado hacia su puesta en marcha.</li>
+                                <li><strong>Hitos de Operación:</strong> Distinción entre proyectos en fase operativa
+                                    (ícono de verificación verde)
+                                    y la fecha proyectada de inicio de operaciones (marcador de diamante verde).</li>
+                            </ul>
+                        </div>
+
+                        <!-- 3. VISUALIZACIÓN ANÁLISIS DE INVERSIÓN -->
+                        <div class="formula-card">
+                            <div class="formula-card-title">
+                                <i data-lucide="line-chart" style="width: 15px; height: 15px; color: #0284c7;"></i>
+                                Visualización: Análisis de Inversión
+                            </div>
+
+                            <div class="formula-subtitle">
+                                <i data-lucide="gauge" style="width: 13px; height: 13px; color: #0284c7;"></i>
+                                Indicadores Clave (KPIs superiores):
+                            </div>
+                            <ul
+                                style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
+                                <li><strong>Inversión total:</strong> Monto consolidado en MM USD de los proyectos
+                                    evaluados en el portafolio.</li>
+                                <li><strong>Promedio inversión / proyecto:</strong> Inversión media en millones de
+                                    dólares por cada iniciativa ferroviaria.</li>
+                                <li><strong>Filial con mayor inversión:</strong> Filial operativa que concentra el mayor
+                                    volumen de recursos financieros según los filtros aplicados.</li>
+                            </ul>
+
+                            <div class="formula-subtitle">
+                                <i data-lucide="pie-chart" style="width: 13px; height: 13px; color: #0284c7;"></i>
+                                Distribución y Asignación de Inversión por Filial (%):
+                            </div>
+                            <div class="formula-box">
+                                Inversión(Filial f) = &Sigma; [ Inversión_Total(p) / N_filiales(p) ]
+                            </div>
+                            <p class="formula-explanation">
+                                En iniciativas de alcance transversal o a nivel de red nacional sin una filial única
+                                exclusiva
+                                (ej. Control por Señalización Virtual CSV o adquisición general de material rodante), la
+                                inversión en MM USD
+                                se divide de manera equitativa entre las filiales operativas beneficiarias para reflejar
+                                fielmente la participación porcentual en el gráfico.
+                            </p>
+
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Controlador del Modal Acerca de -->
+    <script>
+        (function () {
+            const btnOpen = document.getElementById('btn-open-about');
+            const btnClose = document.getElementById('btn-close-about-modal');
+            const modal = document.getElementById('about-modal');
+
+            function openAboutModal() {
+                if (modal) {
+                    modal.style.display = 'flex';
+                    if (window.lucide) {
+                        lucide.createIcons();
+                    }
+                }
+            }
+
+            function closeAboutModal() {
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+            }
+
+            if (btnOpen) {
+                btnOpen.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    openAboutModal();
+                });
+            }
+
+            if (btnClose) {
+                btnClose.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    closeAboutModal();
+                });
+            }
+
+            if (modal) {
+                modal.addEventListener('click', function (e) {
+                    if (e.target === modal) {
+                        closeAboutModal();
+                    }
+                });
+            }
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && modal && modal.style.display === 'flex') {
+                    closeAboutModal();
+                }
+            });
         })();
     </script>
 </body>

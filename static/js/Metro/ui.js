@@ -176,6 +176,14 @@ function setMetroTableMode(mode) {
         if (kpiIcon2) kpiIcon2.innerHTML = '<i data-lucide="map-pin"></i>';
         if (kpiLabel2) kpiLabel2.textContent = 'Estaciones Activas';
         if (kpiVal2) kpiVal2.textContent = totalEst > 0 ? `${totalEst} est.` : '—';
+
+        // Desactivar capa comunas si el usuario no la activó manualmente
+        const userActive = (window.metroState && window.metroState.userExplicitlyEnabledComunas) || (typeof metroUserExplicitlyEnabledComunas !== 'undefined' && metroUserExplicitlyEnabledComunas);
+        if (!userActive && typeof metroToggleComunas === 'function') {
+            metroToggleComunas(false);
+            const chk = document.getElementById('metro-toggle-comunas');
+            if (chk) chk.checked = false;
+        }
     } else if (mode === 'comunas') {
         if (btnComunas) {
             btnComunas.classList.add('active');
@@ -184,7 +192,7 @@ function setMetroTableMode(mode) {
             btnComunas.style.border = '1px solid var(--primary)';
         }
         if (kpiIcon1) kpiIcon1.innerHTML = '<i data-lucide="building-2"></i>';
-        if (kpiLabel1) kpiLabel1.textContent = 'Gran Santiago Urbano';
+        if (kpiLabel1) kpiLabel1.textContent = 'Comunas del Gran Santiago';
 
         const stats = window.METRO_COMUNAS_STATS || {};
         const totalCom = stats.total_comunas || ((stats.ranking_estaciones || []).length + (stats.lista_sin_metro || []).length);
@@ -226,6 +234,14 @@ function setMetroTableMode(mode) {
         if (kpiIcon2) kpiIcon2.innerHTML = '<i data-lucide="dollar-sign"></i>';
         if (kpiLabel2) kpiLabel2.textContent = 'Inversión Estimada';
         if (kpiVal2) kpiVal2.textContent = totalInv > 0 ? (typeof metroFormatInvestment === 'function' ? metroFormatInvestment(totalInv) : `US$ ${totalInv} MM`) : '—';
+
+        // Desactivar capa comunas si el usuario no la activó manualmente
+        const userActive = (window.metroState && window.metroState.userExplicitlyEnabledComunas) || (typeof metroUserExplicitlyEnabledComunas !== 'undefined' && metroUserExplicitlyEnabledComunas);
+        if (!userActive && typeof metroToggleComunas === 'function') {
+            metroToggleComunas(false);
+            const chk = document.getElementById('metro-toggle-comunas');
+            if (chk) chk.checked = false;
+        }
     }
 
     if (window.lucide && typeof window.lucide.createIcons === 'function') {
@@ -347,6 +363,12 @@ function metroOnClickOperatingLine(lineName) {
         metroState.selectedProjectName = null;
         metroState.selectedProjectId = null;
         metroState.selectedComuna = null;
+        if (typeof metroUpdateSideComunasTableSelection === 'function') {
+            metroUpdateSideComunasTableSelection();
+        }
+        if (typeof metroComunasLayer !== 'undefined' && metroComunasLayer) {
+            metroComunasLayer.eachLayer(l => metroComunasLayer.resetStyle(l));
+        }
 
         if (metroMap && typeof metroFindOperatingLayers === 'function') {
             const layers = metroFindOperatingLayers(lineName);
@@ -426,7 +448,7 @@ function metroRenderSideComunasTable() {
 
     const stats = window.METRO_COMUNAS_STATS;
     if (!stats) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:1.5rem; color:var(--text-secondary);">No hay información de comunas cargada.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:1.5rem; color:var(--text-secondary);">No hay información de comunas cargada.</td></tr>';
         if (labelPagination) labelPagination.textContent = '0-0 de 0';
         if (btnPrev) btnPrev.disabled = true;
         if (btnNext) btnNext.disabled = true;
@@ -524,7 +546,7 @@ function metroRenderSideComunasTable() {
     if (btnSin) btnSin.textContent = `Sin Metro (${allComunas.filter(c => !c.has_metro && c.expansion_status !== 'En Expansión').length})`;
 
     if (totalComunas === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:1.5rem; color:var(--text-secondary); font-size:0.75rem;">No se encontraron comunas que coincidan con los filtros.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:1.5rem; color:var(--text-secondary); font-size:0.75rem;">No se encontraron comunas que coincidan con los filtros.</td></tr>';
         return;
     }
 
@@ -560,30 +582,23 @@ function metroRenderSideComunasTable() {
             ? `<div style="display:flex; flex-wrap:wrap; gap:2px; align-items:center;">${lineasBadges.join('')}</div>`
             : `<span style="font-size:0.72rem; color:var(--text-muted);">—</span>`;
 
-        const kmHtml = c.km_red > 0
-            ? `<span style="font-weight:600; font-size:0.73rem; color:var(--text-secondary); font-variant-numeric:tabular-nums;">${c.km_red.toFixed(1)} km</span>`
-            : `<span style="font-size:0.72rem; color:var(--text-muted);">—</span>`;
-
         html += `
             <tr class="row-main metro-side-comuna-row" id="metro-side-comuna-row-${start + idx}" data-comuna="${c.comuna}"
                 style="cursor: pointer; border-bottom: 1px solid var(--border-color); transition: background 0.15s ease;"
                 onmouseenter="metroOnHoverSideComuna('${c.comuna.replace(/'/g, "\\'")}', true)"
                 onmouseleave="metroOnHoverSideComuna('${c.comuna.replace(/'/g, "\\'")}', false)"
                 onclick="metroOnClickComunaFromTable('${c.comuna.replace(/'/g, "\\'")}')">
-                <td style="width: 28%; padding: 0.45rem 0.5rem;">
+                <td style="width: 32%; padding: 0.45rem 0.5rem;">
                     <div style="font-weight: 700; font-size: 0.76rem; color: var(--text-primary); line-height: 1.25;">${c.comuna}</div>
                 </td>
-                <td style="width: 24%; padding: 0.45rem 0.4rem;">
+                <td style="width: 26%; padding: 0.45rem 0.4rem;">
                     ${badgeEstado}
                 </td>
-                <td style="width: 14%; text-align: center; padding: 0.45rem 0.35rem;">
+                <td style="width: 16%; text-align: center; padding: 0.45rem 0.35rem;">
                     ${estCountHtml}
                 </td>
-                <td style="width: 22%; padding: 0.45rem 0.35rem;">
+                <td style="width: 26%; padding: 0.45rem 0.35rem;">
                     ${lineasHtml}
-                </td>
-                <td style="width: 12%; text-align: right; padding: 0.45rem 0.5rem;">
-                    ${kmHtml}
                 </td>
             </tr>
         `;
@@ -708,6 +723,46 @@ function metroOnClickComunaFromTable(comunaName) {
 }
 window.metroOnClickComunaFromTable = metroOnClickComunaFromTable;
 
+function metroUpdateDetailNavButtons(currentProjName) {
+    const btnPrev = document.getElementById('metro-btn-detail-prev');
+    const btnNext = document.getElementById('metro-btn-detail-next');
+    if (!btnPrev || !btnNext) return;
+
+    const list = (typeof currentFilteredMetroProjects !== 'undefined' && currentFilteredMetroProjects && currentFilteredMetroProjects.length > 0)
+        ? currentFilteredMetroProjects
+        : ((window.METRO_DATA && window.METRO_DATA.data) ? window.METRO_DATA.data : []);
+
+    const idx = list.findIndex(p => p.name === currentProjName);
+
+    if (idx > 0) {
+        btnPrev.disabled = false;
+        btnPrev.style.opacity = '1';
+        btnPrev.style.cursor = 'pointer';
+        btnPrev.style.pointerEvents = 'auto';
+        btnPrev.onclick = () => metroSelectProject(list[idx - 1]);
+    } else {
+        btnPrev.disabled = true;
+        btnPrev.style.opacity = '0.35';
+        btnPrev.style.cursor = 'not-allowed';
+        btnPrev.style.pointerEvents = 'none';
+        btnPrev.onclick = null;
+    }
+
+    if (idx >= 0 && idx < list.length - 1) {
+        btnNext.disabled = false;
+        btnNext.style.opacity = '1';
+        btnNext.style.cursor = 'pointer';
+        btnNext.style.pointerEvents = 'auto';
+        btnNext.onclick = () => metroSelectProject(list[idx + 1]);
+    } else {
+        btnNext.disabled = true;
+        btnNext.style.opacity = '0.35';
+        btnNext.style.cursor = 'not-allowed';
+        btnNext.style.pointerEvents = 'none';
+        btnNext.onclick = null;
+    }
+}
+
 function metroShowProjectDetailView(proj) {
     const tableProjectsContainer = document.getElementById('metro-table-container-view');
     const tableLinesContainer = document.getElementById('metro-lines-container-view');
@@ -724,10 +779,18 @@ function metroShowProjectDetailView(proj) {
     const lineColor = (typeof metroGetProjectColor === 'function')
         ? metroGetProjectColor(proj.line || proj.name)
         : (METRO_LINE_COLORS[proj.line] || '#0284c7');
-    const classColor = METRO_CLASS_COLORS[proj.environmental_classification] || '#64748b';
 
-    const communesList = proj.communes ? proj.communes.split(',').map(c => c.trim()).filter(Boolean) : [];
-    const communesPills = communesList.map(c => `<span class="badge" style="background:var(--surface-bg); border:1px solid var(--border-color); font-size:0.7rem; padding:0.15rem 0.45rem; border-radius:4px;">${c}</span>`).join(' ');
+    let badgeClass = 'badge-neutral';
+    const stageLower = (proj.stage || '').toLowerCase();
+    if (stageLower.includes('ejecu') || stageLower.includes('construc')) {
+        badgeClass = 'badge-info';
+    } else if (stageLower.includes('diseñ')) {
+        badgeClass = 'badge-warning';
+    } else if (stageLower.includes('factib') || stageLower.includes('estudio')) {
+        badgeClass = 'badge-neutral';
+    } else if (stageLower.includes('opera')) {
+        badgeClass = 'badge-success';
+    }
 
     const invFormatted = (proj.investment_mm_usd != null && Number(proj.investment_mm_usd) > 0)
         ? metroFormatInvestment(proj.investment_mm_usd)
@@ -750,114 +813,124 @@ function metroShowProjectDetailView(proj) {
         : (proj.benefited_population || '—');
 
     detailBody.innerHTML = `
-        <div style="display:flex; flex-direction:column; gap:0.85rem; padding:0.85rem 1rem;">
-            <!-- Título y Badges -->
-            <div>
-                <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem; flex-wrap:wrap;">
-                    <span style="display:inline-flex; align-items:center; gap:0.35rem; background:${lineColor}1a; color:${lineColor}; border:1px solid ${lineColor}4d; font-weight:700; font-size:0.72rem; padding:0.2rem 0.55rem; border-radius:4px;">
-                        ${typeof metroGetProjectTypeSvg === 'function' ? metroGetProjectTypeSvg(proj.type || proj.tipo, 12, 12, lineColor) : ''}
-                        ${proj.line || 'Metro'}
-                    </span>
-                    <span style="background:${classColor}22; color:${classColor}; border:1px solid ${classColor}55; font-weight:600; font-size:0.7rem; padding:0.18rem 0.5rem; border-radius:4px;">
-                        ${proj.environmental_classification || 'Expansión'}
-                    </span>
-                    <span style="background:var(--surface-bg); border:1px solid var(--border-color); font-size:0.7rem; padding:0.18rem 0.5rem; border-radius:4px; color:var(--text-secondary);">
-                        ${proj.type || 'Línea Nueva'}
-                    </span>
-                    <span style="font-size:0.72rem; color:var(--text-muted); font-weight:600; margin-left:auto;">${proj.id || ''}</span>
-                </div>
-                <h2 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin:0; line-height:1.3;">
-                    ${proj.name}
-                </h2>
-                <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.25rem;">
-                    Terminales: <strong>${proj.terminals || '—'}</strong>
-                </div>
+        <!-- Cabecera del Proyecto (Estilo index.html) -->
+        <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.1rem;">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
+                <h3 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--text-primary); line-height: 1.35; font-family: var(--font-heading); flex: 1; min-width: 0;">${proj.name}</h3>
+                <span class="badge ${badgeClass}" style="flex-shrink: 0; font-size: 0.7rem; padding: 0.2rem 0.5rem; white-space: nowrap; margin-top: 2px;">${proj.stage || 'Expansión'}</span>
             </div>
-
-            <!-- Grid de KPIs Clave -->
-            <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:0.6rem;">
-                <div style="background:var(--surface-card); border:1px solid var(--border-color); border-radius:8px; padding:0.65rem;">
-                    <div style="font-size:0.68rem; color:var(--text-secondary); text-transform:uppercase; font-weight:600;">Inversión Total</div>
-                    <div style="font-size:${invFormatted.length > 18 ? '0.82rem' : '1.05rem'}; font-weight:800; color:var(--primary); margin-top:0.2rem; line-height:1.25;">${invFormatted}</div>
-                </div>
-                <div style="background:var(--surface-card); border:1px solid var(--border-color); border-radius:8px; padding:0.65rem;">
-                    <div style="font-size:0.68rem; color:var(--text-secondary); text-transform:uppercase; font-weight:600;">Puesta en Servicio</div>
-                    <div style="font-size:1.05rem; font-weight:800; color:var(--text-primary); margin-top:0.2rem;">${proj.operation_year || '—'}</div>
-                </div>
-                <div style="background:var(--surface-card); border:1px solid var(--border-color); border-radius:8px; padding:0.65rem;">
-                    <div style="font-size:0.68rem; color:var(--text-secondary); text-transform:uppercase; font-weight:600;">Longitud y Estaciones</div>
-                    <div style="font-size:0.92rem; font-weight:700; color:var(--text-primary); margin-top:0.2rem;">${proj.length_km ? proj.length_km + ' km' : '—'} • ${proj.stations ? proj.stations + ' est.' : '—'}</div>
-                </div>
-                <div style="background:var(--surface-card); border:1px solid var(--border-color); border-radius:8px; padding:0.65rem;">
-                    <div style="font-size:0.68rem; color:var(--text-secondary); text-transform:uppercase; font-weight:600;">Población Beneficiada</div>
-                    <div style="font-size:0.92rem; font-weight:700; color:var(--text-primary); margin-top:0.2rem;">${pobFormatted}</div>
-                </div>
+            <div style="font-size: 0.75rem; color: ${lineColor}; font-weight: 600; margin-top: 0.25rem;">
+                ${proj.line || 'Metro de Santiago'} ${proj.type ? `• ${proj.type}` : ''}
             </div>
+        </div>
 
-            <!-- Fichas Informativas en Bloques -->
-            <div style="display:flex; flex-direction:column; gap:0.75rem;">
-                <!-- Bloque 1: Tiempo de Viaje y Combinaciones -->
-                <div style="background:var(--surface-card); border:1px solid var(--border-color); border-radius:8px; padding:0.75rem;">
-                    <div style="font-weight:700; font-size:0.78rem; color:var(--text-primary); margin-bottom:0.35rem; display:flex; align-items:center; gap:0.4rem;">
-                        <i data-lucide="clock" style="width:14px; height:14px; color:var(--primary);"></i> Tiempo de Viaje e Intermodalidad
-                    </div>
-                    <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.4;">
-                        <strong>Tiempo estimado:</strong> ${proj.travel_time || '—'}<br>
-                        <strong>Combinaciones:</strong> ${proj.combinations || '—'}
-                    </div>
-                </div>
+        <!-- 1. Características y Trazado -->
+        <div class="detail-section">
+            <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.4rem;">
+                <i data-lucide="map-pin" style="width: 14px; height: 14px; color: var(--primary);"></i>
+                Características y Trazado
+            </h4>
+            <div class="detail-grid" style="grid-template-columns: 125px 1fr; gap: 0.3rem; font-size: 0.74rem;">
+                <span class="detail-label">Terminales:</span>
+                <span class="detail-value">${proj.terminals || '—'}</span>
 
-                <!-- Bloque 2: Comunas Conectadas -->
-                <div style="background:var(--surface-card); border:1px solid var(--border-color); border-radius:8px; padding:0.75rem;">
-                    <div style="font-weight:700; font-size:0.78rem; color:var(--text-primary); margin-bottom:0.4rem; display:flex; align-items:center; gap:0.4rem;">
-                        <i data-lucide="map-pin" style="width:14px; height:14px; color:var(--primary);"></i> Comunas Conectadas
-                    </div>
-                    <div style="display:flex; flex-wrap:wrap; gap:0.3rem;">
-                        ${communesPills || '<span style="color:var(--text-muted);font-size:0.72rem;">No especificadas</span>'}
-                    </div>
-                </div>
+                <span class="detail-label">Longitud:</span>
+                <span class="detail-value">${proj.length_km ? proj.length_km + ' km' : '—'}</span>
 
-                <!-- Bloque 3: Avance Físico, Túneles y Talleres -->
-                <div style="background:var(--surface-card); border:1px solid var(--border-color); border-radius:8px; padding:0.75rem;">
-                    <div style="font-weight:700; font-size:0.78rem; color:var(--text-primary); margin-bottom:0.35rem; display:flex; align-items:center; gap:0.4rem;">
-                        <i data-lucide="activity" style="width:14px; height:14px; color:var(--primary);"></i> Avance Físico y Obras Subterráneas
-                    </div>
-                    <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.4;">
-                        <strong>Estado / Etapa:</strong> ${proj.stage || '—'}<br>
-                        <strong>Avance Túnel:</strong> ${proj.tunnel_excavation || '—'}<br>
-                        <strong>Talleres y Cocheras:</strong> ${proj.workshops_depots || '—'}
-                    </div>
-                </div>
+                <span class="detail-label">Estaciones:</span>
+                <span class="detail-value">${proj.stations ? proj.stations + ' estaciones' : '—'}</span>
 
-                <!-- Bloque 4: Material Rodante y Tecnología -->
-                <div style="background:var(--surface-card); border:1px solid var(--border-color); border-radius:8px; padding:0.75rem;">
-                    <div style="font-weight:700; font-size:0.78rem; color:var(--text-primary); margin-bottom:0.35rem; display:flex; align-items:center; gap:0.4rem;">
-                        <i data-lucide="train" style="width:14px; height:14px; color:var(--primary);"></i> Material Rodante y Sistemas
-                    </div>
-                    <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.4;">
-                        <strong>Trenes:</strong> ${proj.rolling_stock || '—'}<br>
-                        <strong>Sistemas:</strong> ${proj.systems_technology || '—'}
-                    </div>
-                </div>
+                <span class="detail-label">Tiempo de Viaje:</span>
+                <span class="detail-value">${proj.travel_time || '—'}</span>
 
-                <!-- Bloque 5: Medio Ambiente y Arqueología -->
-                <div style="background:var(--surface-card); border:1px solid var(--border-color); border-radius:8px; padding:0.75rem;">
-                    <div style="font-weight:700; font-size:0.78rem; color:var(--text-primary); margin-bottom:0.35rem; display:flex; align-items:center; gap:0.4rem;">
-                        <i data-lucide="shield-check" style="width:14px; height:14px; color:var(--primary);"></i> Medio Ambiente y Patrimonio
-                    </div>
-                    <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.4;">
-                        <strong>Estado Ambiental:</strong> ${proj.environmental_status || '—'}<br>
-                        <strong>Arqueología y Comunidad:</strong> ${proj.heritage_archaeology || '—'}
-                    </div>
-                </div>
+                <span class="detail-label">Población Beneficiada:</span>
+                <span class="detail-value">${pobFormatted}</span>
 
-                <!-- Bloque 6: Fuente Oficial -->
-                <div style="font-size:0.7rem; color:var(--text-muted); font-style:italic; padding-top:0.3rem;">
-                    Fuente: ${proj.source || 'Memoria Integrada Metro 2025'}
-                </div>
+                <span class="detail-label">Combinaciones:</span>
+                <span class="detail-value">${proj.combinations || '—'}</span>
+
+                <span class="detail-label">Comunas:</span>
+                <span class="detail-value">${proj.communes || '—'}</span>
+            </div>
+        </div>
+
+        <!-- 2. Inversión y Avance -->
+        <div class="detail-section">
+            <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.4rem;">
+                <i data-lucide="trending-up" style="width: 14px; height: 14px; color: var(--primary);"></i>
+                Inversión y Avance
+            </h4>
+            <div class="detail-grid" style="grid-template-columns: 125px 1fr; gap: 0.3rem; font-size: 0.74rem;">
+                <span class="detail-label">Inversión Total:</span>
+                <span class="detail-value"><strong>${invFormatted}</strong></span>
+
+                <span class="detail-label">Inversión Acumulada:</span>
+                <span class="detail-value">${invAcumFormatted}</span>
+
+                <span class="detail-label">Puesta en Servicio:</span>
+                <span class="detail-value"><strong>${proj.operation_year || '—'}</strong></span>
+
+                <span class="detail-label">Fecha de Inicio:</span>
+                <span class="detail-value">${proj.start_date || '—'}</span>
+
+                <span class="detail-label">Avance Físico:</span>
+                <span class="detail-value"><strong>${avFisFormatted}</strong></span>
+
+                <span class="detail-label">Avance Financiero:</span>
+                <span class="detail-value">${avFinFormatted}</span>
+            </div>
+        </div>
+
+        <!-- 3. Infraestructura y Obras -->
+        <div class="detail-section">
+            <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.4rem;">
+                <i data-lucide="activity" style="width: 14px; height: 14px; color: var(--primary);"></i>
+                Infraestructura y Obras
+            </h4>
+            <div class="detail-grid" style="grid-template-columns: 125px 1fr; gap: 0.3rem; font-size: 0.74rem;">
+                <span class="detail-label">Avance Túneles:</span>
+                <span class="detail-value">${proj.tunnel_excavation || '—'}</span>
+
+                <span class="detail-label">Talleres y Cocheras:</span>
+                <span class="detail-value">${proj.workshops_depots || '—'}</span>
+            </div>
+        </div>
+
+        <!-- 4. Material Rodante y Sistemas -->
+        <div class="detail-section">
+            <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.4rem;">
+                <i data-lucide="train" style="width: 14px; height: 14px; color: var(--primary);"></i>
+                Material Rodante y Sistemas
+            </h4>
+            <div class="detail-grid" style="grid-template-columns: 125px 1fr; gap: 0.3rem; font-size: 0.74rem;">
+                <span class="detail-label">Trenes / Flota:</span>
+                <span class="detail-value">${proj.rolling_stock || '—'}</span>
+
+                <span class="detail-label">Tecnología y Sistemas:</span>
+                <span class="detail-value">${proj.systems_technology || '—'}</span>
+            </div>
+        </div>
+
+        <!-- 5. Medio Ambiente y Patrimonio -->
+        <div class="detail-section">
+            <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.4rem;">
+                <i data-lucide="shield-check" style="width: 14px; height: 14px; color: var(--primary);"></i>
+                Medio Ambiente y Patrimonio
+            </h4>
+            <div class="detail-grid" style="grid-template-columns: 125px 1fr; gap: 0.3rem; font-size: 0.74rem;">
+                <span class="detail-label">Clasificación Ambiental:</span>
+                <span class="detail-value">${proj.environmental_classification || '—'}</span>
+
+                <span class="detail-label">Estado Ambiental (RCA):</span>
+                <span class="detail-value">${proj.environmental_status || '—'}</span>
+
+                <span class="detail-label">Arqueología y Patrimonio:</span>
+                <span class="detail-value">${proj.heritage_archaeology || '—'}</span>
             </div>
         </div>
     `;
+
+    detailBody.scrollTop = 0;
 
     const backBtn = document.getElementById('metro-btn-detail-back');
     if (backBtn) {
@@ -868,6 +941,8 @@ function metroShowProjectDetailView(proj) {
             }
         };
     }
+
+    metroUpdateDetailNavButtons(proj.name);
 
     if (window.lucide && typeof window.lucide.createIcons === 'function') {
         window.lucide.createIcons();
@@ -888,6 +963,17 @@ function metroSelectProject(proj) {
         window.metroCloseAllTooltips();
     }
 
+    // Deseleccionar comuna del mapa y de la tabla si estaba seleccionada
+    if (metroState.selectedComuna) {
+        metroState.selectedComuna = null;
+        if (typeof metroUpdateSideComunasTableSelection === 'function') {
+            metroUpdateSideComunasTableSelection();
+        }
+        if (typeof metroComunasLayer !== 'undefined' && metroComunasLayer) {
+            metroComunasLayer.eachLayer(l => metroComunasLayer.resetStyle(l));
+        }
+    }
+
     if (!proj) {
         metroState.selectedProjectName = null;
         metroState.selectedProjectId = null;
@@ -896,6 +982,11 @@ function metroSelectProject(proj) {
             metroUpdateMapStyles(currentFilteredMetroProjects);
         }
         return;
+    }
+
+    // Sincronizar modo de tabla a 'projects' si venía de comunas o líneas
+    if (metroState.tableMode !== 'projects' && typeof setMetroTableMode === 'function') {
+        setMetroTableMode('projects');
     }
 
     if (!metroShowProjects && typeof metroToggleProjects === 'function') {
@@ -939,9 +1030,9 @@ function metroUpdateDynamicLabels() {
     const tabLines = document.getElementById('metro-tab-text-lines');
     const tabComunas = document.getElementById('metro-tab-text-comunas');
 
-    if (tabProjects && projects.length > 0) tabProjects.textContent = `Proyectos (${projects.length})`;
-    if (tabLines && lines.length > 0) tabLines.textContent = `Líneas Actuales (${lines.length})`;
-    if (tabComunas && totalCom > 0) tabComunas.textContent = `Comunas (${totalCom})`;
+    if (tabProjects) tabProjects.textContent = 'Proyectos';
+    if (tabLines) tabLines.textContent = 'Líneas Actuales';
+    if (tabComunas) tabComunas.textContent = 'Comunas';
 
     const linesLabel = document.getElementById('metro-lines-pagination-label');
     if (linesLabel) {
@@ -1024,8 +1115,146 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Exportar a GeoJSON
+    const btnExportGeoJSON = document.getElementById('metro-btn-export-geojson');
+    if (btnExportGeoJSON) {
+        btnExportGeoJSON.addEventListener('click', () => {
+            exportMetroToGeoJSON();
+        });
+    }
+
     // Iniciar Módulos
     if (typeof metroLoadFilters === 'function') metroLoadFilters();
     if (typeof metroInitLeafletMap === 'function') metroInitLeafletMap();
     if (typeof metroFetchData === 'function') metroFetchData();
 });
+
+/**
+ * Exporta los trazados oficiales y estaciones de Metro de Santiago a GeoJSON (.geojson)
+ * unificando la red operativa y los proyectos de expansión tal cual se cargan al inicio.
+ */
+function exportMetroToGeoJSON() {
+    const features = [];
+
+    // 1. Líneas en Servicio (Red Operativa)
+    if (window.METRO_EXISTING_LINES && Array.isArray(window.METRO_EXISTING_LINES.features)) {
+        window.METRO_EXISTING_LINES.features.forEach(f => {
+            if (!f || !f.geometry || !f.geometry.coordinates || f.geometry.coordinates.length === 0) return;
+            const cloned = JSON.parse(JSON.stringify(f));
+            const p = cloned.properties || {};
+            cloned.properties = {
+                tipo_elemento: "Línea Operativa",
+                red: "Metro de Santiago",
+                nombre_linea: p.name || (p.ref ? `Línea ${p.ref}` : "Línea Metro"),
+                ref: p.ref || "",
+                color: p.colour || p.color || (typeof metroGetLineColor === 'function' ? metroGetLineColor(p.name || p.ref) : ""),
+                operativa: true,
+                ...p
+            };
+            features.push(cloned);
+        });
+    }
+
+    // 2. Proyectos de Expansión (Trazados futuros)
+    if (window.METRO_GEO_DATA && Array.isArray(window.METRO_GEO_DATA.features)) {
+        const allProjects = (window.METRO_DATA && window.METRO_DATA.data) ? window.METRO_DATA.data : [];
+        window.METRO_GEO_DATA.features.forEach(f => {
+            if (!f || !f.geometry || !f.geometry.coordinates || f.geometry.coordinates.length === 0) return;
+            const cloned = JSON.parse(JSON.stringify(f));
+            const p = cloned.properties || {};
+            const cod = (p.shape_id != null && String(p.shape_id).trim() !== '')
+                ? String(p.shape_id).trim()
+                : (p.COD != null ? String(p.COD).trim() : (p['@id'] || ''));
+            
+            const matchedProj = allProjects.find(proj => {
+                const shapes = proj.shapes || proj.Shapes || [];
+                return shapes.map(String).includes(cod) || proj.name === p.name;
+            });
+
+            cloned.properties = {
+                tipo_elemento: "Proyecto de Expansión",
+                red: "Metro de Santiago",
+                nombre_proyecto: (matchedProj && matchedProj.name) || p.name || "Proyecto Metro",
+                linea: (matchedProj && matchedProj.line) || p.linea || "",
+                etapa: (matchedProj && matchedProj.stage) || p.stage || "En desarrollo",
+                inversion_mm_usd: (matchedProj && matchedProj.investment_mm_usd != null) ? matchedProj.investment_mm_usd : (p.investment_mm_usd || null),
+                operacion_estimada: (matchedProj && (matchedProj.operation_year || matchedProj.estimated_operation)) || p.inauguracion || "",
+                longitud_km: (matchedProj && matchedProj.length_km) || p.length_km || null,
+                nuevas_estaciones: (matchedProj && matchedProj.new_stations) || p.new_stations || null,
+                comunas_beneficiadas: (matchedProj && Array.isArray(matchedProj.communes)) ? matchedProj.communes.join(', ') : (p.comunas || ""),
+                color: (typeof metroGetProjectColor === 'function') ? metroGetProjectColor((matchedProj && matchedProj.line) || p.linea) : (p.color || "#52525b"),
+                operativa: false,
+                ...p
+            };
+            features.push(cloned);
+        });
+    }
+
+    // 3. Estaciones Operativas
+    if (window.METRO_EXISTING_STATIONS && Array.isArray(window.METRO_EXISTING_STATIONS.features)) {
+        window.METRO_EXISTING_STATIONS.features.forEach(f => {
+            if (!f || !f.geometry || !f.geometry.coordinates) return;
+            const cloned = JSON.parse(JSON.stringify(f));
+            const p = cloned.properties || {};
+            cloned.properties = {
+                tipo_elemento: "Estación Operativa",
+                red: "Metro de Santiago",
+                nombre_estacion: p.name || "",
+                lineas: p.linea || p.line || "",
+                comuna: p.comuna || "",
+                es_combinacion: Boolean(p.combinacion || p.is_combination),
+                operativa: true,
+                ...p
+            };
+            features.push(cloned);
+        });
+    }
+
+    // 4. Nuevas Estaciones Futuras
+    if (window.METRO_FUTURO_STATIONS && Array.isArray(window.METRO_FUTURO_STATIONS.features)) {
+        window.METRO_FUTURO_STATIONS.features.forEach(f => {
+            if (!f || !f.geometry || !f.geometry.coordinates) return;
+            const cloned = JSON.parse(JSON.stringify(f));
+            const p = cloned.properties || {};
+            cloned.properties = {
+                tipo_elemento: "Estación Futura",
+                red: "Metro de Santiago",
+                nombre_estacion: p.name || "",
+                linea: p.linea || p.line || "",
+                comuna: p.comuna || "",
+                combinacion_futura: p.combinacion || "",
+                inauguracion_estimada: p.inauguracion || "",
+                operativa: false,
+                ...p
+            };
+            features.push(cloned);
+        });
+    }
+
+    if (features.length === 0) {
+        alert('No se encontraron geometrías de la Red de Metro para exportar.');
+        return;
+    }
+
+    const exportCollection = {
+        type: "FeatureCollection",
+        name: "CATLEC_Metro_Red_Santiago",
+        crs: {
+            type: "name",
+            properties: { name: "urn:ogc:def:crs:OGC:1.3:CRS84" }
+        },
+        features: features
+    };
+
+    const jsonString = JSON.stringify(exportCollection, null, 2);
+    const blob = new Blob([jsonString], { type: "application/geo+json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const downloadAnchor = document.createElement('a');
+    const today = new Date().toISOString().slice(0, 10);
+    downloadAnchor.setAttribute('href', url);
+    downloadAnchor.setAttribute('download', `CATLEC_Metro_Red_Santiago_${today}.geojson`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

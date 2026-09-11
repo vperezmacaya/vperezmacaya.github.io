@@ -208,6 +208,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const btnExportGeoJSON = document.getElementById('btn-export-geojson');
+    if (btnExportGeoJSON) {
+        btnExportGeoJSON.addEventListener('click', () => {
+            exportDGCToGeoJSON();
+        });
+    }
+
     btnResetMap.addEventListener('click', () => {
         if (leafletMap) {
             leafletMap.setView([-37.6751, -71.5430], 4.0);
@@ -931,5 +938,93 @@ function exportDGCToExcel() {
     // 3. Descargar archivo
     const today = new Date().toISOString().slice(0, 10);
     XLSX.writeFile(wb, `CATLEC_DGC_Concesiones_${today}.xlsx`);
+}
+
+/**
+ * Exporta las geometrías y trazados oficiales de concesiones DGC a GeoJSON (.geojson)
+ * respetando las geometrías oficiales iniciales de la plataforma (excluyendo shapes huérfanos).
+ */
+function exportDGCToGeoJSON() {
+    if (!window.DGC_DATA || !window.DGC_DATA.features || window.DGC_DATA.features.length === 0) {
+        alert('No se encontraron geometrías de concesiones DGC para exportar.');
+        return;
+    }
+
+    const allContracts = (window.STATIC_DATA && window.STATIC_DATA.data) 
+        ? window.STATIC_DATA.data 
+        : (window.contractsData || []);
+
+    // Construir mapa de COD de shape -> Proyectos de Concesión asociados
+    const shapeToContracts = {};
+    allContracts.forEach(p => {
+        const shapes = p.shapes || p.Shapes || [];
+        if (Array.isArray(shapes)) {
+            shapes.forEach(s => {
+                const sid = String(s).trim();
+                if (sid) {
+                    if (!shapeToContracts[sid]) shapeToContracts[sid] = [];
+                    shapeToContracts[sid].push(p);
+                }
+            });
+        }
+    });
+
+    const validFeatures = window.DGC_DATA.features.filter(feature => {
+        if (!feature || !feature.geometry || !feature.geometry.coordinates || feature.geometry.coordinates.length === 0) {
+            return false;
+        }
+        const props = feature.properties || {};
+        const cod = props.COD != null ? String(props.COD).trim() : '';
+        // Solo incluir si tiene un COD asociado a alguna concesión registrada
+        return Boolean(cod && shapeToContracts[cod] && shapeToContracts[cod].length > 0);
+    }).map(feature => {
+        const cloned = JSON.parse(JSON.stringify(feature));
+        const props = cloned.properties || {};
+        const cod = props.COD != null ? String(props.COD).trim() : '';
+        
+        if (cod && shapeToContracts[cod]) {
+            const projs = shapeToContracts[cod];
+            if (projs.length === 1) {
+                const p = projs[0];
+                cloned.properties.codigo_proyecto = p["Código proyecto"] || p.code || "";
+                cloned.properties.nombre_concesion = p["Nombre de la Concesión "] || p["Nombre de la Concesión"] || p.official_name || "";
+                cloned.properties.nombre_comun = p["Nombre de uso común"] || p.name || "";
+                cloned.properties.sector = p["Sector del proyecto"] || p.sector || props.Sector_DGC || "";
+                cloned.properties.region = p["Región geográfica"] || p.region || "";
+                cloned.properties.estado = p["ESTADO"] || p.status || "";
+                cloned.properties.presupuesto_uf = p["Presupuesto oficial estimado"] != null ? p["Presupuesto oficial estimado"] : (p.budget_uf != null ? p.budget_uf : null);
+                cloned.properties.inversion_uf = p["Inversión Materializada estimada"] != null ? p["Inversión Materializada estimada"] : (p.investment_uf != null ? p.investment_uf : null);
+                cloned.properties.sociedad_concesionaria = p["Nombre sociedad concesionaria"] || p.concessionaire || "";
+                cloned.properties.metodo_licitacion = p["Metodo de licitación"] || p.tender_method || "";
+            } else {
+                cloned.properties.concesiones_asociadas = projs.map(p => p["Nombre de uso común"] || p["Nombre de la Concesión "] || p.name || p.code).join(' | ');
+                cloned.properties.codigos_proyectos = projs.map(p => p["Código proyecto"] || p.code).join(' | ');
+                cloned.properties.sector = props.Sector_DGC || (projs[0] && (projs[0]["Sector del proyecto"] || projs[0].sector)) || "";
+            }
+        }
+        return cloned;
+    });
+
+    const exportCollection = {
+        type: "FeatureCollection",
+        name: "CATLEC_DGC_Concesiones_Chile",
+        crs: window.DGC_DATA.crs || {
+            type: "name",
+            properties: { name: "urn:ogc:def:crs:OGC:1.3:CRS84" }
+        },
+        features: validFeatures
+    };
+
+    const jsonString = JSON.stringify(exportCollection, null, 2);
+    const blob = new Blob([jsonString], { type: "application/geo+json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const downloadAnchor = document.createElement('a');
+    const today = new Date().toISOString().slice(0, 10);
+    downloadAnchor.setAttribute('href', url);
+    downloadAnchor.setAttribute('download', `CATLEC_DGC_Concesiones_${today}.geojson`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 

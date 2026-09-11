@@ -289,9 +289,27 @@ function efeFetchData() {
         let valB = b[sortBy];
 
         if (sortBy === 'investment_mm_usd' || sortBy === 'operation_year') {
-            valA = valA != null && !isNaN(valA) ? Number(valA) : (sortOrder === 'asc' ? Infinity : -Infinity);
-            valB = valB != null && !isNaN(valB) ? Number(valB) : (sortOrder === 'asc' ? Infinity : -Infinity);
-            return sortOrder === 'asc' ? valA - valB : valB - valA;
+            if (sortBy === 'operation_year') {
+                const rawA = a[sortBy];
+                const rawB = b[sortBy];
+                valA = typeof efeGetNumericYear === 'function' ? efeGetNumericYear(rawA) : (rawA != null && !isNaN(rawA) ? Number(rawA) : null);
+                valB = typeof efeGetNumericYear === 'function' ? efeGetNumericYear(rawB) : (rawB != null && !isNaN(rawB) ? Number(rawB) : null);
+                valA = valA != null ? valA : (sortOrder === 'asc' ? Infinity : -Infinity);
+                valB = valB != null ? valB : (sortOrder === 'asc' ? Infinity : -Infinity);
+                if (valA !== valB) {
+                    return sortOrder === 'asc' ? valA - valB : valB - valA;
+                }
+                const plusA = String(rawA).includes('+') ? 1 : 0;
+                const plusB = String(rawB).includes('+') ? 1 : 0;
+                if (plusA !== plusB) {
+                    return sortOrder === 'asc' ? plusA - plusB : plusB - plusA;
+                }
+                return 0;
+            } else {
+                valA = valA != null && !isNaN(valA) ? Number(valA) : (sortOrder === 'asc' ? Infinity : -Infinity);
+                valB = valB != null && !isNaN(valB) ? Number(valB) : (sortOrder === 'asc' ? Infinity : -Infinity);
+                return sortOrder === 'asc' ? valA - valB : valB - valA;
+            }
         } else {
             valA = valA != null ? String(valA).trim() : '';
             valB = valB != null ? String(valB).trim() : '';
@@ -426,5 +444,90 @@ function exportEFEToExcel() {
 
     const today = new Date().toISOString().slice(0, 10);
     XLSX.writeFile(wb, `CATLEC_EFE_Proyectos_${today}.xlsx`);
+}
+
+/**
+ * Exporta el GeoJSON depurado de la red e infraestructura ferroviaria oficial
+ * tal como se visualiza en el mapa Leaflet al iniciar la aplicación,
+ * descartando features sin infraestructura o proyectos asociados.
+ */
+function exportEFEToGeoJSON() {
+    if (!window.EFE_GEO_DATA || !window.EFE_GEO_DATA.features) {
+        alert('No se encontraron datos geográficos de EFE para exportar.');
+        return;
+    }
+
+    const projects = (window.EFE_DATA && window.EFE_DATA.data) ? window.EFE_DATA.data : [];
+    const shapeToProj = {};
+    projects.forEach(proj => {
+        (proj.shapes || []).forEach(cod => {
+            const key = String(cod).trim();
+            if (!shapeToProj[key]) shapeToProj[key] = [];
+            shapeToProj[key].push({
+                nombre_proyecto: proj.name,
+                filial: proj.filial || 'Sin filial específica',
+                tipo: proj.type || '',
+                etapa: proj.stage || '',
+                inversion_mm_usd: proj.investment_mm_usd != null ? proj.investment_mm_usd : null,
+                operacion_estimada: proj.operation_year || '',
+                avance_etapa: proj.progress || null,
+                detalle_cartera: proj.detail || ''
+            });
+        });
+    });
+
+    const validFeatures = window.EFE_GEO_DATA.features.filter(feature => {
+        if (!feature || !feature.geometry || !feature.geometry.coordinates || feature.geometry.coordinates.length === 0) {
+            return false;
+        }
+        if (typeof efeHasValidShapeAttribute === 'function') {
+            return efeHasValidShapeAttribute(feature);
+        }
+        const props = feature.properties || {};
+        const isService = (props.line || props.LINE || props.linea || props.LINEA);
+        const cod = props.COD != null ? String(props.COD).trim() : '';
+        return Boolean(isService || (cod && shapeToProj[cod] && shapeToProj[cod].length > 0));
+    }).map(feature => {
+        const cloned = JSON.parse(JSON.stringify(feature));
+        const props = cloned.properties || {};
+        const cod = props.COD != null ? String(props.COD).trim() : '';
+        if (cod && shapeToProj[cod]) {
+            const projs = shapeToProj[cod];
+            if (projs.length === 1) {
+                cloned.properties.proyecto = projs[0].nombre_proyecto;
+                cloned.properties.filial = projs[0].filial;
+                cloned.properties.tipo = projs[0].tipo;
+                cloned.properties.etapa = projs[0].etapa;
+                cloned.properties.inversion_mm_usd = projs[0].inversion_mm_usd;
+                cloned.properties.operacion_estimada = projs[0].operacion_estimada;
+                cloned.properties.avance_etapa = projs[0].avance_etapa;
+            } else {
+                cloned.properties.proyectos_asociados = projs.map(p => p.nombre_proyecto).join(' | ');
+            }
+        }
+        return cloned;
+    });
+
+    const exportCollection = {
+        type: "FeatureCollection",
+        name: "CATLEC_EFE_Red_Ferroviaria",
+        crs: window.EFE_GEO_DATA.crs || {
+            type: "name",
+            properties: { name: "urn:ogc:def:crs:OGC:1.3:CRS84" }
+        },
+        features: validFeatures
+    };
+
+    const jsonString = JSON.stringify(exportCollection, null, 2);
+    const blob = new Blob([jsonString], { type: "application/geo+json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const downloadAnchor = document.createElement('a');
+    const today = new Date().toISOString().slice(0, 10);
+    downloadAnchor.setAttribute('href', url);
+    downloadAnchor.setAttribute('download', `CATLEC_EFE_Red_Ferroviaria_${today}.geojson`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 

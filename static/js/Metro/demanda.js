@@ -77,6 +77,10 @@ function hideMetroDemandaView() {
 }
 
 function renderMetroDemandaAnalytics() {
+    if (typeof Chart !== 'undefined' && Chart.defaults) {
+        Chart.defaults.devicePixelRatio = Math.max(2.5, window.devicePixelRatio || 1);
+    }
+
     const isLight = document.body.classList.contains('light-theme');
     const textColor = isLight ? '#0f172a' : '#f8fafc';
     const textSecColor = isLight ? '#64748b' : '#94a3b8';
@@ -95,12 +99,13 @@ function renderMetroDemandaAnalytics() {
     const elKpiDemanda3 = document.getElementById('metro-demanda-kpi-3');
     const elKpiDemanda4 = document.getElementById('metro-demanda-kpi-4');
     const elKpiDemanda5 = document.getElementById('metro-demanda-kpi-5');
-    const elKpiDemanda6 = document.getElementById('metro-demanda-kpi-6');
     const elKpiDemandaLabel1 = document.getElementById('metro-demanda-kpi-label-1');
+    const elKpiDemandaLabel2 = document.getElementById('metro-demanda-kpi-label-2');
 
     if (demandData.length > 0) {
         const latestDemand = demandData[demandData.length - 1];
-        if (elKpiDemandaLabel1) elKpiDemandaLabel1.textContent = `Afluencia Anual (${latestDemand.year})`;
+        if (elKpiDemandaLabel1) elKpiDemandaLabel1.textContent = `Cantidad de viajes (${latestDemand.year})`;
+        if (elKpiDemandaLabel2) elKpiDemandaLabel2.textContent = `Pasajeros día hábil promedio (${latestDemand.year})`;
         if (elKpiDemanda1) elKpiDemanda1.textContent = `${latestDemand.trips_mm.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} MM`;
         if (elKpiDemanda2) elKpiDemanda2.textContent = `${latestDemand.daily_trips_mm.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MM`;
     }
@@ -117,14 +122,6 @@ function renderMetroDemandaAnalytics() {
         if (elKpiDemanda5) elKpiDemanda5.textContent = `${latestSupply.car_km_mm.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MM`;
     }
 
-    if (indicatorData.length > 0) {
-        const indMat = indicatorData.find(i => (i.indicator || '').toLowerCase().includes('material rodante') && !i.indicator.includes('> 5 min'));
-        if (indMat && elKpiDemanda6) {
-            const val = indMat.y2025 || indMat.y2024 || 0;
-            elKpiDemanda6.textContent = `${val.toFixed(2).replace('.', ',')} /MM c-km`;
-        }
-    }
-
     // ── 1. GRÁFICO: Demanda Histórica (Afluencia 2019-2025) (Skill CATLEC Bar Chart - Combo) ──
     const ctxDemanda = document.getElementById('metroChartDemandaAnual');
     if (ctxDemanda && demandData.length > 0) {
@@ -135,12 +132,13 @@ function renderMetroDemandaAnalytics() {
         const dailyTrips = demandData.map(d => d.daily_trips_mm);
 
         metroChartDemandaAnualInstance = new Chart(ctxDemanda, {
+            type: 'bar',
             data: {
                 labels: labels,
                 datasets: [
                     {
                         type: 'bar',
-                        label: 'Afluencia Anual (MM Viajes)',
+                        label: 'Cantidad de Viajes (MM Anual)',
                         data: trips,
                         backgroundColor: isLight ? 'rgba(2, 132, 199, 0.8)' : 'rgba(56, 189, 248, 0.8)',
                         borderColor: isLight ? '#0284c7' : '#38bdf8',
@@ -151,17 +149,15 @@ function renderMetroDemandaAnalytics() {
                     },
                     {
                         type: 'line',
-                        label: 'Día Laboral Promedio (MM Pax)',
+                        label: 'Pasajeros en Día Hábil Promedio (MM Pasajeros)',
                         data: dailyTrips,
                         borderColor: '#f59e0b',
                         backgroundColor: '#f59e0b',
                         borderWidth: 2.2,
+                        tension: 0,
+                        pointRadius: 2.5,
+                        pointHoverRadius: 4.5,
                         pointBackgroundColor: '#f59e0b',
-                        pointBorderColor: isLight ? '#ffffff' : '#0f172a',
-                        pointBorderWidth: 1.5,
-                        pointRadius: 3,
-                        pointHoverRadius: 5,
-                        tension: 0.25,
                         fill: false,
                         yAxisID: 'y1',
                         order: 1
@@ -171,7 +167,8 @@ function renderMetroDemandaAnalytics() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
+                devicePixelRatio: Math.max(2.5, window.devicePixelRatio || 1),
+                interaction: { mode: 'nearest', intersect: true },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -183,8 +180,15 @@ function renderMetroDemandaAnalytics() {
                                 return `Año ${items[0].label}`;
                             },
                             label: function (ctx) {
-                                if (ctx.datasetIndex === 0) return ` ${ctx.dataset.label}: ${ctx.raw} MM viajes`;
-                                return ` ${ctx.dataset.label}: ${ctx.raw} MM pax/día`;
+                                const idx = ctx.dataIndex;
+                                const t = trips[idx] !== undefined ? trips[idx] : ctx.raw;
+                                const dt = dailyTrips[idx] !== undefined ? dailyTrips[idx] : ctx.raw;
+                                const tFormatted = Number(t).toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+                                const dtFormatted = Number(dt).toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                return [
+                                    `Cantidad de Viajes (Anual): ${tFormatted} MM viajes`,
+                                    `Pasajeros en Día Hábil Promedio: ${dtFormatted} MM pasajeros/día`
+                                ];
                             }
                         }
                     }
@@ -198,7 +202,7 @@ function renderMetroDemandaAnalytics() {
                         type: 'linear',
                         display: true,
                         position: 'left',
-                        title: { display: true, text: 'Afluencia (MM Viajes)', color: textSecColor, font: { size: 9.5, weight: '600' } },
+                        title: { display: true, text: 'Cantidad de Viajes (MM Anual)', color: textSecColor, font: { size: 9.5, weight: '600' } },
                         grid: { color: gridColor },
                         ticks: { color: textSecColor, font: { size: 10 } }
                     },
@@ -206,7 +210,7 @@ function renderMetroDemandaAnalytics() {
                         type: 'linear',
                         display: true,
                         position: 'right',
-                        title: { display: true, text: 'Día Hábil (MM Pax)', color: '#f59e0b', font: { size: 9.5, weight: '600' } },
+                        title: { display: true, text: 'Pasajeros Día Hábil (MM)', color: '#f59e0b', font: { size: 9.5, weight: '600' } },
                         grid: { drawOnChartArea: false },
                         ticks: { color: '#f59e0b', font: { size: 10 } }
                     }
@@ -225,6 +229,7 @@ function renderMetroDemandaAnalytics() {
         const efficiencyData = supplyData.map(s => s.energy_efficiency);
 
         metroChartOfertaCkmInstance = new Chart(ctxOferta, {
+            type: 'bar',
             data: {
                 labels: labelsSupply,
                 datasets: [
@@ -241,17 +246,15 @@ function renderMetroDemandaAnalytics() {
                     },
                     {
                         type: 'line',
-                        label: 'Eficiencia Energética (GWh / MMCKm)',
+                        label: 'Consumo Energético (GWh / MMCKm)',
                         data: efficiencyData,
                         borderColor: '#10b981',
                         backgroundColor: '#10b981',
                         borderWidth: 2.2,
+                        tension: 0,
+                        pointRadius: 2.5,
+                        pointHoverRadius: 4.5,
                         pointBackgroundColor: '#10b981',
-                        pointBorderColor: isLight ? '#ffffff' : '#0f172a',
-                        pointBorderWidth: 1.5,
-                        pointRadius: 3.5,
-                        pointHoverRadius: 5.5,
-                        tension: 0.2,
                         fill: false,
                         yAxisID: 'y1',
                         order: 1
@@ -261,7 +264,8 @@ function renderMetroDemandaAnalytics() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
+                devicePixelRatio: Math.max(2.5, window.devicePixelRatio || 1),
+                interaction: { mode: 'nearest', intersect: true },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -273,8 +277,15 @@ function renderMetroDemandaAnalytics() {
                                 return `Año ${items[0].label}`;
                             },
                             label: function (ctx) {
-                                if (ctx.datasetIndex === 0) return ` Oferta: ${ctx.raw} MMCKm`;
-                                return ` Eficiencia: ${ctx.raw} GWh/MMCKm`;
+                                const idx = ctx.dataIndex;
+                                const ckm = carKmData[idx] !== undefined ? carKmData[idx] : ctx.raw;
+                                const eff = efficiencyData[idx] !== undefined ? efficiencyData[idx] : ctx.raw;
+                                const ckmFormatted = Number(ckm).toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                const effFormatted = Number(eff).toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                return [
+                                    `Oferta: ${ckmFormatted} MMCKm`,
+                                    `Consumo Energético: ${effFormatted} GWh/MMCKm`
+                                ];
                             }
                         }
                     }
@@ -302,9 +313,9 @@ function renderMetroDemandaAnalytics() {
                         ticks: {
                             color: '#10b981',
                             font: { size: 10 },
-                            callback: (v) => v.toFixed(2)
+                            callback: (v) => Number(v).toFixed(2)
                         },
-                        title: { display: true, text: 'GWh / MMCKm', color: '#10b981', font: { size: 9.5, weight: '600' } }
+                        title: { display: true, text: 'Consumo Energético (GWh / MMCKm)', color: '#10b981', font: { size: 9.5, weight: '600' } }
                     }
                 }
             }
@@ -462,32 +473,35 @@ function renderMetroDemandaAnalytics() {
                         label: 'Averías Mat. Rodante / MM Ckm',
                         data: dataMat,
                         borderColor: '#ef4444',
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        backgroundColor: '#ef4444',
                         borderWidth: 2,
+                        pointRadius: 2.5,
+                        pointHoverRadius: 4.5,
                         pointBackgroundColor: '#ef4444',
-                        tension: 0.3,
-                        fill: true
+                        tension: 0,
+                        fill: false
                     },
                     {
                         label: 'Averías Vías/Sistemas / MM Ckm',
                         data: dataVias,
                         borderColor: '#10b981',
-                        backgroundColor: 'transparent',
+                        backgroundColor: '#10b981',
                         borderWidth: 2,
+                        pointRadius: 2.5,
+                        pointHoverRadius: 4.5,
                         pointBackgroundColor: '#10b981',
-                        borderDash: [4, 4],
-                        tension: 0.3
+                        tension: 0,
+                        fill: false
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                devicePixelRatio: Math.max(2.5, window.devicePixelRatio || 1),
+                interaction: { mode: 'nearest', intersect: true },
                 plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: { color: textColor, font: { size: 10 } }
-                    },
+                    legend: { display: false },
                     tooltip: {
                         enabled: false,
                         external: metroExternalTooltip,
@@ -497,14 +511,22 @@ function renderMetroDemandaAnalytics() {
                                 return `Año ${items[0].label}`;
                             },
                             label: function (ctx) {
-                                return ` ${ctx.dataset.label}: ${ctx.raw}`;
+                                const val = Number(ctx.raw).toFixed(2).replace('.', ',');
+                                return ` ${ctx.dataset.label}: ${val}`;
                             }
                         }
                     }
                 },
                 scales: {
-                    x: { grid: { color: gridColor }, ticks: { color: textSecColor } },
-                    y: { grid: { color: gridColor }, ticks: { color: textSecColor } }
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: textSecColor, font: { size: 10 } }
+                    },
+                    y: {
+                        grid: { color: gridColor },
+                        ticks: { color: textSecColor, font: { size: 10 } },
+                        title: { display: true, text: 'Averías / MM Ckm', color: textSecColor, font: { size: 9.5, weight: '600' } }
+                    }
                 }
             }
         });
