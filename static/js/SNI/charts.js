@@ -753,12 +753,38 @@ function updateMinistryShareChart() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 5. Desglose Direcciones MOP
+// 5. Desglose Direcciones MOP (Consolidadas)
 // ─────────────────────────────────────────────────────────────────────────────
+function getConsolidatedMopService(srv) {
+    if (!srv || typeof srv !== 'string') return 'Otros';
+    const s = srv.trim();
+    if (s.includes('Vialidad')) return 'Dirección de Vialidad';
+    if (s.includes('Concesiones')) return 'Dirección General de Concesiones';
+    if (s.includes('Obras Hidráulicas') || s.includes('Obras Hidraulicas') || s.includes('Hidráulica') || s.includes('Hidraulica')) {
+        return 'Dirección de Obras Hidráulicas';
+    }
+    if (s.includes('Agua Potable') || s.includes('Sanitarios')) {
+        return 'Agua Potable Rural';
+    }
+    if (s.includes('Portuarias') || s.includes('Obras Portuarias')) return 'Dirección de Obras Portuarias';
+    if (s.includes('Aeropuertos')) return 'Dirección de Aeropuertos';
+    if (s.includes('Arquitectura')) return 'Dirección de Arquitectura';
+    if (s.includes('Aguas')) return 'Dirección General de Aguas';
+    if (s.includes('Planeamiento')) return 'Dirección de Planeamiento';
+    if (s.includes('General de Obras')) return 'Dirección General de Obras Públicas';
+    if (s.includes('Secretaría') || s.includes('Secretaria')) return 'Secretaría y Adm. General';
+    return 'Otros';
+}
+
 function wrapMopServiceLabel(label) {
     if (!label || typeof label !== 'string') return label;
     const words = label.split(' ');
     if (words.length <= 1) return label;
+
+    // Si empieza con "Dirección General de", dividir en 2 renglones
+    if (label.startsWith('Dirección General de ') && words.length > 3) {
+        return ['Dirección General de', words.slice(3).join(' ')];
+    }
 
     // Si empieza con "Dirección de", dividir en exactamente 2 renglones
     if (label.startsWith('Dirección de ') && words.length > 2) {
@@ -787,8 +813,9 @@ function updateMopServicesChart() {
     const srvMap = {};
     let totalMop = 0;
     filtered.forEach(r => {
-        if (!srvMap[r.srv]) srvMap[r.srv] = 0;
-        srvMap[r.srv] += r.u;
+        const consName = getConsolidatedMopService(r.srv);
+        if (!srvMap[consName]) srvMap[consName] = 0;
+        srvMap[consName] += r.u;
         totalMop += r.u;
     });
 
