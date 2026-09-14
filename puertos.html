@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CATLEC - Puertos de Chile (Región del Biobío)</title>
+    <meta name="description" content="Dashboard de estadísticas y análisis de carga de los puertos de la Región del Biobío — CATLEC">
+    <link rel="icon" type="image/png" href="logo/favicon.png">
+    <link rel="shortcut icon" href="logo/favicon.ico">
+
+    <!-- CATLEC Global Stylesheet -->
+    <link rel="stylesheet" href="static/css/styles.css?v=20260910">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- SheetJS for Client-Side Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Static Data -->
+    <script src="static/data/puertos_data.js"></script>
+
+    <style>
+        /* ── Estilos Específicos para Puertos ────────────────────────────── */
+        .puertos-view-wrapper {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+            padding: 0.5rem 0.65rem;
+            gap: 0.5rem;
+            overflow: hidden;
+        }
+
+        /* Fila de KPIs (5 Columnas) */
+        .puertos-kpi-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.45rem;
+            flex-shrink: 0;
+        }
+
+        .kpi-subtext {
+            font-size: 0.62rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 1px;
+            display: block;
+        }
+
+        /* Grilla de Gráficos 2x2 */
+        .puertos-charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 0.5rem;
+            flex: 1;
+            min-height: 0;
+            height: 100%;
+        }
+
+        .puertos-chart-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.5rem 0.65rem 0.4rem;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+            box-shadow: var(--shadow-main);
+        }
+
+        .puertos-chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.25rem;
+            margin-bottom: 0.35rem;
+            flex-shrink: 0;
+            gap: 0.5rem;
+        }
+
+        .puertos-chart-title {
+            font-size: 0.74rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+
+        .puertos-chart-body {
+            flex: 1;
+            position: relative;
+            min-height: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .puertos-pie-container {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 0.1rem 0;
+            position: relative;
+        }
+
+        .puertos-pie-canvas-wrap {
+            width: 90px;
+            height: 90px;
+            min-width: 90px;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .puertos-pie-legend {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+            overflow-y: auto;
+            justify-content: center;
+            max-height: 100%;
+        }
+
+        /* Modal Acerca de */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 680px;
+            max-height: 88vh;
+            overflow-y: auto;
+            padding: 1.25rem 1.5rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            color: var(--text-primary);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .modal-close-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+
+        /* Botón de Exportar Excel (Estilo index.html) */
+        #btn-export-excel {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.35);
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        #btn-export-excel:hover {
+            background: rgba(16, 185, 129, 0.28);
+            border-color: rgba(16, 185, 129, 0.6);
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+    </style>
+</head>
+
+<body class="light-theme">
+    <div class="app-container">
+
+        <!-- ═══════════════════════════════ HEADER ═══════════════════════════════ -->
+        <header class="top-navbar">
+            <div class="top-navbar-left">
+                <img src="logo/cropped-Logo-CATLEC-horizontal-sin-fondo-1.png" alt="Logo CATLEC" class="top-navbar-logo">
+                <span class="top-navbar-title">Visor de datos - Puertos (Región del Biobío)</span>
+                <span class="top-navbar-divider"></span>
+                <span class="top-navbar-proto">Prototipo en desarrollo</span>
+            </div>
+            <div class="top-navbar-right" style="display: flex; align-items: center; gap: 0.45rem;">
+                <button class="top-navbar-btn" id="btn-export-excel"
+                    title="Descargar base de datos de puertos en Excel (.xlsx)">
+                    <i data-lucide="file-spreadsheet" style="width: 13px; height: 13px;"></i>
+                    <span>Exportar Excel</span>
+                </button>
+                <button class="top-navbar-btn" id="btn-open-about"
+                    title="Acerca de este módulo (Fuentes oficiales y Metodología)">
+                    <i data-lucide="info" style="width: 13px; height: 13px;"></i>
+                    <span>Acerca de</span>
+                </button>
+
+                <!-- Menú Seleccionar Base de Datos -->
+                <div class="nav-menu" id="nav-menu">
+                    <button class="nav-menu-btn" id="nav-menu-btn" aria-haspopup="true" aria-expanded="false">
+                        <i data-lucide="anchor" style="width:14px;height:14px;margin-right:2px;"></i>
+                        Seleccionar Base de Datos
+                        <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
+                    </button>
+                    <div class="nav-menu-dropdown" id="nav-menu-dropdown">
+                        <!-- Group DGC -->
+                        <div class="nav-menu-group" id="nav-dgc-group">
+                            <div class="nav-menu-item nav-menu-has-sub" id="nav-dgc-parent-item">
+                                <a href="index.html" class="nav-menu-parent-link"
+                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
+                                    <img src="logo/Gob_chile_logo.svg" alt="DGC" class="nav-db-logo" width="15"
+                                        height="15" style="width:15px;height:15px;object-fit:contain;flex-shrink:0;">
+                                    Dirección General de Concesiones (DGC)
+                                </a>
+                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
+                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
+                            </div>
+                            <div class="nav-submenu" id="nav-dgc-submenu">
+                                <a class="nav-submenu-item" href="index.html">
+                                    <i data-lucide="map" style="width:13px;height:13px;"></i> Mapa
+                                </a>
+                                <a class="nav-submenu-item" href="index.html#timeline">
+                                    <i data-lucide="clock" style="width:13px;height:13px;"></i> Líneas de Tiempo
+                                </a>
+                                <a class="nav-submenu-item" href="index.html#investment">
+                                    <i data-lucide="line-chart" style="width:13px;height:13px;"></i> Análisis de Inversión
+                                </a>
+                                <a class="nav-submenu-item" href="index.html#contracts">
+                                    <i data-lucide="layers" style="width:13px;height:13px;"></i> Análisis de Contratos
+                                </a>
+                                <a class="nav-submenu-item" href="index.html#bidders">
+                                    <i data-lucide="users" style="width:13px;height:13px;"></i> Análisis de Oferentes
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Group EFE -->
+                        <div class="nav-menu-group" id="nav-efe-group">
+                            <div class="nav-menu-item nav-menu-has-sub" id="nav-efe-parent-item">
+                                <a href="EFE.html" class="nav-menu-parent-link"
+                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
+                                    <img src="logo/efe_logo.png" alt="EFE" class="nav-db-logo" width="15" height="15"
+                                        style="width:15px;height:15px;object-fit:contain;flex-shrink:0;">
+                                    Empresas de Ferrocarriles del Estado (EFE)
+                                </a>
+                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
+                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
+                            </div>
+                            <div class="nav-submenu" id="nav-efe-submenu">
+                                <a class="nav-submenu-item" href="EFE.html">
+                                    <i data-lucide="map" style="width:13px;height:13px;"></i> Mapa
+                                </a>
+                                <a class="nav-submenu-item" href="EFE.html#timeline">
+                                    <i data-lucide="clock" style="width:13px;height:13px;"></i> Líneas de Tiempo
+                                </a>
+                                <a class="nav-submenu-item" href="EFE.html#inversion">
+                                    <i data-lucide="line-chart" style="width:13px;height:13px;"></i> Análisis de Inversión
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Group Metro -->
+                        <div class="nav-menu-group" id="nav-metro-group">
+                            <div class="nav-menu-item nav-menu-has-sub" id="nav-metro-parent-item">
+                                <a href="Metro.html" class="nav-menu-parent-link"
+                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
+                                    <img src="logo/metro_logo.png" alt="Metro" class="nav-db-logo" width="15"
+                                        height="15" style="width:15px;height:15px;object-fit:contain;flex-shrink:0;">
+                                    Metro de Santiago
+                                </a>
+                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
+                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
+                            </div>
+                            <div class="nav-submenu" id="nav-metro-submenu">
+                                <a class="nav-submenu-item" href="Metro.html">
+                                    <i data-lucide="map" style="width:13px;height:13px;"></i> Mapa
+                                </a>
+                                <a class="nav-submenu-item" href="Metro.html#timeline">
+                                    <i data-lucide="clock" style="width:13px;height:13px;"></i> Líneas de Tiempo
+                                </a>
+                                <a class="nav-submenu-item" href="Metro.html#comunas">
+                                    <i data-lucide="building-2" style="width:13px;height:13px;"></i> Estadísticas Comunales
+                                </a>
+                                <a class="nav-submenu-item" href="Metro.html#demanda">
+                                    <i data-lucide="trending-up" style="width:13px;height:13px;"></i> Demanda y Operación
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Group MOP -->
+                        <div class="nav-menu-group" id="nav-mop-group">
+                            <div class="nav-menu-item nav-menu-has-sub" id="nav-mop-parent-item">
+                                <a href="MOP.html" class="nav-menu-parent-link"
+                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
+                                    <img src="logo/Gob_chile_logo.svg" alt="MOP" class="nav-db-logo" width="15"
+                                        height="15" style="width:15px;height:15px;object-fit:contain;flex-shrink:0;">
+                                    Ministerio de Obras Públicas (MOP)
+                                </a>
+                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
+                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
+                            </div>
+                            <div class="nav-submenu" id="nav-mop-submenu">
+                                <a class="nav-submenu-item" href="MOP.html">
+                                    <i data-lucide="layout-dashboard" style="width:13px;height:13px;"></i> Tabla de proyectos
+                                </a>
+                                <a class="nav-submenu-item" href="MOP.html#inversion">
+                                    <i data-lucide="bar-chart-2" style="width:13px;height:13px;"></i> Análisis de inversión
+                                </a>
+                                <a class="nav-submenu-item" href="MOP.html#programas">
+                                    <i data-lucide="layers" style="width:13px;height:13px;"></i> Programas y Etapas
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Group SNI -->
+                        <div class="nav-menu-group" id="nav-sni-group">
+                            <div class="nav-menu-item nav-menu-has-sub" id="nav-sni-parent-item">
+                                <a href="SNI.html" class="nav-menu-parent-link"
+                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
+                                    <img src="logo/Gob_chile_logo.svg" alt="SNI" class="nav-db-logo" width="15"
+                                        height="15" style="width:15px;height:15px;object-fit:contain;flex-shrink:0;">
+                                    Sistema Nacional de Inversiones (SNI)
+                                </a>
+                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
+                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
+                            </div>
+                            <div class="nav-submenu" id="nav-sni-submenu">
+                                <a class="nav-submenu-item" href="SNI.html#map">
+                                    <i data-lucide="map" style="width:13px;height:13px;"></i> Mapa Regional
+                                </a>
+                                <a class="nav-submenu-item" href="SNI.html#territorial">
+                                    <i data-lucide="bar-chart-2" style="width:13px;height:13px;"></i> Análisis Territorial
+                                </a>
+                                <a class="nav-submenu-item" href="SNI.html#ministries">
+                                    <i data-lucide="landmark" style="width:13px;height:13px;"></i> Ministerios y Sectores
+                                </a>
+                                <a class="nav-submenu-item" href="SNI.html#temporal">
+                                    <i data-lucide="clock" style="width:13px;height:13px;"></i> Análisis Temporal
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Group Puertos (Active) -->
+                        <div class="nav-menu-group" id="nav-puertos-group">
+                            <div class="nav-menu-item active nav-menu-has-sub" id="nav-puertos-parent-item">
+                                <a href="puertos.html" class="nav-menu-parent-link"
+                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
+                                    <i data-lucide="anchor" style="width:15px;height:15px;flex-shrink:0;color:#0284c7;"></i>
+                                    Puertos (Región del Biobío)
+                                </a>
+                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
+                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
+                            </div>
+                            <div class="nav-submenu" id="nav-puertos-submenu">
+                                <a class="nav-submenu-item" href="puertos.html#resumen">
+                                    <i data-lucide="boxes" style="width:13px;height:13px;"></i> Resumen de Carga
+                                </a>
+                                <a class="nav-submenu-item" href="puertos.html#contenedores">
+                                    <i data-lucide="package" style="width:13px;height:13px;"></i> Contenedores y TEUs
+                                </a>
+                                <a class="nav-submenu-item" href="puertos.html#tipologia">
+                                    <i data-lucide="layers" style="width:13px;height:13px;"></i> Tipología de Carga
+                                </a>
+                                <a class="nav-submenu-item" href="puertos.html#terrestre">
+                                    <i data-lucide="truck" style="width:13px;height:13px;"></i> Conectividad Terrestre
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ══════════════════════════ SUBHEADER AZUL (4 TABS) ══════════════════════════ -->
+        <div class="view-subheader four-tabs">
+            <button class="view-tab-btn active" id="btn-view-resumen">
+                <i data-lucide="boxes" style="width: 14px; height: 14px;"></i>
+                <span>Resumen de Carga</span>
+            </button>
+            <button class="view-tab-btn" id="btn-view-contenedores">
+                <i data-lucide="package" style="width: 14px; height: 14px;"></i>
+                <span>Contenedores y TEUs</span>
+            </button>
+            <button class="view-tab-btn" id="btn-view-tipologia">
+                <i data-lucide="layers" style="width: 14px; height: 14px;"></i>
+                <span>Tipología de Carga</span>
+            </button>
+            <button class="view-tab-btn" id="btn-view-terrestre">
+                <i data-lucide="truck" style="width: 14px; height: 14px;"></i>
+                <span>Conectividad Terrestre y Peajes</span>
+            </button>
+        </div>
+
+        <!-- ══════════════════════════ CONTENEDOR PRINCIPAL ══════════════════════════ -->
+        <main style="flex: 1; min-height: 0; position: relative; overflow: hidden; display: flex; flex-direction: column;">
+
+            <!-- ── VISTA 1: RESUMEN DE CARGA ────────────────────────────────────── -->
+            <div class="vis-container puertos-view-wrapper" id="vis-container-resumen" style="display: flex;">
+                <!-- Fila de KPIs -->
+                <div class="puertos-kpi-row">
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="boxes"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Carga Total Histórica</span>
+                            <span class="kpi-value" id="kpi-total-carga" style="font-size: 0.95rem;">-</span>
+                            <span class="kpi-subtext">Total movilizado (2019-2026)</span>
+                        </div>
+                    </div>
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="calendar"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Promedio Anual</span>
+                            <span class="kpi-value" id="kpi-avg-carga" style="font-size: 0.95rem;">-</span>
+                            <span class="kpi-subtext">Años 2019 - 2025</span>
+                        </div>
+                    </div>
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="arrow-up-right"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Embarque Exterior</span>
+                            <span class="kpi-value" id="kpi-embarque-exterior" style="font-size: 0.95rem;">-</span>
+                            <span class="kpi-subtext">Carga exportada</span>
+                        </div>
+                    </div>
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="arrow-down-left"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Desembarque Exterior</span>
+                            <span class="kpi-value" id="kpi-desembarque-exterior" style="font-size: 0.95rem;">-</span>
+                            <span class="kpi-subtext">Carga importada</span>
+                        </div>
+                    </div>
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="shuffle"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Cabotaje y Tránsito</span>
+                            <span class="kpi-value" id="kpi-cabotaje-transito" style="font-size: 0.95rem;">-</span>
+                            <span class="kpi-subtext">Fletes reg./internacionales</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grilla 2x2 -->
+                <div class="puertos-charts-grid">
+                    <!-- Gráfico 1: Combo Carga vs Variación -->
+                    <div class="puertos-chart-card">
+                        <div class="puertos-chart-header">
+                            <h3 class="puertos-chart-title">
+                                <i data-lucide="bar-chart-2" style="width: 13px; height: 13px; color: #0284c7;"></i>
+                                Carga Total Movilizada vs Variación Interanual
+                            </h3>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.6rem;">
+                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: var(--text-secondary);">
+                                    <span style="width: 7px; height: 7px; background: #0284c7; border-radius: 1.5px; display: inline-block;"></span>
+                                    Carga (MM Ton)
+                                </span>
+                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: var(--text-primary); font-weight: 600;">
+                                    <span style="width: 9px; height: 2px; background: #f59e0b; display: inline-block;"></span>
+                                    Variación (%)
+                                </span>
+                            </div>
+                        </div>
+                        <div class="puertos-chart-body">
+                            <canvas id="chart-carga-evolucion"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico 2: Flujos Apilados -->
+                    <div class="puertos-chart-card">
+                        <div class="puertos-chart-header">
+                            <h3 class="puertos-chart-title">
+                                <i data-lucide="layers" style="width: 13px; height: 13px; color: #6366f1;"></i>
+                                Distribución Anual por Tipo de Flujo Portuario
+                            </h3>
+                            <div style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.58rem; color: var(--text-secondary);">
+                                <span style="display: inline-flex; align-items: center; gap: 0.2rem;"><span style="width:6px;height:6px;background:#0284c7;border-radius:1px;"></span>Embarcada</span>
+                                <span style="display: inline-flex; align-items: center; gap: 0.2rem;"><span style="width:6px;height:6px;background:#6366f1;border-radius:1px;"></span>Desembarcada</span>
+                                <span style="display: inline-flex; align-items: center; gap: 0.2rem;"><span style="width:6px;height:6px;background:#10b981;border-radius:1px;"></span>Cabotaje</span>
+                                <span style="display: inline-flex; align-items: center; gap: 0.2rem;"><span style="width:6px;height:6px;background:#f59e0b;border-radius:1px;"></span>Re-estibas</span>
+                            </div>
+                        </div>
+                        <div class="puertos-chart-body">
+                            <canvas id="chart-carga-flujos"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico 3: Doughnut Operación -->
+                    <div class="puertos-chart-card">
+                        <div class="puertos-chart-header">
+                            <h3 class="puertos-chart-title">
+                                <i data-lucide="pie-chart" style="width: 13px; height: 13px; color: #8b5cf6;"></i>
+                                Participación por Tipo de Operación Portuaria (%)
+                            </h3>
+                            <span style="font-size: 0.62rem; color: var(--text-secondary);">Consolidado Histórico</span>
+                        </div>
+                        <div class="puertos-pie-container">
+                            <div class="puertos-pie-canvas-wrap">
+                                <canvas id="chart-carga-operacion-pie"></canvas>
+                            </div>
+                            <div class="puertos-pie-legend" id="chart-carga-operacion-pieLegend"></div>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico 4: Estacionalidad Mensual -->
+                    <div class="puertos-chart-card">
+                        <div class="puertos-chart-header">
+                            <h3 class="puertos-chart-title">
+                                <i data-lucide="activity" style="width: 13px; height: 13px; color: #06b6d4;"></i>
+                                Ciclo y Estacionalidad Mensual Promedio
+                            </h3>
+                            <span style="font-size: 0.62rem; color: var(--text-secondary);">Promedio 2019 - 2025</span>
+                        </div>
+                        <div class="puertos-chart-body">
+                            <canvas id="chart-carga-estacionalidad"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── VISTA 2: CONTENEDORES Y TEUS ────────────────────────────────── -->
+            <div class="vis-container puertos-view-wrapper" id="vis-container-contenedores" style="display: none;">
+                <!-- Fila de KPIs -->
+                <div class="puertos-kpi-row">
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="package"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Total TEUs Históricos</span>
+                            <span class="kpi-value" id="kpi-total-teus" style="font-size: 0.95rem;">-</span>
+                            <span class="kpi-subtext">Total movilizado (2019-2026)</span>
+                        </div>
+                    </div>
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="calendar"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Promedio Anual TEUs</span>
+                            <span class="kpi-value" id="kpi-avg-teus" style="font-size: 0.95rem;">-</span>
+                            <span class="kpi-subtext">Años 2019 - 2025</span>
+                        </div>
+                    </div>
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="box"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Contenedores 40 pies</span>
+                            <span class="kpi-value" id="kpi-c40-unidades" style="font-size: 0.95rem;">-</span>
+                            <span class="kpi-subtext">Unidades físicas acumuladas</span>
+                        </div>
+                    </div>
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="box"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Contenedores 20 pies</span>
+                            <span class="kpi-value" id="kpi-c20-unidades" style="font-size: 0.95rem;">-</span>
+                            <span class="kpi-subtext">Unidades físicas acumuladas</span>
+                        </div>
+                    </div>
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="scale"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Ratio 40ft / 20ft</span>
+                            <span class="kpi-value" id="kpi-ratio-c40-c20" style="font-size: 0.95rem;">-</span>
+                            <span class="kpi-subtext">Preferencia de formato</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grilla 2x2 -->
+                <div class="puertos-charts-grid">
+                    <!-- Gráfico 1: Combo TEUs vs Variación -->
+                    <div class="puertos-chart-card">
+                        <div class="puertos-chart-header">
+                            <h3 class="puertos-chart-title">
+                                <i data-lucide="bar-chart-2" style="width: 13px; height: 13px; color: #6366f1;"></i>
+                                Evolución Anual de TEUs Movilizados vs Variación (%)
+                            </h3>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.6rem;">
+                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: var(--text-secondary);">
+                                    <span style="width: 7px; height: 7px; background: #6366f1; border-radius: 1.5px; display: inline-block;"></span>
+                                    TEUs (Miles)
+                                </span>
+                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: var(--text-primary); font-weight: 600;">
+                                    <span style="width: 9px; height: 2px; background: #10b981; display: inline-block;"></span>
+                                    Variación (%)
+                                </span>
+                            </div>
+                        </div>
+                        <div class="puertos-chart-body">
+                            <canvas id="chart-teus-evolucion"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico 2: Unidades 20ft vs 40ft -->
+                    <div class="puertos-chart-card">
+                        <div class="puertos-chart-header">
+                            <h3 class="puertos-chart-title">
+                                <i data-lucide="columns" style="width: 13px; height: 13px; color: #0284c7;"></i>
+                                Comparativa Unidades: Contenedores 40 pies vs 20 pies
+                            </h3>
+                            <div style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.6rem;">
+                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: var(--text-secondary);">
+                                    <span style="width: 7px; height: 7px; background: #0284c7; border-radius: 1.5px; display: inline-block;"></span>
+                                    40 pies
+                                </span>
+                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: var(--text-secondary);">
+                                    <span style="width: 7px; height: 7px; background: #f59e0b; border-radius: 1.5px; display: inline-block;"></span>
+                                    20 pies
+                                </span>
+                            </div>
+                        </div>
+                        <div class="puertos-chart-body">
+                            <canvas id="chart-contenedores-comparativa"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico 3: Estado de Manejo Apilado -->
+                    <div class="puertos-chart-card">
+                        <div class="puertos-chart-header">
+                            <h3 class="puertos-chart-title">
+                                <i data-lucide="layers" style="width: 13px; height: 13px; color: #f59e0b;"></i>
+                                Estado de Manejo de Contenedores por Año
+                            </h3>
+                            <div style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.58rem; color: var(--text-secondary);">
+                                <span style="display: inline-flex; align-items: center; gap: 0.2rem;"><span style="width:6px;height:6px;background:#6366f1;border-radius:1px;"></span>Embarcados</span>
+                                <span style="display: inline-flex; align-items: center; gap: 0.2rem;"><span style="width:6px;height:6px;background:#0284c7;border-radius:1px;"></span>Desembarcados</span>
+                                <span style="display: inline-flex; align-items: center; gap: 0.2rem;"><span style="width:6px;height:6px;background:#10b981;border-radius:1px;"></span>Cabotaje</span>
+                                <span style="display: inline-flex; align-items: center; gap: 0.2rem;"><span style="width:6px;height:6px;background:#f59e0b;border-radius:1px;"></span>Re-estibas</span>
+                            </div>
+                        </div>
+                        <div class="puertos-chart-body">
+                            <canvas id="chart-contenedores-manejo"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico 4: Doughnut Manejo -->
+                    <div class="puertos-chart-card">
+                        <div class="puertos-chart-header">
+                            <h3 class="puertos-chart-title">
+                                <i data-lucide="pie-chart" style="width: 13px; height: 13px; color: #10b981;"></i>
+                                Participación por Estado de Manejo (%)
+                            </h3>
+                            <span style="font-size: 0.62rem; color: var(--text-secondary);">Total Unidades</span>
+                        </div>
+                        <div class="puertos-pie-container">
+                            <div class="puertos-pie-canvas-wrap">
+                                <canvas id="chart-contenedores-pie"></canvas>
+                            </div>
+                            <div class="puertos-pie-legend" id="chart-contenedores-pieLegend"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── VISTA 3: TIPOLOGÍA DE CARGA ─────────────────────────────────── -->
+            <div class="vis-container puertos-view-wrapper" id="vis-container-tipologia" style="display: none;">
+                <!-- Fila de KPIs -->
+                <div class="puertos-kpi-row">
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="package"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Carga en Contenedores</span>
+                            <span class="kpi-value" id="kpi-carga-contenedores" style="font-size: 0.95rem;">-</span>
+                            <span class="kpi-subtext">Total embarque + desembarque</span>
+                        </div>
+                    </div>
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="droplet"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Granel Líquido/Gaseoso</span>
+                            <span class="kpi-value" id="kpi-granel-liquido" style="font-size: 0.95rem;">-</span>
+                            <span class="kpi-subtext">Total embarque + desembarque</span>
+                        </div>
+                    </div>
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="mountain"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Granel Sólido</span>
+                            <span class="kpi-value" id="kpi-granel-solido" style="font-size: 0.95rem;">-</span>
+                            <span class="kpi-subtext">Total embarque + desembarque</span>
+                        </div>
+                    </div>
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="package-open"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Carga Suelta / General</span>
+                            <span class="kpi-value" id="kpi-carga-suelta" style="font-size: 0.95rem;">-</span>
+                            <span class="kpi-subtext">Total embarque + desembarque</span>
+                        </div>
+                    </div>
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="clock"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Período de Datos</span>
+                            <span class="kpi-value" style="font-size: 0.95rem;">2019 - 2026</span>
+                            <span class="kpi-subtext">91 meses registrados</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grilla 2x2 -->
+                <div class="puertos-charts-grid">
+                    <!-- Gráfico 1: Embarcada por Tipo -->
+                    <div class="puertos-chart-card">
+                        <div class="puertos-chart-header">
+                            <h3 class="puertos-chart-title">
+                                <i data-lucide="arrow-up-right" style="width: 13px; height: 13px; color: #0284c7;"></i>
+                                Composición de Carga Embarcada al Exterior por Año
+                            </h3>
+                            <div style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.58rem; color: var(--text-secondary);">
+                                <span style="display: inline-flex; align-items: center; gap: 0.2rem;"><span style="width:6px;height:6px;background:#6366f1;border-radius:1px;"></span>Contenedor</span>
+                                <span style="display: inline-flex; align-items: center; gap: 0.2rem;"><span style="width:6px;height:6px;background:#0284c7;border-radius:1px;"></span>Suelta</span>
+                                <span style="display: inline-flex; align-items: center; gap: 0.2rem;"><span style="width:6px;height:6px;background:#f59e0b;border-radius:1px;"></span>Granel Sólido</span>
+                                <span style="display: inline-flex; align-items: center; gap: 0.2rem;"><span style="width:6px;height:6px;background:#10b981;border-radius:1px;"></span>Granel Líquido</span>
+                            </div>
+                        </div>
+                        <div class="puertos-chart-body">
+                            <canvas id="chart-tipologia-embarcada"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico 2: Desembarcada por Tipo -->
+                    <div class="puertos-chart-card">
+                        <div class="puertos-chart-header">
+                            <h3 class="puertos-chart-title">
+                                <i data-lucide="arrow-down-left" style="width: 13px; height: 13px; color: #10b981;"></i>
+                                Composición de Carga Desembarcada del Exterior por Año
+                            </h3>
+                            <div style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.58rem; color: var(--text-secondary);">
+                                <span style="display: inline-flex; align-items: center; gap: 0.2rem;"><span style="width:6px;height:6px;background:#10b981;border-radius:1px;"></span>Granel Líquido</span>
+                                <span style="display: inline-flex; align-items: center; gap: 0.2rem;"><span style="width:6px;height:6px;background:#f59e0b;border-radius:1px;"></span>Granel Sólido</span>
+                                <span style="display: inline-flex; align-items: center; gap: 0.2rem;"><span style="width:6px;height:6px;background:#6366f1;border-radius:1px;"></span>Contenedor</span>
+                                <span style="display: inline-flex; align-items: center; gap: 0.2rem;"><span style="width:6px;height:6px;background:#0284c7;border-radius:1px;"></span>Suelta</span>
+                            </div>
+                        </div>
+                        <div class="puertos-chart-body">
+                            <canvas id="chart-tipologia-desembarcada"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico 3: Doughnut Embarcada -->
+                    <div class="puertos-chart-card">
+                        <div class="puertos-chart-header">
+                            <h3 class="puertos-chart-title">
+                                <i data-lucide="pie-chart" style="width: 13px; height: 13px; color: #0284c7;"></i>
+                                Distribución Carga Embarcada al Exterior (%)
+                            </h3>
+                            <span style="font-size: 0.62rem; color: var(--text-secondary);">Consolidado</span>
+                        </div>
+                        <div class="puertos-pie-container">
+                            <div class="puertos-pie-canvas-wrap">
+                                <canvas id="chart-pie-embarcada"></canvas>
+                            </div>
+                            <div class="puertos-pie-legend" id="chart-pie-embarcadaLegend"></div>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico 4: Doughnut Desembarcada -->
+                    <div class="puertos-chart-card">
+                        <div class="puertos-chart-header">
+                            <h3 class="puertos-chart-title">
+                                <i data-lucide="pie-chart" style="width: 13px; height: 13px; color: #10b981;"></i>
+                                Distribución Carga Desembarcada del Exterior (%)
+                            </h3>
+                            <span style="font-size: 0.62rem; color: var(--text-secondary);">Consolidado</span>
+                        </div>
+                        <div class="puertos-pie-container">
+                            <div class="puertos-pie-canvas-wrap">
+                                <canvas id="chart-pie-desembarcada"></canvas>
+                            </div>
+                            <div class="puertos-pie-legend" id="chart-pie-desembarcadaLegend"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── VISTA 4: CONECTIVIDAD TERRESTRE Y PEAJES ────────────────────── -->
+            <div class="vis-container puertos-view-wrapper" id="vis-container-terrestre" style="display: none;">
+                <!-- Fila de KPIs -->
+                <div class="puertos-kpi-row">
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="truck"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Pasadas de Camiones</span>
+                            <span class="kpi-value" id="kpi-total-pasadas-peaje" style="font-size: 0.95rem;">-</span>
+                            <span class="kpi-subtext">Total en plazas de peaje</span>
+                        </div>
+                    </div>
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="truck"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Camiones 3 y más ejes</span>
+                            <span class="kpi-value" id="kpi-camiones-3mas-ejes" style="font-size: 0.95rem;">-</span>
+                            <span class="kpi-subtext">Flota de alto tonelaje</span>
+                        </div>
+                    </div>
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="truck"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Camiones de 2 ejes</span>
+                            <span class="kpi-value" id="kpi-camiones-2ejes" style="font-size: 0.95rem;">-</span>
+                            <span class="kpi-subtext">Carga liviana / mediana</span>
+                        </div>
+                    </div>
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="refresh-cw"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Re-estibas y Transbordos</span>
+                            <span class="kpi-value" id="kpi-reestibas-transbordos" style="font-size: 0.95rem;">-</span>
+                            <span class="kpi-subtext">Manipulación en recinto</span>
+                        </div>
+                    </div>
+                    <div class="card-kpi">
+                        <div class="kpi-icon"><i data-lucide="globe"></i></div>
+                        <div class="kpi-val-container">
+                            <span class="kpi-label">Tránsito Internacional</span>
+                            <span class="kpi-value" id="kpi-transito-internacional" style="font-size: 0.95rem;">-</span>
+                            <span class="kpi-subtext">Desde/hacia terceros países</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grilla 2x2 -->
+                <div class="puertos-charts-grid">
+                    <!-- Gráfico 1: Pasadas de Camiones por Peajes -->
+                    <div class="puertos-chart-card">
+                        <div class="puertos-chart-header">
+                            <h3 class="puertos-chart-title">
+                                <i data-lucide="truck" style="width: 13px; height: 13px; color: #6366f1;"></i>
+                                Flujo de Camiones de Carga por Plazas de Peaje
+                            </h3>
+                            <div style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.6rem;">
+                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: var(--text-secondary);">
+                                    <span style="width: 7px; height: 7px; background: #6366f1; border-radius: 1.5px; display: inline-block;"></span>
+                                    3 y más ejes
+                                </span>
+                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: var(--text-secondary);">
+                                    <span style="width: 7px; height: 7px; background: #f59e0b; border-radius: 1.5px; display: inline-block;"></span>
+                                    2 ejes
+                                </span>
+                            </div>
+                        </div>
+                        <div class="puertos-chart-body">
+                            <canvas id="chart-peajes-evolucion"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico 2: Re-estibas vs Transbordos -->
+                    <div class="puertos-chart-card">
+                        <div class="puertos-chart-header">
+                            <h3 class="puertos-chart-title">
+                                <i data-lucide="repeat" style="width: 13px; height: 13px; color: #0284c7;"></i>
+                                Carga por Re-estibas vs Transbordos (Toneladas)
+                            </h3>
+                            <div style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.6rem;">
+                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: var(--text-secondary);">
+                                    <span style="width: 7px; height: 7px; background: #0284c7; border-radius: 1.5px; display: inline-block;"></span>
+                                    Re-estibas
+                                </span>
+                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: var(--text-secondary);">
+                                    <span style="width: 7px; height: 7px; background: #8b5cf6; border-radius: 1.5px; display: inline-block;"></span>
+                                    Transbordos
+                                </span>
+                            </div>
+                        </div>
+                        <div class="puertos-chart-body">
+                            <canvas id="chart-reestibas-transbordos"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico 3: Doughnut Peajes -->
+                    <div class="puertos-chart-card">
+                        <div class="puertos-chart-header">
+                            <h3 class="puertos-chart-title">
+                                <i data-lucide="pie-chart" style="width: 13px; height: 13px; color: #f59e0b;"></i>
+                                Distribución de Flota de Carga por Ejes (%)
+                            </h3>
+                            <span style="font-size: 0.62rem; color: var(--text-secondary);">Total Pasadas</span>
+                        </div>
+                        <div class="puertos-pie-container">
+                            <div class="puertos-pie-canvas-wrap">
+                                <canvas id="chart-peajes-pie"></canvas>
+                            </div>
+                            <div class="puertos-pie-legend" id="chart-peajes-pieLegend"></div>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico 4: Estacionalidad Peajes -->
+                    <div class="puertos-chart-card">
+                        <div class="puertos-chart-header">
+                            <h3 class="puertos-chart-title">
+                                <i data-lucide="activity" style="width: 13px; height: 13px; color: #10b981;"></i>
+                                Estacionalidad Mensual del Transporte de Carga Terrestre
+                            </h3>
+                            <span style="font-size: 0.62rem; color: var(--text-secondary);">Promedio Pasadas / Mes</span>
+                        </div>
+                        <div class="puertos-chart-body">
+                            <canvas id="chart-peajes-estacionalidad"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- ══════════════════════════ MODAL ACERCA DE ══════════════════════════ -->
+        <div class="modal-overlay" id="about-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 style="font-size: 0.95rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.45rem;">
+                        <i data-lucide="anchor" style="width: 16px; height: 16px; color: #0284c7;"></i>
+                        Acerca del Módulo de Puertos
+                    </h3>
+                    <button class="modal-close-btn" id="btn-close-about">&times;</button>
+                </div>
+                <div style="font-size: 0.78rem; line-height: 1.5; display: flex; flex-direction: column; gap: 0.75rem; color: var(--text-secondary);">
+                    <!-- BLOQUE: CONTACTO DE LOS AUTORES -->
+                    <div class="about-authors-card">
+                        <div class="about-authors-header">
+                            <span class="about-authors-title">
+                                <i data-lucide="users" style="width: 15px; height: 15px; color: #2563eb;"></i>
+                                Contacto de los Autores / Equipo Desarrollador
+                            </span>
+                        </div>
+                        <div class="about-authors-grid">
+                            <!-- Vicente Pérez -->
+                            <div class="about-author-box">
+                                <div class="about-author-info">
+                                    <div class="about-author-name">
+                                        <i data-lucide="user-check" style="width: 13px; height: 13px; color: #2563eb;"></i>
+                                        Vicente Pérez
+                                    </div>
+                                    <span class="about-author-role">Facultad de Ingeniería, Universidad de Concepción</span>
+                                    <div class="about-author-contacts">
+                                        <a href="mailto:vicperez2021@udec.cl" class="about-author-contact-item" title="Enviar correo a Vicente Pérez">
+                                            <i data-lucide="mail" style="width: 12px; height: 12px; color: #64748b;"></i>
+                                            vicperez2021@udec.cl
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="about-author-actions">
+                                    <a href="mailto:vicperez2021@udec.cl" class="about-btn-action about-btn-email" title="Enviar correo a Vicente Pérez">
+                                        <i data-lucide="mail" style="width: 12px; height: 12px;"></i>
+                                        Contactar
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- José Oliveros -->
+                            <div class="about-author-box">
+                                <div class="about-author-info">
+                                    <div class="about-author-name">
+                                        <i data-lucide="user-check" style="width: 13px; height: 13px; color: #2563eb;"></i>
+                                        José Oliveros
+                                    </div>
+                                    <span class="about-author-role">Facultad de Ingeniería, Universidad de Concepción</span>
+                                    <div class="about-author-contacts">
+                                        <a href="mailto:joseoliveros@udec.cl" class="about-author-contact-item" title="Enviar correo a José Oliveros">
+                                            <i data-lucide="mail" style="width: 12px; height: 12px; color: #64748b;"></i>
+                                            joseoliveros@udec.cl
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="about-author-actions">
+                                    <a href="mailto:joseoliveros@udec.cl" class="about-btn-action about-btn-email" title="Enviar correo a José Oliveros">
+                                        <i data-lucide="mail" style="width: 12px; height: 12px;"></i>
+                                        Contactar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p><strong style="color: var(--text-primary);">Fuente Oficial:</strong> Instituto Nacional de Estadísticas (INE) — Encuesta Directa a Puertos de la Región del Biobío.</p>
+                    <p><strong style="color: var(--text-primary);">Cobertura Temporal:</strong> Series históricas mensuales desde Enero de 2019 hasta Julio de 2026 (91 períodos mensuales).</p>
+                    <p><strong style="color: var(--text-primary);">Variables y Operaciones:</strong></p>
+                    <ul style="padding-left: 1.2rem; margin: 0; display: flex; flex-direction: column; gap: 0.2rem;">
+                        <li><strong>Carga Total Movilizada:</strong> Toneladas efectivas embarcadas, desembarcadas, fletes de cabotaje, re-estibas, transbordos y tránsitos internacionales.</li>
+                        <li><strong>Contenedores y TEUs:</strong> Movilización de contenedores de 20 y 40 pies, y cálculo estandarizado de TEUs (Twenty-foot Equivalent Unit).</li>
+                        <li><strong>Tipología de Carga:</strong> Granel líquido/gaseoso, granel sólido, carga en contenedores y carga general suelta.</li>
+                        <li><strong>Conectividad Terrestre:</strong> Conteo vehicular mensual de camiones pesados (2 ejes vs 3 y más ejes) en plazas de peaje de la región.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="static/js/Puertos/charts.js"></script>
+    <script>
+        // Control del Modal Acerca de
+        document.getElementById('btn-open-about')?.addEventListener('click', () => {
+            document.getElementById('about-modal')?.classList.add('open');
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                lucide.createIcons();
+            }
+        });
+        document.getElementById('btn-close-about')?.addEventListener('click', () => {
+            document.getElementById('about-modal')?.classList.remove('open');
+        });
+        document.getElementById('about-modal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'about-modal') {
+                document.getElementById('about-modal').classList.remove('open');
+            }
+        });
+    </script>
+</body>
+
+</html>
