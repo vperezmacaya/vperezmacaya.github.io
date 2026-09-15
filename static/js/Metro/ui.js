@@ -1101,17 +1101,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Exportar a Excel
+    // Exportar a Excel (Multi-hoja: Proyectos, Líneas Operativas y Comunas)
     const btnExportExcel = document.getElementById('metro-btn-export-excel');
     if (btnExportExcel) {
         btnExportExcel.addEventListener('click', () => {
-            if (typeof XLSX !== 'undefined') {
-                const allProjects = (window.METRO_DATA && window.METRO_DATA.data) ? window.METRO_DATA.data : [];
-                const ws = XLSX.utils.json_to_sheet(allProjects);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Metro_Proyectos");
-                XLSX.writeFile(wb, "Metro_Santiago_Proyectos.xlsx");
-            }
+            exportMetroToExcel();
         });
     }
 
@@ -1258,3 +1252,144 @@ function exportMetroToGeoJSON() {
     downloadAnchor.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+/**
+ * Exporta la base de datos de Metro de Santiago a un archivo Excel (.xlsx) con 3 hojas:
+ * 1. Proyectos Metro (Proyectos de expansión)
+ * 2. Líneas Operativas (Líneas actuales y características técnicas de operación)
+ * 3. Comunas (Datos comunales, demografía y estado de cobertura de la red)
+ */
+function exportMetroToExcel() {
+    if (typeof XLSX === 'undefined') {
+        console.error('SheetJS (XLSX) no está disponible.');
+        alert('La librería para exportar a Excel no se ha cargado correctamente.');
+        return;
+    }
+
+    const metroData = window.METRO_DATA || {};
+    const projectsList = (typeof currentFilteredMetroProjects !== 'undefined' && currentFilteredMetroProjects.length > 0)
+        ? currentFilteredMetroProjects
+        : (metroData.data || []);
+    const linesList = metroData.lines || [];
+    const communesList = metroData.communes || [];
+
+    const wb = XLSX.utils.book_new();
+
+    // Función auxiliar para auto-calcular el ancho óptimo de las columnas
+    const setOptimalColWidths = (ws, rows) => {
+        if (!rows || rows.length === 0) return;
+        const colKeys = Object.keys(rows[0]);
+        ws['!cols'] = colKeys.map(key => {
+            let maxLen = key.length;
+            for (let i = 0; i < Math.min(rows.length, 50); i++) {
+                const val = rows[i][key];
+                if (val != null) {
+                    const strLen = String(val).length;
+                    if (strLen > maxLen) maxLen = strLen;
+                }
+            }
+            return { wch: Math.min(Math.max(maxLen + 2, 12), 50) };
+        });
+    };
+
+    // ── 1. Hoja: Proyectos Metro ─────────────────────────────────────────────
+    const projectsRows = projectsList.map(p => ({
+        "ID Proyecto": p.id || '',
+        "Proyecto": p.name || '',
+        "Línea": p.line || '',
+        "Tipo": p.type || '',
+        "Clasificación Ambiental": p.environmental_classification || '',
+        "Etapa": p.stage || '',
+        "Estado Ambiental / RCA": p.environmental_status || '',
+        "Fecha Inicio / Hito": p.start_date || '',
+        "Longitud (km)": p.length_km != null ? p.length_km : '',
+        "Estaciones": p.stations != null ? p.stations : '',
+        "Terminales": p.terminals || '',
+        "Comunas Conectadas": p.communes || '',
+        "Población Beneficiada (hab)": p.benefited_population != null ? p.benefited_population : '',
+        "Tiempo de Viaje / Reducción": p.travel_time || '',
+        "Puesta en Servicio": p.operation_year || '',
+        "Inversión estimada (MM USD)": p.investment_mm_usd != null ? p.investment_mm_usd : (p.investment_str || ''),
+        "Inversión acumulada 2025 (MM USD)": p.accumulated_investment_2025_mm_usd != null ? p.accumulated_investment_2025_mm_usd : '',
+        "Avance Financiero": p.financial_progress_pct != null ? `${(p.financial_progress_pct * 100).toFixed(1)}%` : (p.financial_progress_str || ''),
+        "Avance Físico": p.physical_progress_pct != null ? `${(p.physical_progress_pct * 100).toFixed(1)}%` : (p.physical_progress_str || ''),
+        "Avance Túnel / Excavaciones": p.tunnel_excavation || '',
+        "Combinaciones e Intermodalidad": p.combinations || '',
+        "Talleres y Cocheras": p.workshops_depots || '',
+        "Material Rodante": p.rolling_stock || '',
+        "Tecnología y Sistemas": p.systems_technology || '',
+        "Patrimonio y Arqueología": p.heritage_archaeology || '',
+        "Fuente": p.source || '',
+        "Color Hex": p.color_hex || ''
+    }));
+
+    if (projectsRows.length > 0) {
+        const wsProjects = XLSX.utils.json_to_sheet(projectsRows);
+        setOptimalColWidths(wsProjects, projectsRows);
+        XLSX.utils.book_append_sheet(wb, wsProjects, "Proyectos Metro");
+    }
+
+    // ── 2. Hoja: Líneas Operativas (Líneas actuales) ─────────────────────────
+    const linesRows = linesList.map(l => ({
+        "Línea": l.line || '',
+        "Color": l.color || '',
+        "Terminales (Cabeceras)": l.terminals || '',
+        "Longitud (km)": l.length_km != null ? l.length_km : '',
+        "Estaciones": l.stations != null ? l.stations : '',
+        "Combinaciones": l.combinations != null ? l.combinations : '',
+        "Cant. Comunas": l.communes_count != null ? l.communes_count : '',
+        "Comunas Conectadas": l.communes || '',
+        "Tipo de Trazado": l.alignment || '',
+        "Rodadura": l.rolling_type || '',
+        "Conducción / Automatización": l.driving_mode || '',
+        "Material Rodante": l.rolling_stock || '',
+        "Coches / Convoy": l.cars_per_train != null ? l.cars_per_train : '',
+        "Puertas de Andén": l.platform_doors || '',
+        "Aire Acondicionado": l.air_conditioning || '',
+        "Año Inauguración": l.inauguration_year != null ? l.inauguration_year : '',
+        "Última Extensión": l.last_extension_year != null ? l.last_extension_year : '',
+        "Velocidad Comercial": l.commercial_speed || '',
+        "Intervalo Hora Punta": l.peak_headway || '',
+        "Fuente": l.source || '',
+        "Color Hex": l.color_hex || '',
+        "Tipología Tecnología": l.track_type || '',
+        "Frecuencia de Inspección (días)": l.inspection_days != null ? l.inspection_days : ''
+    }));
+
+    if (linesRows.length > 0) {
+        const wsLines = XLSX.utils.json_to_sheet(linesRows);
+        setOptimalColWidths(wsLines, linesRows);
+        XLSX.utils.book_append_sheet(wb, wsLines, "Líneas Operativas");
+    }
+
+    // ── 3. Hoja: Comunas ─────────────────────────────────────────────────────
+    const communesRows = communesList.map(c => ({
+        "Comuna": c.name || '',
+        "Provincia": c.province || '',
+        "Población (Habitantes)": c.population != null ? c.population : '',
+        "Superficie (km²)": c.surface_km2 != null ? c.surface_km2 : '',
+        "Densidad (hab/km²)": c.density_hab_km2 != null ? c.density_hab_km2 : '',
+        "Estado Cobertura Metro": c.metro_status || '',
+        "¿Cuenta con Metro?": c.has_metro ? 'Sí' : 'No',
+        "Estaciones Operativas": c.stations_count != null ? c.stations_count : 0,
+        "Estaciones Futuras": c.stations_future != null ? c.stations_future : 0,
+        "Total Estaciones": c.stations_total != null ? c.stations_total : 0,
+        "Líneas Conectadas": Array.isArray(c.lines) ? c.lines.join(', ') : (c.lines || ''),
+        "Proyectos Futuros": Array.isArray(c.future_projects) ? c.future_projects.join(', ') : (c.future_projects || ''),
+        "Habitantes por Estación": c.hab_per_station != null ? c.hab_per_station : ''
+    }));
+
+    if (communesRows.length > 0) {
+        const wsCommunes = XLSX.utils.json_to_sheet(communesRows);
+        setOptimalColWidths(wsCommunes, communesRows);
+        XLSX.utils.book_append_sheet(wb, wsCommunes, "Comunas");
+    }
+
+    // Guardar libro Excel
+    XLSX.writeFile(wb, "Metro_Santiago_Proyectos.xlsx");
+}
+
+if (typeof window !== 'undefined') {
+    window.exportMetroToExcel = exportMetroToExcel;
+}
+

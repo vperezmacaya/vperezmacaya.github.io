@@ -197,6 +197,84 @@ function createOrUpdateChart(canvasOrId, instance, config) {
     const canvas = typeof canvasOrId === 'string' ? document.getElementById(canvasOrId) : canvasOrId;
     if (!canvas) return null;
 
+    // Configuración de animación fluida estándar CATLEC (450ms, easeOutQuart)
+    if (!config.options) config.options = {};
+    if (config.options.animation === undefined) {
+        config.options.animation = { duration: 450, easing: 'easeOutQuart' };
+    }
+
+    // Verificar si la instancia existente es válida, está vinculada al mismo canvas y tiene el mismo tipo
+    const isInstanceValid = instance &&
+        typeof instance.update === 'function' &&
+        instance.canvas === canvas &&
+        instance.config &&
+        instance.config.type === config.type;
+
+    if (isInstanceValid) {
+        // 1. Actualizar etiquetas de categorías
+        instance.data.labels = config.data.labels || [];
+
+        // 2. Sincronizar datasets manteniendo referencias para interpolación fluida
+        if (Array.isArray(config.data.datasets)) {
+            if (instance.data.datasets.length === config.data.datasets.length) {
+                config.data.datasets.forEach((newDs, i) => {
+                    const targetDs = instance.data.datasets[i];
+                    targetDs.data = newDs.data;
+                    if (newDs.label !== undefined) targetDs.label = newDs.label;
+                    if (newDs.backgroundColor !== undefined) targetDs.backgroundColor = newDs.backgroundColor;
+                    if (newDs.borderColor !== undefined) targetDs.borderColor = newDs.borderColor;
+                    if (newDs.borderWidth !== undefined) targetDs.borderWidth = newDs.borderWidth;
+                    if (newDs.borderRadius !== undefined) targetDs.borderRadius = newDs.borderRadius;
+                    if (newDs.borderSkipped !== undefined) targetDs.borderSkipped = newDs.borderSkipped;
+                    if (newDs.hoverOffset !== undefined) targetDs.hoverOffset = newDs.hoverOffset;
+                    if (newDs.type !== undefined) targetDs.type = newDs.type;
+                    if (newDs.order !== undefined) targetDs.order = newDs.order;
+                    if (newDs.yAxisID !== undefined) targetDs.yAxisID = newDs.yAxisID;
+                    if (newDs.tension !== undefined) targetDs.tension = newDs.tension;
+                    if (newDs.pointRadius !== undefined) targetDs.pointRadius = newDs.pointRadius;
+                    if (newDs.pointHoverRadius !== undefined) targetDs.pointHoverRadius = newDs.pointHoverRadius;
+                    if (newDs.pointBackgroundColor !== undefined) targetDs.pointBackgroundColor = newDs.pointBackgroundColor;
+                    if (newDs.fill !== undefined) targetDs.fill = newDs.fill;
+                    if (newDs.barThickness !== undefined) targetDs.barThickness = newDs.barThickness;
+                });
+            } else {
+                instance.data.datasets = config.data.datasets;
+            }
+        }
+
+        // 3. Sincronizar opciones reactivas (escalas, tooltips, plugins, callbacks)
+        if (config.options) {
+            if (config.options.scales) {
+                instance.options.scales = config.options.scales;
+            }
+            if (config.options.plugins) {
+                instance.options.plugins = config.options.plugins;
+            }
+            if (config.options.onClick !== undefined) {
+                instance.options.onClick = config.options.onClick;
+            }
+            if (config.options.onHover !== undefined) {
+                instance.options.onHover = config.options.onHover;
+            }
+            if (config.options.indexAxis !== undefined) {
+                instance.options.indexAxis = config.options.indexAxis;
+            }
+            if (config.options.animation !== undefined) {
+                instance.options.animation = config.options.animation;
+            }
+        }
+
+        // 4. Actualizar plugins a nivel de gráfico si fueron provistos
+        if (config.plugins) {
+            instance.config.plugins = config.plugins;
+        }
+
+        // 5. Animación reactiva in-place fluida
+        instance.update();
+        return instance;
+    }
+
+    // Si la instancia previa no coincide en canvas o tipo, destruirla de manera limpia
     if (instance && typeof instance.destroy === 'function') {
         instance.destroy();
     }
