@@ -86,14 +86,207 @@ function efeRenderTable(projects) {
 
 function efeShowTableListView() {
     if (efeProjectDetailView) efeProjectDetailView.style.display = 'none';
-    if (efeTableContainerView) efeTableContainerView.style.display = 'flex';
+    const linesContainer = document.getElementById('efe-lines-container-view');
+    if (efeState.tableMode === 'lines') {
+        if (efeTableContainerView) efeTableContainerView.style.display = 'none';
+        if (linesContainer) linesContainer.style.display = 'flex';
+        efeRenderOperatingLinesTable();
+    } else {
+        if (linesContainer) linesContainer.style.display = 'none';
+        if (efeTableContainerView) efeTableContainerView.style.display = 'flex';
+    }
 }
+
+function setEfeTableMode(mode) {
+    efeState.tableMode = mode;
+    const btnProjects = document.getElementById('efe-tab-mode-projects');
+    const btnLines = document.getElementById('efe-tab-mode-lines');
+    const kpiIcon1 = document.getElementById('efe-kpi-icon-1');
+    const kpiLabel1 = document.getElementById('efe-kpi-label-1');
+    const kpiIcon2 = document.getElementById('efe-kpi-icon-2');
+    const kpiLabel2 = document.getElementById('efe-kpi-label-2');
+
+    // Reset styles de ambos botones
+    [btnProjects, btnLines].forEach(b => {
+        if (!b) return;
+        b.classList.remove('active');
+        b.style.background = 'transparent';
+        b.style.color = 'var(--text-secondary)';
+        b.style.border = '1px solid var(--border-color)';
+    });
+
+    if (mode === 'lines') {
+        if (btnLines) {
+            btnLines.classList.add('active');
+            btnLines.style.background = 'var(--primary)';
+            btnLines.style.color = '#ffffff';
+            btnLines.style.border = '1px solid var(--primary)';
+        }
+
+        // KPI labels & icons
+        if (kpiIcon1) kpiIcon1.innerHTML = '<i data-lucide="train-front"></i>';
+        if (kpiLabel1) kpiLabel1.textContent = 'Servicios en Operación';
+
+        if (kpiIcon2) kpiIcon2.innerHTML = '<i data-lucide="route"></i>';
+        if (kpiLabel2) kpiLabel2.textContent = 'Extensión de Red';
+
+        efeState.selectedProjectName = null;
+        efeShowTableListView();
+        if (typeof efeFetchData === 'function') {
+            efeFetchData();
+        }
+    } else {
+        if (btnProjects) {
+            btnProjects.classList.add('active');
+            btnProjects.style.background = 'var(--primary)';
+            btnProjects.style.color = '#ffffff';
+            btnProjects.style.border = '1px solid var(--primary)';
+        }
+
+        // KPI 1: Proyectos Totales
+        if (kpiIcon1) kpiIcon1.innerHTML = '<i data-lucide="train-front"></i>';
+        if (kpiLabel1) kpiLabel1.textContent = 'Proyectos totales';
+
+        // KPI 2: Inversión Total
+        if (kpiIcon2) kpiIcon2.innerHTML = '<i data-lucide="dollar-sign"></i>';
+        if (kpiLabel2) kpiLabel2.textContent = 'Inversión total';
+
+        if (efeState.selectedProjectName) {
+            const allProjects = (window.EFE_DATA && window.EFE_DATA.data) ? window.EFE_DATA.data : [];
+            const selectedProj = allProjects.find(p => p.name === efeState.selectedProjectName);
+            if (selectedProj) {
+                efeShowProjectDetailView(selectedProj, currentFilteredEFEProjects);
+            } else {
+                efeShowTableListView();
+            }
+        } else {
+            efeShowTableListView();
+        }
+
+        if (typeof efeFetchData === 'function') {
+            efeFetchData();
+        }
+    }
+
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+    }
+}
+window.setEfeTableMode = setEfeTableMode;
+
+function efeUpdateOperatingLinesTableSelection() {
+    const rows = document.querySelectorAll('#efe-operating-lines-table-body tr.row-main');
+    const selected = efeState.selectedOperatingLine;
+    rows.forEach(row => {
+        const isSelected = selected && row.getAttribute('data-service') === selected;
+        row.style.backgroundColor = isSelected ? 'rgba(2, 132, 199, 0.12)' : '';
+        row.style.boxShadow = isSelected ? 'inset 4px 0 0 #0284c7' : '';
+    });
+}
+window.efeUpdateOperatingLinesTableSelection = efeUpdateOperatingLinesTableSelection;
+
+function efeRenderOperatingLinesTable(linesToRender) {
+    const tbody = document.getElementById('efe-operating-lines-table-body');
+    if (!tbody) return;
+
+    const lines = linesToRender || (typeof currentFilteredEFELines !== 'undefined' && currentFilteredEFELines.length > 0
+        ? currentFilteredEFELines
+        : ((window.EFE_DATA && window.EFE_DATA.lines) ? window.EFE_DATA.lines : []));
+
+    if (!lines || lines.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:1.5rem; color:var(--text-secondary);">No hay servicios regulares de pasajeros que coincidan con la búsqueda o filtro.</td></tr>';
+        const linesLabel = document.getElementById('efe-lines-pagination-label');
+        if (linesLabel) linesLabel.textContent = '0-0 de 0';
+        return;
+    }
+
+    tbody.innerHTML = '';
+    lines.forEach((l, idx) => {
+        const lineColor = '#0284c7';
+        const isSelected = efeState.selectedOperatingLine && efeState.selectedOperatingLine === l.service;
+
+        const tr = document.createElement('tr');
+        tr.className = 'row-main';
+        tr.id = `efe-line-row-${idx}`;
+        tr.setAttribute('data-service', l.service);
+        tr.style.cursor = 'pointer';
+        tr.style.borderBottom = '1px solid var(--border-color)';
+        tr.style.transition = 'background 0.15s ease, box-shadow 0.15s ease';
+        if (isSelected) {
+            tr.style.backgroundColor = 'rgba(2, 132, 199, 0.12)';
+            tr.style.boxShadow = 'inset 4px 0 0 #0284c7';
+        }
+
+        tr.innerHTML = `
+            <td style="width: 38%; padding: 0.48rem 0.45rem;">
+                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                    <span style="display:inline-flex; width: 8px; height: 8px; border-radius: 50%; background: ${lineColor}; flex-shrink: 0; box-shadow: 0 0 0 2px rgba(0,0,0,0.08);"></span>
+                    <div style="font-weight: 600; font-size: 0.76rem; color: var(--text-primary); line-height: 1.2;">${l.service}</div>
+                </div>
+                <div style="font-size: 0.65rem; color: var(--text-secondary); margin-top: 2px; padding-left: 0.9rem;">${l.filial}</div>
+            </td>
+            <td style="width: 36%; padding: 0.48rem 0.45rem;">
+                <div style="font-weight: 600; font-size: 0.74rem; color: var(--text-primary);">${l.terminals || '—'}</div>
+                <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 2px;">${l.operational_classification || '—'}</div>
+            </td>
+            <td style="width: 14%; text-align: right; padding: 0.48rem 0.45rem;">
+                <span style="font-weight: 700; font-size: 0.78rem; color: var(--primary); font-variant-numeric: tabular-nums;">${l.length_km ? l.length_km.toFixed(1) : '—'} km</span>
+            </td>
+            <td style="width: 12%; text-align: center; padding: 0.48rem 0.45rem;">
+                <span style="font-weight: 700; font-size: 0.76rem; color: var(--text-primary); font-variant-numeric: tabular-nums;">${l.stations || 0}</span>
+                <span style="font-size: 0.66rem; color: var(--text-muted); margin-left: 2px;">est.</span>
+            </td>
+        `;
+
+        tr.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (typeof efeOnClickOperatingLine === 'function') {
+                efeOnClickOperatingLine(l.service);
+            }
+        });
+
+        tr.addEventListener('mouseenter', () => {
+            if (typeof efeOnHoverOperatingLine === 'function') {
+                efeOnHoverOperatingLine(l.service, true);
+            }
+        });
+
+        tr.addEventListener('mouseleave', () => {
+            if (typeof efeOnHoverOperatingLine === 'function') {
+                efeOnHoverOperatingLine(l.service, false);
+            }
+        });
+
+        tbody.appendChild(tr);
+    });
+
+    const linesLabel = document.getElementById('efe-lines-pagination-label');
+    if (linesLabel) {
+        linesLabel.textContent = lines.length > 0 ? `1-${lines.length} de ${lines.length}` : '0-0 de 0';
+    }
+    const btnPrevLines = document.getElementById('efe-lines-btn-prev');
+    const btnNextLines = document.getElementById('efe-lines-btn-next');
+    if (btnPrevLines) btnPrevLines.disabled = true;
+    if (btnNextLines) btnNextLines.disabled = true;
+
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+    }
+}
+window.efeRenderOperatingLinesTable = efeRenderOperatingLinesTable;
 
 function efeShowProjectDetailView(proj, currentFilteredProjects) {
     if (!proj) {
         efeShowTableListView();
         return;
     }
+
+    if (efeState.tableMode !== 'projects' && typeof setEfeTableMode === 'function') {
+        setEfeTableMode('projects');
+    }
+
+    const linesContainer = document.getElementById('efe-lines-container-view');
+    if (linesContainer) linesContainer.style.display = 'none';
 
     if (efeTableContainerView) efeTableContainerView.style.display = 'none';
     if (efeProjectDetailView) {
@@ -293,8 +486,10 @@ function efeUpdatePagination(page, totalPages, totalFiltered) {
 document.addEventListener('DOMContentLoaded', () => {
     efeInitDOMReferences();
     if (typeof efeLoadFilters === 'function') efeLoadFilters();
+    if (typeof efeInitLinesFilters === 'function') efeInitLinesFilters();
     if (typeof efeInitLeafletMap === 'function') efeInitLeafletMap();
     if (typeof efeFetchData === 'function') efeFetchData();
+    if (typeof setEfeTableMode === 'function') setEfeTableMode(efeState.tableMode || 'projects');
 
     // Back to table list view
     if (efeBtnBackToTable) {
@@ -357,7 +552,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             document.querySelectorAll('.efe-detail-checkbox').forEach(cb => cb.checked = false);
             if (efeDetailCheckAll) efeDetailCheckAll.checked = false;
-            if (efeDetailMultiselectText) efeDetailMultiselectText.textContent = 'Todo el portafolio';
+            if (efeDetailMultiselectText) efeDetailMultiselectText.textContent = 'Toda la cartera';
 
             document.querySelectorAll('.efe-tipo-checkbox').forEach(cb => cb.checked = false);
             if (efeTipoCheckAll) efeTipoCheckAll.checked = false;

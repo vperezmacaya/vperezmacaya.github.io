@@ -1,5 +1,10 @@
 // ─── EFE Filters & Data Module ───────────────────────────────────────────────
-var currentFilteredEFEProjects = [];
+var currentFilteredEFEProjects = null;
+var currentFilteredEFELines = null;
+if (typeof window !== 'undefined') {
+    window.currentFilteredEFEProjects = currentFilteredEFEProjects;
+    window.currentFilteredEFELines = currentFilteredEFELines;
+}
 
 function efeNormalize(str) {
     return str
@@ -236,9 +241,9 @@ function efeUpdateSelectedDetails() {
     const count = efeState.selectedDetails.length;
     if (efeDetailCheckAll) efeDetailCheckAll.checked = (count === total && total > 0);
     if (efeDetailMultiselectText) {
-        if (count === 0 || count === total) efeDetailMultiselectText.textContent = 'Todo el portafolio';
+        if (count === 0 || count === total) efeDetailMultiselectText.textContent = 'Toda la cartera';
         else if (count === 1) efeDetailMultiselectText.textContent = efeState.selectedDetails[0];
-        else efeDetailMultiselectText.textContent = `${count} tipos seleccionados`;
+        else efeDetailMultiselectText.textContent = `${count} carteras seleccionadas`;
     }
     efeState.page = 1;
     efeFetchData();
@@ -264,7 +269,7 @@ function efeFetchData() {
     const allProjects = (window.EFE_DATA && window.EFE_DATA.data) ? window.EFE_DATA.data : [];
     const searchNorm = efeNormalize(efeState.search);
 
-    // Filter
+    // ─── 1. Filter Projects (Search, Filial, Cartera, Tipo) ───────────────
     let filtered = allProjects.filter(proj => {
         // Search
         if (searchNorm) {
@@ -273,14 +278,39 @@ function efeFetchData() {
         }
         // Filial filter
         if (!efeFilialMatchesFilter(proj.filial, efeState.selectedFiliales)) return false;
-        // Detail filter (Estratégico vs Preinversional)
+        // Cartera / Detalle filter (Estratégico vs Preinversional vs Otros)
         if (!efeDetailMatchesFilter(proj.detail, efeState.selectedDetails)) return false;
         // Tipo filter
         if (!efeTipoMatchesFilter(proj.type, efeState.selectedTipos)) return false;
         return true;
     });
 
-    // Sort
+    // ─── 2. Filter Operating Lines (Search & Filial) ─────────────────────────
+    const allLines = (window.EFE_DATA && window.EFE_DATA.lines) ? window.EFE_DATA.lines : [];
+    let filteredLines = allLines.filter(l => {
+        if (searchNorm) {
+            const haystack = efeNormalize(
+                (l.service || '') + ' ' +
+                (l.filial || '') + ' ' +
+                (l.terminals || '') + ' ' +
+                (l.operational_classification || '') + ' ' +
+                (l.regions || '') + ' ' +
+                (l.rolling_stock || '') + ' ' +
+                (l.traction || '')
+            );
+            if (!haystack.includes(searchNorm)) return false;
+        }
+        if (!efeFilialMatchesFilter(l.filial, efeState.selectedFiliales)) return false;
+        return true;
+    });
+
+    currentFilteredEFELines = filteredLines;
+    if (typeof window !== 'undefined') window.currentFilteredEFELines = currentFilteredEFELines;
+
+    currentFilteredEFEProjects = filtered;
+    if (typeof window !== 'undefined') window.currentFilteredEFEProjects = currentFilteredEFEProjects;
+
+    // Sort projects
     const sortBy = efeState.sortBy || 'investment_mm_usd';
     const sortOrder = efeState.sortOrder || 'desc';
 
@@ -324,7 +354,7 @@ function efeFetchData() {
     const totalFiltered = filtered.length;
     const totalAll = allProjects.length;
 
-    // Pagination
+    // Pagination for projects
     const page = efeState.page;
     const pageSize = efeState.pageSize;
     const totalPages = Math.max(1, Math.ceil(totalFiltered / pageSize));
@@ -332,9 +362,29 @@ function efeFetchData() {
     const startIdx = (efeState.page - 1) * pageSize;
     const pageSlice = filtered.slice(startIdx, startIdx + pageSize);
 
-    // Update table
-    efeRenderTable(pageSlice);
-    efeUpdatePagination(efeState.page, totalPages, totalFiltered);
+    // Update tables & KPIs according to active table mode
+    if (efeState.tableMode === 'lines') {
+        if (typeof efeRenderOperatingLinesTable === 'function') {
+            efeRenderOperatingLinesTable(filteredLines);
+        }
+        const kpiVal1 = document.getElementById('efe-kpi-total-projects');
+        const kpiVal2 = document.getElementById('efe-kpi-total-investment');
+
+        const totalServices = filteredLines.length;
+        const totalKm = filteredLines.reduce((sum, l) => sum + (typeof l.length_km === 'number' ? l.length_km : (Number(l.length_km) || 0)), 0);
+
+        if (kpiVal1) kpiVal1.textContent = totalServices.toLocaleString('es-CL');
+        if (kpiVal2) kpiVal2.textContent = totalKm.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' km';
+    } else {
+        efeRenderTable(pageSlice);
+        efeUpdatePagination(efeState.page, totalPages, totalFiltered);
+
+        if (efeKpiTotalProjects) efeKpiTotalProjects.textContent = totalFiltered;
+        if (efeKpiTotalInvestment) {
+            const totalInvMM = filtered.reduce((sum, p) => sum + (p.investment_mm_usd || 0), 0);
+            efeKpiTotalInvestment.textContent = efeFormatInvestment(totalInvMM);
+        }
+    }
 
     // If currently selected project is no longer in filtered results, clear selection
     if (efeState.selectedProjectName) {
@@ -354,22 +404,14 @@ function efeFetchData() {
         efeUpdateMapStyles();
     }
 
-    // Update count badge & KPIs
+    // Update count badge
     if (efeCountLoaded) efeCountLoaded.textContent = totalFiltered;
     if (efeCountTotal) efeCountTotal.textContent = totalAll;
-
-    if (efeKpiTotalProjects) efeKpiTotalProjects.textContent = totalFiltered;
-    if (efeKpiTotalInvestment) {
-        const totalInvMM = filtered.reduce((sum, p) => sum + (p.investment_mm_usd || 0), 0);
-        efeKpiTotalInvestment.textContent = efeFormatInvestment(totalInvMM);
-    }
 
     // Update analytics charts
     if (typeof efeUpdateAnalyticsCharts === 'function') {
         efeUpdateAnalyticsCharts(filtered);
     }
-
-    currentFilteredEFEProjects = filtered;
 
     // Update investment panel if currently open
     if (efeState.investmentOpen && typeof renderEfeInvestmentAnalytics === 'function') {
@@ -379,6 +421,11 @@ function efeFetchData() {
     // Update timeline panel if currently open
     if (efeState.timelineOpen && typeof renderEfeTimeline === 'function') {
         renderEfeTimeline(filtered);
+    }
+
+    // Update operacion panel if currently open
+    if (efeState.operacionOpen && typeof renderEfeOperacionView === 'function') {
+        renderEfeOperacionView(filteredLines);
     }
 
     efeUpdateMapBadge(filtered.length, totalAll);
@@ -442,8 +489,31 @@ function exportEFEToExcel() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Proyectos_EFE");
 
+    // Append Líneas Operativas if available
+    const lines = (window.EFE_DATA && window.EFE_DATA.lines) ? window.EFE_DATA.lines : [];
+    if (lines.length > 0) {
+        const lineRows = lines.map(l => ({
+            "Servicio": l.service || '',
+            "Filial": l.filial || '',
+            "Clasificación Operacional": l.operational_classification || '',
+            "Cabeceras / Trazado": l.terminals || '',
+            "Longitud (km)": l.length_km || 0,
+            "Estaciones": l.stations || 0,
+            "Pasajeros 2025 (MM)": l.passengers_2025_mm != null ? l.passengers_2025_mm : '',
+            "Satisfacción 2025 (%)": l.satisfaction_2025_pct != null ? `${l.satisfaction_2025_pct}%` : '',
+            "Tiempo Promedio Viaje (min)": l.travel_time_avg_min != null ? l.travel_time_avg_min : '',
+            "Tiempo Total Trayecto (min)": l.travel_time_total_min != null ? l.travel_time_total_min : '',
+            "Material Rodante": l.rolling_stock || '',
+            "Tracción / Alimentación": l.traction || '',
+            "Regiones Conectadas": l.regions || '',
+            "Fuente": l.source || ''
+        }));
+        const wsLines = XLSX.utils.json_to_sheet(lineRows);
+        XLSX.utils.book_append_sheet(wb, wsLines, "Lineas_Operativas");
+    }
+
     const today = new Date().toISOString().slice(0, 10);
-    XLSX.writeFile(wb, `CATLEC_EFE_Proyectos_${today}.xlsx`);
+    XLSX.writeFile(wb, `CATLEC_EFE_BaseDatos_${today}.xlsx`);
 }
 
 /**
@@ -484,9 +554,10 @@ function exportEFEToGeoJSON() {
             return efeHasValidShapeAttribute(feature);
         }
         const props = feature.properties || {};
-        const isService = (props.line || props.LINE || props.linea || props.LINEA);
         const cod = props.COD != null ? String(props.COD).trim() : '';
-        return Boolean(isService || (cod && shapeToProj[cod] && shapeToProj[cod].length > 0));
+        const hasProj = cod && shapeToProj[cod] && shapeToProj[cod].length > 0;
+        const hasLine = cod && typeof efeShapeToLines !== 'undefined' && efeShapeToLines[cod] && efeShapeToLines[cod].length > 0;
+        return Boolean(hasProj || hasLine);
     }).map(feature => {
         const cloned = JSON.parse(JSON.stringify(feature));
         const props = cloned.properties || {};
@@ -530,4 +601,6 @@ function exportEFEToGeoJSON() {
     downloadAnchor.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+
 

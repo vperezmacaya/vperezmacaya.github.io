@@ -144,6 +144,9 @@ function showEfeInvestmentView() {
     if (efeState.timelineOpen && typeof hideEfeTimelineView === 'function') {
         hideEfeTimelineView();
     }
+    if (efeState.operacionOpen && typeof hideEfeOperacionView === 'function') {
+        hideEfeOperacionView();
+    }
     efeState.investmentOpen = true;
     const grid = document.querySelector('.efe-dashboard-grid');
     const centerPanel = document.querySelector('.center-panel');
@@ -152,6 +155,7 @@ function showEfeInvestmentView() {
     const btnMap = document.getElementById('btn-efe-view-map');
     const btnInv = document.getElementById('btn-efe-view-investment');
     const btnTl = document.getElementById('btn-efe-view-timeline');
+    const btnOp = document.getElementById('btn-efe-view-operacion');
 
     if (grid) grid.style.gridTemplateColumns = '280px 1fr';
     if (centerPanel) centerPanel.style.display = 'none';
@@ -160,6 +164,7 @@ function showEfeInvestmentView() {
 
     if (btnMap) btnMap.classList.remove('active');
     if (btnTl) btnTl.classList.remove('active');
+    if (btnOp) btnOp.classList.remove('active');
     if (btnInv) btnInv.classList.add('active');
 
     // Cambiar URL hash limpiamente
@@ -190,8 +195,8 @@ function hideEfeInvestmentView() {
     if (rightPanel) rightPanel.style.display = 'flex';
     if (invPanel) invPanel.style.display = 'none';
 
-    if (btnMap) btnMap.classList.add('active');
     if (btnInv) btnInv.classList.remove('active');
+    if (btnMap && !efeState.timelineOpen && !efeState.operacionOpen) btnMap.classList.add('active');
 
     if (window.location.hash === '#inversion' || window.location.hash === '#investment') {
         history.replaceState(null, null, window.location.pathname + window.location.search);
@@ -332,6 +337,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
                     indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
+                    animation: { duration: 450, easing: 'easeOutQuart' },
                     layout: { padding: { top: 0, bottom: 0, left: 0, right: 10 } },
                     plugins: {
                         legend: { display: false },
@@ -438,6 +444,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
                     responsive: true,
                     maintainAspectRatio: false,
                     cutout: '65%',
+                    animation: { duration: 450, easing: 'easeOutQuart' },
                     plugins: {
                         legend: { display: false },
                         tooltip: {
@@ -515,6 +522,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
                     indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
+                    animation: { duration: 450, easing: 'easeOutQuart' },
                     layout: { padding: { top: 0, bottom: 0, left: 0, right: 10 } },
                     plugins: {
                         legend: { display: false },

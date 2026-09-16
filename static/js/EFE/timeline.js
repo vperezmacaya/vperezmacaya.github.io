@@ -214,6 +214,9 @@ function showEfeTimelineView() {
     if (efeState.investmentOpen && typeof hideEfeInvestmentView === 'function') {
         hideEfeInvestmentView();
     }
+    if (efeState.operacionOpen && typeof hideEfeOperacionView === 'function') {
+        hideEfeOperacionView();
+    }
     efeState.timelineOpen = true;
 
     const grid = document.querySelector('.efe-dashboard-grid');
@@ -223,6 +226,7 @@ function showEfeTimelineView() {
     const btnMap = document.getElementById('btn-efe-view-map');
     const btnInv = document.getElementById('btn-efe-view-investment');
     const btnTl = document.getElementById('btn-efe-view-timeline');
+    const btnOp = document.getElementById('btn-efe-view-operacion');
 
     if (grid) grid.style.gridTemplateColumns = '280px 1fr';
     if (centerPanel) centerPanel.style.display = 'none';
@@ -231,6 +235,7 @@ function showEfeTimelineView() {
 
     if (btnMap) btnMap.classList.remove('active');
     if (btnInv) btnInv.classList.remove('active');
+    if (btnOp) btnOp.classList.remove('active');
     if (btnTl) btnTl.classList.add('active');
 
     if (window.location.hash !== '#timeline') {
@@ -262,7 +267,7 @@ function hideEfeTimelineView() {
     if (tlPanel) tlPanel.style.display = 'none';
 
     if (btnTl) btnTl.classList.remove('active');
-    if (btnMap && !efeState.investmentOpen) btnMap.classList.add('active');
+    if (btnMap && !efeState.investmentOpen && !efeState.operacionOpen) btnMap.classList.add('active');
 
     if (window.location.hash === '#timeline') {
         history.replaceState(null, null, window.location.pathname + window.location.search);

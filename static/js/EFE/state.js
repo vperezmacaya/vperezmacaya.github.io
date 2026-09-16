@@ -4,14 +4,20 @@ var efeState = {
     selectedFiliales: [],
     selectedDetails: [],
     selectedTipos: [],
+    linesSearch: '',
+    linesSelectedFiliales: [],
     selectedProjectName: null,
     hoveredProjectName: null,
+    selectedOperatingLine: null,
+    hoveredOperatingLine: null,
     sortBy: 'investment_mm_usd',
     sortOrder: 'desc',
     page: 1,
     pageSize: 50,
     investmentOpen: false,
-    timelineOpen: false
+    timelineOpen: false,
+    operacionOpen: false,
+    tableMode: 'projects'
 };
 if (typeof window !== 'undefined') window.efeState = efeState;
 
@@ -87,13 +93,15 @@ var efeMetroGeoLayer = null;    // GeoJSON layer for Metro de Santiago lines
 var efeMetroPointsLayer = null; // GeoJSON layer for Metro de Santiago stations
 var efeEstacionesGeoLayer = null; // GeoJSON layer for EFE active passenger stations
 var efeShapeToProjects = {};    // cod (int) -> array of project names
+var efeShapeToLines = {};       // cod (int) -> array of operating line service names
 var efeHighlightedCods = new Set(); // currently highlighted shape CODs
 var efeShapeGeometries = {};    // cod (string) -> array of Leaflet layer objects
 var efeProjectMarkers = [];     // Array of train marker objects currently on map
 var efeClusterOriginMarkers = []; // Array of cluster origin dot markers
 var efeClusterLegLayers = [];     // Array of spiderfy connecting leg polylines
 var efeShowEfeLines = true;       // Toggle for EFE passenger lines layer
-var efeShowMetroLines = true;     // Toggle for Metro lines and stations layer
+var efeShowMetroLines = false;    // Toggle for Metro lines and stations layer (disabled by default)
+var efeShowProjects = true;       // Toggle for project icons and shapes layer
 
 let efeAvailableFiliales = [
     'EFE Valparaíso',
@@ -101,6 +109,12 @@ let efeAvailableFiliales = [
     'EFE Sur',
     'EFE Arica - La Paz',
     'Sin filial específica'
+];
+
+let efeAvailableLinesFiliales = [
+    'EFE Central',
+    'EFE Sur',
+    'EFE Valparaíso'
 ];
 
 let efeAvailableDetails = [
@@ -156,6 +170,7 @@ function efeInitDOMReferences() {
     efeTipoCheckAll                 = document.getElementById('efe-tipo-check-all');
     efeTipoOptionsList              = document.getElementById('efe-tipo-options-list');
     efeBtnReset                     = document.getElementById('efe-btn-reset');
+
     efeTableBody                    = document.getElementById('efe-table-body');
     efeEmptyState                   = document.getElementById('efe-empty-state');
     efeCountLoaded                  = document.getElementById('efe-count-loaded');
@@ -173,4 +188,34 @@ function efeInitDOMReferences() {
     efeBtnBackToTable              = document.getElementById('efe-btn-back-to-table');
     efeBtnDetailPrev               = document.getElementById('efe-btn-detail-prev');
     efeBtnDetailNext               = document.getElementById('efe-btn-detail-next');
+}
+
+// ─── Estaciones EFE: Buscador dinámico por ID o Nombre en EFE_DATA ────────────
+function efeFindStation(featureOrId) {
+    if (!featureOrId) return null;
+    let stId = '';
+    if (typeof featureOrId === 'string') {
+        stId = featureOrId.trim();
+    } else if (featureOrId.id != null) {
+        stId = String(featureOrId.id).trim();
+    } else if (featureOrId.properties) {
+        stId = String(featureOrId.properties.station_id || featureOrId.properties.id || '').trim();
+    }
+
+    const stationsList = (window.EFE_DATA && window.EFE_DATA.stations) ? window.EFE_DATA.stations : [];
+    if (stId) {
+        const found = stationsList.find(s => String(s.id).trim() === stId);
+        if (found) return found;
+    }
+
+    // Fallback por nombre si el ID no coincidió
+    if (featureOrId.properties && featureOrId.properties.name) {
+        const featName = String(featureOrId.properties.name).trim().toLowerCase();
+        return stationsList.find(s => String(s.name).trim().toLowerCase() === featName) || null;
+    }
+
+    return null;
+}
+if (typeof window !== 'undefined') {
+    window.efeFindStation = efeFindStation;
 }

@@ -279,7 +279,7 @@ function metroRenderOperatingLinesTable() {
         }
 
         html += `
-            <tr class="row-main" id="metro-line-row-${idx}" data-line="${l.line}" style="cursor: pointer; border-bottom: 1px solid var(--border-color); transition: background 0.15s ease;"
+            <tr class="row-main" id="metro-line-row-${idx}" data-line="${l.line}" style="cursor: pointer; border-bottom: 1px solid var(--border-color); transition: background-color 0.2s ease, box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);"
                 onmouseenter="metroOnHoverOperatingLine('${l.line}', true)"
                 onmouseleave="metroOnHoverOperatingLine('${l.line}', false)"
                 onclick="metroOnClickOperatingLine('${l.line}')">
@@ -584,7 +584,7 @@ function metroRenderSideComunasTable() {
 
         html += `
             <tr class="row-main metro-side-comuna-row" id="metro-side-comuna-row-${start + idx}" data-comuna="${c.comuna}"
-                style="cursor: pointer; border-bottom: 1px solid var(--border-color); transition: background 0.15s ease;"
+                style="cursor: pointer; border-bottom: 1px solid var(--border-color); transition: background-color 0.2s ease, box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);"
                 onmouseenter="metroOnHoverSideComuna('${c.comuna.replace(/'/g, "\\'")}', true)"
                 onmouseleave="metroOnHoverSideComuna('${c.comuna.replace(/'/g, "\\'")}', false)"
                 onclick="metroOnClickComunaFromTable('${c.comuna.replace(/'/g, "\\'")}')">

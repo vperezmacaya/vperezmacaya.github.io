@@ -149,11 +149,38 @@ metro_points_fc = {
     "features": [ft for ft in metro_all_points_raw if str(ft.get('id', '')).startswith('node/')]
 }
 
-# Cargar EFE_estaciones_filtradas.json (Estaciones de EFE con servicio activo de pasajeros)
+# Cargar EFE_estaciones.json (Estaciones de EFE con servicio activo de pasajeros enriquecidas desde Excel)
 efe_estaciones_fc = {"type": "FeatureCollection", "features": []}
-efe_est_path = os.path.join(EFE_DIR, 'EFE_estaciones_filtradas.json')
+efe_est_path = os.path.join(EFE_DIR, 'EFE_estaciones.json')
+if not os.path.exists(efe_est_path):
+    efe_est_path = os.path.join(EFE_DIR, 'EFE_estaciones_filtradas.json')
+efe_excel_path = os.path.join(BASE_DIR, 'Bases de dato', 'EFE.xlsx')
+
+efe_stations_excel_lookup = {}
+if os.path.exists(efe_excel_path):
+    try:
+        import pandas as pd
+        df_est_efe = pd.read_excel(efe_excel_path, sheet_name='Estaciones', header=2)
+        for _, r in df_est_efe.iterrows():
+            sid = str(r.get('ID Estación', '')).strip()
+            if not sid or sid == 'nan': continue
+            s_raw = str(r.get('Servicio', '')).strip()
+            s_arr = [s.strip() for s in s_raw.split(',') if s.strip()] if s_raw and s_raw != 'nan' else []
+            proj_raw = str(r.get('ID Proyecto', '')).strip()
+            proj_arr = [p.strip() for p in proj_raw.split(',') if p.strip()] if proj_raw and proj_raw != 'nan' else []
+            efe_stations_excel_lookup[sid] = {
+                'station_id': sid,
+                'name': str(r.get('Nombre Estación', '')).strip(),
+                'services': s_arr,
+                'services_str': s_raw if s_raw != 'nan' else '',
+                'project_ids': proj_arr
+            }
+        print(f"  -> {len(efe_stations_excel_lookup)} estaciones EFE indexadas desde hoja 'Estaciones' en {efe_excel_path}.")
+    except Exception as e_est_ex:
+        print(f"⚠ Error al leer hoja 'Estaciones' de EFE.xlsx: {e_est_ex}")
+
 if os.path.exists(efe_est_path):
-    print("Procesando EFE_estaciones_filtradas.json (estaciones activas de pasajeros)...")
+    print(f"Procesando {os.path.basename(efe_est_path)} (estaciones activas de pasajeros)...")
     try:
         with open(efe_est_path, 'r', encoding='utf-8') as f:
             raw_efe_est = json.load(f)
@@ -162,8 +189,26 @@ if os.path.exists(efe_est_path):
                 if not geom or not geom.get('coordinates'):
                     continue
                 ft['geometry']['coordinates'] = round_coords(ft['geometry']['coordinates'])
+                
+                # Enrich with Excel data
+                fid = str(ft.get('id') or ft.get('properties', {}).get('station_id') or '')
+                st_info = efe_stations_excel_lookup.get(fid)
+                if 'properties' not in ft: ft['properties'] = {}
+                if st_info:
+                    ft['id'] = st_info['station_id']
+                    ft['properties']['station_id'] = st_info['station_id']
+                    ft['properties']['name'] = st_info['name']
+                    ft['properties']['services'] = st_info['services']
+                    ft['properties']['servicios_activos'] = st_info['services']
+                    ft['properties']['services_str'] = st_info['services_str']
+                    ft['properties']['project_ids'] = st_info['project_ids']
+                else:
+                    ft['properties']['station_id'] = fid
+                    ft['properties']['services'] = ft['properties'].get('servicios_activos', [])
+                    ft['properties']['project_ids'] = []
+
                 efe_estaciones_fc['features'].append(ft)
-        print(f"  -> {len(efe_estaciones_fc['features'])} estaciones activas de EFE agregadas.")
+        print(f"  -> {len(efe_estaciones_fc['features'])} estaciones activas de EFE enriquecidas y agregadas.")
     except Exception as e:
         print(f"⚠ Error al leer EFE_estaciones_filtradas.json: {e}")
 

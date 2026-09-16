@@ -1314,13 +1314,23 @@ function metroUpdateMapStyles(filteredProjects) {
                     });
                 }
             } else if (selectedLine) {
-                // Hay una línea operativa seleccionada -> proyectos atenuados con moderación
-                layer.setStyle({
-                    color: projColor,
-                    weight: 3.0,
-                    opacity: 0.35,
-                    dashArray: null
-                });
+                if (isHovered) {
+                    layer.setStyle({
+                        color: projColor,
+                        weight: 5.5,
+                        opacity: 1.0,
+                        dashArray: null
+                    });
+                    if (layer.bringToFront) layer.bringToFront();
+                } else {
+                    // Hay una línea operativa seleccionada -> proyectos atenuados con moderación
+                    layer.setStyle({
+                        color: projColor,
+                        weight: 3.0,
+                        opacity: 0.35,
+                        dashArray: null
+                    });
+                }
             } else {
                 if (isHovered) {
                     layer.setStyle({
@@ -1733,13 +1743,29 @@ function metroUpdateMapStyles(filteredProjects) {
                 if (marker.setZIndexOffset) marker.setZIndexOffset(100);
             }
         } else if (selectedLine) {
-            // Línea operativa seleccionada -> marcadores atenuados con moderación
-            pulse.classList.remove('active-selected', 'is-hovered');
-            pulse.classList.add('dimmed');
-            bg = pColor;
-            scaleStr = 'scale(0.92)';
-            opacityVal = '0.45';
-            if (marker.setZIndexOffset) marker.setZIndexOffset(100);
+            if (isHoveredMarker) {
+                pulse.classList.remove('active-selected', 'dimmed');
+                pulse.classList.add('is-hovered');
+                bg = pColor;
+                scaleStr = 'scale(1.25)';
+                opacityVal = '1.0';
+                if (marker.setZIndexOffset) marker.setZIndexOffset(9500);
+            } else if (isClusterActive) {
+                pulse.classList.remove('active-selected', 'is-hovered', 'dimmed');
+                pulse.classList.add('deployed');
+                bg = pColor;
+                scaleStr = 'scale(1.05)';
+                opacityVal = '1.0';
+                if (marker.setZIndexOffset) marker.setZIndexOffset(9000);
+            } else {
+                // Línea operativa seleccionada -> marcadores atenuados con moderación
+                pulse.classList.remove('active-selected', 'is-hovered');
+                pulse.classList.add('dimmed');
+                bg = pColor;
+                scaleStr = 'scale(0.92)';
+                opacityVal = '0.45';
+                if (marker.setZIndexOffset) marker.setZIndexOffset(100);
+            }
         } else {
             if (isHoveredMarker) {
                 pulse.classList.remove('active-selected', 'dimmed');

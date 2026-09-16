@@ -112,11 +112,15 @@
                                 </a>
                                 <a class="nav-submenu-item" id="nav-efe-sub-timeline" href="#timeline">
                                     <i data-lucide="clock" style="width:13px;height:13px;"></i>
-                                    Líneas de Tiempo
+                                    Líneas de Tiempo de Proyectos
                                 </a>
                                 <a class="nav-submenu-item" id="nav-efe-sub-investment" href="#inversion">
                                     <i data-lucide="line-chart" style="width:13px;height:13px;"></i>
-                                    Análisis de Inversión
+                                    Análisis de Inversión de Proyectos
+                                </a>
+                                <a class="nav-submenu-item" id="nav-efe-sub-operacion" href="#operacion">
+                                    <i data-lucide="trending-up" style="width:13px;height:13px;"></i>
+                                    Demanda y Operación
                                 </a>
                             </div>
                         </div>
@@ -242,18 +246,22 @@
         </header>
 
         <!-- Subheader: Rapid View Switcher Bar -->
-        <div class="view-subheader efe-tabs three-tabs">
+        <div class="view-subheader efe-tabs four-tabs">
             <button class="view-tab-btn active" id="btn-efe-view-map">
                 <i data-lucide="map" style="width: 14px; height: 14px;"></i>
                 <span>Mapa</span>
             </button>
             <button class="view-tab-btn" id="btn-efe-view-timeline">
                 <i data-lucide="clock" style="width: 14px; height: 14px;"></i>
-                <span>Líneas de Tiempo</span>
+                <span>Líneas de Tiempo de Proyectos</span>
             </button>
             <button class="view-tab-btn" id="btn-efe-view-investment">
                 <i data-lucide="line-chart" style="width: 14px; height: 14px;"></i>
-                <span>Análisis de Inversión</span>
+                <span>Análisis de Inversión de Proyectos</span>
+            </button>
+            <button class="view-tab-btn" id="btn-efe-view-operacion">
+                <i data-lucide="trending-up" style="width: 14px; height: 14px;"></i>
+                <span>Demanda y Operación</span>
             </button>
         </div>
 
@@ -277,17 +285,16 @@
 
                         <!-- Search -->
                         <div class="form-group" style="gap:0.15rem;">
-                            <label class="form-label" for="efe-search-input" style="font-size:0.7rem;">Buscar
-                                proyecto</label>
+                            <label class="form-label" for="efe-search-input" style="font-size:0.7rem;">Buscar</label>
                             <div class="search-wrapper">
                                 <i data-lucide="search" style="width:13px;height:13px;"></i>
                                 <input type="text" id="efe-search-input" class="form-input"
-                                    placeholder="Buscar proyecto o filial..."
+                                    placeholder="Buscar proyecto, servicio o filial..."
                                     style="padding:0.3rem 0.55rem 0.3rem 1.8rem;font-size:0.76rem;">
                             </div>
                         </div>
 
-                        <!-- Filial Filter -->
+                        <!-- Filial Filter (Affects both Projects and Operating Lines) -->
                         <div class="form-group" style="gap:0.15rem; position:relative; z-index:90;">
                             <label class="form-label" style="font-size:0.7rem;">Filial</label>
                             <div class="multiselect-container" id="efe-filial-multiselect-container">
@@ -323,18 +330,18 @@
                             </div>
                         </div>
 
-                        <!-- Detalle / Cartera Filter -->
+                        <!-- Cartera de proyectos Filter -->
                         <div class="form-group" style="gap:0.15rem; position:relative; z-index:80;">
-                            <label class="form-label" style="font-size:0.7rem;">Detalle / Cartera</label>
+                            <label class="form-label" style="font-size:0.7rem;">Cartera de proyectos</label>
                             <div class="multiselect-container" id="efe-detail-multiselect-container">
                                 <button class="multiselect-btn" id="efe-detail-multiselect-btn">
-                                    <span id="efe-detail-multiselect-text">Todo el portafolio</span>
+                                    <span id="efe-detail-multiselect-text">Toda la cartera</span>
                                     <i data-lucide="chevron-down" style="width:12px;height:12px;flex-shrink:0;"></i>
                                 </button>
                                 <div class="multiselect-dropdown" id="efe-detail-multiselect-dropdown">
                                     <label class="multiselect-check-all">
                                         <input type="checkbox" id="efe-detail-check-all">
-                                        <span>Todo el portafolio</span>
+                                        <span>Toda la cartera</span>
                                     </label>
                                     <div id="efe-detail-options-list"></div>
                                 </div>
@@ -351,7 +358,7 @@
                             <div style="display: flex; gap: 0.25rem; width: 100%;">
                                 <button class="btn-reset" id="efe-btn-export-excel"
                                     style="flex: 1; padding: 0.28rem 0.4rem; font-size: 0.72rem; justify-content: center; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); color: #10b981; font-weight: 600; cursor: pointer; transition: all 0.15s ease;"
-                                    title="Descargar proyectos EFE filtrados o completos en Excel (.xlsx)">
+                                    title="Descargar datos en Excel (.xlsx)">
                                     <i data-lucide="file-spreadsheet" style="width: 12px; height: 12px;"></i>
                                     Exportar Excel
                                 </button>
@@ -398,13 +405,13 @@
                             </div>
                         </div>
 
-                        <!-- Chart 2: Proyectos por Detalle de Cartera -->
+                        <!-- Chart 2: Cartera de Proyectos -->
                         <div
                             style="flex: 1.1; min-height: 0; display: flex; flex-direction: column; gap: 0.15rem; border-top: 1px solid var(--border-color); padding-top: 0.3rem;">
                             <div style="display: flex; flex-direction: column; gap: 0.05rem;">
                                 <div
                                     style="font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: flex; align-items: center; gap: 0.3rem;">
-                                    Proyectos por Detalle de Cartera
+                                    Cartera de Proyectos
                                 </div>
                                 <span
                                     style="font-size: 0.61rem; color: var(--text-muted); font-style: italic; line-height: 1.1;">
@@ -439,20 +446,37 @@
 
                 <!-- Right Panel: KPIs & Projects Table / Details -->
                 <section class="right-panel results-panel">
+                    <!-- Top View Mode Switcher: Proyectos vs Servicios Actuales (Arriba de los KPI) -->
+                    <div class="efe-table-mode-switch"
+                        style="display: flex; align-items: center; gap: 0.35rem; padding: 0.45rem 0.65rem; border-bottom: 1px solid var(--border-color); background: var(--bg-card); flex-shrink: 0;">
+                        <button class="btn btn-xs efe-mode-btn active" id="efe-tab-mode-projects"
+                            onclick="setEfeTableMode('projects')"
+                            style="flex: 1; justify-content: center; font-size: 0.72rem; padding: 0.28rem 0.5rem; border-radius: 4px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; background: var(--primary); color: #ffffff; border: 1px solid var(--primary); transition: all 0.15s ease;">
+                            <i data-lucide="folder-kanban" style="width: 12px; height: 12px;"></i>
+                            <span id="efe-tab-text-projects">Proyectos</span>
+                        </button>
+                        <button class="btn btn-xs efe-mode-btn" id="efe-tab-mode-lines"
+                            onclick="setEfeTableMode('lines')"
+                            style="flex: 1; justify-content: center; font-size: 0.72rem; padding: 0.28rem 0.5rem; border-radius: 4px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); transition: all 0.15s ease;">
+                            <i data-lucide="train-front" style="width: 12px; height: 12px;"></i>
+                            <span id="efe-tab-text-lines">Servicios Actuales</span>
+                        </button>
+                    </div>
+
                     <!-- Top KPI Grid -->
                     <section class="kpi-grid" aria-label="Indicadores Clave">
                         <div class="card-kpi">
-                            <div class="kpi-icon"><i data-lucide="train-front"></i></div>
+                            <div class="kpi-icon" id="efe-kpi-icon-1"><i data-lucide="train-front"></i></div>
                             <div class="kpi-val-container">
-                                <span class="kpi-label">Proyectos totales</span>
+                                <span class="kpi-label" id="efe-kpi-label-1">Proyectos totales</span>
                                 <span class="kpi-value" id="efe-kpi-total-projects">—</span>
                             </div>
                         </div>
 
                         <div class="card-kpi">
-                            <div class="kpi-icon"><i data-lucide="dollar-sign"></i></div>
+                            <div class="kpi-icon" id="efe-kpi-icon-2"><i data-lucide="dollar-sign"></i></div>
                             <div class="kpi-val-container">
-                                <span class="kpi-label">Inversión total</span>
+                                <span class="kpi-label" id="efe-kpi-label-2">Inversión total</span>
                                 <span class="kpi-value" id="efe-kpi-total-investment"
                                     style="font-size: 0.95rem;">—</span>
                             </div>
@@ -472,7 +496,7 @@
                                     <thead>
                                         <tr>
                                             <th class="sortable" data-sort="name" style="width: 38%;">Nombre Proyecto
-                                            </th>
+                                             </th>
                                             <th class="sortable" data-sort="filial" style="width: 22%;">Filial</th>
                                             <th class="sortable desc" data-sort="investment_mm_usd"
                                                 style="width: 20%; text-align: right;">Inversión</th>
@@ -509,6 +533,49 @@
                                     <i data-lucide="chevron-left" style="width: 12px; height: 12px;"></i> Anterior
                                 </button>
                                 <button class="btn-paged" id="efe-btn-next" disabled
+                                    style="padding: 0.25rem 0.5rem; font-size: 0.72rem;">
+                                    Siguiente <i data-lucide="chevron-right" style="width: 12px; height: 12px;"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Table Container View 2: Consolidated Operating Lines (Memoria 2025) -->
+                    <div id="efe-lines-container-view"
+                        style="display: none; flex-direction: column; flex: 1; min-height: 0;">
+
+                        <div class="table-responsive">
+                            <div class="table-header-wrapper">
+                                <table class="data-table" style="table-layout: fixed; width: 100%;">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 38%;">Servicio</th>
+                                            <th style="width: 36%;">Cabeceras / Trazado</th>
+                                            <th style="width: 14%; text-align: right;">Longitud</th>
+                                            <th style="width: 12%; text-align: center;">Estaciones</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                            <div class="table-body-wrapper">
+                                <table class="data-table" id="efe-operating-lines-table"
+                                    style="table-layout: fixed; width: 100%;">
+                                    <tbody id="efe-operating-lines-table-body">
+                                        <!-- Rendered dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Pagination Controls -->
+                        <div class="pagination-container" style="padding: 0.35rem 0.5rem; gap: 0.5rem;">
+                            <div id="efe-lines-pagination-label" style="font-size: 0.72rem;">0-0 de 0</div>
+                            <div class="pagination-controls">
+                                <button class="btn-paged" id="efe-lines-btn-prev" disabled
+                                    style="padding: 0.25rem 0.5rem; font-size: 0.72rem;">
+                                    <i data-lucide="chevron-left" style="width: 12px; height: 12px;"></i> Anterior
+                                </button>
+                                <button class="btn-paged" id="efe-lines-btn-next" disabled
                                     style="padding: 0.25rem 0.5rem; font-size: 0.72rem;">
                                     Siguiente <i data-lucide="chevron-right" style="width: 12px; height: 12px;"></i>
                                 </button>
@@ -670,9 +737,6 @@
                                             style="width: 13px; height: 13px; color: var(--primary);"></i>
                                         Inversión según Tipo de Proyecto
                                     </h3>
-                                    <span
-                                        style="font-size: 0.6rem; color: var(--text-muted); font-style: italic;">*Inversión
-                                        acumulada estimada en MM USD por tipología</span>
                                 </div>
                                 <div style="flex: 1; min-height: 0; position: relative;">
                                     <canvas id="efeChartInvByTipo"></canvas>
@@ -694,8 +758,6 @@
                                                 style="width: 12px; height: 12px; color: #0284c7;"></i>
                                             Inversión por Filial (%)
                                         </h3>
-                                        <span style="font-size: 0.6rem; color: var(--text-muted); font-style: italic;">*
-                                            Proyectos nacionales divididos equitativamente por filial</span>
                                     </div>
                                     <div
                                         style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; gap: 0.6rem; padding: 0 0.15rem; position: relative;">
@@ -733,6 +795,137 @@
                     </div>
                 </div>
 
+                <!-- Full-Width EFE Demand & Operations Panel -->
+                <div id="efe-operacion-full-panel" class="efe-operacion-full-panel"
+                    style="display:none; grid-column: 2 / -1; flex-direction: column; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; height: 100%; min-height: 0;">
+
+                    <div class="operacion-body"
+                        style="flex: 1; overflow: hidden; padding: 0.45rem; display: flex; flex-direction: column; gap: 0.4rem; min-height: 0; height: 100%;">
+
+                        <!-- BANNER KPI SUPERIOR (3 Indicadores Clave) -->
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; flex-shrink: 0;">
+                            <div class="card-kpi" style="min-height: 52px; padding: 0.35rem 0.55rem;">
+                                <div class="kpi-icon">
+                                    <i data-lucide="users"></i>
+                                </div>
+                                <div class="kpi-val-container">
+                                    <span class="kpi-label">Pasajeros Totales (2025)</span>
+                                    <span class="kpi-value" id="efe-kpi-op-pax" style="font-size: 0.95rem;">-</span>
+                                </div>
+                            </div>
+
+                            <div class="card-kpi" style="min-height: 52px; padding: 0.35rem 0.55rem;">
+                                <div class="kpi-icon">
+                                    <i data-lucide="map-pin"></i>
+                                </div>
+                                <div class="kpi-val-container">
+                                    <span class="kpi-label">Estaciones Activas</span>
+                                    <span class="kpi-value" id="efe-kpi-op-estaciones" style="font-size: 0.95rem;">-</span>
+                                </div>
+                            </div>
+
+                            <div class="card-kpi" style="min-height: 52px; padding: 0.35rem 0.55rem;">
+                                <div class="kpi-icon">
+                                    <i data-lucide="smile"></i>
+                                </div>
+                                <div class="kpi-val-container">
+                                    <span class="kpi-label">Satisfacción Usuaria (Promedio)</span>
+                                    <span class="kpi-value" id="efe-kpi-op-satisfaccion" style="font-size: 0.95rem;">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- FILA 1 DE GRÁFICOS (3 Columnas: Demanda Pax, Demanda Filial, Tracción/Flota) -->
+                        <div style="display: grid; grid-template-columns: 38% 31% 31%; gap: 0.4rem; flex: 1; min-height: 0;">
+                            <!-- Gráfico 1: Demanda por Servicio -->
+                            <div class="panel-card" style="padding: 0.4rem 0.5rem 0.3rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
+                                    <h3 style="font-size: 0.74rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
+                                        <i data-lucide="bar-chart-2" style="width: 13px; height: 13px; color: #2563eb;"></i>
+                                        Demanda Anual por Servicio (MM pax 2025)
+                                    </h3>
+                                </div>
+                                <div style="flex: 1; min-height: 0; position: relative;">
+                                    <canvas id="efeChartDemandaPax"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Gráfico 2: Demanda por Filial -->
+                            <div class="panel-card" style="padding: 0.4rem 0.5rem 0.3rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
+                                    <h3 style="font-size: 0.74rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
+                                        <i data-lucide="pie-chart" style="width: 13px; height: 13px; color: #0284c7;"></i>
+                                        Demanda por Filial (%)
+                                    </h3>
+                                </div>
+                                <div style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0 0.15rem; position: relative;">
+                                    <div style="width: 85px; height: 85px; min-width: 85px; flex-shrink: 0; position: relative;">
+                                        <canvas id="efeChartDemandaFilial"></canvas>
+                                    </div>
+                                    <div id="efeChartDemandaFilialLegend" style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; overflow: hidden; justify-content: center;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Gráfico 5: Tracción y Flota -->
+                            <div class="panel-card" style="padding: 0.4rem 0.5rem 0.3rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
+                                    <h3 style="font-size: 0.74rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
+                                        <i data-lucide="zap" style="width: 13px; height: 13px; color: #8b5cf6;"></i>
+                                        Tracción y Tecnología de Flota
+                                    </h3>
+                                </div>
+                                <div style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0 0.15rem; position: relative;">
+                                    <div style="width: 85px; height: 85px; min-width: 85px; flex-shrink: 0; position: relative;">
+                                        <canvas id="efeChartTraccionFlota"></canvas>
+                                    </div>
+                                    <div id="efeChartTraccionFlotaLegend" style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; overflow: hidden; justify-content: center;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- FILA 2 DE GRÁFICOS (2 Columnas: Longitud vs Estaciones, Satisfacción Usuaria) -->
+                        <div style="display: grid; grid-template-columns: 55% 45%; gap: 0.4rem; flex: 1; min-height: 0;">
+                            <!-- Gráfico 3: Longitud vs Estaciones -->
+                            <div class="panel-card" style="padding: 0.4rem 0.5rem 0.3rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
+                                    <h3 style="font-size: 0.74rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
+                                        <i data-lucide="git-commit" style="width: 13px; height: 13px; color: #0284c7;"></i>
+                                        Extensión de Trazado vs N° Estaciones
+                                    </h3>
+                                    <div style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.63rem;">
+                                        <span style="display: flex; align-items: center; gap: 0.25rem; color: #0284c7; font-weight: 600;">
+                                            <span style="width: 8px; height: 8px; border-radius: 2px; background: #0284c7;"></span> Extensión (km)
+                                        </span>
+                                        <span style="display: flex; align-items: center; gap: 0.25rem; color: #d97706; font-weight: 600;">
+                                            <span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></span> Estaciones
+                                        </span>
+                                    </div>
+                                </div>
+                                <div style="flex: 1; min-height: 0; position: relative;">
+                                    <canvas id="efeChartLongitudEstaciones"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Gráfico 4: Satisfacción Usuaria -->
+                            <div class="panel-card" style="padding: 0.4rem 0.5rem 0.3rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
+                                    <h3 style="font-size: 0.74rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
+                                        <i data-lucide="star" style="width: 13px; height: 13px; color: #10b981;"></i>
+                                        Índice de Satisfacción Usuaria (%)
+                                    </h3>
+                                    <span style="font-size: 0.6rem; color: var(--text-muted); font-style: italic;">*Evaluación neta Memoria 2025</span>
+                                </div>
+                                <div style="flex: 1; min-height: 0; position: relative;">
+                                    <canvas id="efeChartSatisfaccion"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
@@ -764,6 +957,7 @@
     <script src="static/js/EFE/charts.js?v=20260908_1240"></script>
     <script src="static/js/EFE/investment.js?v=20260908_1240"></script>
     <script src="static/js/EFE/timeline.js?v=20260908_1240"></script>
+    <script src="static/js/EFE/operacion.js?v=20260915_1"></script>
     <script src="static/js/EFE/map.js?v=20260908_1240"></script>
     <script src="static/js/EFE/filters.js?v=20260908_1240"></script>
     <script src="static/js/EFE/ui.js?v=20260910_1"></script>
@@ -886,14 +1080,17 @@
             const btnMap = document.getElementById('btn-efe-view-map');
             const btnTl = document.getElementById('btn-efe-view-timeline');
             const btnInv = document.getElementById('btn-efe-view-investment');
+            const btnOp = document.getElementById('btn-efe-view-operacion');
             const navSubMap = document.getElementById('nav-efe-sub-map');
             const navSubTl = document.getElementById('nav-efe-sub-timeline');
             const navSubInv = document.getElementById('nav-efe-sub-investment');
+            const navSubOp = document.getElementById('nav-efe-sub-operacion');
 
             if (btnMap) {
                 btnMap.addEventListener('click', () => {
                     if (typeof hideEfeInvestmentView === 'function') hideEfeInvestmentView();
                     if (typeof hideEfeTimelineView === 'function') hideEfeTimelineView();
+                    if (typeof hideEfeOperacionView === 'function') hideEfeOperacionView();
                 });
             }
             if (btnTl) {
@@ -906,12 +1103,18 @@
                     if (typeof showEfeInvestmentView === 'function') showEfeInvestmentView();
                 });
             }
+            if (btnOp) {
+                btnOp.addEventListener('click', () => {
+                    if (typeof showEfeOperacionView === 'function') showEfeOperacionView();
+                });
+            }
             if (navSubMap) {
                 navSubMap.addEventListener('click', (e) => {
                     e.preventDefault();
                     navDropdown.classList.remove('open');
                     if (typeof hideEfeInvestmentView === 'function') hideEfeInvestmentView();
                     if (typeof hideEfeTimelineView === 'function') hideEfeTimelineView();
+                    if (typeof hideEfeOperacionView === 'function') hideEfeOperacionView();
                 });
             }
             if (navSubTl) {
@@ -928,6 +1131,13 @@
                     if (typeof showEfeInvestmentView === 'function') showEfeInvestmentView();
                 });
             }
+            if (navSubOp) {
+                navSubOp.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    navDropdown.classList.remove('open');
+                    if (typeof showEfeOperacionView === 'function') showEfeOperacionView();
+                });
+            }
 
             // Handle URL hash on load and hashchange
             function handleEfeHashRoute() {
@@ -936,9 +1146,12 @@
                     if (typeof showEfeTimelineView === 'function') showEfeTimelineView();
                 } else if (hash === '#inversion' || hash === '#investment') {
                     if (typeof showEfeInvestmentView === 'function') showEfeInvestmentView();
+                } else if (hash === '#operacion' || hash === '#demanda') {
+                    if (typeof showEfeOperacionView === 'function') showEfeOperacionView();
                 } else {
                     if (typeof hideEfeInvestmentView === 'function') hideEfeInvestmentView();
                     if (typeof hideEfeTimelineView === 'function') hideEfeTimelineView();
+                    if (typeof hideEfeOperacionView === 'function') hideEfeOperacionView();
                 }
             }
 
@@ -1183,7 +1396,7 @@
                         <div class="formula-card">
                             <div class="formula-card-title">
                                 <i data-lucide="clock" style="width: 15px; height: 15px; color: #7c3aed;"></i>
-                                Visualización: Líneas de Tiempo
+                                Visualización: Líneas de Tiempo de Proyectos
                             </div>
 
                             <div class="formula-subtitle">
@@ -1209,11 +1422,11 @@
                             </ul>
                         </div>
 
-                        <!-- 3. VISUALIZACIÓN ANÁLISIS DE INVERSIÓN -->
+                        <!-- 3. VISUALIZACIÓN ANÁLISIS DE INVERSIÓN DE PROYECTOS -->
                         <div class="formula-card">
                             <div class="formula-card-title">
                                 <i data-lucide="line-chart" style="width: 15px; height: 15px; color: #0284c7;"></i>
-                                Visualización: Análisis de Inversión
+                                Visualización: Análisis de Inversión de Proyectos
                             </div>
 
                             <div class="formula-subtitle">
@@ -1246,6 +1459,27 @@
                                 fielmente la participación porcentual en el gráfico.
                             </p>
 
+                        </div>
+
+                        <!-- 4. VISUALIZACIÓN DEMANDA Y OPERACIÓN -->
+                        <div class="formula-card">
+                            <div class="formula-card-title">
+                                <i data-lucide="trending-up" style="width: 15px; height: 15px; color: #059669;"></i>
+                                Visualización: Demanda y Operación
+                            </div>
+
+                            <div class="formula-subtitle">
+                                <i data-lucide="gauge" style="width: 13px; height: 13px; color: #059669;"></i>
+                                Indicadores y Métricas Operacionales (Memoria Integrada 2025):
+                            </div>
+                            <ul
+                                style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
+                                <li><strong>Demanda Anual de Pasajeros:</strong> Volumen consolidado en millones de viajes pagados (MM pax) transportados por cada servicio suburbano, interurbano y regional durante el ejercicio anual 2025.</li>
+                                <li><strong>Participación por Filial (%):</strong> Proporción de la demanda total de la red movilizada por EFE Central, EFE Valparaíso, EFE Sur y EFE Arica-La Paz.</li>
+                                <li><strong>Extensión de Red y N° Estaciones:</strong> Longitud operativa de vías férreas comerciales (km) y cantidad de paradas y terminales activas.</li>
+                                <li><strong>Índice de Satisfacción Usuaria (%):</strong> Nivel de aprobación y percepción de servicio reportado en las encuestas anuales corporativas de satisfacción de clientes.</li>
+                                <li><strong>Tecnología y Tracción:</strong> Distribución del parque ferroviario en tracción 100% eléctrica (automotores EMU), diésel (locomotoras / buscarril) y bimodal (trenes rápidos 160 km/h BMU).</li>
+                            </ul>
                         </div>
 
                     </div>

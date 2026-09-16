@@ -125,6 +125,7 @@ function efeInitAnalyticsCharts() {
                 responsive: true,
                 maintainAspectRatio: false,
                 cutout: '68%',
+                animation: { duration: 450, easing: 'easeOutQuart' },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -161,6 +162,7 @@ function efeInitAnalyticsCharts() {
                 responsive: true,
                 maintainAspectRatio: false,
                 cutout: '68%',
+                animation: { duration: 450, easing: 'easeOutQuart' },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -317,3 +319,238 @@ function efeUpdateAnalyticsCharts(filteredProjects) {
         }).join('');
     }
 }
+
+// ─── EFE Operating Lines Analytics Charts (Servicios Actuales) ───────────────
+var efeLinesFilialChart = null;
+var efeLinesTraccionChart = null;
+
+const EFE_TRACCION_COLORS = {
+    'Eléctrica': '#0284c7', // Sky Blue
+    'Diésel': '#f59e0b',    // Amber
+    'Bimodal': '#10b981'    // Emerald
+};
+
+function efeGetTractionCategory(tractionStr) {
+    if (!tractionStr || String(tractionStr).trim() === '' || String(tractionStr).trim().toLowerCase() === 'nan') {
+        return 'Diésel';
+    }
+    const t = String(tractionStr).trim().toLowerCase();
+    if (t.includes('bimodal') || t.includes('híbrido')) {
+        return 'Bimodal';
+    }
+    if (t.includes('eléctric')) {
+        return 'Eléctrica';
+    }
+    if (t.includes('diésel') || t.includes('trocha') || t.includes('diesel')) {
+        return 'Diésel';
+    }
+    return 'Diésel';
+}
+
+function efeInitLinesAnalyticsCharts() {
+    const isLight = document.body.classList.contains('light-theme');
+    const borderColor = isLight ? '#ffffff' : '#0f1626';
+
+    // Lines Chart 1: Filial Pie Chart
+    const ctxFilial = document.getElementById('efeLinesFilialChart');
+    if (ctxFilial && !efeLinesFilialChart) {
+        efeLinesFilialChart = new Chart(ctxFilial, {
+            type: 'doughnut',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: [],
+                    borderWidth: 2,
+                    borderColor: borderColor,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '68%',
+                animation: { duration: 450, easing: 'easeOutQuart' },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        enabled: false,
+                        external: efeExternalTooltip,
+                        callbacks: {
+                            label: function (context) {
+                                const val = context.parsed || 0;
+                                return ' ' + context.label + ': ' + val + ' servicios';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Lines Chart 2: Tracción Pie Chart
+    const ctxTraccion = document.getElementById('efeLinesTraccionChart');
+    if (ctxTraccion && !efeLinesTraccionChart) {
+        efeLinesTraccionChart = new Chart(ctxTraccion, {
+            type: 'doughnut',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: [],
+                    borderWidth: 2,
+                    borderColor: borderColor,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '68%',
+                animation: { duration: 450, easing: 'easeOutQuart' },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        enabled: false,
+                        external: efeExternalTooltip,
+                        callbacks: {
+                            label: function (context) {
+                                const val = context.parsed || 0;
+                                return ' ' + context.label + ': ' + val + ' servicios';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+function efeUpdateLinesAnalyticsCharts(filteredLines) {
+    if (typeof Chart === 'undefined') return;
+
+    Chart.defaults.devicePixelRatio = Math.max(2.5, window.devicePixelRatio || 1);
+    efeInitLinesAnalyticsCharts();
+
+    const isLight = document.body.classList.contains('light-theme');
+    const borderColor = isLight ? '#ffffff' : '#0f1626';
+
+    const lines = filteredLines || (window.EFE_DATA && window.EFE_DATA.lines ? window.EFE_DATA.lines : []);
+
+    // ─── 1. Group Lines by Filial ───────────────────────────────────────────
+    const filialCounts = {
+        'EFE Central': 0,
+        'EFE Sur': 0,
+        'EFE Valparaíso': 0
+    };
+
+    lines.forEach(l => {
+        const fil = (l.filial && String(l.filial).trim() !== '' && String(l.filial).trim().toLowerCase() !== 'nan')
+            ? String(l.filial).trim()
+            : null;
+
+        if (fil && filialCounts[fil] !== undefined) {
+            filialCounts[fil]++;
+        } else if (fil) {
+            filialCounts[fil] = (filialCounts[fil] || 0) + 1;
+        }
+    });
+
+    const filialLabels = Object.keys(filialCounts).filter(k => filialCounts[k] > 0);
+    const filialData = filialLabels.map(f => filialCounts[f]);
+    const totalFilialServices = filialData.reduce((a, b) => a + b, 0) || 1;
+    const filialColors = filialLabels.map(f => EFE_FILIAL_COLORS[f] || '#64748b');
+
+    if (efeLinesFilialChart) {
+        efeLinesFilialChart.data.labels = filialLabels;
+        efeLinesFilialChart.data.datasets[0].data = filialData;
+        efeLinesFilialChart.data.datasets[0].backgroundColor = filialColors;
+        efeLinesFilialChart.data.datasets[0].borderColor = borderColor;
+        efeLinesFilialChart.options.plugins.tooltip.callbacks = {
+            label: function (ctx) {
+                const val = ctx.raw || 0;
+                const pct = ((val / totalFilialServices) * 100).toFixed(0);
+                return ` ${ctx.label}: ${val} servicio${val !== 1 ? 's' : ''} (${pct}%)`;
+            }
+        };
+        efeLinesFilialChart.update();
+    }
+
+    const legendFilialElem = document.getElementById('efeLinesFilialChartLegend');
+    if (legendFilialElem) {
+        legendFilialElem.innerHTML = filialLabels.map((lbl, idx) => {
+            const val = filialData[idx];
+            const pct = totalFilialServices > 0 ? ((val / totalFilialServices) * 100).toFixed(1).replace(/\.0$/, '') : '0';
+            const col = filialColors[idx];
+            return `
+                <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.69rem; padding:0.12rem 0; color:var(--text-primary);">
+                    <div style="display:flex; align-items:center; gap:0.35rem; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        <span style="width:7px; height:7px; border-radius:50%; background-color:${col}; flex-shrink:0;"></span>
+                        <span style="color:var(--text-primary); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${lbl}</span>
+                    </div>
+                    <span style="font-size:0.68rem; color:var(--text-secondary); font-weight:700; font-variant-numeric:tabular-nums; flex-shrink:0; margin-left:0.25rem;">
+                        ${pct}%
+                    </span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // ─── 2. Group Lines by Tracción (Eléctrica, Diésel, Bimodal) ─────────────
+    const traccionCounts = {
+        'Eléctrica': 0,
+        'Diésel': 0,
+        'Bimodal': 0
+    };
+
+    lines.forEach(l => {
+        const tr = efeGetTractionCategory(l.traction);
+        if (traccionCounts[tr] !== undefined) {
+            traccionCounts[tr]++;
+        } else {
+            traccionCounts[tr] = 1;
+        }
+    });
+
+    const traccionLabels = Object.keys(traccionCounts).filter(k => traccionCounts[k] > 0);
+    const traccionData = traccionLabels.map(k => traccionCounts[k]);
+    const totalTraccionServices = traccionData.reduce((a, b) => a + b, 0) || 1;
+    const traccionColors = traccionLabels.map(k => EFE_TRACCION_COLORS[k] || '#64748b');
+
+    if (efeLinesTraccionChart) {
+        efeLinesTraccionChart.data.labels = traccionLabels;
+        efeLinesTraccionChart.data.datasets[0].data = traccionData;
+        efeLinesTraccionChart.data.datasets[0].backgroundColor = traccionColors;
+        efeLinesTraccionChart.data.datasets[0].borderColor = borderColor;
+        efeLinesTraccionChart.options.plugins.tooltip.callbacks = {
+            label: function (ctx) {
+                const val = ctx.raw || 0;
+                const pct = ((val / totalTraccionServices) * 100).toFixed(0);
+                return ` ${ctx.label}: ${val} servicio${val !== 1 ? 's' : ''} (${pct}%)`;
+            }
+        };
+        efeLinesTraccionChart.update();
+    }
+
+    const legendTraccionElem = document.getElementById('efeLinesTraccionChartLegend');
+    if (legendTraccionElem) {
+        legendTraccionElem.innerHTML = traccionLabels.map((lbl, idx) => {
+            const val = traccionData[idx];
+            const pct = totalTraccionServices > 0 ? ((val / totalTraccionServices) * 100).toFixed(1).replace(/\.0$/, '') : '0';
+            const col = traccionColors[idx];
+            return `
+                <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.68rem; padding:0.08rem 0; color:var(--text-primary);" title="${lbl}: ${val} servicio${val !== 1 ? 's' : ''} (${pct}%)">
+                    <div style="display:flex; align-items:center; gap:0.3rem; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        <span style="width:7px; height:7px; border-radius:50%; background-color:${col}; flex-shrink:0;"></span>
+                        <span style="color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${lbl}</span>
+                    </div>
+                    <span style="font-size:0.68rem; color:var(--text-secondary); font-weight:700; font-variant-numeric:tabular-nums; flex-shrink:0; margin-left:0.25rem;">
+                        ${pct}%
+                    </span>
+                </div>
+            `;
+        }).join('');
+    }
+}
+window.efeInitLinesAnalyticsCharts = efeInitLinesAnalyticsCharts;
+window.efeUpdateLinesAnalyticsCharts = efeUpdateLinesAnalyticsCharts;

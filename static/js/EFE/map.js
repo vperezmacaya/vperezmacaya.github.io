@@ -1,6 +1,4 @@
-// ─── EFE Map Module ──────────────────────────────────────────────────────────
-
-const EFE_TRAIN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 31h8"/><path d="M4 11V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6"/><path d="M4 11h16v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/><line x1="8" y1="15" x2="8.01" y2="15"/><line x1="16" y1="15" x2="16.01" y2="15"/><path d="m9 19-3 3"/><path d="m15 19 3 3"/></svg>`;
+const EFE_TRAIN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8"/><path d="M4 11V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6"/><path d="M4 11h16v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/><line x1="8" y1="15" x2="8.01" y2="15"/><line x1="16" y1="15" x2="16.01" y2="15"/><path d="m9 19-3 3"/><path d="m15 19 3 3"/></svg>`;
 
 function efeInitLeafletMap() {
     efeMap = L.map('efe-map', {
@@ -18,13 +16,18 @@ function efeInitLeafletMap() {
         maxZoom: 20
     }).addTo(efeMap);
 
-    // Clear project selection & collapse clusters when clicking map background
+    // Clear project & line selection & collapse clusters when clicking map background
     efeMap.on('click', () => {
         efeState.selectedProjectName = null;
         efeState.hoveredProjectName = null;
+        efeState.selectedOperatingLine = null;
+        efeState.hoveredOperatingLine = null;
         efeProjectMarkers.forEach(m => {
             if (m.clusterState) m.clusterState.isClickedDeployed = false;
         });
+        if (typeof efeUpdateOperatingLinesTableSelection === 'function') {
+            efeUpdateOperatingLinesTableSelection();
+        }
         efeUpdateMapStyles();
         if (typeof efeFetchData === 'function') efeFetchData();
     });
@@ -38,13 +41,6 @@ function efeInitLeafletMap() {
     });
 
     efeLoadMapLayers();
-}
-
-function efeIsServiceLine(feature) {
-    if (!feature || !feature.properties) return false;
-    const props = feature.properties;
-    const val = props.line != null ? props.line : (props.LINE != null ? props.LINE : (props.linea != null ? props.linea : props.LINEA));
-    return val != null && String(val).trim() !== '' && String(val).trim().toLowerCase() !== 'null' && String(val).trim().toLowerCase() !== 'none';
 }
 
 function efeIsMixedProject(proj) {
@@ -74,14 +70,34 @@ function efeIsMixedProject(proj) {
 
 function efeHasValidShapeAttribute(feature) {
     if (!feature || !feature.properties) return false;
-    const isServiceLine = efeIsServiceLine(feature);
-    if (isServiceLine) return true;
     const props = feature.properties;
     const cod = props.COD != null ? String(props.COD).trim() : '';
     const hasCod = cod !== '' && cod.toLowerCase() !== 'null' && cod.toLowerCase() !== 'none';
     if (!hasCod) return false;
-    // Only include shapes that belong to at least one project in the database
-    return !!(efeShapeToProjects && efeShapeToProjects[cod] && efeShapeToProjects[cod].length > 0);
+    // Only include shapes that belong to at least one project or operating line in the database
+    const hasProj = efeShapeToProjects && efeShapeToProjects[cod] && efeShapeToProjects[cod].length > 0;
+    const hasLine = efeShapeToLines && efeShapeToLines[cod] && efeShapeToLines[cod].length > 0;
+    return !!(hasProj || hasLine);
+}
+
+function efeGetActiveProjectForShape(cod) {
+    if (!cod || !efeShowProjects) return null;
+    const sCod = String(cod).trim();
+    const activeProjects = (currentFilteredEFEProjects !== null && typeof currentFilteredEFEProjects !== 'undefined')
+        ? currentFilteredEFEProjects
+        : ((window.EFE_DATA && window.EFE_DATA.data) ? window.EFE_DATA.data : []);
+    const projNames = efeShapeToProjects[sCod] || [];
+    return activeProjects.find(p => projNames.includes(p.name)) || null;
+}
+
+function efeGetActiveLineForShape(cod) {
+    if (!cod) return null;
+    const sCod = String(cod).trim();
+    const activeLines = (currentFilteredEFELines !== null && typeof currentFilteredEFELines !== 'undefined')
+        ? currentFilteredEFELines
+        : ((window.EFE_DATA && window.EFE_DATA.lines) ? window.EFE_DATA.lines : []);
+    const lineNames = efeShapeToLines[sCod] || [];
+    return activeLines.find(l => lineNames.includes(l.service)) || null;
 }
 
 function efeLoadMapLayers() {
@@ -118,28 +134,41 @@ function efeLoadMapLayers() {
         });
     });
 
+    // Build shape→lines index from EFE_DATA.lines
+    const lines = (window.EFE_DATA && window.EFE_DATA.lines) ? window.EFE_DATA.lines : [];
+    efeShapeToLines = {};
+    lines.forEach(l => {
+        (l.shapes || []).forEach(cod => {
+            const key = String(cod);
+            if (!efeShapeToLines[key]) efeShapeToLines[key] = [];
+            efeShapeToLines[key].push(l.service);
+        });
+    });
+
     efeGeoLayer = L.geoJSON(geoData, {
         filter: function (feature) {
             if (!feature || !feature.geometry || !feature.geometry.coordinates || feature.geometry.coordinates.length === 0) {
                 return false;
             }
-            // NEVER render shapes that lack BOTH a valid COD and a valid line attribute
             return efeHasValidShapeAttribute(feature);
         },
         style: function (feature) {
             if (feature.geometry && feature.geometry.type && feature.geometry.type.toLowerCase().includes('point')) {
                 return { radius: 0, opacity: 0, fillOpacity: 0, stroke: false, fill: false };
             }
-            if (efeIsServiceLine(feature)) {
-                return { color: '#0284c7', weight: 3.0, opacity: 0.9, fillOpacity: 0 };
-            }
             const props = feature.properties || {};
             const cod = props.COD != null ? String(props.COD).trim() : '';
             const hasProject = cod && efeShapeToProjects[cod] && efeShapeToProjects[cod].length > 0;
-            if (!hasProject) {
+            const hasLine = cod && efeShapeToLines[cod] && efeShapeToLines[cod].length > 0;
+            if (!hasProject && !hasLine) {
                 return { opacity: 0, fillOpacity: 0, stroke: false, fill: false };
             }
-            return { color: '#059669', weight: 3.5, opacity: 0.85, fillOpacity: 0.2 };
+            // Prioridad Verde: Proyectos prevalece sobre Líneas Operativas
+            if (hasProject) {
+                return { color: '#059669', weight: 3.5, opacity: 0.85, fillOpacity: 0.2 };
+            }
+            // Solo Línea Operativa: Azul
+            return { color: '#0284c7', weight: 3.0, opacity: 0.90, fillOpacity: 0 };
         },
         pointToLayer: function (feature, latlng) {
             return L.circleMarker(latlng, {
@@ -154,7 +183,6 @@ function efeLoadMapLayers() {
         onEachFeature: function (feature, layer) {
             const props = feature.properties || {};
             const cod = props.COD != null ? String(props.COD).trim() : '';
-            const isServiceLine = efeIsServiceLine(feature);
 
             if (cod) {
                 if (!efeShapeGeometries[cod]) {
@@ -163,44 +191,56 @@ function efeLoadMapLayers() {
                 efeShapeGeometries[cod].push(layer);
             }
 
-            if (!cod && isServiceLine) {
-                const serviceKey = 'service_' + (props.line || props.LINE || props.linea || props.LINEA || 'line');
-                if (!efeShapeGeometries[serviceKey]) {
-                    efeShapeGeometries[serviceKey] = [];
-                }
-                efeShapeGeometries[serviceKey].push(layer);
-            }
-
             if (feature.geometry && feature.geometry.type && feature.geometry.type.toLowerCase().includes('point')) {
                 return;
             }
 
-            // Hover & Click events for line/polygon vectors
+            // Hover & Click events for line/polygon vectors (Dynamically resolving active filtered project or line)
             layer.on({
                 mouseover: function (e) {
                     L.DomEvent.stopPropagation(e);
-                    if (isServiceLine) return;
-                    const projNames = efeShapeToProjects[cod];
-                    if (projNames && projNames.length > 0) {
-                        efeState.hoveredProjectName = projNames[0];
+                    const actLine = efeGetActiveLineForShape(cod);
+                    const actProj = efeGetActiveProjectForShape(cod);
+
+                    if (efeState.tableMode === 'lines') {
+                        if (actLine) {
+                            efeState.hoveredOperatingLine = actLine.service;
+                        } else if (actProj) {
+                            efeState.hoveredProjectName = actProj.name;
+                        }
+                    } else {
+                        if (actProj) {
+                            efeState.hoveredProjectName = actProj.name;
+                        } else if (actLine) {
+                            efeState.hoveredOperatingLine = actLine.service;
+                        }
+                    }
+                    if (actLine || actProj) {
                         efeUpdateMapStyles();
                     }
                 },
                 mouseout: function (e) {
                     L.DomEvent.stopPropagation(e);
-                    if (isServiceLine) return;
+                    efeState.hoveredOperatingLine = null;
                     efeState.hoveredProjectName = null;
                     efeUpdateMapStyles();
                 },
                 click: function (e) {
                     L.DomEvent.stopPropagation(e);
-                    if (isServiceLine) return;
-                    const projNames = efeShapeToProjects[cod];
-                    if (projNames && projNames.length > 0) {
-                        const allProjects = (window.EFE_DATA && window.EFE_DATA.data) ? window.EFE_DATA.data : [];
-                        const proj = allProjects.find(p => p.name === projNames[0]);
-                        if (proj) {
-                            efeSelectProject(proj);
+                    const actLine = efeGetActiveLineForShape(cod);
+                    const actProj = efeGetActiveProjectForShape(cod);
+
+                    if (efeState.tableMode === 'lines') {
+                        if (actLine) {
+                            efeOnClickOperatingLine(actLine.service);
+                        } else if (actProj) {
+                            efeSelectProject(actProj);
+                        }
+                    } else {
+                        if (actProj) {
+                            efeSelectProject(actProj);
+                        } else if (actLine) {
+                            efeOnClickOperatingLine(actLine.service);
                         }
                     }
                 }
@@ -249,7 +289,10 @@ function efeLoadMapLayers() {
                     }
                 });
             }
-        }).addTo(efeMap);
+        });
+        if (efeShowMetroLines) {
+            efeMetroGeoLayer.addTo(efeMap);
+        }
     }
 
     // 3. Metro de Santiago Stations Layer (Puntos pequeños y sutiles)
@@ -273,31 +316,6 @@ function efeLoadMapLayers() {
                     sticky: true,
                     className: 'efe-tooltip'
                 });
-                layer.on({
-                    mouseover: function (e) {
-                        if (e.target.setRadius) e.target.setRadius(4.2);
-                        e.target.setStyle({
-                            weight: 2.0,
-                            color: '#e11d48',
-                            fillColor: '#ffffff',
-                            opacity: 1.0,
-                            fillOpacity: 1.0
-                        });
-                    },
-                    mouseout: function (e) {
-                        const isDimmed = !!efeState.selectedProjectName;
-                        const targetRadius = isDimmed ? 2.0 : 2.5;
-                        if (e.target.setRadius) e.target.setRadius(targetRadius);
-                        e.target.setStyle({
-                            radius: targetRadius,
-                            fillColor: '#ffffff',
-                            color: '#c53030',
-                            weight: isDimmed ? 0.8 : 1.2,
-                            opacity: isDimmed ? 0.35 : 0.85,
-                            fillOpacity: isDimmed ? 0.35 : 0.95
-                        });
-                    }
-                });
             }
         });
     }
@@ -317,41 +335,12 @@ function efeLoadMapLayers() {
                 });
             },
             onEachFeature: function (feature, layer) {
-                const props = feature.properties || {};
-                const name = props.name || 'Estación EFE';
-                const srvList = (props.servicios_activos && props.servicios_activos.length > 0)
-                    ? props.servicios_activos.join(' · ')
-                    : 'Servicio de Pasajeros EFE';
+                const stInfo = (typeof efeFindStation === 'function') ? efeFindStation(feature) : null;
+                const name = (stInfo && stInfo.name) || (feature.properties && feature.properties.name) || 'Estación EFE';
 
-                layer.bindTooltip(`<strong>${name}</strong><br><span style="font-size:10.5px;color:#38bdf8;">${srvList}</span>`, {
+                layer.bindTooltip(`<strong>${name}</strong><br><span style="font-size:10.5px;color:#94a3b8;">Estación</span>`, {
                     sticky: true,
                     className: 'efe-tooltip'
-                });
-
-                layer.on({
-                    mouseover: function (e) {
-                        if (e.target.setRadius) e.target.setRadius(4.2);
-                        e.target.setStyle({
-                            weight: 2.2,
-                            color: '#38bdf8',
-                            fillColor: '#ffffff',
-                            opacity: 1.0,
-                            fillOpacity: 1.0
-                        });
-                    },
-                    mouseout: function (e) {
-                        const isDimmed = !!efeState.selectedProjectName;
-                        const targetRadius = isDimmed ? 2.0 : 2.5;
-                        if (e.target.setRadius) e.target.setRadius(targetRadius);
-                        e.target.setStyle({
-                            radius: targetRadius,
-                            fillColor: '#ffffff',
-                            color: '#0284c7',
-                            weight: isDimmed ? 0.8 : 1.3,
-                            opacity: isDimmed ? 0.35 : 0.9,
-                            fillOpacity: isDimmed ? 0.35 : 0.95
-                        });
-                    }
                 });
             }
         });
@@ -378,12 +367,67 @@ function efeLoadMapLayers() {
     }, 100);
 }
 
+// ─── Normalizador de Nombres de Servicio ──────────────────────────────────────
+function efeNormalizeServiceName(str) {
+    if (!str) return '';
+    return String(str)
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[\u2013\u2014–—]/g, '-')
+        .replace(/\s+/g, ' ')
+        .toLowerCase()
+        .trim();
+}
+
 // ─── Zoom-dependent Visibility for Stations (Metro & EFE) (Zoom >= 11) ─────────
 const STATIONS_MIN_ZOOM = 11;
+let efeIsZoomTransitioning = false;
+let efeZoomTransitionTimeout = null;
+
+function efeStartZoomTransition(durationMs = 1200) {
+    efeIsZoomTransitioning = true;
+    if (efeZoomTransitionTimeout) {
+        clearTimeout(efeZoomTransitionTimeout);
+        efeZoomTransitionTimeout = null;
+    }
+
+    if (efeEstacionesGeoLayer && efeMap && efeMap.hasLayer(efeEstacionesGeoLayer)) {
+        efeMap.removeLayer(efeEstacionesGeoLayer);
+    }
+    if (efeMetroPointsLayer && efeMap && efeMap.hasLayer(efeMetroPointsLayer)) {
+        efeMap.removeLayer(efeMetroPointsLayer);
+    }
+
+    const onZoomEnd = () => {
+        if (!efeIsZoomTransitioning) return;
+        efeIsZoomTransitioning = false;
+        if (efeZoomTransitionTimeout) {
+            clearTimeout(efeZoomTransitionTimeout);
+            efeZoomTransitionTimeout = null;
+        }
+        efeUpdateStationsVisibility();
+        efeUpdateMapStyles();
+    };
+
+    if (efeMap) {
+        efeMap.once('moveend', onZoomEnd);
+    }
+    efeZoomTransitionTimeout = setTimeout(onZoomEnd, durationMs + 80);
+}
 
 function efeUpdateStationsVisibility() {
     if (!efeMap) return;
     const currentZoom = efeMap.getZoom();
+
+    // If a flyTo / flyToBounds zoom transition is currently animating, keep station layers hidden
+    if (efeIsZoomTransitioning) {
+        if (efeMetroPointsLayer && efeMap.hasLayer(efeMetroPointsLayer)) {
+            efeMap.removeLayer(efeMetroPointsLayer);
+        }
+        if (efeEstacionesGeoLayer && efeMap.hasLayer(efeEstacionesGeoLayer)) {
+            efeMap.removeLayer(efeEstacionesGeoLayer);
+        }
+        return;
+    }
 
     // Estaciones Metro de Santiago
     if (efeMetroPointsLayer) {
@@ -396,10 +440,11 @@ function efeUpdateStationsVisibility() {
         }
     }
 
-    // Estaciones de Pasajeros EFE
+    // Estaciones de Pasajeros EFE (Forzar visibilidad si hay un servicio o proyecto seleccionado)
     if (efeEstacionesGeoLayer) {
         const isShownEfe = efeMap.hasLayer(efeEstacionesGeoLayer);
-        const shouldShowEfe = efeShowEfeLines && (currentZoom >= STATIONS_MIN_ZOOM);
+        const hasActiveSelection = !!(efeState.selectedOperatingLine || efeState.selectedProjectName);
+        const shouldShowEfe = efeShowEfeLines && (hasActiveSelection || currentZoom >= STATIONS_MIN_ZOOM);
         if (shouldShowEfe) {
             if (!isShownEfe) efeMap.addLayer(efeEstacionesGeoLayer);
         } else {
@@ -449,6 +494,28 @@ function efeToggleMetroLines(visible) {
     efeUpdateMapStyles();
 }
 
+function efeToggleProjects(visible) {
+    efeShowProjects = !!visible;
+    if (!efeMap) return;
+
+    if (!efeShowProjects) {
+        // Hide project markers
+        efeProjectMarkers.forEach(m => {
+            if (m && efeMap && efeMap.hasLayer(m)) {
+                efeMap.removeLayer(m);
+            }
+        });
+        efeClearClusterDecorations();
+    } else {
+        // Re-render project markers
+        const projs = (typeof currentFilteredEFEProjects !== 'undefined' && currentFilteredEFEProjects.length > 0)
+            ? currentFilteredEFEProjects
+            : ((window.EFE_DATA && window.EFE_DATA.data) ? window.EFE_DATA.data : []);
+        efeRenderProjectMarkers(projs);
+    }
+    efeUpdateMapStyles();
+}
+
 // ─── Clear Cluster Origin Dots & Leg Lines ──────────────────────────────────
 function efeClearClusterDecorations() {
     efeClusterOriginMarkers.forEach(m => {
@@ -464,8 +531,12 @@ function efeClearClusterDecorations() {
 
 // ─── Dynamic Map Styler (Dimming, Hover, Selection, and Spiderfy Fan-out) ───
 function efeUpdateMapStyles() {
+    efeUpdateStationsVisibility();
+
     const selectedName = efeState.selectedProjectName;
     const hoveredName = efeState.hoveredProjectName;
+    const selectedLine = efeState.selectedOperatingLine;
+    const hoveredLine = efeState.hoveredOperatingLine;
 
     const allProjects = (window.EFE_DATA && window.EFE_DATA.data) ? window.EFE_DATA.data : [];
     const selectedProj = selectedName ? allProjects.find(p => p.name === selectedName) : null;
@@ -474,8 +545,39 @@ function efeUpdateMapStyles() {
     const hoveredProj = hoveredName ? allProjects.find(p => p.name === hoveredName) : null;
     const hoveredShapes = new Set(hoveredProj ? (hoveredProj.shapes || []).map(s => String(s)) : []);
 
+    const allLines = (window.EFE_DATA && window.EFE_DATA.lines) ? window.EFE_DATA.lines : [];
+    const selectedLineObj = selectedLine ? allLines.find(l => l.service === selectedLine) : null;
+    const selectedLineShapes = new Set(selectedLineObj ? (selectedLineObj.shapes || []).map(s => String(s)) : []);
+    const selectedLineColor = '#0284c7';
+
+    const hoveredLineObj = hoveredLine ? allLines.find(l => l.service === hoveredLine) : null;
+    const hoveredLineShapes = new Set(hoveredLineObj ? (hoveredLineObj.shapes || []).map(s => String(s)) : []);
+    const hoveredLineColor = '#0284c7';
+
     const isMixedSelected = selectedProj && efeIsMixedProject(selectedProj);
     const isMixedHovered = hoveredProj && efeIsMixedProject(hoveredProj);
+
+    // Active filtered projects and lines
+    const activeProjects = (currentFilteredEFEProjects !== null && typeof currentFilteredEFEProjects !== 'undefined')
+        ? currentFilteredEFEProjects
+        : allProjects;
+    const activeLines = (currentFilteredEFELines !== null && typeof currentFilteredEFELines !== 'undefined')
+        ? currentFilteredEFELines
+        : allLines;
+
+    // Active project shape CODs (respecting efeShowProjects toggle)
+    const activeFilteredProjectShapes = new Set();
+    if (efeShowProjects) {
+        activeProjects.forEach(proj => {
+            (proj.shapes || []).forEach(cod => activeFilteredProjectShapes.add(String(cod).trim()));
+        });
+    }
+
+    // Active line shape CODs
+    const activeFilteredLineShapes = new Set();
+    activeLines.forEach(l => {
+        (l.shapes || []).forEach(cod => activeFilteredLineShapes.add(String(cod).trim()));
+    });
 
     // Clear previous cluster decorations (origin dots & leg lines)
     efeClearClusterDecorations();
@@ -489,113 +591,140 @@ function efeUpdateMapStyles() {
 
             const props = feature.properties || {};
             const cod = String(props.COD != null ? props.COD : '');
-            const isServiceLine = efeIsServiceLine(feature);
-            const hasProject = cod && efeShapeToProjects[cod] && efeShapeToProjects[cod].length > 0;
+            const hasActiveProject = cod !== '' && activeFilteredProjectShapes.has(cod);
+            const hasActiveLine = cod !== '' && activeFilteredLineShapes.has(cod);
 
-            // Shapes with a COD not associated with any project must NEVER appear on the map
-            if (!hasProject && !isServiceLine) {
+            // Shapes not associated with any active filtered project or line are hidden
+            if (!hasActiveProject && !hasActiveLine) {
                 return { opacity: 0, fillOpacity: 0, stroke: false, fill: false };
             }
 
-            const isSelected = selectedName && cod && selectedShapes.has(cod);
-            const isHovered = hoveredName && cod && hoveredShapes.has(cod);
+            const isProjSelected = efeShowProjects && selectedName && cod && selectedShapes.has(cod);
+            const isProjHovered = efeShowProjects && hoveredName && cod && hoveredShapes.has(cod);
+            const isLineSelected = selectedLine && cod && selectedLineShapes.has(cod);
+            const isLineHovered = hoveredLine && cod && hoveredLineShapes.has(cod);
 
-            if (selectedName) {
-                if (isSelected) {
-                    if (isServiceLine) {
-                        return {
-                            color: '#0284c7',
-                            weight: 5.5,
-                            opacity: 1.0,
-                            fillOpacity: 0.5,
-                            fillColor: '#0284c7'
-                        };
-                    } else {
-                        return {
-                            color: '#047857',
-                            weight: 5.5,
-                            opacity: 1.0,
-                            fillOpacity: 0.5,
-                            fillColor: '#047857'
-                        };
-                    }
-                } else if (isHovered && !isMixedHovered) {
-                    if (isServiceLine) {
-                        return {
-                            color: '#0284c7',
-                            weight: 4.5,
-                            opacity: 0.9,
-                            fillOpacity: 0.35,
-                            fillColor: '#0284c7'
-                        };
-                    } else {
-                        return {
-                            color: '#059669',
-                            weight: 4.5,
-                            opacity: 0.85,
-                            fillOpacity: 0.35,
-                            fillColor: '#059669'
-                        };
-                    }
-                } else {
-                    if (isServiceLine) {
-                        return { color: '#0284c7', weight: 2.0, opacity: 0.45, fillOpacity: 0 };
-                    }
+            if (selectedLine) {
+                if (isLineSelected) {
                     return {
-                        color: '#6ee7b7',
+                        color: selectedLineColor,
+                        weight: 6.0,
+                        opacity: 1.0,
+                        fillOpacity: 0.5,
+                        fillColor: selectedLineColor
+                    };
+                } else if (isProjHovered && hasActiveProject) {
+                    return {
+                        color: '#059669',
+                        weight: 4.5,
+                        opacity: 0.90,
+                        fillOpacity: 0.35,
+                        fillColor: '#059669'
+                    };
+                } else {
+                    return {
+                        color: hasActiveProject ? '#6ee7b7' : '#94a3b8',
                         weight: 2.0,
-                        opacity: 0.45,
+                        opacity: 0.30,
+                        fillOpacity: 0.05,
+                        fillColor: hasActiveProject ? '#6ee7b7' : '#94a3b8'
+                    };
+                }
+            } else if (selectedName) {
+                if (isProjSelected) {
+                    return {
+                        color: '#047857',
+                        weight: 5.5,
+                        opacity: 1.0,
+                        fillOpacity: 0.5,
+                        fillColor: '#047857'
+                    };
+                } else if (isProjHovered && !isMixedHovered && hasActiveProject) {
+                    return {
+                        color: '#059669',
+                        weight: 4.5,
+                        opacity: 0.85,
+                        fillOpacity: 0.35,
+                        fillColor: '#059669'
+                    };
+                } else if (isLineHovered && hasActiveLine) {
+                    return {
+                        color: '#0284c7',
+                        weight: 4.5,
+                        opacity: 0.85,
+                        fillOpacity: 0.35,
+                        fillColor: '#0284c7'
+                    };
+                } else {
+                    return {
+                        color: hasActiveProject ? '#6ee7b7' : '#94a3b8',
+                        weight: 2.0,
+                        opacity: 0.30,
                         fillOpacity: 0.08,
-                        fillColor: '#6ee7b7'
+                        fillColor: hasActiveProject ? '#6ee7b7' : '#94a3b8'
                     };
                 }
             } else {
                 // No selection active
-                if (isHovered && !isMixedHovered) {
-                    if (isServiceLine) {
+                if (isLineHovered && hasActiveLine) {
+                    return {
+                        color: hoveredLineColor,
+                        weight: 5.5,
+                        opacity: 1.0,
+                        fillOpacity: 0.4,
+                        fillColor: hoveredLineColor
+                    };
+                } else if (isProjHovered && !isMixedHovered && hasActiveProject) {
+                    return {
+                        color: '#047857',
+                        weight: 5.0,
+                        opacity: 1.0,
+                        fillOpacity: 0.4,
+                        fillColor: '#047857'
+                    };
+                } else {
+                    // Default active state:
+                    // 1) Si está asociado a un proyecto activo -> VERDE (#059669)
+                    // 2) Si el proyecto fue filtrado pero el servicio sigue activo -> AZUL (#0284c7)
+                    if (hasActiveProject) {
                         return {
-                            color: '#0284c7',
-                            weight: 5.0,
-                            opacity: 1.0,
-                            fillOpacity: 0.4,
-                            fillColor: '#0284c7'
+                            color: '#059669',
+                            weight: 3.5,
+                            opacity: 0.85,
+                            fillOpacity: 0.25,
+                            fillColor: '#059669'
                         };
                     } else {
                         return {
-                            color: '#047857',
-                            weight: 5.0,
-                            opacity: 1.0,
-                            fillOpacity: 0.4,
-                            fillColor: '#047857'
+                            color: '#0284c7',
+                            weight: 3.0,
+                            opacity: 0.90,
+                            fillOpacity: 0,
+                            fillColor: '#0284c7'
                         };
                     }
-                } else {
-                    // Normal default state for all shapes
-                    if (isServiceLine) {
-                        return { color: '#0284c7', weight: 3.0, opacity: 0.9, fillOpacity: 0 };
-                    }
-
-                    return {
-                        color: '#059669',
-                        weight: 3.5,
-                        opacity: 0.85,
-                        fillOpacity: 0.25,
-                        fillColor: '#059669'
-                    };
                 }
             }
         });
 
         // Bring selected vector shapes to front layer of SVG map
-        if (selectedName && selectedShapes.size > 0) {
+        if (selectedLine && selectedLineShapes.size > 0) {
+            selectedLineShapes.forEach(cod => {
+                const sid = String(cod);
+                const layersArr = efeShapeGeometries[sid];
+                if (layersArr) {
+                    layersArr.forEach(l => {
+                        if (l.bringToFront) l.bringToFront();
+                    });
+                }
+            });
+        } else if (selectedName && selectedShapes.size > 0) {
             selectedShapes.forEach(cod => {
                 const sid = String(cod);
                 const layersArr = efeShapeGeometries[sid];
                 if (layersArr) {
                     layersArr.forEach(l => {
-                        if (l.bringToFront) {
-                            l.bringToFront();
-                        }
+                        if (l.bringToFront) l.bringToFront();
                     });
                 }
             });
@@ -605,8 +734,8 @@ function efeUpdateMapStyles() {
     // 1.5 Update Metro Lines & Stations Style & Dimming
     if (efeMetroGeoLayer) {
         efeMetroGeoLayer.setStyle(function (feature) {
-            if (selectedName) {
-                // Dimming al seleccionar cualquier icono/proyecto
+            if (selectedName || selectedLine) {
+                // Dimming al seleccionar cualquier icono/proyecto/línea
                 return {
                     color: '#c53030',
                     weight: 1.6,
@@ -628,7 +757,7 @@ function efeUpdateMapStyles() {
     }
 
     if (efeMetroPointsLayer) {
-        const isDimmed = !!selectedName;
+        const isDimmed = !!(selectedName || selectedLine);
         const targetRadius = isDimmed ? 2.0 : 2.5;
         efeMetroPointsLayer.eachLayer(layer => {
             if (layer.setRadius) layer.setRadius(targetRadius);
@@ -643,20 +772,60 @@ function efeUpdateMapStyles() {
         });
     }
 
-    // 1.6 Update EFE Passenger Stations (Dimming on project selection)
+    // 1.6 Update EFE Passenger Stations (Highlight matching line or project stations, dim others)
     if (efeEstacionesGeoLayer) {
-        const isDimmed = !!selectedName;
-        const targetRadius = isDimmed ? 2.0 : 2.5;
+        const isDimmed = !!(selectedName || selectedLine);
         efeEstacionesGeoLayer.eachLayer(layer => {
-            if (layer.setRadius) layer.setRadius(targetRadius);
-            layer.setStyle({
-                radius: targetRadius,
-                fillColor: '#ffffff',
-                color: '#0284c7',
-                weight: isDimmed ? 0.8 : 1.3,
-                opacity: isDimmed ? 0.35 : 0.9,
-                fillOpacity: isDimmed ? 0.35 : 0.95
+            const stInfo = (typeof efeFindStation === 'function') ? efeFindStation(layer.feature) : null;
+            const props = (layer.feature && layer.feature.properties) ? layer.feature.properties : {};
+            const actServs = (stInfo && stInfo.services) ? stInfo.services : (props.services || props.servicios_activos || []);
+            const projIds = (stInfo && stInfo.project_ids) ? stInfo.project_ids : (props.project_ids || []);
+
+            const normSelLine = efeNormalizeServiceName(selectedLine);
+            const isMatchLine = normSelLine && actServs.some(s => {
+                const sNorm = efeNormalizeServiceName(s);
+                return sNorm === normSelLine || sNorm.includes(normSelLine) || normSelLine.includes(sNorm);
             });
+
+            const isMatchProj = selectedProj && projIds.some(pid => {
+                const pStr = String(pid).trim();
+                return pStr === String(selectedProj.id) || (selectedProj.name && pStr === String(selectedProj.name).trim());
+            });
+
+            if (isMatchLine) {
+                if (layer.setRadius) layer.setRadius(4.5);
+                layer.setStyle({
+                    radius: 4.5,
+                    fillColor: '#ffffff',
+                    color: selectedLineColor,
+                    weight: 2.2,
+                    opacity: 1.0,
+                    fillOpacity: 1.0
+                });
+                if (layer.bringToFront) layer.bringToFront();
+            } else if (isMatchProj) {
+                if (layer.setRadius) layer.setRadius(4.5);
+                layer.setStyle({
+                    radius: 4.5,
+                    fillColor: '#ffffff',
+                    color: '#059669',
+                    weight: 2.2,
+                    opacity: 1.0,
+                    fillOpacity: 1.0
+                });
+                if (layer.bringToFront) layer.bringToFront();
+            } else {
+                const targetRadius = isDimmed ? 2.0 : 2.5;
+                if (layer.setRadius) layer.setRadius(targetRadius);
+                layer.setStyle({
+                    radius: targetRadius,
+                    fillColor: '#ffffff',
+                    color: '#0284c7',
+                    weight: isDimmed ? 0.8 : 1.3,
+                    opacity: isDimmed ? 0.30 : 0.9,
+                    fillOpacity: isDimmed ? 0.30 : 0.95
+                });
+            }
         });
     }
 
@@ -730,13 +899,41 @@ function efeUpdateMapStyles() {
         let bg = baseColor;
         let zIndex = '100';
 
-        if (selectedName) {
+        if (selectedLine) {
+            if (isHoveredMarker) {
+                // Animate hovered project marker even when an operating line is selected
+                pulse.classList.remove('active-selected');
+                pulse.classList.add('is-hovered');
+                pulse.classList.remove('dimmed');
+                bg = baseColor;
+                scaleStr = 'scale(1.25)';
+                zIndex = '9500';
+                if (marker.setZIndexOffset) marker.setZIndexOffset(9500);
+            } else if (isClusterActive) {
+                pulse.classList.remove('active-selected');
+                pulse.classList.remove('is-hovered');
+                pulse.classList.remove('dimmed');
+                bg = baseColor;
+                scaleStr = 'scale(1.0)';
+                zIndex = '9000';
+                if (marker.setZIndexOffset) marker.setZIndexOffset(9000);
+            } else {
+                // Dimming for non-hovered train icons when an operating line is selected
+                pulse.classList.remove('active-selected');
+                pulse.classList.remove('is-hovered');
+                pulse.classList.add('dimmed');
+                bg = baseColor;
+                scaleStr = 'scale(0.85)';
+                zIndex = '1';
+                if (marker.setZIndexOffset) marker.setZIndexOffset(-1000);
+            }
+        } else if (selectedName) {
             if (isSelectedMarker) {
                 // Selected train icon marker - Bring to absolute front of all map marker layers
                 pulse.classList.add('active-selected');
                 pulse.classList.remove('is-hovered');
                 pulse.classList.remove('dimmed');
-                bg = '#0284c7';
+                bg = '#047857';
                 scaleStr = 'scale(1.35)';
                 zIndex = '10000';
                 if (marker.setZIndexOffset) marker.setZIndexOffset(10000);
@@ -744,7 +941,7 @@ function efeUpdateMapStyles() {
                 pulse.classList.remove('active-selected');
                 pulse.classList.add('is-hovered');
                 pulse.classList.remove('dimmed');
-                bg = '#2563eb';
+                bg = baseColor;
                 scaleStr = 'scale(1.25)';
                 zIndex = '9500';
                 if (marker.setZIndexOffset) marker.setZIndexOffset(9500);
@@ -773,7 +970,7 @@ function efeUpdateMapStyles() {
                 pulse.classList.remove('active-selected');
                 pulse.classList.add('is-hovered');
                 pulse.classList.remove('dimmed');
-                bg = '#2563eb';
+                bg = baseColor;
                 scaleStr = 'scale(1.25)';
                 zIndex = '9500';
                 if (marker.setZIndexOffset) marker.setZIndexOffset(9500);
@@ -809,7 +1006,7 @@ function efeUpdateMapStyles() {
 
         const badge = pulse.querySelector('.marker-cluster-badge');
         if (badge) {
-            if (selectedName || isClusterActive) {
+            if (selectedName || selectedLine || isClusterActive) {
                 badge.style.display = 'none';
             } else {
                 badge.style.display = 'flex';
@@ -835,7 +1032,16 @@ function efeSelectProject(proj) {
         efeState.selectedProjectName = null;
     } else {
         efeState.selectedProjectName = proj.name;
+        efeState.selectedOperatingLine = null;
+        efeState.hoveredOperatingLine = null;
+        // Si el usuario está en la vista de líneas actuales, alternar a la vista proyectos
+        if (efeState.tableMode !== 'projects' && typeof setEfeTableMode === 'function') {
+            setEfeTableMode('projects');
+        }
         efeZoomToProject(proj);
+    }
+    if (typeof efeUpdateOperatingLinesTableSelection === 'function') {
+        efeUpdateOperatingLinesTableSelection();
     }
     efeUpdateMapStyles();
     if (typeof efeFetchData === 'function') {
@@ -904,6 +1110,8 @@ function efeRenderProjectMarkers(mapProjects) {
         if (m && efeMap) efeMap.removeLayer(m);
     });
     efeProjectMarkers = [];
+
+    if (!efeShowProjects) return;
 
     if (!mapProjects || mapProjects.length === 0) return;
 
@@ -1034,12 +1242,8 @@ function efeRenderProjectMarkers(mapProjects) {
 
 function efeCreateTrainMarker(proj, latLng, isMiniDot = false, clusterCount = 1) {
     const badgeHtml = clusterCount > 1 ? `<span class="marker-cluster-badge">${clusterCount}</span>` : '';
-    const typeSvg = (typeof efeGetProjectTypeSvg === 'function')
-        ? efeGetProjectTypeSvg(proj.type, 13, 13, '#ffffff')
-        : EFE_TRAIN_SVG;
-    const typeColor = (typeof EFE_TIPO_COLORS !== 'undefined' && EFE_TIPO_COLORS[proj.type])
-        ? EFE_TIPO_COLORS[proj.type]
-        : '#2563eb';
+    const typeSvg = EFE_TRAIN_SVG;
+    const typeColor = '#059669';
 
     let iconHtml = '';
     if (isMiniDot) {
@@ -1084,16 +1288,6 @@ function efeGetProjectsExtentBounds() {
         }
     });
 
-    // Also extend bounds by any active service line layers
-    if (efeGeoLayer) {
-        efeGeoLayer.eachLayer(l => {
-            if (l.feature && efeIsServiceLine(l.feature)) {
-                if (l.getBounds) bounds.extend(l.getBounds());
-                else if (l.getLatLng) bounds.extend(l.getLatLng());
-            }
-        });
-    }
-
     return bounds;
 }
 
@@ -1103,6 +1297,7 @@ function efeApplyDefaultMapView(animate = false) {
     const extentBounds = efeGetProjectsExtentBounds();
     if (extentBounds && extentBounds.isValid()) {
         if (animate && efeMap.flyToBounds) {
+            efeStartZoomTransition(1200);
             efeMap.flyToBounds(extentBounds, {
                 animate: true,
                 duration: 1.2,
@@ -1154,6 +1349,7 @@ function efeZoomToProject(proj) {
         });
 
         if (combinedBounds.isValid()) {
+            efeStartZoomTransition(1200);
             efeMap.flyToBounds(combinedBounds, {
                 animate: true,
                 duration: 1.2,
@@ -1166,6 +1362,7 @@ function efeZoomToProject(proj) {
 
     const midpoint = efeGetLineMidpoint(matchedLayers);
     if (midpoint) {
+        efeStartZoomTransition(1200);
         efeMap.flyTo(midpoint, 10, { animate: true, duration: 1.2 });
     } else {
         efeApplyDefaultMapView(true);
@@ -1175,9 +1372,14 @@ function efeZoomToProject(proj) {
 function efeResetMap() {
     efeState.selectedProjectName = null;
     efeState.hoveredProjectName = null;
+    efeState.selectedOperatingLine = null;
+    efeState.hoveredOperatingLine = null;
     efeProjectMarkers.forEach(m => {
         if (m.clusterState) m.clusterState.isClickedDeployed = false;
     });
+    if (typeof efeUpdateOperatingLinesTableSelection === 'function') {
+        efeUpdateOperatingLinesTableSelection();
+    }
     efeUpdateMapStyles();
     if (typeof efeShowTableListView === 'function') {
         efeShowTableListView();
@@ -1187,6 +1389,88 @@ function efeResetMap() {
     }
     efeApplyDefaultMapView(true);
 }
+
+// ─── Operating Lines (Servicios Actuales) Map Interaction ──────────────────
+function efeSelectOperatingLine(lineName) {
+    if (!lineName) {
+        efeState.selectedOperatingLine = null;
+    } else {
+        efeState.selectedOperatingLine = lineName;
+        efeState.selectedProjectName = null;
+        efeZoomToOperatingLine(lineName);
+    }
+    if (typeof efeUpdateOperatingLinesTableSelection === 'function') {
+        efeUpdateOperatingLinesTableSelection();
+    }
+    efeUpdateMapStyles();
+}
+window.efeSelectOperatingLine = efeSelectOperatingLine;
+
+function efeOnClickOperatingLine(lineName) {
+    if (!lineName) return;
+    if (efeState.tableMode !== 'lines' && typeof setEfeTableMode === 'function') {
+        setEfeTableMode('lines');
+    }
+    if (efeState.selectedOperatingLine === lineName) {
+        efeState.selectedOperatingLine = null;
+        if (typeof efeApplyDefaultMapView === 'function') efeApplyDefaultMapView(true);
+    } else {
+        efeState.selectedOperatingLine = lineName;
+        efeState.selectedProjectName = null;
+        efeZoomToOperatingLine(lineName);
+    }
+    if (typeof efeUpdateOperatingLinesTableSelection === 'function') {
+        efeUpdateOperatingLinesTableSelection();
+    }
+    efeUpdateMapStyles();
+}
+window.efeOnClickOperatingLine = efeOnClickOperatingLine;
+
+function efeOnHoverOperatingLine(lineName, isHover) {
+    if (efeState.selectedProjectName || efeState.selectedOperatingLine) return;
+    efeState.hoveredOperatingLine = isHover ? lineName : null;
+    efeUpdateMapStyles();
+}
+window.efeOnHoverOperatingLine = efeOnHoverOperatingLine;
+
+function efeZoomToOperatingLine(lineName) {
+    if (!efeMap || !lineName) return;
+    const lines = (window.EFE_DATA && window.EFE_DATA.lines) ? window.EFE_DATA.lines : [];
+    const lineObj = lines.find(l => l.service === lineName);
+    if (!lineObj || !lineObj.shapes || lineObj.shapes.length === 0) {
+        efeApplyDefaultMapView(true);
+        return;
+    }
+
+    let matchedLayers = [];
+    lineObj.shapes.forEach(shapeId => {
+        const sid = String(shapeId).trim();
+        const layersForShape = efeShapeGeometries[sid];
+        if (layersForShape) matchedLayers.push(...layersForShape);
+    });
+
+    if (matchedLayers.length > 0) {
+        let combinedBounds = L.latLngBounds();
+        matchedLayers.forEach(l => {
+            if (l.getBounds) combinedBounds.extend(l.getBounds());
+            else if (l.getLatLng) combinedBounds.extend(l.getLatLng());
+        });
+
+        if (combinedBounds.isValid()) {
+            efeStartZoomTransition(1200);
+            efeMap.flyToBounds(combinedBounds, {
+                animate: true,
+                duration: 1.2,
+                padding: [60, 60],
+                maxZoom: 12
+            });
+            return;
+        }
+    }
+
+    efeApplyDefaultMapView(true);
+}
+window.efeZoomToOperatingLine = efeZoomToOperatingLine;
 
 function efeHighlightProjectShapes(shapes) {
     if (!shapes || shapes.length === 0) {
@@ -1228,12 +1512,13 @@ function efeAddMapLegend() {
                 <span class="efe-legend-color-line" style="background-color: #c53030;"></span>
                 <span>Líneas Metro de Santiago</span>
             </label>
-            <div class="efe-legend-item">
+            <label class="efe-legend-item efe-legend-toggleable" for="efe-toggle-projects" title="Activar/desactivar proyectos (íconos y trazados)">
+                <input type="checkbox" id="efe-toggle-projects" class="efe-legend-checkbox" ${efeShowProjects ? 'checked' : ''}>
                 <span class="efe-legend-icon-badge">
                     ${EFE_TRAIN_SVG}
                 </span>
                 <span>Proyectos</span>
-            </div>
+            </label>
         `;
 
         // Prevent map click or scroll propagation when clicking inside the legend
@@ -1251,6 +1536,13 @@ function efeAddMapLegend() {
         if (chkMetro) {
             chkMetro.addEventListener('change', (e) => {
                 efeToggleMetroLines(e.target.checked);
+            });
+        }
+
+        const chkProjects = div.querySelector('#efe-toggle-projects');
+        if (chkProjects) {
+            chkProjects.addEventListener('change', (e) => {
+                efeToggleProjects(e.target.checked);
             });
         }
 

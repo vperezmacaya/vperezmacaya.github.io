@@ -22,6 +22,10 @@
 /* Hitbox bridge: invisible safety zone connecting parent item and flyout submenu */
 
 /* ─── Subheader Rapid View Switcher Bar ──────────────────────────────────── */
+.view-subheader.efe-tabs.four-tabs,
+.view-subheader.four-tabs {
+    grid-template-columns: repeat(4, 1fr);
+}
 .view-subheader.efe-tabs,
 .view-subheader.three-tabs {
     grid-template-columns: repeat(3, 1fr);
@@ -451,11 +455,12 @@ body.light-theme .efe-legend-item {
     opacity: 0.25;
     filter: grayscale(80%);
 }
-.efe-legend-checkbox:not(:checked) ~ .efe-legend-proj-icons {
+.efe-legend-checkbox:not(:checked) ~ .efe-legend-proj-icons,
+.efe-legend-checkbox:not(:checked) ~ .efe-legend-icon-badge {
     opacity: 0.35;
     filter: grayscale(70%);
 }
-.efe-legend-checkbox:not(:checked) ~ span:not(.efe-legend-color-line) {
+.efe-legend-checkbox:not(:checked) ~ span:not(.efe-legend-color-line):not(.efe-legend-icon-badge) {
     color: var(--text-muted);
     opacity: 0.65;
 }
@@ -516,10 +521,11 @@ body.light-theme .efe-map-legend {
     padding: 0.15rem 0.55rem;
 }
 
-/* ─── Leaflet Map Tooltips (Estándar Oficial EFE) ────────────────────────── */
+/* ─── Leaflet Map Tooltips (Estándar Oficial EFE / CATLEC) ─────────────────── */
 .catlec-map-tooltip,
 .efe-map-tooltip,
-.efe-tooltip {
+.efe-tooltip,
+.sectra-map-tooltip {
     background: #1e293b !important;
     border: 1px solid rgba(59, 130, 246, 0.3) !important;
     color: #ffffff !important;
@@ -527,14 +533,50 @@ body.light-theme .efe-map-legend {
     font-size: 0.72rem !important;
     line-height: 1.35 !important;
     border-radius: 6px !important;
-    padding: 0.3rem 0.55rem !important;
+    padding: 0.35rem 0.6rem !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
     pointer-events: none !important;
-    white-space: nowrap;
+    width: max-content !important;
+    min-width: 120px !important;
+    max-width: 260px !important;
+    white-space: normal !important;
+    overflow-wrap: break-word !important;
 }
+
+.catlec-map-tooltip br,
+.efe-map-tooltip br,
+.efe-tooltip br,
+.sectra-map-tooltip br {
+    display: none !important;
+}
+
+.catlec-map-tooltip strong,
+.efe-map-tooltip strong,
+.efe-tooltip strong,
+.sectra-map-tooltip strong {
+    display: block !important;
+    white-space: normal !important;
+    overflow-wrap: break-word !important;
+    font-size: 0.76rem !important;
+    line-height: 1.25 !important;
+    margin: 0 0 2px 0 !important;
+}
+
+.catlec-map-tooltip span,
+.efe-map-tooltip span,
+.efe-tooltip span,
+.sectra-map-tooltip span {
+    display: block !important;
+    white-space: normal !important;
+    overflow-wrap: break-word !important;
+    line-height: 1.25 !important;
+    margin: 0 !important;
+}
+
 body.light-theme .catlec-map-tooltip,
 body.light-theme .efe-map-tooltip,
-body.light-theme .efe-tooltip {
+body.light-theme .efe-tooltip,
+body.light-theme .sectra-map-tooltip {
     background: #1e293b !important;
     border: 1px solid rgba(59, 130, 246, 0.3) !important;
     color: #ffffff !important;
@@ -794,7 +836,7 @@ body.light-theme .btn-paged {
     justify-content: center;
     background-color: #059669;
     border: 2px solid #ffffff;
-    box-shadow: 0 4px 10px rgba(5, 150, 105, 0.35);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
     cursor: pointer;
     transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
 }
@@ -841,14 +883,14 @@ body.light-theme .btn-paged {
 .centroid-marker-pulse:hover,
 .centroid-marker-pulse.is-hovered {
     transform: scale(1.25);
-    box-shadow: 0 6px 16px rgba(5, 150, 105, 0.5);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
     background-color: #047857;
     z-index: 1000 !important;
 }
 .centroid-marker-pulse.active-selected {
     transform: scale(1.35);
     background-color: #047857;
-    box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.35), 0 8px 20px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.4), 0 8px 20px rgba(0, 0, 0, 0.5);
     z-index: 10000 !important;
 }
 .centroid-marker-pulse.dimmed {

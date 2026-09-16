@@ -1197,7 +1197,7 @@ body.light-theme .data-table th {
 
 .data-table tbody tr.row-main {
     cursor: pointer;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    transition: background-color 0.2s ease, color 0.15s ease, box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .data-table tbody tr.row-main:hover,
@@ -1956,7 +1956,46 @@ body.light-theme .leaflet-bar a {
     }
 }
 
-/* Concession Tooltip Styling */
+/* Concession & CATLEC Tooltip Styling */
+.catlec-map-tooltip {
+    background: #1e293b !important;
+    border: 1px solid rgba(59, 130, 246, 0.3) !important;
+    color: #ffffff !important;
+    font-family: var(--font-sans, system-ui, -apple-system, sans-serif) !important;
+    font-size: 0.72rem !important;
+    line-height: 1.35 !important;
+    border-radius: 6px !important;
+    padding: 0.35rem 0.6rem !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    pointer-events: none !important;
+    width: max-content !important;
+    min-width: 120px !important;
+    max-width: 260px !important;
+    white-space: normal !important;
+    overflow-wrap: break-word !important;
+}
+
+.catlec-map-tooltip br {
+    display: none !important;
+}
+
+.catlec-map-tooltip strong {
+    display: block !important;
+    white-space: normal !important;
+    overflow-wrap: break-word !important;
+    font-size: 0.76rem !important;
+    line-height: 1.25 !important;
+    margin: 0 0 2px 0 !important;
+}
+
+.catlec-map-tooltip span {
+    display: block !important;
+    white-space: normal !important;
+    overflow-wrap: break-word !important;
+    line-height: 1.25 !important;
+    margin: 0 !important;
+}
+
 .concession-tooltip {
     background-color: var(--bg-card) !important;
     color: var(--text-primary) !important;
@@ -1968,7 +2007,9 @@ body.light-theme .leaflet-bar a {
     border-radius: var(--radius-sm) !important;
     padding: 0.35rem 0.6rem !important;
     opacity: 0.95 !important;
-    white-space: nowrap;
+    max-width: 250px !important;
+    white-space: normal !important;
+    word-break: break-word !important;
     transition: none !important;
     animation: none !important;
 }

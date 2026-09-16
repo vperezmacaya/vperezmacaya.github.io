@@ -347,7 +347,7 @@ print(f"\nProcesando EFE desde: {EFE_EXCEL_PATH}...")
 
 try:
     efe_excel_file = pd.ExcelFile(EFE_EXCEL_PATH)
-    sheet_to_use = 'Proyectos Deduplicados' if 'Proyectos Deduplicados' in efe_excel_file.sheet_names else 'EFE'
+    sheet_to_use = 'Proyectos' if 'Proyectos' in efe_excel_file.sheet_names else ('Proyectos Deduplicados' if 'Proyectos Deduplicados' in efe_excel_file.sheet_names else 'EFE')
     df_efe = pd.read_excel(EFE_EXCEL_PATH, sheet_name=sheet_to_use)
     print(f"  -> {len(df_efe)} filas cargadas en hoja '{sheet_to_use}'")
     print(f"  -> Columnas: {list(df_efe.columns)}")
@@ -558,7 +558,134 @@ try:
     # Sort by investment descending (None last)
     efe_projects.sort(key=lambda p: p.get('investment_mm_usd') or 0, reverse=True)
 
-    efe_payload = {'data': efe_projects}
+    # ── Cargar Hoja: Estaciones (Estaciones de Pasajeros EFE) ──
+    efe_stations = []
+    try:
+        df_est = None
+        for h in [2, 1, 0]:
+            try:
+                temp_df = pd.read_excel(EFE_EXCEL_PATH, sheet_name='Estaciones', header=h)
+                cols_str = ' '.join([str(c).lower() for c in temp_df.columns])
+                if 'estaci' in cols_str or 'id' in cols_str:
+                    df_est = temp_df
+                    break
+            except Exception:
+                pass
+
+        if df_est is not None:
+            col_id = next((c for c in df_est.columns if 'id' in str(c).lower()), 'ID Estación')
+            col_name = next((c for c in df_est.columns if 'nombre' in str(c).lower()), 'Nombre Estación')
+            col_serv = next((c for c in df_est.columns if 'servicio' in str(c).lower()), 'Servicio')
+            col_proj = next((c for c in df_est.columns if 'proyecto' in str(c).lower()), 'ID Proyecto')
+
+            for _, r in df_est.iterrows():
+                st_id = str(r.get(col_id) or '').strip()
+                st_name = str(r.get(col_name) or '').strip()
+                if not st_id or st_id.lower() == 'nan' or 'id estaci' in st_id.lower():
+                    continue
+
+                srv_raw = r.get(col_serv)
+                srv_list = []
+                if pd.notna(srv_raw) and str(srv_raw).strip() and str(srv_raw).lower() != 'nan':
+                    srv_list = [s.strip().replace('\u2013', '-').replace('\u2014', '-') for s in re.split(r'[,;/·\n]', str(srv_raw)) if s.strip()]
+
+                proj_raw = r.get(col_proj)
+                proj_list = []
+                if pd.notna(proj_raw) and str(proj_raw).strip() and str(proj_raw).lower() != 'nan':
+                    proj_list = [str(p).strip() for p in re.split(r'[,;/\n]', str(proj_raw)) if str(p).strip()]
+
+                efe_stations.append({
+                    'id': st_id,
+                    'name': st_name,
+                    'services': srv_list,
+                    'project_ids': proj_list
+                })
+            print(f"  -> {len(efe_stations)} estaciones de pasajeros cargadas desde 'Estaciones'")
+    except Exception as e_est:
+        print(f"  AVISO: No se pudo cargar hoja 'Estaciones' de EFE: {e_est}")
+
+    def efe_norm_service_key(s):
+        if not s: return ''
+        s_clean = str(s).lower().replace('\u2013', '-').replace('\u2014', '-')
+        s_clean = ''.join(c for c in unicodedata.normalize('NFD', s_clean) if unicodedata.category(c) != 'Mn')
+        return re.sub(r'[^a-z0-9]', '', s_clean)
+
+    def count_service_stations(serv_name):
+        if not serv_name: return 0
+        norm_target = efe_norm_service_key(serv_name)
+        count = 0
+        for st in efe_stations:
+            for s in st.get('services', []):
+                norm_st = efe_norm_service_key(s)
+                if norm_target == norm_st or norm_target in norm_st or norm_st in norm_target:
+                    count += 1
+                    break
+        return count
+
+    # ── Cargar Hoja: Líneas Operativas (Servicios Regulares de Pasajeros Memoria 2025) ──
+    efe_lines = []
+    try:
+        df_lines = pd.read_excel(EFE_EXCEL_PATH, sheet_name='Líneas Operativas', header=2)
+        for _, r in df_lines.iterrows():
+            serv_name = str(r.get('Servicio', '')).strip()
+            if not serv_name or serv_name == 'nan':
+                continue
+
+            pax_val = r.get('Pasajeros 2025 (MM)')
+            try:
+                pax_2025 = float(pax_val) if pd.notna(pax_val) else None
+            except Exception:
+                pax_2025 = None
+
+            sat_val = r.get('Satisfacción 2025 (%)')
+            try:
+                sat_2025 = float(sat_val) if pd.notna(sat_val) else None
+            except Exception:
+                sat_2025 = None
+
+            km_val = r.get('Longitud (km)')
+            try:
+                km = float(km_val) if pd.notna(km_val) else 0.0
+            except Exception:
+                km = 0.0
+
+            # Conteo dinámico según las asignaciones reales de la hoja Estaciones
+            dynamic_est = count_service_stations(serv_name)
+            if dynamic_est > 0:
+                est = dynamic_est
+            else:
+                est_val = r.get('Estaciones')
+                try:
+                    est = int(est_val) if pd.notna(est_val) else 0
+                except Exception:
+                    est = 0
+
+            efe_lines.append({
+                'service': serv_name,
+                'filial': sanitize_value(r.get('Filial')),
+                'operational_classification': sanitize_value(r.get('Clasificación Operacional')),
+                'terminals': sanitize_value(r.get('Cabeceras / Trazado')),
+                'length_km': km,
+                'stations': est,
+                'passengers_2025_mm': pax_2025,
+                'satisfaction_2025_pct': sat_2025,
+                'travel_time_avg_min': int(r.get('Tiempo Promedio Viaje (min)')) if pd.notna(r.get('Tiempo Promedio Viaje (min)')) else None,
+                'travel_time_total_min': int(r.get('Tiempo Total Trayecto (min)')) if pd.notna(r.get('Tiempo Total Trayecto (min)')) else None,
+                'rolling_stock': sanitize_value(r.get('Material Rodante')),
+                'traction': sanitize_value(r.get('Tracción / Alimentación')),
+                'regions': sanitize_value(r.get('Regiones Conectadas')),
+                'shapes': parse_shapes_list(r.get('Shapes')),
+                'source': sanitize_value(r.get('Fuente Memoria 2025'))
+            })
+        print(f"  -> {len(efe_lines)} servicios regulares de pasajeros cargados desde 'Líneas Operativas' (conteo dinámico de estaciones)")
+    except Exception as e_l:
+        print(f"  AVISO: No se pudo cargar hoja 'Líneas Operativas' de EFE: {e_l}")
+
+    efe_payload = {
+        'data': efe_projects,
+        'lines': efe_lines,
+        'stations': efe_stations
+    }
     out_efe_js = os.path.join(OUT_DIR, 'efe_data.js')
     efe_json_str = json.dumps(efe_payload, ensure_ascii=False, indent=None, separators=(',', ':'))
     with open(out_efe_js, 'w', encoding='utf-8') as f:
@@ -567,6 +694,8 @@ try:
     size_efe_mb = os.path.getsize(out_efe_js) / 1024 / 1024
     print(f"OK EFE Generado: {out_efe_js} ({size_efe_mb:.3f} MB)")
     print(f"   Proyectos EFE exportados: {len(efe_projects)} (deduplicados de {len(df_efe)} registros)")
+    print(f"   Servicios regulares de pasajeros exportados: {len(efe_lines)}")
+    print(f"   Estaciones de pasajeros exportadas: {len(efe_stations)}")
 
 except Exception as e:
     print(f"[WARN] Error al exportar datos EFE: {e}")
