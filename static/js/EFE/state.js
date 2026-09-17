@@ -10,6 +10,8 @@ var efeState = {
     hoveredProjectName: null,
     selectedOperatingLine: null,
     hoveredOperatingLine: null,
+    savedMapCenter: null,
+    savedMapZoom: null,
     sortBy: 'investment_mm_usd',
     sortOrder: 'desc',
     page: 1,

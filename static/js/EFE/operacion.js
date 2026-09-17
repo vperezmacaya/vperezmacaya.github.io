@@ -104,11 +104,15 @@ function efeOperacionExternalTooltip(context) {
 
 // ── Control de Vistas ────────────────────────────────────────────────────────
 function showEfeOperacionView() {
+    if (typeof efeMap !== 'undefined' && efeMap && efeMap.getCenter) {
+        efeState.savedMapCenter = efeMap.getCenter();
+        efeState.savedMapZoom = efeMap.getZoom();
+    }
     if (efeState.timelineOpen && typeof hideEfeTimelineView === 'function') {
-        hideEfeTimelineView();
+        hideEfeTimelineView(true);
     }
     if (efeState.investmentOpen && typeof hideEfeInvestmentView === 'function') {
-        hideEfeInvestmentView();
+        hideEfeInvestmentView(true);
     }
     efeState.operacionOpen = true;
 
@@ -144,7 +148,7 @@ function showEfeOperacionView() {
     renderEfeOperacionView(currentLines);
 }
 
-function hideEfeOperacionView() {
+function hideEfeOperacionView(skipRestoreCenter) {
     efeState.operacionOpen = false;
 
     const grid = document.querySelector('.efe-dashboard-grid');
@@ -169,6 +173,21 @@ function hideEfeOperacionView() {
 
     if (window.location.hash === '#operacion') {
         history.replaceState(null, null, window.location.pathname + window.location.search);
+    }
+
+    if (typeof efeMap !== 'undefined' && efeMap) {
+        efeMap.invalidateSize({ animate: false });
+        if (!skipRestoreCenter && efeState.savedMapCenter) {
+            efeMap.setView(efeState.savedMapCenter, efeState.savedMapZoom || 5, { animate: false });
+        }
+        setTimeout(() => {
+            if (typeof efeMap !== 'undefined' && efeMap) {
+                efeMap.invalidateSize({ animate: false });
+                if (!skipRestoreCenter && efeState.savedMapCenter) {
+                    efeMap.setView(efeState.savedMapCenter, efeState.savedMapZoom || 5, { animate: false });
+                }
+            }
+        }, 50);
     }
 }
 

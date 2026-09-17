@@ -211,11 +211,15 @@ function efeGetNumericYear(val) {
 
 
 function showEfeTimelineView() {
+    if (typeof efeMap !== 'undefined' && efeMap && efeMap.getCenter) {
+        efeState.savedMapCenter = efeMap.getCenter();
+        efeState.savedMapZoom = efeMap.getZoom();
+    }
     if (efeState.investmentOpen && typeof hideEfeInvestmentView === 'function') {
-        hideEfeInvestmentView();
+        hideEfeInvestmentView(true);
     }
     if (efeState.operacionOpen && typeof hideEfeOperacionView === 'function') {
-        hideEfeOperacionView();
+        hideEfeOperacionView(true);
     }
     efeState.timelineOpen = true;
 
@@ -251,7 +255,7 @@ function showEfeTimelineView() {
     renderEfeTimeline(currentList);
 }
 
-function hideEfeTimelineView() {
+function hideEfeTimelineView(skipRestoreCenter) {
     efeState.timelineOpen = false;
 
     const grid = document.querySelector('.efe-dashboard-grid');
@@ -274,10 +278,16 @@ function hideEfeTimelineView() {
     }
 
     if (typeof efeMap !== 'undefined' && efeMap) {
+        efeMap.invalidateSize({ animate: false });
+        if (!skipRestoreCenter && efeState.savedMapCenter) {
+            efeMap.setView(efeState.savedMapCenter, efeState.savedMapZoom || 5, { animate: false });
+        }
         setTimeout(() => {
-            efeMap.invalidateSize({ animate: false });
-            if (!efeState.selectedProjectName && typeof efeApplyDefaultMapView === 'function') {
-                efeApplyDefaultMapView(false);
+            if (typeof efeMap !== 'undefined' && efeMap) {
+                efeMap.invalidateSize({ animate: false });
+                if (!skipRestoreCenter && efeState.savedMapCenter) {
+                    efeMap.setView(efeState.savedMapCenter, efeState.savedMapZoom || 5, { animate: false });
+                }
             }
         }, 50);
     }
@@ -486,9 +496,11 @@ function renderEfeTimeline(projects, highlightName = null) {
 
         // Click to view project details
         txt.addEventListener('click', () => {
-            hideEfeTimelineView();
+            hideEfeTimelineView(true);
             if (typeof efeSelectProject === 'function') {
-                efeSelectProject(p);
+                setTimeout(() => {
+                    efeSelectProject(p);
+                }, 50);
             }
         });
 
@@ -653,8 +665,12 @@ function renderEfeTimeline(projects, highlightName = null) {
             rect.addEventListener('click', (e) => {
                 e.stopPropagation();
                 hideEfeTimelineTooltip();
-                hideEfeTimelineView();
-                if (typeof efeSelectProject === 'function') efeSelectProject(p);
+                hideEfeTimelineView(true);
+                if (typeof efeSelectProject === 'function') {
+                    setTimeout(() => {
+                        efeSelectProject(p);
+                    }, 50);
+                }
             });
 
             barsSvg.appendChild(rect);
@@ -700,8 +716,12 @@ function renderEfeTimeline(projects, highlightName = null) {
                 milestone.addEventListener('click', (e) => {
                     e.stopPropagation();
                     hideEfeTimelineTooltip();
-                    hideEfeTimelineView();
-                    if (typeof efeSelectProject === 'function') efeSelectProject(p);
+                    hideEfeTimelineView(true);
+                    if (typeof efeSelectProject === 'function') {
+                        setTimeout(() => {
+                            efeSelectProject(p);
+                        }, 50);
+                    }
                 });
                 barsSvg.appendChild(milestone);
 
@@ -774,8 +794,12 @@ function renderEfeTimeline(projects, highlightName = null) {
                 rangeG.addEventListener('click', (e) => {
                     e.stopPropagation();
                     hideEfeTimelineTooltip();
-                    hideEfeTimelineView();
-                    if (typeof efeSelectProject === 'function') efeSelectProject(p);
+                    hideEfeTimelineView(true);
+                    if (typeof efeSelectProject === 'function') {
+                        setTimeout(() => {
+                            efeSelectProject(p);
+                        }, 50);
+                    }
                 });
                 barsSvg.appendChild(rangeG);
 
@@ -849,8 +873,12 @@ function renderEfeTimeline(projects, highlightName = null) {
                 openG.addEventListener('click', (e) => {
                     e.stopPropagation();
                     hideEfeTimelineTooltip();
-                    hideEfeTimelineView();
-                    if (typeof efeSelectProject === 'function') efeSelectProject(p);
+                    hideEfeTimelineView(true);
+                    if (typeof efeSelectProject === 'function') {
+                        setTimeout(() => {
+                            efeSelectProject(p);
+                        }, 50);
+                    }
                 });
                 barsSvg.appendChild(openG);
             }
@@ -885,8 +913,12 @@ function renderEfeTimeline(projects, highlightName = null) {
             rect.addEventListener('click', (e) => {
                 e.stopPropagation();
                 hideEfeTimelineTooltip();
-                hideEfeTimelineView();
-                if (typeof efeSelectProject === 'function') efeSelectProject(p);
+                hideEfeTimelineView(true);
+                if (typeof efeSelectProject === 'function') {
+                    setTimeout(() => {
+                        efeSelectProject(p);
+                    }, 50);
+                }
             });
 
             barsSvg.appendChild(rect);
@@ -941,8 +973,12 @@ function renderEfeTimeline(projects, highlightName = null) {
             rect.addEventListener('click', (e) => {
                 e.stopPropagation();
                 hideEfeTimelineTooltip();
-                hideEfeTimelineView();
-                if (typeof efeSelectProject === 'function') efeSelectProject(p);
+                hideEfeTimelineView(true);
+                if (typeof efeSelectProject === 'function') {
+                    setTimeout(() => {
+                        efeSelectProject(p);
+                    }, 50);
+                }
             });
 
             barsSvg.appendChild(rect);

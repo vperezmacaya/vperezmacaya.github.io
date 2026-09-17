@@ -1296,21 +1296,11 @@ function efeApplyDefaultMapView(animate = false) {
     if (!efeMap) return;
     const extentBounds = efeGetProjectsExtentBounds();
     if (extentBounds && extentBounds.isValid()) {
-        if (animate && efeMap.flyToBounds) {
-            efeStartZoomTransition(1200);
-            efeMap.flyToBounds(extentBounds, {
-                animate: true,
-                duration: 1.2,
-                padding: [40, 40],
-                maxZoom: 10
-            });
-        } else {
-            efeMap.fitBounds(extentBounds, {
-                padding: [40, 40],
-                maxZoom: 10,
-                animate: false
-            });
-        }
+        efeMap.fitBounds(extentBounds, {
+            padding: [40, 40],
+            maxZoom: 10,
+            animate: animate
+        });
     } else {
         efeMap.setView([-35.6751, -71.5430], 5, { animate: animate });
     }
