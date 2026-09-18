@@ -61,6 +61,7 @@ __pycache__/
 .vscode/
 .idea/
 .gemini/
+.claude/settings.local.json
 .DS_Store
 Thumbs.db
 *.log

@@ -1,9 +1,3 @@
-function _normalizeStr(s) {
-    if (!s) return '';
-    return String(s).toLowerCase()
-        .normalize('NFD').replace(/[̀-ͯ]/g, '');
-}
-
 function shortenRegionName(name) {
     if (!name) return '';
     let str = String(name).trim();
@@ -68,17 +62,6 @@ function formatProgress(val) {
         return `${Math.round(val * 100)}%`;
     }
     return `${val}%`;
-}
-
-// De-bouncer for keystrokes
-function debounce(func, delay) {
-    let timeoutId;
-    return function (...args) {
-        if (timeoutId) clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
-            func.apply(this, args);
-        }, delay);
-    };
 }
 
 // --- SECTOR-BASED DESIGN SYSTEM & COLOR STRATEGY ---
@@ -150,36 +133,7 @@ function getRegionStyle(feature) {
 }
 
 
-function wrapTimelineText(text, maxCharsPerLine = 27) {
-    if (!text) return ['—'];
-    const words = text.toString().split(' ');
-    const lines = [];
-    let currentLine = '';
-
-    words.forEach(w => {
-        if ((currentLine + (currentLine ? ' ' : '') + w).length <= maxCharsPerLine) {
-            currentLine += (currentLine ? ' ' : '') + w;
-        } else {
-            if (currentLine) lines.push(currentLine);
-            currentLine = w;
-        }
-    });
-    if (currentLine) lines.push(currentLine);
-    return lines.length > 0 ? lines : [text];
-}
-
 // ── Show / Hide timeline ──────────────────────────────────────────────
-
-function dateToYear(str) {
-    if (!str) return null;
-    const d = new Date(str);
-    if (isNaN(d.getTime())) return null;
-    const y = d.getFullYear();
-    const start = new Date(y, 0, 1);
-    const end = new Date(y + 1, 0, 1);
-    return y + (d - start) / (end - start);
-}
-
 
 function svgEl(tag, attrs = {}) {
     const el = document.createElementNS('http://www.w3.org/2000/svg', tag);

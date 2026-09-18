@@ -111,203 +111,8 @@
                     <i data-lucide="info" style="width: 13px; height: 13px;"></i>
                     <span>Acerca de</span>
                 </button>
-                <!-- Navigation Menu -->
-                <div class="nav-menu" id="nav-menu">
-                    <button class="nav-menu-btn" id="nav-menu-btn" aria-haspopup="true" aria-expanded="false">
-                        <img src="logo/metro_logo.png" alt="Metro" class="nav-db-logo" width="15" height="15"
-                            style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
-                        Seleccionar Base de Datos
-                        <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
-                    </button>
-                    <div class="nav-menu-dropdown" id="nav-menu-dropdown">
-                        <!-- Group DGC with Submenu -->
-                        <div class="nav-menu-group" id="nav-dgc-group">
-                            <div class="nav-menu-item nav-menu-has-sub" id="nav-dgc-parent-item">
-                                <a href="index.html" class="nav-menu-parent-link"
-                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <img src="logo/Gob_chile_logo.svg" alt="DGC" class="nav-db-logo" width="15"
-                                        height="15"
-                                        style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
-                                    Dirección General de Concesiones (DGC)
-                                </a>
-                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
-                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
-                            </div>
-                            <div class="nav-submenu" id="nav-dgc-submenu">
-                                <a class="nav-submenu-item" href="index.html">
-                                    <i data-lucide="map" style="width:13px;height:13px;"></i>
-                                    Mapa
-                                </a>
-                                <a class="nav-submenu-item" href="index.html#timeline">
-                                    <i data-lucide="clock" style="width:13px;height:13px;"></i>
-                                    Líneas de Tiempo
-                                </a>
-                                <a class="nav-submenu-item" href="index.html#investment">
-                                    <i data-lucide="line-chart" style="width:13px;height:13px;"></i>
-                                    Análisis de Inversión
-                                </a>
-                                <a class="nav-submenu-item" href="index.html#contracts">
-                                    <i data-lucide="layers" style="width:13px;height:13px;"></i>
-                                    Análisis de Contratos
-                                </a>
-                                <a class="nav-submenu-item" href="index.html#bidders">
-                                    <i data-lucide="users" style="width:13px;height:13px;"></i>
-                                    Análisis de Oferentes
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Group EFE with Submenu -->
-                        <div class="nav-menu-group" id="nav-efe-group">
-                            <div class="nav-menu-item nav-menu-has-sub" id="nav-efe-parent-item">
-                                <a href="EFE.html" class="nav-menu-parent-link"
-                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <img src="logo/efe_logo.png" alt="EFE" class="nav-db-logo" width="15" height="15"
-                                        style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
-                                    Empresas de Ferrocarriles del Estado (EFE)
-                                </a>
-                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
-                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
-                            </div>
-                            <div class="nav-submenu" id="nav-efe-submenu">
-                                <a class="nav-submenu-item" id="nav-efe-sub-map" href="EFE.html">
-                                    <i data-lucide="map" style="width:13px;height:13px;"></i>
-                                    Mapa
-                                </a>
-                                <a class="nav-submenu-item" id="nav-efe-sub-timeline" href="EFE.html#timeline">
-                                    <i data-lucide="clock" style="width:13px;height:13px;"></i>
-                                    Líneas de Tiempo de Proyectos
-                                </a>
-                                <a class="nav-submenu-item" id="nav-efe-sub-investment" href="EFE.html#inversion">
-                                    <i data-lucide="line-chart" style="width:13px;height:13px;"></i>
-                                    Análisis de Inversión de Proyectos
-                                </a>
-                                <a class="nav-submenu-item" id="nav-efe-sub-operacion" href="EFE.html#operacion">
-                                    <i data-lucide="trending-up" style="width:13px;height:13px;"></i>
-                                    Demanda y Operación
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Group Metro with Submenu (Active) -->
-                        <div class="nav-menu-group" id="nav-metro-group">
-                            <div class="nav-menu-item active nav-menu-has-sub" id="nav-metro-parent-item">
-                                <a href="Metro.html" class="nav-menu-parent-link"
-                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <img src="logo/metro_logo.png" alt="Metro" class="nav-db-logo" width="15"
-                                        height="15"
-                                        style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
-                                    Metro de Santiago
-                                </a>
-                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
-                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
-                            </div>
-                            <div class="nav-submenu" id="nav-metro-submenu">
-                                <a class="nav-submenu-item" id="nav-metro-sub-map" href="#">
-                                    <i data-lucide="map" style="width:13px;height:13px;"></i>
-                                    Mapa
-                                </a>
-                                <a class="nav-submenu-item" id="nav-metro-sub-timeline" href="#timeline">
-                                    <i data-lucide="clock" style="width:13px;height:13px;"></i>
-                                    Líneas de Tiempo
-                                </a>
-                                <a class="nav-submenu-item" id="nav-metro-sub-comunas" href="#comunas">
-                                    <i data-lucide="building-2" style="width:13px;height:13px;"></i>
-                                    Estadísticas Comunales
-                                </a>
-                                <a class="nav-submenu-item" id="nav-metro-sub-demanda" href="#demanda">
-                                    <i data-lucide="trending-up" style="width:13px;height:13px;"></i>
-                                    Demanda y Operación
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Group MOP with Submenu -->
-                        <div class="nav-menu-group" id="nav-mop-group">
-                            <div class="nav-menu-item nav-menu-has-sub" id="nav-mop-parent-item">
-                                <a href="MOP.html" class="nav-menu-parent-link"
-                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <img src="logo/Gob_chile_logo.svg" alt="MOP" class="nav-db-logo" width="15"
-                                        height="15"
-                                        style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
-                                    Ministerio de Obras Públicas (MOP)
-                                </a>
-                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
-                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
-                            </div>
-                            <div class="nav-submenu" id="nav-mop-submenu">
-                                <a class="nav-submenu-item" href="MOP.html">
-                                    <i data-lucide="layout-dashboard" style="width:13px;height:13px;"></i> Tabla de
-                                    proyectos
-                                </a>
-                                <a class="nav-submenu-item" href="MOP.html#inversion">
-                                    <i data-lucide="bar-chart-2" style="width:13px;height:13px;"></i> Análisis de
-                                    inversión
-                                </a>
-                                <a class="nav-submenu-item" href="MOP.html#programas">
-                                    <i data-lucide="layers" style="width:13px;height:13px;"></i> Programas y Etapas
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Group SNI -->
-                        <div class="nav-menu-group" id="nav-sni-group">
-                            <div class="nav-menu-item nav-menu-has-sub" id="nav-sni-parent-item">
-                                <a href="SNI.html" class="nav-menu-parent-link"
-                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <img src="logo/Gob_chile_logo.svg" alt="SNI" class="nav-db-logo" width="15"
-                                        height="15"
-                                        style="width:15px;height:15px;max-width:15px;max-height:15px;object-fit:contain;flex-shrink:0;">
-                                    Sistema Nacional de Inversiones (SNI)
-                                </a>
-                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
-                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
-                            </div>
-                            <div class="nav-submenu" id="nav-sni-submenu">
-                                <a class="nav-submenu-item" href="SNI.html#map">
-                                    <i data-lucide="map" style="width:13px;height:13px;"></i> Mapa Regional
-                                </a>
-                                <a class="nav-submenu-item" href="SNI.html#territorial">
-                                    <i data-lucide="bar-chart-2" style="width:13px;height:13px;"></i> Análisis
-                                    Territorial
-                                </a>
-                                <a class="nav-submenu-item" href="SNI.html#ministries">
-                                    <i data-lucide="landmark" style="width:13px;height:13px;"></i> Ministerios y
-                                    Sectores
-                                </a>
-                                <a class="nav-submenu-item" href="SNI.html#temporal">
-                                    <i data-lucide="clock" style="width:13px;height:13px;"></i> Evolución Temporal
-                                </a>
-                            </div>
-                        </div>
-                        <!-- Group Puertos -->
-                        <div class="nav-menu-group" id="nav-puertos-group">
-                            <div class="nav-menu-item nav-menu-has-sub" id="nav-puertos-parent-item">
-                                <a href="puertos.html" class="nav-menu-parent-link"
-                                    style="display:flex;align-items:center;gap:0.5rem;flex:1;text-decoration:none;color:inherit;">
-                                    <i data-lucide="anchor" style="width:15px;height:15px;flex-shrink:0;"></i>
-                                    Puertos (Región del Biobío)
-                                </a>
-                                <i data-lucide="chevron-left" class="nav-submenu-trigger-icon"
-                                    style="width:12px;height:12px;opacity:0.7;cursor:pointer;padding:2px;"></i>
-                            </div>
-                            <div class="nav-submenu" id="nav-puertos-submenu">
-                                <a class="nav-submenu-item" href="puertos.html#resumen">
-                                    <i data-lucide="boxes" style="width:13px;height:13px;"></i> Resumen de Carga
-                                </a>
-                                <a class="nav-submenu-item" href="puertos.html#contenedores">
-                                    <i data-lucide="package" style="width:13px;height:13px;"></i> Contenedores y TEUs
-                                </a>
-                                <a class="nav-submenu-item" href="puertos.html#tipologia">
-                                    <i data-lucide="layers" style="width:13px;height:13px;"></i> Tipología de Carga
-                                </a>
-                                <a class="nav-submenu-item" href="puertos.html#terrestre">
-                                    <i data-lucide="truck" style="width:13px;height:13px;"></i> Conectividad Terrestre
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <!-- Navigation Menu (renderizado por static/js/common/nav-menu.js) -->
+                <div class="nav-menu" id="nav-menu"></div>
 
             </div>
         </header>
@@ -1075,6 +880,8 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <!-- Metro App Modules -->
+    <script src="static/js/common/tooltip.js?v=20260917_1"></script>
+    <script src="static/js/common/utils.js?v=1"></script>
     <script src="static/js/Metro/state.js?v=20260905_1810"></script>
     <script src="static/js/Metro/timeline.js?v=20260905_1750"></script>
     <script src="static/js/Metro/comunas.js?v=20260910_2235"></script>
@@ -1084,53 +891,11 @@
     <script src="static/js/Metro/ui.js?v=20260908_1215"></script>
 
     <!-- Nav Menu & View Switcher Script -->
+    <script src="static/js/common/nav-menu.js?v=20260917_1"></script>
     <script>
         (function () {
-            // Nav Menu Dropdown Logic
-            const navBtn = document.getElementById('nav-menu-btn');
+            CatlecNav.render();
             const navDropdown = document.getElementById('nav-menu-dropdown');
-            const navDgcGroup = document.getElementById('nav-dgc-group');
-            const navEfeGroup = document.getElementById('nav-efe-group');
-            const navMetroGroup = document.getElementById('nav-metro-group');
-            const navMopGroup = document.getElementById('nav-mop-group');
-            const navSniGroup = document.getElementById('nav-sni-group');
-
-            if (navBtn && navDropdown) {
-                navBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    navDropdown.classList.toggle('open');
-                    navBtn.setAttribute('aria-expanded', navDropdown.classList.contains('open'));
-                });
-                document.addEventListener('click', () => {
-                    navDropdown.classList.remove('open');
-                    if (navDgcGroup) navDgcGroup.classList.remove('open');
-                    if (navEfeGroup) navEfeGroup.classList.remove('open');
-                    if (navMetroGroup) navMetroGroup.classList.remove('open');
-                    if (navMopGroup) navMopGroup.classList.remove('open');
-                    if (navSniGroup) navSniGroup.classList.remove('open');
-                });
-                navDropdown.addEventListener('click', e => e.stopPropagation());
-            }
-
-            function setupHoverGroup(group) {
-                if (!group) return;
-                const trigger = group.querySelector('.nav-submenu-trigger-icon');
-                if (trigger) {
-                    trigger.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        group.classList.toggle('open');
-                    });
-                }
-                group.addEventListener('mouseenter', () => group.classList.add('open'));
-                group.addEventListener('mouseleave', () => group.classList.remove('open'));
-            }
-
-            setupHoverGroup(navDgcGroup);
-            setupHoverGroup(navEfeGroup);
-            setupHoverGroup(navMetroGroup);
-            setupHoverGroup(navMopGroup);
-            setupHoverGroup(navSniGroup);
 
             // Subheader View Switcher Buttons
             const btnMap = document.getElementById('btn-metro-view-map');
@@ -1534,56 +1299,8 @@
     </div>
 
     <!-- Script Controlador del Modal Acerca de -->
-    <script>
-        (function () {
-            const btnOpen = document.getElementById('btn-open-about');
-            const btnClose = document.getElementById('btn-close-about-modal');
-            const modal = document.getElementById('about-modal');
-
-            function openAboutModal() {
-                if (modal) {
-                    modal.style.display = 'flex';
-                    if (window.lucide) {
-                        lucide.createIcons();
-                    }
-                }
-            }
-
-            function closeAboutModal() {
-                if (modal) {
-                    modal.style.display = 'none';
-                }
-            }
-
-            if (btnOpen) {
-                btnOpen.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    openAboutModal();
-                });
-            }
-
-            if (btnClose) {
-                btnClose.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    closeAboutModal();
-                });
-            }
-
-            if (modal) {
-                modal.addEventListener('click', function (e) {
-                    if (e.target === modal) {
-                        closeAboutModal();
-                    }
-                });
-            }
-
-            document.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape' && modal && modal.style.display === 'flex') {
-                    closeAboutModal();
-                }
-            });
-        })();
-    </script>
+    <script src="static/js/common/about-modal.js"></script>
+    <script>CatlecAboutModal.init();</script>
 </body>
 
 </html>

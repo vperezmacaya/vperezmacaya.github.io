@@ -147,77 +147,10 @@
 
     // ── Tooltip externo negro compartido para todos los gráficos de Puertos ───
     // (réplica exacta del estándar investmentExternalTooltip de index.html)
-    function puertosExternalTooltip(context) {
-        const { chart, tooltip } = context;
-        const tooltipId = 'puertos-shared-tooltip';
-        let el = document.getElementById(tooltipId);
-        if (!el) {
-            el = document.createElement('div');
-            el.id = tooltipId;
-            el.style.cssText = [
-                'position:fixed',
-                'background:rgba(0,0,0,0.8)',
-                'color:#fff',
-                'border-radius:3px',
-                'padding:6px 8px',
-                'font:12px/1.4 system-ui,sans-serif',
-                'pointer-events:none',
-                'white-space:nowrap',
-                'z-index:9999',
-                'opacity:0'
-            ].join(';');
-            document.body.appendChild(el);
-        }
-
-        if (tooltip.opacity === 0) {
-            el.style.transition = 'opacity 0.25s ease-in';
-            el.style.opacity = '0';
-            return;
-        }
-
-        const wasVisible = parseFloat(el.style.opacity || '0') > 0.05;
-
-        // Título
-        const titleLines = (tooltip.title || []).flatMap(t => Array.isArray(t) ? t : [t]);
-        const title = titleLines.map(t => String(t).trim()).filter(Boolean).join(' ');
-
-        // Líneas de cuerpo
-        const bodyLines = (tooltip.body || []).flatMap(b => b.lines).flatMap(l => Array.isArray(l) ? l : [l]);
-
-        el.innerHTML = [
-            title ? `<div style="font-weight:700;margin-bottom:3px">${title}</div>` : '',
-            ...bodyLines.map(line => `<div>${line}</div>`)
-        ].join('');
-
-        // Posicionamiento en coordenadas de ventana cerca del puntero/caret
-        const canvasRect = chart.canvas.getBoundingClientRect();
-        let left = canvasRect.left + tooltip.caretX + 10;
-        let top = canvasRect.top + tooltip.caretY - 10;
-
-        // Prevenir desborde en el borde derecho
-        const rect = el.getBoundingClientRect();
-        if (rect.width > 0 && left + rect.width > window.innerWidth - 8) {
-            left = canvasRect.left + tooltip.caretX - rect.width - 10;
-        }
-
-        if (wasVisible) {
-            el.style.transition = 'opacity 0.2s ease-out, left 0.8s cubic-bezier(0.2, 0, 0.2, 1), top 0.8s cubic-bezier(0.2, 0, 0.2, 1)';
-            el.style.left = left + 'px';
-            el.style.top = top + 'px';
-            el.style.opacity = '1';
-        } else {
-            el.style.transition = 'none';
-            el.style.left = left + 'px';
-            el.style.top = top + 'px';
-            void el.offsetHeight;
-            el.style.transition = 'opacity 0.2s ease-out';
-            el.style.opacity = '1';
-        }
-    }
+    const puertosExternalTooltip = CatlecTooltip.create({ domId: 'puertos-shared-tooltip' });
 
     window.puertosCloseAllTooltips = function () {
-        const el = document.getElementById('puertos-shared-tooltip');
-        if (el) el.style.opacity = '0';
+        CatlecTooltip.hide('puertos-shared-tooltip');
     };
 
     // ── Helper para Doughnut con Leyenda HTML desacoplada (Standard CATLEC) ───
@@ -1205,27 +1138,6 @@
         }
     };
 
-    // ── Dropdown de Navegación "Seleccionar Base de Datos" ────────────────────
-    function initNavMenu() {
-        const navBtn = document.getElementById('nav-menu-btn');
-        const navDropdown = document.getElementById('nav-menu-dropdown');
-        if (!navBtn || !navDropdown) return;
-
-        navBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isOpen = navDropdown.classList.contains('open');
-            navDropdown.classList.toggle('open', !isOpen);
-            navBtn.setAttribute('aria-expanded', (!isOpen).toString());
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!navDropdown.contains(e.target) && !navBtn.contains(e.target)) {
-                navDropdown.classList.remove('open');
-                navBtn.setAttribute('aria-expanded', 'false');
-            }
-        });
-    }
-
     // ── Exportación a Excel (SheetJS) ─────────────────────────────────────────
     window.exportPuertosExcel = function () {
         if (!window.PUERTOS_DATA || !window.XLSX) {
@@ -1261,7 +1173,6 @@
 
     // ── Inicialización al cargar DOM ──────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
-        initNavMenu();
         initKPIs();
 
         // Botones de pestañas

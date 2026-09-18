@@ -136,12 +136,9 @@ let efeAvailableTipos = [
 
 // DOM Element References – initialized after DOMContentLoaded
 var efeSearchInput,
-    efeFilialMultiselectContainer, efeFilialMultiselectBtn, efeFilialMultiselectDropdown,
-    efeFilialMultiselectText, efeFilialCheckAll, efeFilialOptionsList,
-    efeDetailMultiselectContainer, efeDetailMultiselectBtn, efeDetailMultiselectDropdown,
-    efeDetailMultiselectText, efeDetailCheckAll, efeDetailOptionsList,
-    efeTipoMultiselectContainer, efeTipoMultiselectBtn, efeTipoMultiselectDropdown,
-    efeTipoMultiselectText, efeTipoCheckAll, efeTipoOptionsList,
+    efeFilialMultiselectText, efeFilialCheckAll,
+    efeDetailMultiselectText, efeDetailCheckAll,
+    efeTipoMultiselectText, efeTipoCheckAll,
     efeBtnReset,
     efeTableBody, efeEmptyState,
     efeCountLoaded, efeCountTotal,
@@ -153,24 +150,12 @@ var efeSearchInput,
 
 function efeInitDOMReferences() {
     efeSearchInput                  = document.getElementById('efe-search-input');
-    efeFilialMultiselectContainer   = document.getElementById('efe-filial-multiselect-container');
-    efeFilialMultiselectBtn         = document.getElementById('efe-filial-multiselect-btn');
-    efeFilialMultiselectDropdown    = document.getElementById('efe-filial-multiselect-dropdown');
     efeFilialMultiselectText        = document.getElementById('efe-filial-multiselect-text');
     efeFilialCheckAll               = document.getElementById('efe-filial-check-all');
-    efeFilialOptionsList            = document.getElementById('efe-filial-options-list');
-    efeDetailMultiselectContainer   = document.getElementById('efe-detail-multiselect-container');
-    efeDetailMultiselectBtn         = document.getElementById('efe-detail-multiselect-btn');
-    efeDetailMultiselectDropdown    = document.getElementById('efe-detail-multiselect-dropdown');
     efeDetailMultiselectText        = document.getElementById('efe-detail-multiselect-text');
     efeDetailCheckAll               = document.getElementById('efe-detail-check-all');
-    efeDetailOptionsList            = document.getElementById('efe-detail-options-list');
-    efeTipoMultiselectContainer     = document.getElementById('efe-tipo-multiselect-container');
-    efeTipoMultiselectBtn           = document.getElementById('efe-tipo-multiselect-btn');
-    efeTipoMultiselectDropdown      = document.getElementById('efe-tipo-multiselect-dropdown');
     efeTipoMultiselectText          = document.getElementById('efe-tipo-multiselect-text');
     efeTipoCheckAll                 = document.getElementById('efe-tipo-check-all');
-    efeTipoOptionsList              = document.getElementById('efe-tipo-options-list');
     efeBtnReset                     = document.getElementById('efe-btn-reset');
 
     efeTableBody                    = document.getElementById('efe-table-body');

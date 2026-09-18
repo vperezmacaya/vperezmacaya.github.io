@@ -141,7 +141,7 @@ function onEachRegionFeature(feature, layer) {
                     const cb = document.querySelector(`.region-checkbox[value="${dbRegionValue}"]`);
                     if (cb) {
                         cb.checked = !cb.checked;
-                        updateSelectedRegions();
+                        cb.dispatchEvent(new Event('change', { bubbles: true }));
                     }
                 }, 250);
             }
@@ -163,7 +163,7 @@ function onEachRegionFeature(feature, layer) {
                 const cb = document.querySelector(`.region-checkbox[value="${dbRegionValue}"]`);
                 if (cb && !cb.checked) {
                     cb.checked = true;
-                    updateSelectedRegions();
+                    cb.dispatchEvent(new Event('change', { bubbles: true }));
                 }
 
                 fetchData().then(() => {
@@ -340,63 +340,6 @@ async function loadMapLayers() {
     }
 }
 
-// --- MIDPOINT CALCULATOR FOR LINES (50% DISTANCE ALONG THE PATH) ---
-function getLineMidpoint(matchedLayers) {
-    if (!matchedLayers || matchedLayers.length === 0) return null;
-
-    let allSegments = [];
-    matchedLayers.forEach(l => {
-        if (l.getLatLngs) {
-            const rawLatLngs = l.getLatLngs();
-            function extractSegments(arr) {
-                if (!Array.isArray(arr) || arr.length === 0) return;
-                if (arr[0] instanceof L.LatLng || (arr[0] && typeof arr[0].lat === 'number')) {
-                    if (arr.length >= 2) {
-                        allSegments.push(arr);
-                    }
-                } else {
-                    arr.forEach(sub => extractSegments(sub));
-                }
-            }
-            extractSegments(rawLatLngs);
-        }
-    });
-
-    if (allSegments.length === 0) return null;
-
-    let totalLength = 0;
-    allSegments.forEach(seg => {
-        for (let i = 0; i < seg.length - 1; i++) {
-            totalLength += seg[i].distanceTo(seg[i + 1]);
-        }
-    });
-
-    if (totalLength === 0) {
-        return allSegments[0][0];
-    }
-
-    const halfDistance = totalLength / 2;
-    let accumulated = 0;
-
-    for (let s = 0; s < allSegments.length; s++) {
-        const seg = allSegments[s];
-        for (let i = 0; i < seg.length - 1; i++) {
-            const p1 = seg[i];
-            const p2 = seg[i + 1];
-            const dist = p1.distanceTo(p2);
-            if (accumulated + dist >= halfDistance) {
-                const needed = halfDistance - accumulated;
-                const ratio = dist > 0 ? (needed / dist) : 0;
-                const lat = p1.lat + (p2.lat - p1.lat) * ratio;
-                const lng = p1.lng + (p2.lng - p1.lng) * ratio;
-                return L.latLng(lat, lng);
-            }
-            accumulated += dist;
-        }
-    }
-
-    return allSegments[0][Math.floor(allSegments[0].length / 2)];
-}
 
 function getProjectCentroid(proj) {
     if (!proj || !proj.shapes || !Array.isArray(proj.shapes) || proj.shapes.length === 0) {
@@ -537,7 +480,7 @@ function renderProjectMarkersOnMap(mapProjects) {
 
         if (isLine) {
             // Condition 1: Single icon on the midpoint of the line
-            const midpoint = getLineMidpoint(matchedLayers);
+            const midpoint = CatlecUtils.getLineMidpoint(matchedLayers);
             if (midpoint) {
                 candidateEntries.push({
                     latLng: midpoint,

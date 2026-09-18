@@ -91,26 +91,14 @@ const chartColors = {
 // DOM elements
 var searchInput = document.getElementById('search-input');
 
-var regionMultiselectContainer = document.getElementById('region-multiselect-container');
-var regionMultiselectBtn = document.getElementById('region-multiselect-btn');
-var regionMultiselectDropdown = document.getElementById('region-multiselect-dropdown');
 var regionMultiselectText = document.getElementById('region-multiselect-text');
 var regionCheckAll = document.getElementById('region-check-all');
-var regionOptionsList = document.getElementById('region-options-list');
 
-var sectorMultiselectContainer = document.getElementById('sector-multiselect-container');
-var sectorMultiselectBtn = document.getElementById('sector-multiselect-btn');
-var sectorMultiselectDropdown = document.getElementById('sector-multiselect-dropdown');
 var sectorMultiselectText = document.getElementById('sector-multiselect-text');
 var sectorCheckAll = document.getElementById('sector-check-all');
-var sectorOptionsList = document.getElementById('sector-options-list');
 
-var statusMultiselectContainer = document.getElementById('status-multiselect-container');
-var statusMultiselectBtn = document.getElementById('status-multiselect-btn');
-var statusMultiselectDropdown = document.getElementById('status-multiselect-dropdown');
 var statusMultiselectText = document.getElementById('status-multiselect-text');
 var statusCheckAll = document.getElementById('status-check-all');
-var statusOptionsList = document.getElementById('status-options-list');
 
 var btnReset = document.getElementById('btn-reset');
 var tableBody = document.getElementById('table-body');
@@ -143,24 +131,12 @@ var allLoadedContractsMap = {};
 
 function initDOMReferences() {
     searchInput = document.getElementById('search-input');
-    regionMultiselectContainer = document.getElementById('region-multiselect-container');
-    regionMultiselectBtn = document.getElementById('region-multiselect-btn');
-    regionMultiselectDropdown = document.getElementById('region-multiselect-dropdown');
     regionMultiselectText = document.getElementById('region-multiselect-text');
     regionCheckAll = document.getElementById('region-check-all');
-    regionOptionsList = document.getElementById('region-options-list');
-    sectorMultiselectContainer = document.getElementById('sector-multiselect-container');
-    sectorMultiselectBtn = document.getElementById('sector-multiselect-btn');
-    sectorMultiselectDropdown = document.getElementById('sector-multiselect-dropdown');
     sectorMultiselectText = document.getElementById('sector-multiselect-text');
     sectorCheckAll = document.getElementById('sector-check-all');
-    sectorOptionsList = document.getElementById('sector-options-list');
-    statusMultiselectContainer = document.getElementById('status-multiselect-container');
-    statusMultiselectBtn = document.getElementById('status-multiselect-btn');
-    statusMultiselectDropdown = document.getElementById('status-multiselect-dropdown');
     statusMultiselectText = document.getElementById('status-multiselect-text');
     statusCheckAll = document.getElementById('status-check-all');
-    statusOptionsList = document.getElementById('status-options-list');
     btnReset = document.getElementById('btn-reset');
     tableBody = document.getElementById('table-body');
     emptyState = document.getElementById('empty-state');

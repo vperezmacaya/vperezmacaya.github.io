@@ -82,80 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Region Multi-Select Handlers
-    if (regionMultiselectBtn && regionMultiselectDropdown) {
-        regionMultiselectBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (sectorMultiselectDropdown) sectorMultiselectDropdown.style.display = 'none';
-            const isVisible = regionMultiselectDropdown.style.display === 'flex';
-            regionMultiselectDropdown.style.display = isVisible ? 'none' : 'flex';
-        });
-    }
-
-    if (regionCheckAll) {
-        regionCheckAll.addEventListener('change', () => {
-            const isChecked = regionCheckAll.checked;
-            document.querySelectorAll('.region-checkbox').forEach(cb => {
-                cb.checked = isChecked;
-            });
-            updateSelectedRegions();
-        });
-    }
-
-    // Sector Multi-Select Handlers
-    if (sectorMultiselectBtn && sectorMultiselectDropdown) {
-        sectorMultiselectBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (regionMultiselectDropdown) regionMultiselectDropdown.style.display = 'none';
-            if (statusMultiselectDropdown) statusMultiselectDropdown.style.display = 'none';
-            const isVisible = sectorMultiselectDropdown.style.display === 'flex';
-            sectorMultiselectDropdown.style.display = isVisible ? 'none' : 'flex';
-        });
-    }
-
-    if (sectorCheckAll) {
-        sectorCheckAll.addEventListener('change', () => {
-            const isChecked = sectorCheckAll.checked;
-            document.querySelectorAll('.sector-checkbox').forEach(cb => {
-                cb.checked = isChecked;
-            });
-            updateSelectedSectors();
-        });
-    }
-
-    // Status Multi-Select Handlers
-    if (statusMultiselectBtn && statusMultiselectDropdown) {
-        statusMultiselectBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (regionMultiselectDropdown) regionMultiselectDropdown.style.display = 'none';
-            if (sectorMultiselectDropdown) sectorMultiselectDropdown.style.display = 'none';
-            const isVisible = statusMultiselectDropdown.style.display === 'flex';
-            statusMultiselectDropdown.style.display = isVisible ? 'none' : 'flex';
-        });
-    }
-
-    if (statusCheckAll) {
-        statusCheckAll.addEventListener('change', () => {
-            const isChecked = statusCheckAll.checked;
-            document.querySelectorAll('.status-checkbox').forEach(cb => {
-                cb.checked = isChecked;
-            });
-            updateSelectedStatuses();
-        });
-    }
-
     // Close dropdowns on outside click
-    document.addEventListener('click', (e) => {
-        if (regionMultiselectContainer && !regionMultiselectContainer.contains(e.target)) {
-            if (regionMultiselectDropdown) regionMultiselectDropdown.style.display = 'none';
-        }
-        if (sectorMultiselectContainer && !sectorMultiselectContainer.contains(e.target)) {
-            if (sectorMultiselectDropdown) sectorMultiselectDropdown.style.display = 'none';
-        }
-        if (statusMultiselectContainer && !statusMultiselectContainer.contains(e.target)) {
-            if (statusMultiselectDropdown) statusMultiselectDropdown.style.display = 'none';
-        }
-    });
+    document.addEventListener('click', CatlecUtils.closeAllMultiselects);
 
     // Load initial filters and initial data load
     loadFilters().then(() => {
@@ -163,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Bind search filter
-    searchInput.addEventListener('input', debounce(() => {
+    searchInput.addEventListener('input', CatlecUtils.debounce(() => {
         appState.search = searchInput.value;
         appState.page = 1;
         fetchData();
@@ -1015,16 +943,6 @@ function exportDGCToGeoJSON() {
         features: validFeatures
     };
 
-    const jsonString = JSON.stringify(exportCollection, null, 2);
-    const blob = new Blob([jsonString], { type: "application/geo+json;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const downloadAnchor = document.createElement('a');
-    const today = new Date().toISOString().slice(0, 10);
-    downloadAnchor.setAttribute('href', url);
-    downloadAnchor.setAttribute('download', `CATLEC_DGC_Concesiones_${today}.geojson`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    CatlecUtils.downloadGeoJSON(exportCollection, 'CATLEC_DGC_Concesiones');
 }
 

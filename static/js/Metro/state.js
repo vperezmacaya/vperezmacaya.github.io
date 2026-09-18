@@ -86,15 +86,6 @@ if (typeof window !== 'undefined') window.METRO_PROJECT_COLOR = METRO_PROJECT_CO
 var METRO_SUBWAY_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/><path d="M4 10h16"/><path d="M10 4v16"/><path d="m8 20-2 2"/><path d="m16 20 2 2"/><circle cx="8" cy="15" r="0.8" fill="#ffffff"/><circle cx="16" cy="15" r="0.8" fill="#ffffff"/></svg>`;
 if (typeof window !== 'undefined') window.METRO_SUBWAY_SVG = METRO_SUBWAY_SVG;
 
-// Iconos SVG para Líneas y Tipos de Metro
-function metroGetProjectTypeSvg(tipo, w = 13, h = 13, stroke = 'currentColor') {
-    const t = tipo ? String(tipo).trim().toLowerCase() : '';
-    if (t.includes('extensi')) {
-        return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
-    }
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/><path d="M4 10h16"/><path d="M10 4v16"/><path d="m8 20-2 2"/><path d="m16 20 2 2"/><circle cx="8" cy="15" r="0.8" fill="${stroke}"/><circle cx="16" cy="15" r="0.8" fill="${stroke}"/></svg>`;
-}
-
 // Variables globales de capas Leaflet
 var metroMap = null;
 var metroTileLayer = null;
@@ -143,10 +134,7 @@ var metroTableBody, metroEmptyState,
 // ─── Normalización y Mapeo Dinámico de Estaciones desde METRO_DATA.stations ───
 function metroNormalizeStationText(text) {
     if (!text) return '';
-    return text.toString().toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .trim();
+    return CatlecUtils.normalizeAccents(text.toString()).trim();
 }
 if (typeof window !== 'undefined') {
     window.metroNormalizeStationText = metroNormalizeStationText;
@@ -297,77 +285,7 @@ if (typeof window !== 'undefined' && window.METRO_DATA && window.METRO_DATA.stat
 }
 
 // ─── Shared External Dark Tooltip (mismo popup negro que EFE.html) ────────────
-function metroExternalTooltip(context) {
-    const { chart, tooltip } = context;
-    const tooltipId = 'metro-chart-external-tooltip';
-    let el = document.getElementById(tooltipId);
-    if (!el) {
-        el = document.createElement('div');
-        el.id = tooltipId;
-        el.style.cssText = [
-            'position:fixed',
-            'background:rgba(15,23,42,0.94)',
-            'color:#fff',
-            'border-radius:6px',
-            'padding:6px 10px',
-            'font:12px/1.4 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif',
-            'pointer-events:none',
-            'z-index:99999',
-            'box-shadow:0 4px 14px rgba(0,0,0,0.3)',
-            'border:1px solid rgba(255,255,255,0.12)',
-            'max-width:380px',
-            'word-break:break-word',
-            'opacity:0'
-        ].join(';');
-        document.body.appendChild(el);
-    }
-
-    const title = (tooltip.title || []).join('\n');
-    const bodyLines = (tooltip.body || []).flatMap(b => b.lines);
-    const afterLines = tooltip.afterBody || [];
-
-    if (tooltip.opacity === 0 || (!title && bodyLines.length === 0 && afterLines.length === 0)) {
-        el.style.transition = 'opacity 0.25s ease-in';
-        el.style.opacity = '0';
-        return;
-    }
-
-    const wasVisible = parseFloat(el.style.opacity || '0') > 0.05;
-
-    el.innerHTML = [
-        title ? `<div style="font-weight:700;margin-bottom:3px;color:#f8fafc;font-size:12px;">${title}</div>` : '',
-        ...bodyLines.map(line => `<div style="color:#e2e8f0;font-size:11.5px;margin-top:2px;">${line}</div>`),
-        afterLines.length > 0 ? `<div style="margin-top:6px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.15);color:#94a3b8;font-size:11px;line-height:1.45;">` + afterLines.map(line => `<div>${line}</div>`).join('') + `</div>` : ''
-    ].join('');
-
-    const canvasRect = chart.canvas.getBoundingClientRect();
-    let left = canvasRect.left + tooltip.caretX + 10;
-    let top = canvasRect.top + tooltip.caretY - 10;
-
-    const rect = el.getBoundingClientRect();
-    if (rect.width > 0 && left + rect.width > window.innerWidth - 8) {
-        left = canvasRect.left + tooltip.caretX - rect.width - 10;
-    }
-    if (rect.height > 0 && top + rect.height > window.innerHeight - 8) {
-        top = window.innerHeight - rect.height - 8;
-    }
-    if (top < 10) top = 10;
-    if (left < 10) left = 10;
-
-    if (wasVisible) {
-        el.style.transition = 'opacity 0.2s ease-out, left 0.15s cubic-bezier(0.2, 0, 0, 1), top 0.15s cubic-bezier(0.2, 0, 0, 1)';
-        el.style.left = left + 'px';
-        el.style.top = top + 'px';
-        el.style.opacity = '1';
-    } else {
-        el.style.transition = 'none';
-        el.style.left = left + 'px';
-        el.style.top = top + 'px';
-        void el.offsetHeight;
-        el.style.transition = 'opacity 0.2s ease-out';
-        el.style.opacity = '1';
-    }
-}
+const metroExternalTooltip = CatlecTooltip.create({ domId: 'metro-chart-external-tooltip' });
 if (typeof window !== 'undefined') {
     window.metroExternalTooltip = metroExternalTooltip;
 }

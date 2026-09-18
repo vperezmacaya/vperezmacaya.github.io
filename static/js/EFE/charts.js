@@ -38,69 +38,7 @@ function efeFormatCompactUSD(val) {
 }
 
 // Shared external tooltip for EFE analysis panel charts
-function efeExternalTooltip(context) {
-    const { chart, tooltip } = context;
-    const tooltipId = 'efe-analysis-tooltip';
-    let el = document.getElementById(tooltipId);
-    if (!el) {
-        el = document.createElement('div');
-        el.id = tooltipId;
-        el.style.cssText = [
-            'position:fixed',
-            'background:rgba(15,23,42,0.92)',
-            'color:#fff',
-            'border-radius:6px',
-            'padding:6px 10px',
-            'font:12px/1.4 system-ui,sans-serif',
-            'pointer-events:none',
-            'white-space:nowrap',
-            'z-index:9999',
-            'box-shadow:0 4px 14px rgba(0,0,0,0.25)',
-            'border:1px solid rgba(255,255,255,0.1)',
-            'opacity:0'
-        ].join(';');
-        document.body.appendChild(el);
-    }
-
-    if (tooltip.opacity === 0) {
-        el.style.transition = 'opacity 0.25s ease-in';
-        el.style.opacity = '0';
-        return;
-    }
-
-    const wasVisible = parseFloat(el.style.opacity || '0') > 0.05;
-
-    const title = (tooltip.title || []).join('\n');
-    const bodyLines = (tooltip.body || []).flatMap(b => b.lines);
-
-    el.innerHTML = [
-        title ? `<div style="font-weight:700;margin-bottom:3px">${title}</div>` : '',
-        ...bodyLines.map(line => `<div>${line}</div>`)
-    ].join('');
-
-    const canvasRect = chart.canvas.getBoundingClientRect();
-    let left = canvasRect.left + tooltip.caretX + 10;
-    let top = canvasRect.top + tooltip.caretY - 10;
-
-    const rect = el.getBoundingClientRect();
-    if (rect.width > 0 && left + rect.width > window.innerWidth - 8) {
-        left = canvasRect.left + tooltip.caretX - rect.width - 10;
-    }
-
-    if (wasVisible) {
-        el.style.transition = 'opacity 0.2s ease-out, left 0.15s cubic-bezier(0.2, 0, 0, 1), top 0.15s cubic-bezier(0.2, 0, 0, 1)';
-        el.style.left = left + 'px';
-        el.style.top = top + 'px';
-        el.style.opacity = '1';
-    } else {
-        el.style.transition = 'none';
-        el.style.left = left + 'px';
-        el.style.top = top + 'px';
-        void el.offsetHeight;
-        el.style.transition = 'opacity 0.2s ease-out';
-        el.style.opacity = '1';
-    }
-}
+const efeExternalTooltip = CatlecTooltip.create({ domId: 'efe-analysis-tooltip' });
 
 function efeInitAnalyticsCharts() {
     const isLight = document.body.classList.contains('light-theme');

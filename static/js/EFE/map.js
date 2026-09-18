@@ -1049,58 +1049,6 @@ function efeSelectProject(proj) {
     }
 }
 
-// ─── Midpoint Calculator for Line Projects (50% distance along path) ───────
-function efeGetLineMidpoint(matchedLayers) {
-    if (!matchedLayers || matchedLayers.length === 0) return null;
-
-    let allSegments = [];
-    matchedLayers.forEach(l => {
-        if (l.getLatLngs) {
-            const rawLatLngs = l.getLatLngs();
-            function extractSegments(arr) {
-                if (!Array.isArray(arr) || arr.length === 0) return;
-                if (arr[0] instanceof L.LatLng || (arr[0] && typeof arr[0].lat === 'number')) {
-                    if (arr.length >= 2) allSegments.push(arr);
-                } else {
-                    arr.forEach(sub => extractSegments(sub));
-                }
-            }
-            extractSegments(rawLatLngs);
-        }
-    });
-
-    if (allSegments.length === 0) return null;
-
-    let totalLength = 0;
-    allSegments.forEach(seg => {
-        for (let i = 0; i < seg.length - 1; i++) {
-            totalLength += seg[i].distanceTo(seg[i + 1]);
-        }
-    });
-
-    if (totalLength === 0) return allSegments[0][0];
-
-    const halfDistance = totalLength / 2;
-    let accumulated = 0;
-
-    for (let s = 0; s < allSegments.length; s++) {
-        const seg = allSegments[s];
-        for (let i = 0; i < seg.length - 1; i++) {
-            const p1 = seg[i];
-            const p2 = seg[i + 1];
-            const dist = p1.distanceTo(p2);
-            if (accumulated + dist >= halfDistance) {
-                const needed = halfDistance - accumulated;
-                const ratio = dist > 0 ? (needed / dist) : 0;
-                return L.latLng(p1.lat + (p2.lat - p1.lat) * ratio, p1.lng + (p2.lng - p1.lng) * ratio);
-            }
-            accumulated += dist;
-        }
-    }
-
-    return allSegments[0][Math.floor(allSegments[0].length / 2)];
-}
-
 // ─── Render Train Markers on Map ─────────────────────────────────────────────
 function efeRenderProjectMarkers(mapProjects) {
     if (!efeMap) return;
@@ -1155,7 +1103,7 @@ function efeRenderProjectMarkers(mapProjects) {
             });
         } else if (lineLayers.length > 0) {
             // Line-only project: 1 train icon at exact path midpoint
-            const midpoint = efeGetLineMidpoint(lineLayers);
+            const midpoint = CatlecUtils.getLineMidpoint(lineLayers);
             if (midpoint) {
                 rawMarkerList.push({ proj, latLng: midpoint, isMini: false });
             }
@@ -1350,7 +1298,7 @@ function efeZoomToProject(proj) {
         }
     }
 
-    const midpoint = efeGetLineMidpoint(matchedLayers);
+    const midpoint = CatlecUtils.getLineMidpoint(matchedLayers);
     if (midpoint) {
         efeStartZoomTransition(1200);
         efeMap.flyTo(midpoint, 10, { animate: true, duration: 1.2 });

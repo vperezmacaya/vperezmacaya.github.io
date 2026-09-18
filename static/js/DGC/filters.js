@@ -1,148 +1,34 @@
 
-function updateSelectedRegions() {
-    const checkedCbs = Array.from(document.querySelectorAll('.region-checkbox:checked'));
-    appState.selectedRegions = checkedCbs.map(cb => cb.value);
-
-    const totalCount = availableRegionsList.length;
-    const checkedCount = appState.selectedRegions.length;
-
-    if (regionCheckAll) {
-        regionCheckAll.checked = (checkedCount === totalCount && totalCount > 0);
-    }
-
-    if (regionMultiselectText) {
-        if (checkedCount === 0 || checkedCount === totalCount) {
-            regionMultiselectText.textContent = 'Todas las regiones';
-        } else if (checkedCount === 1) {
-            regionMultiselectText.textContent = appState.selectedRegions[0];
-        } else {
-            regionMultiselectText.textContent = `${checkedCount} regiones seleccionadas`;
-        }
-    }
-
-    appState.page = 1;
-    appState.selectedProjectCode = null;
-    if (layers.regions) layers.regions.setStyle(getRegionStyle);
-    fetchData();
-}
-
-function updateSelectedSectors() {
-    const checkedCbs = Array.from(document.querySelectorAll('.sector-checkbox:checked'));
-    appState.selectedSectors = checkedCbs.map(cb => cb.value);
-
-    const totalCount = availableSectorsList.length;
-    const checkedCount = appState.selectedSectors.length;
-
-    if (sectorCheckAll) {
-        sectorCheckAll.checked = (checkedCount === totalCount && totalCount > 0);
-    }
-
-    if (sectorMultiselectText) {
-        if (checkedCount === 0 || checkedCount === totalCount) {
-            sectorMultiselectText.textContent = 'Todos los sectores';
-        } else if (checkedCount === 1) {
-            sectorMultiselectText.textContent = appState.selectedSectors[0];
-        } else {
-            sectorMultiselectText.textContent = `${checkedCount} sectores seleccionados`;
-        }
-    }
-
-    appState.page = 1;
-    appState.selectedProjectCode = null;
-    fetchData();
-}
-
-function updateSelectedStatuses() {
-    const checkedCbs = Array.from(document.querySelectorAll('.status-checkbox:checked'));
-    appState.selectedStatuses = checkedCbs.map(cb => cb.value);
-
-    const totalCount = availableStatusesList.length;
-    const checkedCount = appState.selectedStatuses.length;
-
-    if (statusCheckAll) {
-        statusCheckAll.checked = (checkedCount === totalCount && totalCount > 0);
-    }
-
-    if (statusMultiselectText) {
-        if (checkedCount === 0 || checkedCount === totalCount) {
-            statusMultiselectText.textContent = 'Todos los estados';
-        } else if (checkedCount === 1) {
-            statusMultiselectText.textContent = appState.selectedStatuses[0];
-        } else {
-            statusMultiselectText.textContent = `${checkedCount} estados seleccionados`;
-        }
-    }
-
-    appState.page = 1;
-    appState.selectedProjectCode = null;
-    fetchData();
-}
-
 // Carga estática de filtros desde window.STATIC_DATA
 async function loadFilters() {
     const data = window.STATIC_DATA || {};
 
-    //availableRegionsList = data.regions || [];
-    //availableSectorsList = data.sectors || [];
+    const statuses = (data.stats && data.stats.status)
+        ? Object.keys(data.stats.status).sort()
+        : availableStatusesList;
+    availableStatusesList = statuses;
 
-    // Populate region checkboxes
-    if (regionOptionsList) {
-        regionOptionsList.innerHTML = '';
-        availableRegionsList.forEach(reg => {
-            const label = document.createElement('label');
-            label.className = 'multiselect-option';
-            label.innerHTML = `
-                <input type="checkbox" class="region-checkbox" value="${reg}">
-                <span>${reg}</span>
-            `;
-            regionOptionsList.appendChild(label);
-        });
+    CatlecUtils.setupMultiselect('region', availableRegionsList, 'Todas las regiones', 'regiones seleccionadas', (selected) => {
+        appState.selectedRegions = selected;
+        appState.page = 1;
+        appState.selectedProjectCode = null;
+        if (layers.regions) layers.regions.setStyle(getRegionStyle);
+        fetchData();
+    });
 
-        document.querySelectorAll('.region-checkbox').forEach(cb => {
-            cb.addEventListener('change', updateSelectedRegions);
-        });
-    }
+    CatlecUtils.setupMultiselect('sector', availableSectorsList, 'Todos los sectores', 'sectores seleccionados', (selected) => {
+        appState.selectedSectors = selected;
+        appState.page = 1;
+        appState.selectedProjectCode = null;
+        fetchData();
+    });
 
-    // Populate sector checkboxes
-    if (sectorOptionsList) {
-        sectorOptionsList.innerHTML = '';
-        availableSectorsList.forEach(sec => {
-            const label = document.createElement('label');
-            label.className = 'multiselect-option';
-            label.innerHTML = `
-                <input type="checkbox" class="sector-checkbox" value="${sec}">
-                <span>${sec}</span>
-            `;
-            sectorOptionsList.appendChild(label);
-        });
-
-        document.querySelectorAll('.sector-checkbox').forEach(cb => {
-            cb.addEventListener('change', updateSelectedSectors);
-        });
-    }
-
-    // Populate status checkboxes
-    if (statusOptionsList) {
-        statusOptionsList.innerHTML = '';
-        const statuses = (data.stats && data.stats.status)
-            ? Object.keys(data.stats.status).sort()
-            : availableStatusesList;
-        availableStatusesList = statuses;
-
-        availableStatusesList.forEach(st => {
-            const label = document.createElement('label');
-            label.className = 'multiselect-option';
-            label.innerHTML = `
-                <input type="checkbox" class="status-checkbox" value="${st}">
-                <span>${st}</span>
-            `;
-            statusOptionsList.appendChild(label);
-        });
-
-        document.querySelectorAll('.status-checkbox').forEach(cb => {
-            cb.addEventListener('change', updateSelectedStatuses);
-        });
-    }
+    CatlecUtils.setupMultiselect('status', availableStatusesList, 'Todos los estados', 'estados seleccionados', (selected) => {
+        appState.selectedStatuses = selected;
+        appState.page = 1;
+        appState.selectedProjectCode = null;
+        fetchData();
+    });
 }
 
 
@@ -159,7 +45,7 @@ function staticFetchData(params) {
 
     const PAGE_SIZE = 50;
 
-    const searchNorm = _normalizeStr(searchRaw);
+    const searchNorm = CatlecUtils.normalizeAccents(searchRaw);
     const selRegions = regionRaw ? regionRaw.split(',').map(r => r.trim()).filter(Boolean) : [];
     const selSectors = sectorRaw ? sectorRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
     const selStatuses = statusRaw ? statusRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
@@ -179,14 +65,14 @@ function staticFetchData(params) {
             if (!selStatuses.includes(st)) return false;
         }
         if (searchNorm) {
-            const code = _normalizeStr(item['Código proyecto']);
-            const name1 = _normalizeStr(item['Nombre de la Concesión ']);
-            const name2 = _normalizeStr(item['Nombre de uso común']);
-            const desc = _normalizeStr(item['Descripción ']);
-            const soc = _normalizeStr(item['Nombre sociedad concesionaria']);
-            const reg = _normalizeStr(item['Región geográfica']);
-            const sec = _normalizeStr(item['Sector del proyecto']);
-            const bidders = (item.bidders || []).map(b => _normalizeStr(b.name + ' ' + b.code)).join(' ');
+            const code = CatlecUtils.normalizeAccents(item['Código proyecto']);
+            const name1 = CatlecUtils.normalizeAccents(item['Nombre de la Concesión ']);
+            const name2 = CatlecUtils.normalizeAccents(item['Nombre de uso común']);
+            const desc = CatlecUtils.normalizeAccents(item['Descripción ']);
+            const soc = CatlecUtils.normalizeAccents(item['Nombre sociedad concesionaria']);
+            const reg = CatlecUtils.normalizeAccents(item['Región geográfica']);
+            const sec = CatlecUtils.normalizeAccents(item['Sector del proyecto']);
+            const bidders = (item.bidders || []).map(b => CatlecUtils.normalizeAccents(b.name + ' ' + b.code)).join(' ');
             const haystack = [code, name1, name2, desc, soc, reg, sec, bidders].join(' ');
             if (!haystack.includes(searchNorm)) return false;
         }
@@ -374,67 +260,7 @@ let currentFilteredContractsList = [];
 
 
 // Shared external tooltip for DGC analysis panel charts
-function customChartTooltip(context) {
-    const { chart, tooltip } = context;
-    const tooltipId = 'dgc-analysis-tooltip';
-    let el = document.getElementById(tooltipId);
-    if (!el) {
-        el = document.createElement('div');
-        el.id = tooltipId;
-        el.style.cssText = [
-            'position:fixed',
-            'background:rgba(0,0,0,0.8)',
-            'color:#fff',
-            'border-radius:3px',
-            'padding:6px 8px',
-            'font:12px/1.4 system-ui,sans-serif',
-            'pointer-events:none',
-            'white-space:nowrap',
-            'z-index:9999',
-            'opacity:0'
-        ].join(';');
-        document.body.appendChild(el);
-    }
-
-    if (tooltip.opacity === 0) {
-        el.style.transition = 'opacity 0.25s ease-in';
-        el.style.opacity = '0';
-        return;
-    }
-
-    const wasVisible = parseFloat(el.style.opacity || '0') > 0.05;
-
-    const title = (tooltip.title || []).join('\n');
-    const bodyLines = (tooltip.body || []).flatMap(b => b.lines);
-
-    el.innerHTML = [
-        title ? `<div style="font-weight:700;margin-bottom:3px">${title}</div>` : '',
-        ...bodyLines.map(line => `<div>${line}</div>`)
-    ].join('');
-
-    const canvasRect = chart.canvas.getBoundingClientRect();
-    let left = canvasRect.left + tooltip.caretX + 10;
-    let top = canvasRect.top + tooltip.caretY - 10;
-
-    const rect = el.getBoundingClientRect();
-    if (rect.width > 0 && left + rect.width > window.innerWidth - 8) {
-        left = canvasRect.left + tooltip.caretX - rect.width - 10;
-    }
-
-    if (wasVisible) {
-        el.style.transition = 'opacity 0.2s ease-out, left 0.15s cubic-bezier(0.2, 0, 0, 1), top 0.15s cubic-bezier(0.2, 0, 0, 1)';
-        el.style.left = left + 'px';
-        el.style.top = top + 'px';
-        el.style.opacity = '1';
-    } else {
-        el.style.transition = 'none';
-        el.style.left = left + 'px';
-        el.style.top = top + 'px';
-        void el.offsetHeight;
-        el.style.transition = 'opacity 0.2s ease-out';
-        el.style.opacity = '1';
-    }
-}
+const customChartTooltip = CatlecTooltip.create({ domId: 'dgc-analysis-tooltip' });
 
 function renderChart(statsData, currentThemeMode) {
     const sectorCanvas = document.getElementById('sectorChart');

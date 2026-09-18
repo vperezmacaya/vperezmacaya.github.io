@@ -32,112 +32,9 @@ function formatEfeUSD(val) {
 }
 
 // Tooltip compartido para los gráficos de inversión EFE (idéntico al de análisis rápido)
-function efeInvExternalTooltip(context) {
-    if (typeof efeExternalTooltip === 'function') {
-        return efeExternalTooltip(context);
-    }
-    const { chart, tooltip } = context;
-    const tooltipId = 'efe-analysis-tooltip';
-    let el = document.getElementById(tooltipId);
-    if (!el) {
-        el = document.createElement('div');
-        el.id = tooltipId;
-        el.style.cssText = [
-            'position:fixed',
-            'background:rgba(15,23,42,0.92)',
-            'color:#fff',
-            'border-radius:6px',
-            'padding:6px 10px',
-            'font:12px/1.4 system-ui,sans-serif',
-            'pointer-events:none',
-            'white-space:nowrap',
-            'z-index:9999',
-            'box-shadow:0 4px 14px rgba(0,0,0,0.25)',
-            'border:1px solid rgba(255,255,255,0.1)',
-            'opacity:0'
-        ].join(';');
-        document.body.appendChild(el);
-    }
-
-    if (tooltip.opacity === 0) {
-        el.style.transition = 'opacity 0.25s ease-in';
-        el.style.opacity = '0';
-        return;
-    }
-
-    const wasVisible = parseFloat(el.style.opacity || '0') > 0.05;
-
-    const title = (tooltip.title || []).join('\n');
-    const bodyLines = (tooltip.body || []).flatMap(b => b.lines);
-
-    el.innerHTML = [
-        title ? `<div style="font-weight:700;margin-bottom:3px">${title}</div>` : '',
-        ...bodyLines.map(line => `<div>${line}</div>`)
-    ].join('');
-
-    const canvasRect = chart.canvas.getBoundingClientRect();
-    let left = canvasRect.left + tooltip.caretX + 10;
-    let top = canvasRect.top + tooltip.caretY - 10;
-
-    const rect = el.getBoundingClientRect();
-    if (rect.width > 0 && left + rect.width > window.innerWidth - 8) {
-        left = canvasRect.left + tooltip.caretX - rect.width - 10;
-    }
-
-    if (wasVisible) {
-        el.style.transition = 'opacity 0.2s ease-out, left 0.15s cubic-bezier(0.2, 0, 0, 1), top 0.15s cubic-bezier(0.2, 0, 0, 1)';
-        el.style.left = left + 'px';
-        el.style.top = top + 'px';
-        el.style.opacity = '1';
-    } else {
-        el.style.transition = 'none';
-        el.style.left = left + 'px';
-        el.style.top = top + 'px';
-        void el.offsetHeight;
-        el.style.transition = 'opacity 0.2s ease-out';
-        el.style.opacity = '1';
-    }
-}
-
-// Plugin para dibujar etiquetas dinámicas de valor en barras horizontales (dentro o fuera según espacio disponible)
-const efeHorizontalBarLabelsPlugin = {
-    id: 'efeHorizontalBarLabelsPlugin',
-    afterDatasetsDraw: (chart, args, pluginOptions) => {
-        const ctx = chart.ctx;
-        const meta = chart.getDatasetMeta(0);
-        if (!meta || !meta.data) return;
-
-        const isLight = document.body.classList.contains('light-theme');
-        const outsideColor = isLight ? '#334155' : '#cbd5e1';
-        const insideColor = '#ffffff';
-        const formatter = (pluginOptions && pluginOptions.formatter) || ((v) => formatEfeUSD(v));
-
-        ctx.save();
-        ctx.font = '600 9px "Plus Jakarta Sans", system-ui, -apple-system, sans-serif';
-        ctx.textBaseline = 'middle';
-
-        meta.data.forEach((bar, index) => {
-            const rawVal = chart.data.datasets[0].data[index];
-            if (rawVal === undefined || rawVal === null || rawVal <= 0) return;
-
-            const text = formatter(rawVal);
-            const textWidth = ctx.measureText(text).width;
-            const barWidth = Math.abs(bar.x - bar.base);
-
-            if (barWidth >= textWidth + 18) {
-                ctx.fillStyle = insideColor;
-                ctx.textAlign = 'right';
-                ctx.fillText(text, bar.x - 6, bar.y);
-            } else {
-                ctx.fillStyle = outsideColor;
-                ctx.textAlign = 'left';
-                ctx.fillText(text, bar.x + 5, bar.y);
-            }
-        });
-
-        ctx.restore();
-    }
-};
+const efeInvExternalTooltip = (typeof efeExternalTooltip === 'function')
+    ? efeExternalTooltip
+    : CatlecTooltip.create({ domId: 'efe-analysis-tooltip' });
 
 // ── Control de Vistas (Mostrar / Ocultar Panel de Inversión) ───────────────────
 function showEfeInvestmentView() {
@@ -330,7 +227,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
         if (!efeChartInvByTipoInstance) {
             efeChartInvByTipoInstance = new Chart(canvasTipo.getContext('2d'), {
                 type: 'bar',
-                plugins: [efeHorizontalBarLabelsPlugin],
+                plugins: [CatlecUtils.horizontalBarDataLabelsPlugin],
                 data: {
                     labels: tipoLabels,
                     datasets: [{
@@ -361,7 +258,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
                                 }
                             }
                         },
-                        efeHorizontalBarLabelsPlugin: {
+                        horizontalBarDataLabelsPlugin: {
                             formatter: (val) => {
                                 const pct = displayTotalInv > 0 ? ((val / displayTotalInv) * 100).toFixed(1) : 0;
                                 return `${val.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} (${pct}%)`;
@@ -417,8 +314,8 @@ function renderEfeInvestmentAnalytics(projectsList) {
                 const pct = displayTotalInv > 0 ? ((val / displayTotalInv) * 100).toFixed(1) : 0;
                 return ` Inversión: ${formatEfeUSD(val)} (${pct}%) · ${cnt} proyecto${cnt !== 1 ? 's' : ''}`;
             };
-            if (efeChartInvByTipoInstance.options.plugins.efeHorizontalBarLabelsPlugin) {
-                efeChartInvByTipoInstance.options.plugins.efeHorizontalBarLabelsPlugin.formatter = (val) => {
+            if (efeChartInvByTipoInstance.options.plugins.horizontalBarDataLabelsPlugin) {
+                efeChartInvByTipoInstance.options.plugins.horizontalBarDataLabelsPlugin.formatter = (val) => {
                     const pct = displayTotalInv > 0 ? ((val / displayTotalInv) * 100).toFixed(1) : 0;
                     return `${val.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} (${pct}%)`;
                 };
@@ -507,7 +404,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
 
     // Invertir para renderizar el mayor en la parte superior en Chart.js
     const topProjRev = [...sortedProjects].reverse();
-    const projLabels = topProjRev.map(p => wrapTextToLines(p.name || 'Sin nombre', 24));
+    const projLabels = topProjRev.map(p => CatlecUtils.wrapTextToLines(p.name || 'Sin nombre', 24, 2));
     const projValues = topProjRev.map(p => p.attributableInv);
 
     const canvasTop = document.getElementById('efeChartTopProjects');
@@ -515,7 +412,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
         if (!efeChartTopProjectsInstance) {
             efeChartTopProjectsInstance = new Chart(canvasTop.getContext('2d'), {
                 type: 'bar',
-                plugins: [efeHorizontalBarLabelsPlugin],
+                plugins: [CatlecUtils.horizontalBarDataLabelsPlugin],
                 data: {
                     labels: projLabels,
                     datasets: [{
@@ -551,7 +448,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
                                 }
                             }
                         },
-                        efeHorizontalBarLabelsPlugin: {
+                        horizontalBarDataLabelsPlugin: {
                             formatter: (val) => val.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
                         }
                     },
@@ -579,7 +476,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
                                 callback: function (val, idx) {
                                     const entry = topProjRev[idx];
                                     if (!entry) return this.getLabelForValue(val);
-                                    return wrapTextToLines(entry.name, 24);
+                                    return CatlecUtils.wrapTextToLines(entry.name, 24, 2);
                                 }
                             }
                         }
@@ -605,7 +502,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
             efeChartTopProjectsInstance.options.scales.y.ticks.callback = function (val, idx) {
                 const entry = topProjRev[idx];
                 if (!entry) return this.getLabelForValue(val);
-                return wrapTextToLines(entry.name, 24);
+                return CatlecUtils.wrapTextToLines(entry.name, 24, 2);
             };
             efeChartTopProjectsInstance.options.plugins.tooltip.callbacks.title = (items) => {
                 const entry = topProjRev[items[0].dataIndex];
@@ -619,8 +516,8 @@ function renderEfeInvestmentAnalytics(projectsList) {
                     ` Tipo: ${entry.type || 'Sin tipo'}`
                 ];
             };
-            if (efeChartTopProjectsInstance.options.plugins.efeHorizontalBarLabelsPlugin) {
-                efeChartTopProjectsInstance.options.plugins.efeHorizontalBarLabelsPlugin.formatter = (val) => val.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+            if (efeChartTopProjectsInstance.options.plugins.horizontalBarDataLabelsPlugin) {
+                efeChartTopProjectsInstance.options.plugins.horizontalBarDataLabelsPlugin.formatter = (val) => val.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
             }
             efeChartTopProjectsInstance.update();
         }
@@ -631,38 +528,3 @@ function renderEfeInvestmentAnalytics(projectsList) {
     }
 }
 
-// ── Helper: wrapTextToLines para ejes en Chart.js ──────────────────────────────
-function wrapTextToLines(str, maxLen = 22, maxLines = 2) {
-    if (!str || str.length <= maxLen) return str;
-    const words = str.split(' ');
-    if (words.length <= 1) return str.length > maxLen ? str.substring(0, maxLen - 1) + '…' : str;
-
-    const lines = [];
-    let cur = '';
-
-    for (let i = 0; i < words.length; i++) {
-        const w = words[i];
-        if (lines.length === maxLines - 1) {
-            const remaining = words.slice(i).join(' ');
-            let candidate = cur ? cur + ' ' + remaining : remaining;
-            if (candidate.length > maxLen) {
-                candidate = candidate.substring(0, maxLen - 1).trimEnd() + '…';
-            }
-            lines.push(candidate);
-            cur = '';
-            break;
-        }
-
-        if ((cur ? cur + ' ' + w : w).length <= maxLen) {
-            cur = cur ? cur + ' ' + w : w;
-        } else {
-            if (cur) lines.push(cur);
-            cur = w;
-        }
-    }
-    if (cur && lines.length < maxLines) {
-        lines.push(cur);
-    }
-
-    return lines.length > 1 ? lines : str;
-}

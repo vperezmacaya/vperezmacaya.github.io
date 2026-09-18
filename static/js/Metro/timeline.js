@@ -86,34 +86,6 @@ function metroSvgEl(tag, attrs = {}) {
     return el;
 }
 
-function wrapMetroTimelineText(text, maxCharsPerLine = 28) {
-    if (!text) return ['—'];
-    const words = String(text).split(' ');
-    const lines = [];
-    let currentLine = '';
-
-    words.forEach(word => {
-        if ((currentLine + ' ' + word).trim().length <= maxCharsPerLine) {
-            currentLine = (currentLine + ' ' + word).trim();
-        } else {
-            if (currentLine) lines.push(currentLine);
-            currentLine = word;
-        }
-    });
-    if (currentLine) lines.push(currentLine);
-    return lines.length > 0 ? lines : [text];
-}
-
-// ── Parse date string → fractional year number (standard CATLEC) ──────
-function dateToYear(str) {
-    if (!str) return null;
-    const d = new Date(str);
-    if (isNaN(d.getTime())) return null;
-    const y = d.getFullYear();
-    const start = new Date(y, 0, 1);
-    const end = new Date(y + 1, 0, 1);
-    return y + (d - start) / (end - start);
-}
 
 // ── Convierte fechas / años de proyectos Metro a año decimal ──
 function parseMetroYear(val, fallback = null) {
@@ -371,7 +343,7 @@ function renderMetroTimeline(projects, highlightId = null) {
     // ── Layout Metrics ───────────────────────────────────────────────────────
     const ROW_PAD_V = 8;
     const rowMetrics = timelineItems.map(item => {
-        const lines = wrapMetroTimelineText(item.proj.name, 30);
+        const lines = CatlecUtils.wrapText(item.proj.name, 30);
         const textH = lines.length * 13;
         const barH = METRO_TL_BAR_H;
         const height = Math.max(40, textH + ROW_PAD_V * 2);
@@ -395,7 +367,7 @@ function renderMetroTimeline(projects, highlightId = null) {
             if (ms.start && ms.start > maxYear - 1) maxYear = ms.start + 2;
         }
     });
-    const todayYear = dateToYear(new Date().toISOString().slice(0, 10));
+    const todayYear = CatlecUtils.dateToYear(new Date().toISOString().slice(0, 10));
 
     // DOM references
     const barsEl = document.getElementById('metro-timeline-bars-scroll');

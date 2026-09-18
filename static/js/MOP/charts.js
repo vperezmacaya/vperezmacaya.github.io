@@ -69,45 +69,6 @@
     function labelColor() { return isDark() ? '#94a3b8' : '#374151'; }
     function titleColor() { return isDark() ? '#cbd5e1' : '#334155'; }
 
-    // Plugin para dibujar etiquetas de valor en barras horizontales (idéntico a index.html)
-    const horizontalBarDataLabelsPlugin = {
-        id: 'horizontalBarDataLabelsPlugin',
-        afterDatasetsDraw: (chart, args, pluginOptions) => {
-            const ctx = chart.ctx;
-            const meta = chart.getDatasetMeta(0);
-            if (!meta || !meta.data) return;
-
-            const isDarkTheme = isDark();
-            const outsideColor = isDarkTheme ? '#cbd5e1' : '#334155';
-            const insideColor = '#ffffff';
-            const formatter = (pluginOptions && pluginOptions.formatter) || ((v) => String(v));
-
-            ctx.save();
-            ctx.font = '600 9px Inter, system-ui, -apple-system, sans-serif';
-            ctx.textBaseline = 'middle';
-
-            meta.data.forEach((bar, index) => {
-                const rawVal = chart.data.datasets[0].data[index];
-                if (rawVal === undefined || rawVal === null || rawVal <= 0) return;
-
-                const text = formatter(rawVal);
-                const textWidth = ctx.measureText(text).width;
-                const barWidth = Math.abs(bar.x - bar.base);
-
-                if (barWidth >= textWidth + 18) {
-                    ctx.fillStyle = insideColor;
-                    ctx.textAlign = 'right';
-                    ctx.fillText(text, bar.x - 6, bar.y);
-                } else {
-                    ctx.fillStyle = outsideColor;
-                    ctx.textAlign = 'left';
-                    ctx.fillText(text, bar.x + 5, bar.y);
-                }
-            });
-
-            ctx.restore();
-        }
-    };
 
     // ── Chart.js defaults (exactos a index.html) ───────────────────────────────
     Chart.defaults.font.family = "'Inter', system-ui, -apple-system, sans-serif";
@@ -116,6 +77,10 @@
     Chart.defaults.plugins.legend.labels.boxWidth = 10;
     Chart.defaults.plugins.legend.labels.padding  = 10;
     Chart.defaults.plugins.tooltip.enabled = false;
+
+    // ── External Tooltip (Dark Floating Box aligned with EFE.html) ───────────
+    const mopExternalTooltip = CatlecTooltip.create({ domId: 'mop-analysis-tooltip' });
+
     Chart.defaults.plugins.tooltip.external = mopExternalTooltip;
 
     // ── Global Filter State ───────────────────────────────────────────────────
@@ -158,30 +123,22 @@
     function populateFilters() {
         const { filters } = window.MOP_DATA;
 
-        populateMultiselect('mop-region-options-list',   filters.regions,   'mop-region-cb',   updateSelectedRegions);
-        populateMultiselect('mop-servicio-options-list', filters.servicios, 'mop-servicio-cb', updateSelectedServicios);
-        populateMultiselect('mop-etapa-options-list',    filters.etapas,    'mop-etapa-cb',    updateSelectedEtapas);
-    }
-
-    function populateMultiselect(listId, items, cbClass, onChangeFn) {
-        const container = document.getElementById(listId);
-        if (!container) return;
-        container.innerHTML = '';
-        (items || []).filter(Boolean).forEach(val => {
-            const label = document.createElement('label');
-            label.className = 'multiselect-option';
-            const displayText = (val.includes('Servicios Sanitarios Rurales') && !val.includes('(SSR)'))
-                ? `${val} (SSR)`
-                : val;
-            label.innerHTML = `
-                <input type="checkbox" class="${cbClass}" value="${val}">
-                <span>${displayText}</span>
-            `;
-            container.appendChild(label);
+        CatlecUtils.setupMultiselect('mop-region', filters.regions, 'Todas las regiones', 'regiones seleccionadas', (selected) => {
+            selectedRegions = selected;
+            applyFilters();
         });
 
-        container.querySelectorAll(`.${cbClass}`).forEach(cb => {
-            cb.addEventListener('change', onChangeFn);
+        CatlecUtils.setupMultiselect('mop-servicio', filters.servicios, 'Todos los servicios', 'servicios seleccionados', (selected) => {
+            selectedServicios = selected;
+            applyFilters();
+        }, {
+            renderOptionLabel: (val) => (val.includes('Servicios Sanitarios Rurales') && !val.includes('(SSR)')) ? `${val} (SSR)` : val,
+            formatSingleLabel: shortServiceName,
+        });
+
+        CatlecUtils.setupMultiselect('mop-etapa', filters.etapas, 'Todas las etapas', 'etapas seleccionadas', (selected) => {
+            selectedEtapas = selected;
+            applyFilters();
         });
     }
 
@@ -191,20 +148,8 @@
             searchInput.addEventListener('input', applyFilters);
         }
 
-        // Toggle dropdowns
-        bindDropdownToggle('mop-region-multiselect-btn', 'mop-region-multiselect-dropdown');
-        bindDropdownToggle('mop-servicio-multiselect-btn', 'mop-servicio-multiselect-dropdown');
-        bindDropdownToggle('mop-etapa-multiselect-btn', 'mop-etapa-multiselect-dropdown');
-
-        // Check All actions
-        bindCheckAll('mop-region-check-all', '.mop-region-cb', updateSelectedRegions);
-        bindCheckAll('mop-servicio-check-all', '.mop-servicio-cb', updateSelectedServicios);
-        bindCheckAll('mop-etapa-check-all', '.mop-etapa-cb', updateSelectedEtapas);
-
         // Click outside closes dropdowns
-        document.addEventListener('click', () => {
-            closeAllMultiselects();
-        });
+        document.addEventListener('click', CatlecUtils.closeAllMultiselects);
 
         // Reset button
         const resetBtn = document.getElementById('mop-btn-reset');
@@ -219,103 +164,11 @@
         }
     }
 
-    function bindDropdownToggle(btnId, dropdownId) {
-        const btn = document.getElementById(btnId);
-        const dropdown = document.getElementById(dropdownId);
-        if (!btn || !dropdown) return;
-
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isOpen = dropdown.style.display === 'flex';
-            closeAllMultiselects();
-            dropdown.style.display = isOpen ? 'none' : 'flex';
-        });
-
-        dropdown.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
-    }
-
-    function closeAllMultiselects() {
-        document.querySelectorAll('.multiselect-dropdown').forEach(dd => {
-            dd.style.display = 'none';
-        });
-    }
-
-    function bindCheckAll(checkAllId, cbSelector, updateFn) {
-        const checkAll = document.getElementById(checkAllId);
-        if (!checkAll) return;
-        checkAll.addEventListener('change', () => {
-            const isChecked = checkAll.checked;
-            document.querySelectorAll(cbSelector).forEach(cb => {
-                cb.checked = isChecked;
-            });
-            updateFn();
-        });
-    }
-
-    function updateSelectedRegions() {
-        const checked = Array.from(document.querySelectorAll('.mop-region-cb:checked')).map(c => c.value);
-        selectedRegions = checked;
-        const total = window.MOP_DATA?.filters?.regions?.length || 0;
-        const count = checked.length;
-
-        const checkAll = document.getElementById('mop-region-check-all');
-        if (checkAll) checkAll.checked = (count === total && total > 0);
-
-        const textEl = document.getElementById('mop-region-multiselect-text');
-        if (textEl) {
-            if (count === 0 || count === total) textEl.textContent = 'Todas las regiones';
-            else if (count === 1) textEl.textContent = checked[0];
-            else textEl.textContent = `${count} regiones seleccionadas`;
-        }
-
-        applyFilters();
-    }
-
-    function updateSelectedServicios() {
-        const checked = Array.from(document.querySelectorAll('.mop-servicio-cb:checked')).map(c => c.value);
-        selectedServicios = checked;
-        const total = window.MOP_DATA?.filters?.servicios?.length || 0;
-        const count = checked.length;
-
-        const checkAll = document.getElementById('mop-servicio-check-all');
-        if (checkAll) checkAll.checked = (count === total && total > 0);
-
-        const textEl = document.getElementById('mop-servicio-multiselect-text');
-        if (textEl) {
-            if (count === 0 || count === total) textEl.textContent = 'Todos los servicios';
-            else if (count === 1) textEl.textContent = shortServiceName(checked[0]);
-            else textEl.textContent = `${count} servicios seleccionados`;
-        }
-
-        applyFilters();
-    }
-
-    function updateSelectedEtapas() {
-        const checked = Array.from(document.querySelectorAll('.mop-etapa-cb:checked')).map(c => c.value);
-        selectedEtapas = checked;
-        const total = window.MOP_DATA?.filters?.etapas?.length || 0;
-        const count = checked.length;
-
-        const checkAll = document.getElementById('mop-etapa-check-all');
-        if (checkAll) checkAll.checked = (count === total && total > 0);
-
-        const textEl = document.getElementById('mop-etapa-multiselect-text');
-        if (textEl) {
-            if (count === 0 || count === total) textEl.textContent = 'Todas las etapas';
-            else if (count === 1) textEl.textContent = checked[0];
-            else textEl.textContent = `${count} etapas seleccionadas`;
-        }
-
-        applyFilters();
-    }
-
     function resetFilters() {
         const searchInput = document.getElementById('mop-search-input');
         if (searchInput) searchInput.value = '';
 
-        document.querySelectorAll('.mop-region-cb, .mop-servicio-cb, .mop-etapa-cb, #mop-region-check-all, #mop-servicio-check-all, #mop-etapa-check-all').forEach(cb => {
+        document.querySelectorAll('.mop-region-checkbox, .mop-servicio-checkbox, .mop-etapa-checkbox, #mop-region-check-all, #mop-servicio-check-all, #mop-etapa-check-all').forEach(cb => {
             cb.checked = false;
         });
 
@@ -332,7 +185,7 @@
         const etapaText = document.getElementById('mop-etapa-multiselect-text');
         if (etapaText) etapaText.textContent = 'Todas las etapas';
 
-        closeAllMultiselects();
+        CatlecUtils.closeAllMultiselects();
 
         // Restablecer ordenación de la tabla al orden original por defecto (descendente por costo total)
         sortColumn = 'cost_mm';
@@ -730,69 +583,6 @@
         }
     }
 
-    // ── External Tooltip (Dark Floating Box aligned with EFE.html) ───────────
-    function mopExternalTooltip(context) {
-        const { chart, tooltip } = context;
-        const tooltipId = 'mop-analysis-tooltip';
-        let el = document.getElementById(tooltipId);
-        if (!el) {
-            el = document.createElement('div');
-            el.id = tooltipId;
-            el.style.cssText = [
-                'position:fixed',
-                'background:rgba(0,0,0,0.85)',
-                'color:#fff',
-                'border-radius:4px',
-                'padding:6px 9px',
-                'font:11.5px/1.4 system-ui,-apple-system,sans-serif',
-                'pointer-events:none',
-                'white-space:nowrap',
-                'z-index:9999',
-                'box-shadow:0 4px 12px rgba(0,0,0,0.3)',
-                'opacity:0'
-            ].join(';');
-            document.body.appendChild(el);
-        }
-
-        if (tooltip.opacity === 0) {
-            el.style.transition = 'opacity 0.2s ease-in';
-            el.style.opacity = '0';
-            return;
-        }
-
-        const wasVisible = parseFloat(el.style.opacity || '0') > 0.05;
-        const title = (tooltip.title || []).join('\n');
-        const bodyLines = (tooltip.body || []).flatMap(b => b.lines);
-
-        el.innerHTML = [
-            title ? `<div style="font-weight:700;margin-bottom:2px">${title}</div>` : '',
-            ...bodyLines.map(line => `<div>${line}</div>`)
-        ].join('');
-
-        const canvasRect = chart.canvas.getBoundingClientRect();
-        let left = canvasRect.left + tooltip.caretX + 10;
-        let top = canvasRect.top + tooltip.caretY - 10;
-
-        const rect = el.getBoundingClientRect();
-        if (rect.width > 0 && left + rect.width > window.innerWidth - 8) {
-            left = canvasRect.left + tooltip.caretX - rect.width - 10;
-        }
-
-        if (wasVisible) {
-            el.style.transition = 'opacity 0.2s ease-out, left 0.15s cubic-bezier(0.2, 0, 0, 1), top 0.15s cubic-bezier(0.2, 0, 0, 1)';
-            el.style.left = left + 'px';
-            el.style.top = top + 'px';
-            el.style.opacity = '1';
-        } else {
-            el.style.transition = 'none';
-            el.style.left = left + 'px';
-            el.style.top = top + 'px';
-            void el.offsetHeight;
-            el.style.transition = 'opacity 0.2s ease-out';
-            el.style.opacity = '1';
-        }
-    }
-
     // ── Global Filter State ───────────────────────────────────────────────────
     let currentActiveTab  = 'resumen';
 
@@ -1039,7 +829,7 @@
         } else {
             charts.region = new Chart(canvas, {
                 type: 'bar',
-                plugins: [horizontalBarDataLabelsPlugin],
+                plugins: [CatlecUtils.horizontalBarDataLabelsPlugin],
                 data: {
                     labels: labels,
                     datasets: [{
@@ -1137,7 +927,7 @@
         } else {
             charts[id] = new Chart(canvas, {
                 type: 'bar',
-                plugins: [horizontalBarDataLabelsPlugin],
+                plugins: [CatlecUtils.horizontalBarDataLabelsPlugin],
                 data: {
                     labels: labels,
                     datasets: [{
@@ -1243,7 +1033,7 @@
         } else {
             charts[id] = new Chart(canvas, {
                 type: 'bar',
-                plugins: [horizontalBarDataLabelsPlugin],
+                plugins: [CatlecUtils.horizontalBarDataLabelsPlugin],
                 data: {
                     labels: labels,
                     datasets: [{
@@ -1344,7 +1134,7 @@
         } else {
             charts['region-count'] = new Chart(canvas, {
                 type: 'bar',
-                plugins: [horizontalBarDataLabelsPlugin],
+                plugins: [CatlecUtils.horizontalBarDataLabelsPlugin],
                 data: {
                     labels: labels,
                     datasets: [{

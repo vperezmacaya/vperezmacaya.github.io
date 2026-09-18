@@ -4,17 +4,6 @@
  * Harmonized with CATLEC index.html design palette, fonts, and SVG styling.
  */
 
-// ── Parse date string → fractional year number (standard CATLEC) ──────
-function dateToYear(str) {
-    if (!str) return null;
-    const d = new Date(str);
-    if (isNaN(d.getTime())) return null;
-    const y = d.getFullYear();
-    const start = new Date(y, 0, 1);
-    const end = new Date(y + 1, 0, 1);
-    return y + (d - start) / (end - start);
-}
-
 // ── Paleta de Colores por Etapa (CATLEC EFE) ──────────────────────────────────
 const EFE_STAGE_COLORS = {
     'ejecución': '#2563eb',      // Azul Real
@@ -300,24 +289,6 @@ function efeSvgEl(tag, attrs = {}) {
     return el;
 }
 
-function efeWrapText(text, maxChars = 32) {
-    if (!text) return ['—'];
-    const words = text.toString().split(' ');
-    const lines = [];
-    let currentLine = '';
-
-    words.forEach(w => {
-        if ((currentLine + (currentLine ? ' ' : '') + w).length <= maxChars) {
-            currentLine += (currentLine ? ' ' : '') + w;
-        } else {
-            if (currentLine) lines.push(currentLine);
-            currentLine = w;
-        }
-    });
-    if (currentLine) lines.push(currentLine);
-    return lines.length > 0 ? lines : [text];
-}
-
 // ── Main Timeline Render ─────────────────────────────────────────────────────
 function renderEfeTimeline(projects, highlightName = null) {
     const data = (projects && projects.length > 0)
@@ -330,7 +301,7 @@ function renderEfeTimeline(projects, highlightName = null) {
     // Actualizar dinámicamente la leyenda con las etapas presentes
     updateEfeTimelineLegend(data);
 
-    const todayYear = dateToYear(new Date().toISOString().slice(0, 10));
+    const todayYear = CatlecUtils.dateToYear(new Date().toISOString().slice(0, 10));
 
     const opYears = data.map(p => efeGetNumericYear(p.operation_year)).filter(y => y != null && !isNaN(y));
     const maxOp = opYears.length > 0 ? Math.max(...opYears) : Math.floor(todayYear);
@@ -365,7 +336,7 @@ function renderEfeTimeline(projects, highlightName = null) {
 
     // ── Row Metrics ─────────────────────────────────────────────────────────
     const rowMetrics = sortedData.map(p => {
-        const lines = efeWrapText(p.name, 30);
+        const lines = CatlecUtils.wrapText(p.name, 30);
         const textH = lines.length * 13;
         const height = Math.max(EFE_TL_ROW_PAD_V * 2 + EFE_TL_BAR_H, textH + EFE_TL_ROW_PAD_V * 2);
         return { height, lines };

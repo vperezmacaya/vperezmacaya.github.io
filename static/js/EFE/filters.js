@@ -6,12 +6,6 @@ if (typeof window !== 'undefined') {
     window.currentFilteredEFELines = currentFilteredEFELines;
 }
 
-function efeNormalize(str) {
-    return str
-        ? str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
-        : '';
-}
-
 function efeFormatInvestment(valueMM) {
     if (valueMM == null || isNaN(valueMM)) return '—';
     const v = Number(valueMM);
@@ -33,10 +27,10 @@ function efeFilialMatchesFilter(projectFilial, selectedFiliales) {
     if (!projectFilial || String(projectFilial).trim() === '' || String(projectFilial).trim().toLowerCase() === 'nan') {
         return hasSinFilial;
     }
-    const normProjFilial = efeNormalize(projectFilial);
+    const normProjFilial = CatlecUtils.normalizeAccents(projectFilial);
     return selectedFiliales.some(selected => {
         if (selected === 'Sin filial específica') return false;
-        const normSelected = efeNormalize(selected);
+        const normSelected = CatlecUtils.normalizeAccents(selected);
         return normProjFilial.includes(normSelected) || normSelected.includes(normProjFilial);
     });
 }
@@ -55,130 +49,25 @@ function efeTipoMatchesFilter(projectTipo, selectedTipos) {
 }
 
 function efeLoadFilters() {
-    // Populate filial checkboxes
-    if (efeFilialOptionsList) {
-        efeFilialOptionsList.innerHTML = '';
-        efeAvailableFiliales.forEach(filial => {
-            const label = document.createElement('label');
-            label.className = 'multiselect-option';
-            label.innerHTML = `<input type="checkbox" class="efe-filial-checkbox" value="${filial}">
-                <span>${filial}</span>`;
-            efeFilialOptionsList.appendChild(label);
-        });
-
-        // Check-all
-        if (efeFilialCheckAll) {
-            efeFilialCheckAll.addEventListener('change', () => {
-                const isChecked = efeFilialCheckAll.checked;
-                document.querySelectorAll('.efe-filial-checkbox').forEach(cb => cb.checked = isChecked);
-                efeUpdateSelectedFiliales();
-            });
-        }
-
-        document.querySelectorAll('.efe-filial-checkbox').forEach(cb => {
-            cb.addEventListener('change', efeUpdateSelectedFiliales);
-        });
-    }
-
-    // Populate detail checkboxes (Portafolio Estratégico vs Preinversional)
-    if (efeDetailOptionsList) {
-        efeDetailOptionsList.innerHTML = '';
-        efeAvailableDetails.forEach(detail => {
-            const label = document.createElement('label');
-            label.className = 'multiselect-option';
-            label.innerHTML = `<input type="checkbox" class="efe-detail-checkbox" value="${detail}">
-                <span>${detail}</span>`;
-            efeDetailOptionsList.appendChild(label);
-        });
-
-        // Check-all
-        if (efeDetailCheckAll) {
-            efeDetailCheckAll.addEventListener('change', () => {
-                const isChecked = efeDetailCheckAll.checked;
-                document.querySelectorAll('.efe-detail-checkbox').forEach(cb => cb.checked = isChecked);
-                efeUpdateSelectedDetails();
-            });
-        }
-
-        document.querySelectorAll('.efe-detail-checkbox').forEach(cb => {
-            cb.addEventListener('change', efeUpdateSelectedDetails);
-        });
-    }
-
-    // Populate tipo checkboxes
-    if (efeTipoOptionsList) {
-        efeTipoOptionsList.innerHTML = '';
-        efeAvailableTipos.forEach(tipo => {
-            const label = document.createElement('label');
-            label.className = 'multiselect-option';
-            const svgIcon = (typeof efeGetProjectTypeSvg === 'function')
-                ? efeGetProjectTypeSvg(tipo, 12, 12, 'currentColor')
-                : '';
-            const tipoColor = (typeof EFE_TIPO_COLORS !== 'undefined' && EFE_TIPO_COLORS[tipo])
-                ? EFE_TIPO_COLORS[tipo]
-                : '#2563eb';
-            label.innerHTML = `<input type="checkbox" class="efe-tipo-checkbox" value="${tipo}">
-                <span style="display:flex; align-items:center; gap:0.35rem;">
-                    <span style="display:inline-flex; align-items:center; justify-content:center; color:${tipoColor};">${svgIcon}</span>
-                    <span>${tipo}</span>
-                </span>`;
-            efeTipoOptionsList.appendChild(label);
-        });
-
-        // Check-all
-        if (efeTipoCheckAll) {
-            efeTipoCheckAll.addEventListener('change', () => {
-                const isChecked = efeTipoCheckAll.checked;
-                document.querySelectorAll('.efe-tipo-checkbox').forEach(cb => cb.checked = isChecked);
-                efeUpdateSelectedTipos();
-            });
-        }
-
-        document.querySelectorAll('.efe-tipo-checkbox').forEach(cb => {
-            cb.addEventListener('change', efeUpdateSelectedTipos);
-        });
-    }
-
-    // Multiselect dropdown toggles
-    if (efeFilialMultiselectBtn && efeFilialMultiselectDropdown) {
-        efeFilialMultiselectBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (efeDetailMultiselectDropdown) efeDetailMultiselectDropdown.style.display = 'none';
-            if (efeTipoMultiselectDropdown) efeTipoMultiselectDropdown.style.display = 'none';
-            const isOpen = efeFilialMultiselectDropdown.style.display === 'block';
-            efeFilialMultiselectDropdown.style.display = isOpen ? 'none' : 'block';
-        });
-    }
-
-    if (efeDetailMultiselectBtn && efeDetailMultiselectDropdown) {
-        efeDetailMultiselectBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (efeFilialMultiselectDropdown) efeFilialMultiselectDropdown.style.display = 'none';
-            if (efeTipoMultiselectDropdown) efeTipoMultiselectDropdown.style.display = 'none';
-            const isOpen = efeDetailMultiselectDropdown.style.display === 'block';
-            efeDetailMultiselectDropdown.style.display = isOpen ? 'none' : 'block';
-        });
-    }
-
-    if (efeTipoMultiselectBtn && efeTipoMultiselectDropdown) {
-        efeTipoMultiselectBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (efeFilialMultiselectDropdown) efeFilialMultiselectDropdown.style.display = 'none';
-            if (efeDetailMultiselectDropdown) efeDetailMultiselectDropdown.style.display = 'none';
-            const isOpen = efeTipoMultiselectDropdown.style.display === 'block';
-            efeTipoMultiselectDropdown.style.display = isOpen ? 'none' : 'block';
-        });
-    }
-
-    document.addEventListener('click', () => {
-        if (efeFilialMultiselectDropdown) efeFilialMultiselectDropdown.style.display = 'none';
-        if (efeDetailMultiselectDropdown) efeDetailMultiselectDropdown.style.display = 'none';
-        if (efeTipoMultiselectDropdown) efeTipoMultiselectDropdown.style.display = 'none';
+    CatlecUtils.setupMultiselect('efe-filial', efeAvailableFiliales, 'Todas las filiales', 'filiales seleccionadas', (selected) => {
+        efeState.selectedFiliales = selected;
+        efeState.page = 1;
+        efeFetchData();
     });
 
-    if (efeFilialMultiselectDropdown) efeFilialMultiselectDropdown.addEventListener('click', e => e.stopPropagation());
-    if (efeDetailMultiselectDropdown) efeDetailMultiselectDropdown.addEventListener('click', e => e.stopPropagation());
-    if (efeTipoMultiselectDropdown) efeTipoMultiselectDropdown.addEventListener('click', e => e.stopPropagation());
+    CatlecUtils.setupMultiselect('efe-detail', efeAvailableDetails, 'Toda la cartera', 'carteras seleccionadas', (selected) => {
+        efeState.selectedDetails = selected;
+        efeState.page = 1;
+        efeFetchData();
+    });
+
+    CatlecUtils.setupMultiselect('efe-tipo', efeAvailableTipos, 'Todos los tipos', 'tipos seleccionados', (selected) => {
+        efeState.selectedTipos = selected;
+        efeState.page = 1;
+        efeFetchData();
+    });
+
+    document.addEventListener('click', CatlecUtils.closeAllMultiselects);
 
     efeInitTableSorting();
 }
@@ -217,63 +106,15 @@ function efeUpdateSortHeaderIcons() {
     });
 }
 
-function efeUpdateSelectedFiliales() {
-    const checked = Array.from(document.querySelectorAll('.efe-filial-checkbox:checked'));
-    efeState.selectedFiliales = checked.map(cb => cb.value);
-
-    const total = efeAvailableFiliales.length;
-    const count = efeState.selectedFiliales.length;
-    if (efeFilialCheckAll) efeFilialCheckAll.checked = (count === total && total > 0);
-    if (efeFilialMultiselectText) {
-        if (count === 0 || count === total) efeFilialMultiselectText.textContent = 'Todas las filiales';
-        else if (count === 1) efeFilialMultiselectText.textContent = efeState.selectedFiliales[0];
-        else efeFilialMultiselectText.textContent = `${count} filiales seleccionadas`;
-    }
-    efeState.page = 1;
-    efeFetchData();
-}
-
-function efeUpdateSelectedDetails() {
-    const checked = Array.from(document.querySelectorAll('.efe-detail-checkbox:checked'));
-    efeState.selectedDetails = checked.map(cb => cb.value);
-
-    const total = efeAvailableDetails.length;
-    const count = efeState.selectedDetails.length;
-    if (efeDetailCheckAll) efeDetailCheckAll.checked = (count === total && total > 0);
-    if (efeDetailMultiselectText) {
-        if (count === 0 || count === total) efeDetailMultiselectText.textContent = 'Toda la cartera';
-        else if (count === 1) efeDetailMultiselectText.textContent = efeState.selectedDetails[0];
-        else efeDetailMultiselectText.textContent = `${count} carteras seleccionadas`;
-    }
-    efeState.page = 1;
-    efeFetchData();
-}
-
-function efeUpdateSelectedTipos() {
-    const checked = Array.from(document.querySelectorAll('.efe-tipo-checkbox:checked'));
-    efeState.selectedTipos = checked.map(cb => cb.value);
-
-    const total = efeAvailableTipos.length;
-    const count = efeState.selectedTipos.length;
-    if (efeTipoCheckAll) efeTipoCheckAll.checked = (count === total && total > 0);
-    if (efeTipoMultiselectText) {
-        if (count === 0 || count === total) efeTipoMultiselectText.textContent = 'Todos los tipos';
-        else if (count === 1) efeTipoMultiselectText.textContent = efeState.selectedTipos[0];
-        else efeTipoMultiselectText.textContent = `${count} tipos seleccionados`;
-    }
-    efeState.page = 1;
-    efeFetchData();
-}
-
 function efeFetchData() {
     const allProjects = (window.EFE_DATA && window.EFE_DATA.data) ? window.EFE_DATA.data : [];
-    const searchNorm = efeNormalize(efeState.search);
+    const searchNorm = CatlecUtils.normalizeAccents(efeState.search);
 
     // ─── 1. Filter Projects (Search, Filial, Cartera, Tipo) ───────────────
     let filtered = allProjects.filter(proj => {
         // Search
         if (searchNorm) {
-            const haystack = efeNormalize(proj.name + ' ' + (proj.filial || '') + ' ' + (proj.stage || '') + ' ' + (proj.detail || '') + ' ' + (proj.type || '') + ' ' + (proj.description || ''));
+            const haystack = CatlecUtils.normalizeAccents(proj.name + ' ' + (proj.filial || '') + ' ' + (proj.stage || '') + ' ' + (proj.detail || '') + ' ' + (proj.type || '') + ' ' + (proj.description || ''));
             if (!haystack.includes(searchNorm)) return false;
         }
         // Filial filter
@@ -289,7 +130,7 @@ function efeFetchData() {
     const allLines = (window.EFE_DATA && window.EFE_DATA.lines) ? window.EFE_DATA.lines : [];
     let filteredLines = allLines.filter(l => {
         if (searchNorm) {
-            const haystack = efeNormalize(
+            const haystack = CatlecUtils.normalizeAccents(
                 (l.service || '') + ' ' +
                 (l.filial || '') + ' ' +
                 (l.terminals || '') + ' ' +
@@ -589,17 +430,7 @@ function exportEFEToGeoJSON() {
         features: validFeatures
     };
 
-    const jsonString = JSON.stringify(exportCollection, null, 2);
-    const blob = new Blob([jsonString], { type: "application/geo+json;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const downloadAnchor = document.createElement('a');
-    const today = new Date().toISOString().slice(0, 10);
-    downloadAnchor.setAttribute('href', url);
-    downloadAnchor.setAttribute('download', `CATLEC_EFE_Red_Ferroviaria_${today}.geojson`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    CatlecUtils.downloadGeoJSON(exportCollection, 'CATLEC_EFE_Red_Ferroviaria');
 }
 
 

@@ -119,9 +119,7 @@ function normalizeGeoJSONRegionName(geoName) {
     if (!geoName) return '';
 
     // Normalización de texto (remover tildes, comillas, apóstrofes, guiones)
-    const norm = (str) => (str || '')
-        .toLowerCase()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    const norm = (str) => CatlecUtils.normalizeAccents(str || '')
         .replace(/['´`\-_]/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();

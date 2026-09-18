@@ -169,51 +169,9 @@ function renderContractsAnalytics(contractsList) {
     const cntLabels = sortedCntRegions.map(e => e[0]);
     const cntValues = sortedCntRegions.map(e => e[1]);
 
-// Plugin para dibujar etiquetas de valor en barras horizontales (dentro o fuera según espacio disponible)
-const horizontalBarDataLabelsPlugin = {
-    id: 'horizontalBarDataLabelsPlugin',
-    afterDatasetsDraw: (chart, args, pluginOptions) => {
-        const ctx = chart.ctx;
-        const meta = chart.getDatasetMeta(0);
-        if (!meta || !meta.data) return;
-
-        const isDark = document.body.classList.contains('dark-theme');
-        const outsideColor = isDark ? '#cbd5e1' : '#334155';
-        const insideColor = '#ffffff';
-        const formatter = (pluginOptions && pluginOptions.formatter) || ((v) => String(v));
-
-        ctx.save();
-        ctx.font = '600 9px Inter, system-ui, -apple-system, sans-serif';
-        ctx.textBaseline = 'middle';
-
-        meta.data.forEach((bar, index) => {
-            const rawVal = chart.data.datasets[0].data[index];
-            if (rawVal === undefined || rawVal === null || rawVal <= 0) return;
-
-            const text = formatter(rawVal);
-            const textWidth = ctx.measureText(text).width;
-            const barWidth = Math.abs(bar.x - bar.base);
-
-            // Si la barra tiene suficiente espacio interior (ancho >= texto + 18px), se dibuja adentro
-            if (barWidth >= textWidth + 18) {
-                ctx.fillStyle = insideColor;
-                ctx.textAlign = 'right';
-                ctx.fillText(text, bar.x - 6, bar.y);
-            } else {
-                // Si la barra es estrecha, se dibuja afuera a la derecha
-                ctx.fillStyle = outsideColor;
-                ctx.textAlign = 'left';
-                ctx.fillText(text, bar.x + 5, bar.y);
-            }
-        });
-
-        ctx.restore();
-    }
-};
-
     chartContractsByRegionInstance = createOrUpdateChart('chartContractsByRegion', chartContractsByRegionInstance, {
         type: 'bar',
-        plugins: [horizontalBarDataLabelsPlugin],
+        plugins: [CatlecUtils.horizontalBarDataLabelsPlugin],
         data: {
             labels: cntLabels,
             datasets: [{

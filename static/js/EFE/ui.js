@@ -1,13 +1,5 @@
 // ─── EFE UI Module ───────────────────────────────────────────────────────────
 
-function efeDebounce(fn, delay) {
-    let timer;
-    return function(...args) {
-        clearTimeout(timer);
-        timer = setTimeout(() => fn.apply(this, args), delay);
-    };
-}
-
 function efeFormatFilialCell(filialStr) {
     if (!filialStr || String(filialStr).trim() === '' || String(filialStr).trim().toLowerCase() === 'nan' || String(filialStr).trim().toLowerCase() === 'null') {
         return '<span style="color:var(--text-muted);font-style:italic;font-size:0.75rem;">Sin filial específica</span>';
@@ -518,7 +510,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Search
     if (efeSearchInput) {
-        efeSearchInput.addEventListener('input', efeDebounce(() => {
+        efeSearchInput.addEventListener('input', CatlecUtils.debounce(() => {
             efeState.search = efeSearchInput.value;
             efeState.page = 1;
             efeFetchData();

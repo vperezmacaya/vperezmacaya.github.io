@@ -61,7 +61,7 @@ function getGroupEarliestStartDate(g) {
     g.segments.forEach(seg => {
         [seg.start_date, seg.tender_date, seg.adjudication_date].forEach(d => {
             if (d) {
-                const y = dateToYear(d);
+                const y = CatlecUtils.dateToYear(d);
                 if (y !== null && y < earliest) {
                     earliest = y;
                 }
@@ -125,10 +125,10 @@ function renderTimeline(data, highlightCode = null) {
             if (seg.code && seenSegmentCodes.has(seg.code)) return;
             if (seg.code) seenSegmentCodes.add(seg.code);
 
-            const startY = dateToYear(seg.start_date);
-            const endY = dateToYear(seg.end_date);
-            const tenderY = dateToYear(seg.tender_date);
-            const adjY = dateToYear(seg.adjudication_date);
+            const startY = CatlecUtils.dateToYear(seg.start_date);
+            const endY = CatlecUtils.dateToYear(seg.end_date);
+            const tenderY = CatlecUtils.dateToYear(seg.tender_date);
+            const adjY = CatlecUtils.dateToYear(seg.adjudication_date);
 
             if (startY !== null && endY !== null && endY > startY) {
                 durations.push(endY - startY);
@@ -173,7 +173,7 @@ function renderTimeline(data, highlightCode = null) {
     // Per-group row metrics (variable heights with multiline text wrapping)
     const rowMetrics = groups.map(g => {
         const n = g.segments.length;
-        const lines = wrapTimelineText(g.name, 27);
+        const lines = CatlecUtils.wrapText(g.name, 27);
         const textH = lines.length * 13;
         const barLanesH = n * SUBLANE_H + Math.max(0, n - 1) * SUBLANE_GAP;
         const height = Math.max(ROW_PAD_V * 2 + barLanesH, textH + ROW_PAD_V * 2);
@@ -196,13 +196,13 @@ function renderTimeline(data, highlightCode = null) {
 
     // Compute global year range
     let minYear = Infinity, maxYear = -Infinity;
-    const todayYear = dateToYear(new Date().toISOString().slice(0, 10));
+    const todayYear = CatlecUtils.dateToYear(new Date().toISOString().slice(0, 10));
 
     groups.forEach(g => {
         g.segments.forEach(seg => {
             [seg.start_date, seg.end_date,
             seg.resolution_date, seg.tender_date, seg.adjudication_date].forEach(d => {
-                const y = dateToYear(d);
+                const y = CatlecUtils.dateToYear(d);
                 if (y !== null) {
                     if (y < minYear) minYear = y;
                     if (y > maxYear) maxYear = y;
@@ -394,8 +394,8 @@ function renderTimeline(data, highlightCode = null) {
         g.segments.forEach((seg, si) => {
             const color = BAR_COLORS[Math.min(si, BAR_COLORS.length - 1)];
             const laneY = rowY + rowMetrics[i].laneYs[si];
-            const startY = dateToYear(seg.start_date);
-            const endY = dateToYear(seg.end_date);
+            const startY = CatlecUtils.dateToYear(seg.start_date);
+            const endY = CatlecUtils.dateToYear(seg.end_date);
             const isCurrentSeg = cleanHighlight && seg.code && seg.code.toString().trim() === cleanHighlight;
 
             if (startY !== null && endY !== null) {
@@ -457,7 +457,7 @@ function renderTimeline(data, highlightCode = null) {
             }
 
             // Milestone circle: tender_date (Llamado a Licitación)
-            const tenderY = dateToYear(seg.tender_date);
+            const tenderY = CatlecUtils.dateToYear(seg.tender_date);
             if (tenderY !== null && tenderY >= minYear && tenderY <= maxYear) {
                 const tx = toPx(tenderY);
                 const ty = laneY + SUBLANE_H / 2;
@@ -494,7 +494,7 @@ function renderTimeline(data, highlightCode = null) {
             }
 
             // Milestone diamond: adjudication_date
-            const adjY = dateToYear(seg.adjudication_date);
+            const adjY = CatlecUtils.dateToYear(seg.adjudication_date);
             if (adjY !== null && adjY >= minYear && adjY <= maxYear) {
                 const mx = toPx(adjY);
                 const my = laneY + SUBLANE_H / 2;
@@ -529,7 +529,7 @@ function renderTimeline(data, highlightCode = null) {
             }
 
             // Milestone circle: resolution_date
-            const resY = dateToYear(seg.resolution_date);
+            const resY = CatlecUtils.dateToYear(seg.resolution_date);
             if (resY !== null && resY >= minYear && resY <= maxYear) {
                 const cx = toPx(resY);
                 const cy = laneY + SUBLANE_H / 2;

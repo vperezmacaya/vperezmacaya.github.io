@@ -91,119 +91,8 @@ const todayLineChartPlugin = {
     }
 };
 
-// Plugin para dibujar etiquetas de valor en barras horizontales (dentro o fuera según espacio disponible)
-const horizontalBarDataLabelsPlugin = {
-    id: 'horizontalBarDataLabelsPlugin',
-    afterDatasetsDraw: (chart, args, pluginOptions) => {
-        const ctx = chart.ctx;
-        const meta = chart.getDatasetMeta(0);
-        if (!meta || !meta.data) return;
-
-        const isDark = document.body.classList.contains('dark-theme');
-        const outsideColor = isDark ? '#cbd5e1' : '#334155';
-        const insideColor = '#ffffff';
-        const formatter = (pluginOptions && pluginOptions.formatter) || ((v) => String(v));
-
-        ctx.save();
-        ctx.font = '600 9px Inter, system-ui, -apple-system, sans-serif';
-        ctx.textBaseline = 'middle';
-
-        meta.data.forEach((bar, index) => {
-            const rawVal = chart.data.datasets[0].data[index];
-            if (rawVal === undefined || rawVal === null || rawVal <= 0) return;
-
-            const text = formatter(rawVal);
-            const textWidth = ctx.measureText(text).width;
-            const barWidth = Math.abs(bar.x - bar.base);
-
-            // Si la barra tiene suficiente espacio interior (ancho >= texto + 18px), se dibuja adentro
-            if (barWidth >= textWidth + 18) {
-                ctx.fillStyle = insideColor;
-                ctx.textAlign = 'right';
-                ctx.fillText(text, bar.x - 6, bar.y);
-            } else {
-                // Si la barra es estrecha, se dibuja afuera a la derecha
-                ctx.fillStyle = outsideColor;
-                ctx.textAlign = 'left';
-                ctx.fillText(text, bar.x + 5, bar.y);
-            }
-        });
-
-        ctx.restore();
-    }
-};
-
 // Shared external tooltip for all investment panel charts (ensures identical style across all)
-function investmentExternalTooltip(context) {
-    const { chart, tooltip } = context;
-    const tooltipId = 'inv-shared-tooltip';
-    let el = document.getElementById(tooltipId);
-    if (!el) {
-        el = document.createElement('div');
-        el.id = tooltipId;
-        // Match Chart.js native tooltip style exactly
-        el.style.cssText = [
-            'position:fixed',
-            'background:rgba(0,0,0,0.8)',
-            'color:#fff',
-            'border-radius:3px',
-            'padding:6px 8px',
-            'font:12px/1.4 system-ui,sans-serif',
-            'pointer-events:none',
-            'white-space:nowrap',
-            'z-index:9999',
-            'opacity:0'
-        ].join(';');
-        document.body.appendChild(el);
-    }
-
-    if (tooltip.opacity === 0) {
-        // Fade out: slower, ease-in
-        el.style.transition = 'opacity 0.25s ease-in';
-        el.style.opacity = '0';
-        return;
-    }
-
-    const wasVisible = parseFloat(el.style.opacity || '0') > 0.05;
-
-    // Title
-    const title = (tooltip.title || []).join('\n');
-    // Body lines
-    const bodyLines = (tooltip.body || []).flatMap(b => b.lines);
-
-    el.innerHTML = [
-        title ? `<div style="font-weight:700;margin-bottom:3px">${title}</div>` : '',
-        ...bodyLines.map(line => `<div>${line}</div>`)
-    ].join('');
-
-    // Position near caret using page coordinates
-    const canvasRect = chart.canvas.getBoundingClientRect();
-    let left = canvasRect.left + tooltip.caretX + 10;
-    let top = canvasRect.top + tooltip.caretY - 10;
-
-    // Nudge left if overflowing right edge
-    const rect = el.getBoundingClientRect();
-    if (rect.width > 0 && left + rect.width > window.innerWidth - 8) {
-        left = canvasRect.left + tooltip.caretX - rect.width - 10;
-    }
-
-    if (wasVisible) {
-        // Smooth slide transition when moving between slices/bars
-        el.style.transition = 'opacity 0.2s ease-out, left 0.8s cubic-bezier(0.2, 0, 0.2, 1), top 0.8s cubic-bezier(0.2, 0, 0.2, 1)';
-        el.style.left = left + 'px';
-        el.style.top = top + 'px';
-        el.style.opacity = '1';
-    } else {
-        // Instant position placement on initial hover, then fade in
-        el.style.transition = 'none';
-        el.style.left = left + 'px';
-        el.style.top = top + 'px';
-        // Force reflow
-        void el.offsetHeight;
-        el.style.transition = 'opacity 0.2s ease-out';
-        el.style.opacity = '1';
-    }
-}
+const investmentExternalTooltip = CatlecTooltip.create({ domId: 'inv-shared-tooltip' });
 
 function renderInvestmentAnalytics(contractsList) {
     if (!contractsList) return;
@@ -294,7 +183,7 @@ function renderInvestmentAnalytics(contractsList) {
 
     chartInvByRegionInstance = createOrUpdateChart('chartInvByRegion', chartInvByRegionInstance, {
         type: 'bar',
-        plugins: [horizontalBarDataLabelsPlugin],
+        plugins: [CatlecUtils.horizontalBarDataLabelsPlugin],
         data: {
             labels: invLabels,
             datasets: [{

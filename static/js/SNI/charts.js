@@ -30,115 +30,8 @@ if (typeof Chart !== 'undefined') {
 
 // Tooltip externo negro compartido para todos los gráficos SNI
 // (réplica exacta de investmentExternalTooltip de index.html)
-function sniExternalTooltip(context) {
-    const { chart, tooltip } = context;
-    const tooltipId = 'sni-shared-tooltip';
-    let el = document.getElementById(tooltipId);
-    if (!el) {
-        el = document.createElement('div');
-        el.id = tooltipId;
-        el.style.cssText = [
-            'position:fixed',
-            'background:rgba(0,0,0,0.8)',
-            'color:#fff',
-            'border-radius:3px',
-            'padding:6px 8px',
-            'font:12px/1.4 system-ui,sans-serif',
-            'pointer-events:none',
-            'white-space:nowrap',
-            'z-index:9999',
-            'opacity:0'
-        ].join(';');
-        document.body.appendChild(el);
-    }
+const sniExternalTooltip = CatlecTooltip.create({ domId: 'sni-shared-tooltip' });
 
-    if (tooltip.opacity === 0) {
-        el.style.transition = 'opacity 0.25s ease-in';
-        el.style.opacity = '0';
-        return;
-    }
-
-    const wasVisible = parseFloat(el.style.opacity || '0') > 0.05;
-
-    // Title
-    const titleLines = (tooltip.title || []).flatMap(t => Array.isArray(t) ? t : [t]);
-    const title = titleLines.map(t => String(t).trim()).filter(Boolean).join(' ');
-    // Body lines
-    const bodyLines = (tooltip.body || []).flatMap(b => b.lines).flatMap(l => Array.isArray(l) ? l : [l]);
-
-    el.innerHTML = [
-        title ? `<div style="font-weight:700;margin-bottom:3px">${title}</div>` : '',
-        ...bodyLines.map(line => `<div>${line}</div>`)
-    ].join('');
-
-    // Position near caret using page coordinates
-    const canvasRect = chart.canvas.getBoundingClientRect();
-    let left = canvasRect.left + tooltip.caretX + 10;
-    let top = canvasRect.top + tooltip.caretY - 10;
-
-    // Nudge left if overflowing right edge
-    const rect = el.getBoundingClientRect();
-    if (rect.width > 0 && left + rect.width > window.innerWidth - 8) {
-        left = canvasRect.left + tooltip.caretX - rect.width - 10;
-    }
-
-    if (wasVisible) {
-        // Smooth slide transition when moving between slices/bars
-        el.style.transition = 'opacity 0.2s ease-out, left 0.8s cubic-bezier(0.2, 0, 0.2, 1), top 0.8s cubic-bezier(0.2, 0, 0.2, 1)';
-        el.style.left = left + 'px';
-        el.style.top = top + 'px';
-        el.style.opacity = '1';
-    } else {
-        // Instant position placement on initial hover, then fade in
-        el.style.transition = 'none';
-        el.style.left = left + 'px';
-        el.style.top = top + 'px';
-        void el.offsetHeight;
-        el.style.transition = 'opacity 0.2s ease-out';
-        el.style.opacity = '1';
-    }
-}
-
-// Plugin para dibujar etiquetas de valor en barras horizontales
-// (réplica exacta de horizontalBarDataLabelsPlugin de index.html)
-const sniHorizontalBarLabelsPlugin = {
-    id: 'sniHorizontalBarLabelsPlugin',
-    afterDatasetsDraw: (chart, args, pluginOptions) => {
-        const ctx = chart.ctx;
-        const meta = chart.getDatasetMeta(0);
-        if (!meta || !meta.data) return;
-
-        const isDark = !document.body.classList.contains('light-theme');
-        const outsideColor = isDark ? '#cbd5e1' : '#334155';
-        const insideColor = '#ffffff';
-        const formatter = (pluginOptions && pluginOptions.formatter) || ((v) => String(v));
-
-        ctx.save();
-        ctx.font = "600 9px 'Inter', system-ui, -apple-system, sans-serif";
-        ctx.textBaseline = 'middle';
-
-        meta.data.forEach((bar, index) => {
-            const rawVal = chart.data.datasets[0].data[index];
-            if (rawVal === undefined || rawVal === null || rawVal <= 0) return;
-
-            const text = formatter(rawVal);
-            const textWidth = ctx.measureText(text).width;
-            const barWidth = Math.abs(bar.x - bar.base);
-
-            if (barWidth >= textWidth + 18) {
-                ctx.fillStyle = insideColor;
-                ctx.textAlign = 'right';
-                ctx.fillText(text, bar.x - 6, bar.y);
-            } else {
-                ctx.fillStyle = outsideColor;
-                ctx.textAlign = 'left';
-                ctx.fillText(text, bar.x + 5, bar.y);
-            }
-        });
-
-        ctx.restore();
-    }
-};
 
 // Opciones comunes y tema unificado (idéntico a index.html)
 function getChartThemeOptions() {
@@ -340,7 +233,7 @@ function updateMapMetricRankingChart() {
         // CREAR instancia nueva (primera vez)
         sniChartInstances.mapMetricRanking = new Chart(ctx, {
             type: 'bar',
-            plugins: [sniHorizontalBarLabelsPlugin],
+            plugins: [CatlecUtils.horizontalBarDataLabelsPlugin],
             data: {
                 labels: labels,
                 datasets: [{
@@ -362,7 +255,7 @@ function updateMapMetricRankingChart() {
                         ...baseOpts.plugins.tooltip,
                         callbacks: { label: makeTooltipCallback() }
                     },
-                    sniHorizontalBarLabelsPlugin: {
+                    horizontalBarDataLabelsPlugin: {
                         formatter: (val) => valFormatter(val)
                     }
                 },
@@ -431,7 +324,7 @@ function updateRegionRankingChart() {
     if (!sniChartInstances.regionRanking) {
         sniChartInstances.regionRanking = new Chart(ctx, {
             type: 'bar',
-            plugins: [sniHorizontalBarLabelsPlugin],
+            plugins: [CatlecUtils.horizontalBarDataLabelsPlugin],
             data: {
                 labels: labels,
                 datasets: [{
@@ -452,7 +345,7 @@ function updateRegionRankingChart() {
                         ...baseOpts.plugins.tooltip,
                         callbacks: { label: tooltipCb }
                     },
-                    sniHorizontalBarLabelsPlugin: {
+                    horizontalBarDataLabelsPlugin: {
                         formatter: (val) => `US$ ${val.toLocaleString('es-CL', { minimumFractionDigits: 1 })} MM`
                     }
                 },
@@ -684,7 +577,7 @@ function updateMinistryShareChart() {
     if (!sniChartInstances.ministryShare) {
         sniChartInstances.ministryShare = new Chart(ctx, {
             type: 'bar',
-            plugins: [sniHorizontalBarLabelsPlugin],
+            plugins: [CatlecUtils.horizontalBarDataLabelsPlugin],
             data: {
                 labels: labels,
                 datasets: [{
@@ -707,7 +600,7 @@ function updateMinistryShareChart() {
                         ...baseOpts.plugins.tooltip,
                         callbacks: { label: tooltipCb }
                     },
-                    sniHorizontalBarLabelsPlugin: {
+                    horizontalBarDataLabelsPlugin: {
                         formatter: (val) => {
                             const pct = totalUsd > 0 ? ((val / totalUsd) * 100).toFixed(1) : '0';
                             return `${val.toLocaleString('es-CL', { minimumFractionDigits: 1 })} (${pct}%)`;
@@ -739,8 +632,8 @@ function updateMinistryShareChart() {
         chart.data.datasets[0].backgroundColor = colors;
         chart.options.plugins.tooltip.callbacks.label = tooltipCb;
         chart.options.scales.x.ticks.callback = (v) => v.toLocaleString('es-CL');
-        if (chart.options.plugins.sniHorizontalBarLabelsPlugin) {
-            chart.options.plugins.sniHorizontalBarLabelsPlugin.formatter = (val) => {
+        if (chart.options.plugins.horizontalBarDataLabelsPlugin) {
+            chart.options.plugins.horizontalBarDataLabelsPlugin.formatter = (val) => {
                 const pct = totalUsd > 0 ? ((val / totalUsd) * 100).toFixed(1) : '0';
                 return `${val.toLocaleString('es-CL', { minimumFractionDigits: 1 })} (${pct}%)`;
             };
@@ -844,7 +737,7 @@ function updateMopServicesChart() {
     if (!sniChartInstances.mopServices) {
         sniChartInstances.mopServices = new Chart(ctx, {
             type: 'bar',
-            plugins: [sniHorizontalBarLabelsPlugin],
+            plugins: [CatlecUtils.horizontalBarDataLabelsPlugin],
             data: {
                 labels: labels,
                 datasets: [{
@@ -870,7 +763,7 @@ function updateMopServicesChart() {
                             label: tooltipCb
                         }
                     },
-                    sniHorizontalBarLabelsPlugin: {
+                    horizontalBarDataLabelsPlugin: {
                         formatter: (val) => {
                             const pct = totalMop > 0 ? ((val / totalMop) * 100).toFixed(1) : '0';
                             return `${val.toLocaleString('es-CL', { minimumFractionDigits: 1 })} (${pct}%)`;
@@ -902,8 +795,8 @@ function updateMopServicesChart() {
         chart.options.plugins.tooltip.callbacks.title = titleCb;
         chart.options.plugins.tooltip.callbacks.label = tooltipCb;
         chart.options.scales.x.ticks.callback = (v) => v.toLocaleString('es-CL');
-        if (chart.options.plugins.sniHorizontalBarLabelsPlugin) {
-            chart.options.plugins.sniHorizontalBarLabelsPlugin.formatter = (val) => {
+        if (chart.options.plugins.horizontalBarDataLabelsPlugin) {
+            chart.options.plugins.horizontalBarDataLabelsPlugin.formatter = (val) => {
                 const pct = totalMop > 0 ? ((val / totalMop) * 100).toFixed(1) : '0';
                 return `${val.toLocaleString('es-CL', { minimumFractionDigits: 1 })} (${pct}%)`;
             };

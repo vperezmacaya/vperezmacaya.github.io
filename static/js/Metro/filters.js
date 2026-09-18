@@ -1,12 +1,6 @@
 // ─── Filtros y Lógica de Datos Metro de Santiago ───────────────────────────────
 var currentFilteredMetroProjects = [];
 
-function metroNormalize(str) {
-    return str
-        ? str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
-        : '';
-}
-
 function metroFormatInvestment(valueMM, rawStr) {
     if (valueMM != null && !isNaN(valueMM) && valueMM !== '' && Number(valueMM) > 0) {
         const v = Number(valueMM);

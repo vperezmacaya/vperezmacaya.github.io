@@ -9,26 +9,26 @@ function initSectraFilters() {
     sectraAvailableMandantes = window.SECTRA_DATA.filters.mandantes || [];
     
     // 1. Inicializar Multiselects
-    setupCustomMultiselect('region', sectraAvailableRegions, 'Todas las regiones', (selected) => {
+    CatlecUtils.setupMultiselect('region', sectraAvailableRegions, 'Todas las regiones', 'regiones seleccionadas', (selected) => {
         sectraState.selectedRegions = selected;
         updateCityMultiselect();
         sectraState.page = 1;
         onFilterChanged();
     });
-    
-    setupCustomMultiselect('city', sectraAvailableCities, 'Todas las ciudades/áreas', (selected) => {
+
+    CatlecUtils.setupMultiselect('city', sectraAvailableCities, 'Todas las ciudades/áreas', 'ciudades/áreas seleccionadas', (selected) => {
         sectraState.selectedCities = selected;
         sectraState.page = 1;
         onFilterChanged();
     });
-    
-    setupCustomMultiselect('status', sectraAvailableStatuses, 'Todos los estados', (selected) => {
+
+    CatlecUtils.setupMultiselect('status', sectraAvailableStatuses, 'Todos los estados', 'estados seleccionados', (selected) => {
         sectraState.selectedStatuses = selected;
         sectraState.page = 1;
         onFilterChanged();
     });
-    
-    setupCustomMultiselect('mandante', sectraAvailableMandantes, 'Todos los mandantes', (selected) => {
+
+    CatlecUtils.setupMultiselect('mandante', sectraAvailableMandantes, 'Todos los mandantes', 'mandantes seleccionados', (selected) => {
         sectraState.selectedMandantes = selected;
         sectraState.page = 1;
         onFilterChanged();
@@ -37,15 +37,11 @@ function initSectraFilters() {
     // 2. Buscador reactivo
     const searchInput = document.getElementById('search-input');
     if (searchInput) {
-        let debounceTimer;
-        searchInput.addEventListener('input', (e) => {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => {
-                sectraState.search = e.target.value;
-                sectraState.page = 1;
-                onFilterChanged();
-            }, 200);
-        });
+        searchInput.addEventListener('input', CatlecUtils.debounce((e) => {
+            sectraState.search = e.target.value;
+            sectraState.page = 1;
+            onFilterChanged();
+        }, 200));
     }
     
     // 3. Botón Restablecer
@@ -64,86 +60,12 @@ function initSectraFilters() {
     setupViewSwitcher();
 }
 
-function setupCustomMultiselect(idPrefix, options, defaultLabel, onChangeCallback) {
-    const container = document.getElementById(`${idPrefix}-multiselect-container`);
-    const btn = document.getElementById(`${idPrefix}-multiselect-btn`);
-    const dropdown = document.getElementById(`${idPrefix}-multiselect-dropdown`);
-    const textSpan = document.getElementById(`${idPrefix}-multiselect-text`);
-    const checkAll = document.getElementById(`${idPrefix}-check-all`);
-    const listEl = document.getElementById(`${idPrefix}-options-list`);
-    
-    if (!btn || !dropdown || !listEl) return;
-    
-    // Renderizar opciones
-    renderMultiselectOptions(listEl, options, idPrefix);
-    
-    // Toggle dropdown
-    btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const isOpen = dropdown.style.display === 'block';
-        closeAllMultiselects();
-        dropdown.style.display = isOpen ? 'none' : 'block';
-    });
-    
-    dropdown.addEventListener('click', (e) => e.stopPropagation());
-    
-    // Check all listener
-    if (checkAll) {
-        checkAll.addEventListener('change', () => {
-            const checkboxes = listEl.querySelectorAll(`.${idPrefix}-checkbox`);
-            checkboxes.forEach(cb => cb.checked = checkAll.checked);
-            updateSelected();
-        });
-    }
-    
-    // Item checkbox listener
-    listEl.addEventListener('change', (e) => {
-        if (e.target.classList.contains(`${idPrefix}-checkbox`)) {
-            const checkboxes = listEl.querySelectorAll(`.${idPrefix}-checkbox`);
-            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-            if (checkAll) checkAll.checked = allChecked;
-            updateSelected();
-        }
-    });
-    
-    function updateSelected() {
-        const checkboxes = listEl.querySelectorAll(`.${idPrefix}-checkbox:checked`);
-        const selectedValues = Array.from(checkboxes).map(cb => cb.value);
-        
-        if (selectedValues.length === 0 || selectedValues.length === options.length) {
-            textSpan.textContent = defaultLabel;
-            if (checkAll) checkAll.checked = selectedValues.length === options.length;
-            onChangeCallback([]);
-        } else if (selectedValues.length === 1) {
-            textSpan.textContent = selectedValues[0];
-            onChangeCallback(selectedValues);
-        } else {
-            textSpan.textContent = `${selectedValues.length} seleccionados`;
-            onChangeCallback(selectedValues);
-        }
-    }
-}
-
-function renderMultiselectOptions(listEl, options, idPrefix) {
-    listEl.innerHTML = '';
-    options.forEach(opt => {
-        if (!opt) return;
-        const label = document.createElement('label');
-        label.className = 'multiselect-option';
-        label.innerHTML = `
-            <input type="checkbox" class="${idPrefix}-checkbox" value="${opt}">
-            <span>${opt}</span>
-        `;
-        listEl.appendChild(label);
-    });
-}
-
 function updateCityMultiselect() {
     const listEl = document.getElementById('city-options-list');
     const textSpan = document.getElementById('city-multiselect-text');
     const checkAll = document.getElementById('city-check-all');
     if (!listEl || !window.SECTRA_DATA) return;
-    
+
     let cities = [];
     if (sectraState.selectedRegions.length > 0) {
         const projs = window.SECTRA_DATA.projects.filter(p => sectraState.selectedRegions.includes(p.region));
@@ -151,20 +73,24 @@ function updateCityMultiselect() {
     } else {
         cities = sectraAvailableCities;
     }
-    
-    renderMultiselectOptions(listEl, cities, 'city');
+
+    // Solo se reconstruyen las opciones (la lista de ciudades depende de las
+    // regiones seleccionadas); los listeners de botón/check-all/dropdown ya
+    // quedaron delegados sobre listEl/checkAll en la llamada inicial de
+    // CatlecUtils.setupMultiselect('city', ...) en initSectraFilters().
+    listEl.innerHTML = '';
+    cities.filter(Boolean).forEach(opt => {
+        const label = document.createElement('label');
+        label.className = 'multiselect-option';
+        label.innerHTML = `<input type="checkbox" class="city-checkbox" value="${opt}"><span>${opt}</span>`;
+        listEl.appendChild(label);
+    });
     if (textSpan) textSpan.textContent = 'Todas las ciudades/áreas';
     if (checkAll) checkAll.checked = false;
     sectraState.selectedCities = [];
 }
 
-function closeAllMultiselects() {
-    document.querySelectorAll('.multiselect-dropdown').forEach(d => {
-        d.style.display = 'none';
-    });
-}
-
-document.addEventListener('click', closeAllMultiselects);
+document.addEventListener('click', CatlecUtils.closeAllMultiselects);
 
 function resetAllFilters() {
     sectraState.search = '';

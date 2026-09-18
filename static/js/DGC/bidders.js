@@ -312,7 +312,7 @@ function renderBiddersAnalytics(contractsList) {
     const top10 = companyScores.slice(0, 10);
     // Reverse for Chart.js (renders bottom-to-top, we want highest at top)
     const top10rev = [...top10].reverse();
-    const barLabels = top10rev.map(c => wrapTextToLines(c.name, 20));
+    const barLabels = top10rev.map(c => CatlecUtils.wrapTextToLines(c.name, 20, 3));
     const barData = top10rev.map(c => parseFloat(c.score.toFixed(isParticipaciones ? 0 : 2)));
 
     // Palette: Amber / Orange for both views
@@ -426,7 +426,7 @@ function renderBiddersAnalytics(contractsList) {
                             callback: function (val, idx) {
                                 const entry = top10rev[idx];
                                 if (!entry) return this.getLabelForValue(val);
-                                return wrapTextToLines(entry.name, 20);
+                                return CatlecUtils.wrapTextToLines(entry.name, 20, 3);
                             }
                         }
                     }
@@ -462,43 +462,6 @@ function renderBiddersAnalytics(contractsList) {
     }
 
     lucide.createIcons();
-}
-
-// ── Helper: wrap text into multi-line arrays for Chart.js Y-axis ticks (max 2 line breaks / 3 lines) ──────
-function wrapTextToLines(str, maxLen = 20, maxLines = 3) {
-    if (!str || str.length <= maxLen) return str;
-    const words = str.split(' ');
-    if (words.length <= 1) return str.length > maxLen ? str.substring(0, maxLen - 1) + '…' : str;
-
-    const lines = [];
-    let cur = '';
-
-    for (let i = 0; i < words.length; i++) {
-        const w = words[i];
-        if (lines.length === maxLines - 1) {
-            // Last allowed line: append remaining text and truncate with ellipsis if exceeds maxLen
-            const remaining = words.slice(i).join(' ');
-            let candidate = cur ? cur + ' ' + remaining : remaining;
-            if (candidate.length > maxLen) {
-                candidate = candidate.substring(0, maxLen - 1).trimEnd() + '…';
-            }
-            lines.push(candidate);
-            cur = '';
-            break;
-        }
-
-        if ((cur ? cur + ' ' + w : w).length <= maxLen) {
-            cur = cur ? cur + ' ' + w : w;
-        } else {
-            if (cur) lines.push(cur);
-            cur = w;
-        }
-    }
-    if (cur && lines.length < maxLines) {
-        lines.push(cur);
-    }
-
-    return lines.length > 1 ? lines : str;
 }
 
 // ── Helper: compute weighted company scores (adjudicaciones o participaciones) ─────────────────────

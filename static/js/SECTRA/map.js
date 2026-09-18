@@ -40,66 +40,6 @@ function getSectraFeatureStyle(feature, isSelected = false, isDimmed = false) {
     };
 }
 
-// ─── Cálculo del Punto Medio de Líneas (50% de la distancia total) ────────────
-function getLineMidpoint(layer) {
-    if (!layer) return null;
-    
-    let allSegments = [];
-    if (layer.getLatLngs) {
-        const rawLatLngs = layer.getLatLngs();
-        function extractSegments(arr) {
-            if (!Array.isArray(arr) || arr.length === 0) return;
-            if (arr[0] instanceof L.LatLng || (arr[0] && typeof arr[0].lat === 'number')) {
-                if (arr.length >= 2) {
-                    allSegments.push(arr);
-                }
-            } else {
-                arr.forEach(sub => extractSegments(sub));
-            }
-        }
-        extractSegments(rawLatLngs);
-    } else if (layer.getLatLng) {
-        return layer.getLatLng();
-    }
-
-    if (allSegments.length === 0) {
-        return layer.getBounds ? layer.getBounds().getCenter() : null;
-    }
-
-    let totalLength = 0;
-    allSegments.forEach(seg => {
-        for (let i = 0; i < seg.length - 1; i++) {
-            totalLength += seg[i].distanceTo(seg[i + 1]);
-        }
-    });
-
-    if (totalLength === 0) {
-        return allSegments[0][0];
-    }
-
-    const halfDistance = totalLength / 2;
-    let accumulated = 0;
-
-    for (let s = 0; s < allSegments.length; s++) {
-        const seg = allSegments[s];
-        for (let i = 0; i < seg.length - 1; i++) {
-            const p1 = seg[i];
-            const p2 = seg[i + 1];
-            const dist = p1.distanceTo(p2);
-            if (accumulated + dist >= halfDistance) {
-                const needed = halfDistance - accumulated;
-                const ratio = dist > 0 ? (needed / dist) : 0;
-                const lat = p1.lat + (p2.lat - p1.lat) * ratio;
-                const lng = p1.lng + (p2.lng - p1.lng) * ratio;
-                return L.latLng(lat, lng);
-            }
-            accumulated += dist;
-        }
-    }
-
-    return allSegments[0][Math.floor(allSegments[0].length / 2)];
-}
-
 function initSectraMap() {
     const mapEl = document.getElementById('sectra-map');
     if (!mapEl) return;
@@ -194,7 +134,7 @@ function loadSectraVectorLayers() {
             
             // 1. Si es línea: generar el ícono en el punto medio (50% de la distancia)
             if (isLine) {
-                const midpoint = getLineMidpoint(layer);
+                const midpoint = CatlecUtils.getLineMidpoint(layer);
                 if (midpoint) {
                     const marker = createSectraProjectMarker(p, midpoint, layer, feature);
                     if (marker) {

@@ -1,13 +1,5 @@
 // ─── Módulo de Interfaz de Usuario (UI) de Metro de Santiago ──────────────────
 
-function metroDebounce(func, wait) {
-    let timeout;
-    return function (...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-    };
-}
-
 function metroFormatLineCell(lineStr) {
     if (!lineStr) return '<span style="color:var(--text-muted);font-style:italic;">—</span>';
     const str = String(lineStr).trim();
@@ -1240,17 +1232,7 @@ function exportMetroToGeoJSON() {
         features: features
     };
 
-    const jsonString = JSON.stringify(exportCollection, null, 2);
-    const blob = new Blob([jsonString], { type: "application/geo+json;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const downloadAnchor = document.createElement('a');
-    const today = new Date().toISOString().slice(0, 10);
-    downloadAnchor.setAttribute('href', url);
-    downloadAnchor.setAttribute('download', `CATLEC_Metro_Red_Santiago_${today}.geojson`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    CatlecUtils.downloadGeoJSON(exportCollection, 'CATLEC_Metro_Red_Santiago');
 }
 
 /**
