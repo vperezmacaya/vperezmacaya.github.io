@@ -213,7 +213,7 @@ async function exportSNIToExcel() {
         if (toastText) toastText.innerText = 'Aplicando filtros activos a los registros...';
         await new Promise(resolve => setTimeout(resolve, 60)); // Permitir renderizado de UI
 
-        const { selectedYears, selectedRegions, selectedMinistries, selectedSources, selectedSubtitles } = sniState;
+        const { selectedYears, selectedRegions, selectedMinistries, selectedSources } = sniState;
 
         // Filtrar los registros granulares respetando los filtros seleccionados
         const filteredRaw = cachedSniRawData.filter(row => {
@@ -221,7 +221,6 @@ async function exportSNIToExcel() {
             if (selectedRegions && selectedRegions.length > 0 && !selectedRegions.includes(row.r)) return false;
             if (selectedMinistries && selectedMinistries.length > 0 && !selectedMinistries.includes(row.m)) return false;
             if (selectedSources && selectedSources.length > 0 && !selectedSources.includes(row.f)) return false;
-            if (selectedSubtitles && selectedSubtitles.length > 0 && !selectedSubtitles.includes(row.s)) return false;
             return true;
         });
 
@@ -251,8 +250,7 @@ async function exportSNIToExcel() {
         const hasFilter = (selectedYears && selectedYears.length) ||
             (selectedRegions && selectedRegions.length) ||
             (selectedMinistries && selectedMinistries.length) ||
-            (selectedSources && selectedSources.length) ||
-            (selectedSubtitles && selectedSubtitles.length);
+            (selectedSources && selectedSources.length);
         const suffix = hasFilter ? '_Filtrado' : '_Completo';
         XLSX.writeFile(wb, `SNI_Inversion_Publica_CATLEC${suffix}_${new Date().toISOString().slice(0, 10)}.xlsx`);
 

@@ -16,16 +16,16 @@
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <!-- CATLEC Global Stylesheet & EFE Addon -->
-    <link rel="stylesheet" href="static/css/styles.css?v=20260910">
-    <link rel="stylesheet" href="static/css/efe_addons.css?v=20260910">
+    <link rel="stylesheet" href="static/css/styles.css?v=20260920_1">
+    <link rel="stylesheet" href="static/css/efe_addons.css?v=20260920_1">
 
     <!-- SheetJS for Client-Side Excel Export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <!-- Static Data -->
-    <script src="static/data/efe_data.js?v=33"></script>
-    <script src="static/data/efe_geo.js?v=33"></script>
-    <script src="static/data/regions_data.js?v=33"></script>
+    <script src="static/data/efe_data.js?v=20260919_2325"></script>
+    <script src="static/data/efe_geo.js?v=20260919_2325"></script>
+    <script src="static/data/regions_data.js?v=20260919_2325"></script>
 </head>
 
 <body class="light-theme">
@@ -432,38 +432,21 @@
                     <div class="timeline-header">
                         <div class="timeline-header-left">
                             <i data-lucide="gantt-chart" style="width:14px;height:14px;color:var(--primary);"></i>
-                            <h2 class="timeline-header-title">Línea de Tiempo de Proyectos EFE</h2>
+                            <h2 class="timeline-header-title">Portafolio de Inversiones Estratégicas 2024-2031</h2>
                             <span id="efe-timeline-count-badge" class="timeline-count-badge">0 Proyectos</span>
                         </div>
                         <div class="timeline-header-right" id="efe-timeline-header-legend">
                             <span class="timeline-legend-item">
                                 <span class="tl-legend-dot"
-                                    style="background:#2563eb; width:11px; height:7px; border-radius:2px;"></span>Ejecución
+                                    style="background:#0f3b6c; width:11px; height:7px; border-radius:2px;"></span>Etapa de Proyecto
                             </span>
                             <span class="timeline-legend-item">
                                 <span class="tl-legend-dot"
-                                    style="background:#ea580c; width:11px; height:7px; border-radius:2px;"></span>Diseño
+                                    style="background:#1e9952; border-radius:50%; text-align:center; color:#fff; font-size:7px; line-height:10px; width:10px; height:10px;">✓</span>Operativo
                             </span>
                             <span class="timeline-legend-item">
                                 <span class="tl-legend-dot"
-                                    style="background:#0891b2; width:11px; height:7px; border-radius:2px;"></span>Factibilidad
-                            </span>
-                            <span class="timeline-legend-item">
-                                <span class="tl-legend-dot"
-                                    style="background:#8b5cf6; width:11px; height:7px; border-radius:2px;"></span>Prefactibilidad
-                            </span>
-                            <span class="timeline-legend-item">
-                                <span class="tl-legend-dot"
-                                    style="background:#6366f1; width:11px; height:7px; border-radius:2px;"></span>Estudio
-                                Básico
-                            </span>
-                            <span class="timeline-legend-item">
-                                <span class="tl-legend-dot"
-                                    style="background:#10b981; border-radius:50%; text-align:center; color:#fff; font-size:7px; line-height:10px; width:10px; height:10px;">✓</span>Operativo
-                            </span>
-                            <span class="timeline-legend-item">
-                                <span class="tl-legend-dot"
-                                    style="background:#10b981; transform:rotate(45deg); width:7px; height:7px; border-radius:1px;"></span>Puesta
+                                    style="background:#1e9952; transform:rotate(45deg); width:7px; height:7px; border-radius:1px;"></span>Puesta
                                 en Operación
                             </span>
                             <span class="timeline-legend-item">
@@ -548,7 +531,7 @@
                                     <h3
                                         style="font-size: 0.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
                                         <i data-lucide="layers"
-                                            style="width: 13px; height: 13px; color: var(--primary);"></i>
+                                            style="width: 13px; height: 13px; color: #0f3b6c;"></i>
                                         Inversión según Tipo de Proyecto
                                     </h3>
                                 </div>
@@ -569,7 +552,7 @@
                                         <h3
                                             style="font-size: 0.72rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
                                             <i data-lucide="pie-chart"
-                                                style="width: 12px; height: 12px; color: #0284c7;"></i>
+                                                style="width: 12px; height: 12px; color: #1694b8;"></i>
                                             Inversión por Filial (%)
                                         </h3>
                                     </div>
@@ -593,7 +576,7 @@
                                         <h3
                                             style="font-size: 0.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
                                             <i data-lucide="train"
-                                                style="width: 13px; height: 13px; color: var(--primary);"></i>
+                                                style="width: 13px; height: 13px; color: #d92534;"></i>
                                             5 Proyectos Ferroviarios con Mayor Inversión
                                         </h3>
                                     </div>
@@ -643,41 +626,28 @@
                                     <i data-lucide="smile"></i>
                                 </div>
                                 <div class="kpi-val-container">
-                                    <span class="kpi-label">Satisfacción Usuaria (Promedio)</span>
+                                    <span class="kpi-label">Satisfacción Usuaria (2025)</span>
                                     <span class="kpi-value" id="efe-kpi-op-satisfaccion" style="font-size: 0.95rem;">-</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- FILA 1 DE GRÁFICOS (3 Columnas: Demanda Pax, Demanda Filial, Tracción/Flota) -->
-                        <div style="display: grid; grid-template-columns: 38% 31% 31%; gap: 0.4rem; flex: 1; min-height: 0;">
-                            <!-- Gráfico 1: Demanda por Servicio -->
+                        <!-- FILA 1 DE GRÁFICOS (2 Columnas: Demanda de Pasajeros, Tracción/Flota) -->
+                        <div style="display: grid; grid-template-columns: 66% 34%; gap: 0.4rem; flex: 1; min-height: 0;">
+                            <!-- Gráfico 1: Demanda de Pasajeros -->
                             <div class="panel-card" style="padding: 0.4rem 0.5rem 0.3rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
-                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
-                                    <h3 style="font-size: 0.74rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
-                                        <i data-lucide="bar-chart-2" style="width: 13px; height: 13px; color: #2563eb;"></i>
-                                        Demanda Anual por Servicio (MM pax 2025)
-                                    </h3>
+                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.2rem; margin-bottom: 0.2rem; flex-shrink: 0; gap: 0.4rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.4rem; min-width: 0;">
+                                        <h3 style="font-size: 0.74rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary); white-space: nowrap;">
+                                            <i data-lucide="bar-chart-2" style="width: 13px; height: 13px; color: #2b5ec9;"></i>
+                                            Demanda de Pasajeros por Filial (MM pasajeros)
+                                        </h3>
+                                    </div>
+                                    <div id="efeChartDemandaPaxLegend" style="display: flex; align-items: center; gap: 0.45rem; font-size: 0.62rem; flex-wrap: wrap; justify-content: flex-end;">
+                                    </div>
                                 </div>
                                 <div style="flex: 1; min-height: 0; position: relative;">
                                     <canvas id="efeChartDemandaPax"></canvas>
-                                </div>
-                            </div>
-
-                            <!-- Gráfico 2: Demanda por Filial -->
-                            <div class="panel-card" style="padding: 0.4rem 0.5rem 0.3rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
-                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
-                                    <h3 style="font-size: 0.74rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
-                                        <i data-lucide="pie-chart" style="width: 13px; height: 13px; color: #0284c7;"></i>
-                                        Demanda por Filial (%)
-                                    </h3>
-                                </div>
-                                <div style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0 0.15rem; position: relative;">
-                                    <div style="width: 85px; height: 85px; min-width: 85px; flex-shrink: 0; position: relative;">
-                                        <canvas id="efeChartDemandaFilial"></canvas>
-                                    </div>
-                                    <div id="efeChartDemandaFilialLegend" style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; overflow: hidden; justify-content: center;">
-                                    </div>
                                 </div>
                             </div>
 
@@ -685,7 +655,7 @@
                             <div class="panel-card" style="padding: 0.4rem 0.5rem 0.3rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
                                 <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
                                     <h3 style="font-size: 0.74rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
-                                        <i data-lucide="zap" style="width: 13px; height: 13px; color: #8b5cf6;"></i>
+                                        <i data-lucide="zap" style="width: 13px; height: 13px; color: #0f3b6c;"></i>
                                         Tracción y Tecnología de Flota
                                     </h3>
                                 </div>
@@ -700,20 +670,20 @@
                         </div>
 
                         <!-- FILA 2 DE GRÁFICOS (2 Columnas: Longitud vs Estaciones, Satisfacción Usuaria) -->
-                        <div style="display: grid; grid-template-columns: 55% 45%; gap: 0.4rem; flex: 1; min-height: 0;">
+                        <div style="display: grid; grid-template-columns: 50% 50%; gap: 0.4rem; flex: 1; min-height: 0;">
                             <!-- Gráfico 3: Longitud vs Estaciones -->
                             <div class="panel-card" style="padding: 0.4rem 0.5rem 0.3rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
                                 <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
                                     <h3 style="font-size: 0.74rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
-                                        <i data-lucide="git-commit" style="width: 13px; height: 13px; color: #0284c7;"></i>
+                                        <i data-lucide="git-commit" style="width: 13px; height: 13px; color: #0f3b6c;"></i>
                                         Extensión de Trazado vs N° Estaciones
                                     </h3>
                                     <div style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.63rem;">
-                                        <span style="display: flex; align-items: center; gap: 0.25rem; color: #0284c7; font-weight: 600;">
-                                            <span style="width: 8px; height: 8px; border-radius: 2px; background: #0284c7;"></span> Extensión (km)
+                                        <span style="display: flex; align-items: center; gap: 0.25rem; color: #0f3b6c; font-weight: 600;">
+                                            <span style="width: 8px; height: 8px; border-radius: 2px; background: #0f3b6c;"></span> Extensión (km)
                                         </span>
-                                        <span style="display: flex; align-items: center; gap: 0.25rem; color: #d97706; font-weight: 600;">
-                                            <span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></span> Estaciones
+                                        <span style="display: flex; align-items: center; gap: 0.25rem; color: #d92534; font-weight: 600;">
+                                            <span style="width: 8px; height: 8px; border-radius: 50%; background: #d92534;"></span> Estaciones
                                         </span>
                                     </div>
                                 </div>
@@ -724,12 +694,23 @@
 
                             <!-- Gráfico 4: Satisfacción Usuaria -->
                             <div class="panel-card" style="padding: 0.4rem 0.5rem 0.3rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
-                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
-                                    <h3 style="font-size: 0.74rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
-                                        <i data-lucide="star" style="width: 13px; height: 13px; color: #10b981;"></i>
-                                        Índice de Satisfacción Usuaria (%)
-                                    </h3>
-                                    <span style="font-size: 0.6rem; color: var(--text-muted); font-style: italic;">*Evaluación neta Memoria 2025</span>
+                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.2rem; margin-bottom: 0.2rem; flex-shrink: 0; gap: 0.4rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.4rem; min-width: 0;">
+                                        <h3 style="font-size: 0.74rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary); white-space: nowrap;">
+                                            <i data-lucide="star" style="width: 13px; height: 13px; color: #1e9952;"></i>
+                                            Satisfacción Usuaria (%)
+                                        </h3>
+                                        <div class="efe-chart-view-toggle" style="display: inline-flex; background: var(--bg-hover, rgba(0,0,0,0.06)); padding: 2px; border-radius: 6px; border: 1px solid var(--border-color);">
+                                            <button type="button" id="btn-efe-sat-trend" style="padding: 2px 8px; font-size: 0.62rem; font-weight: 600; border: none; border-radius: 4px; cursor: pointer; background: var(--primary, #2563eb); color: #ffffff; transition: all 0.2s;">
+                                                Tendencia por año
+                                            </button>
+                                            <button type="button" id="btn-efe-sat-ranking" style="padding: 2px 8px; font-size: 0.62rem; font-weight: 600; border: none; border-radius: 4px; cursor: pointer; background: transparent; color: var(--text-muted); transition: all 0.2s;">
+                                                Por Servicio (2025)
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="efeChartSatisfaccionLegend" style="display: flex; align-items: center; gap: 0.45rem; font-size: 0.62rem; flex-wrap: wrap; justify-content: flex-end;">
+                                    </div>
                                 </div>
                                 <div style="flex: 1; min-height: 0; position: relative;">
                                     <canvas id="efeChartSatisfaccion"></canvas>
@@ -767,19 +748,20 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <!-- EFE App Logic -->
-    <script src="static/js/common/tooltip.js?v=20260917_1"></script>
-    <script src="static/js/common/utils.js?v=1"></script>
-    <script src="static/js/EFE/state.js?v=20260908_1240"></script>
-    <script src="static/js/EFE/charts.js?v=20260908_1240"></script>
-    <script src="static/js/EFE/investment.js?v=20260908_1240"></script>
-    <script src="static/js/EFE/timeline.js?v=20260908_1240"></script>
-    <script src="static/js/EFE/operacion.js?v=20260915_1"></script>
-    <script src="static/js/EFE/map.js?v=20260908_1240"></script>
-    <script src="static/js/EFE/filters.js?v=20260908_1240"></script>
-    <script src="static/js/EFE/ui.js?v=20260910_1"></script>
+    <script src="static/js/common/tooltip.js?v=20260919_2325"></script>
+    <script src="static/js/common/utils.js?v=20260920_1"></script>
+    <script src="static/js/common/timeline.js?v=20260920_1"></script>
+    <script src="static/js/EFE/state.js?v=20260919_2325"></script>
+    <script src="static/js/EFE/charts.js?v=20260919_2325"></script>
+    <script src="static/js/EFE/investment.js?v=20260919_2325"></script>
+    <script src="static/js/EFE/timeline.js?v=20260919_2325"></script>
+    <script src="static/js/EFE/operacion.js?v=20260919_2325"></script>
+    <script src="static/js/EFE/map.js?v=20260919_2325"></script>
+    <script src="static/js/EFE/filters.js?v=20260919_2325"></script>
+    <script src="static/js/EFE/ui.js?v=20260919_2325"></script>
 
     <!-- Nav Menu & View Switcher Logic -->
-    <script src="static/js/common/nav-menu.js?v=20260917_1"></script>
+    <script src="static/js/common/nav-menu.js?v=20260919_2325"></script>
     <script>
         (function () {
             CatlecNav.render();
@@ -1180,16 +1162,38 @@
 
                             <div class="formula-subtitle">
                                 <i data-lucide="gauge" style="width: 13px; height: 13px; color: #059669;"></i>
-                                Indicadores y Métricas Operacionales (Memoria Integrada 2025):
+                                Indicadores y Métricas Operacionales:
                             </div>
                             <ul
                                 style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
-                                <li><strong>Demanda Anual de Pasajeros:</strong> Volumen consolidado en millones de viajes pagados (MM pax) transportados por cada servicio suburbano, interurbano y regional durante el ejercicio anual 2025.</li>
-                                <li><strong>Participación por Filial (%):</strong> Proporción de la demanda total de la red movilizada por EFE Central, EFE Valparaíso, EFE Sur y EFE Arica-La Paz.</li>
+                                <li><strong>Demanda Histórica y Anual de Pasajeros:</strong> Serie temporal 2018-2025 en millones de pasajeros (MM pasajeros) transportados por filial, basada en los reportes y balances auditados de la CMF (tabla 6.2.iv de las Memorias Integradas EFE 2025, 2024 y Reporte 2020).</li>
+                                <li><strong>Visualización en Barras Apiladas:</strong> El gráfico consolida la demanda anual mediante barras apiladas segmentadas por filial, donde la altura total de cada columna representa la demanda agregada de toda la red para el respectivo año.</li>
+                                <li><strong>Cálculo Dinámico de Totales en Cliente:</strong> Los totales corporativos anuales y de los indicadores superiores no provienen de filas estáticas en la base de datos, sino que se computan dinámicamente sumando en tiempo real las demandas de todas las filiales cargadas. Esto garantiza flexibilidad y escalabilidad ante la adición de nuevas filiales a futuro.</li>
                                 <li><strong>Extensión de Red y N° Estaciones:</strong> Longitud operativa de vías férreas comerciales (km) y cantidad de paradas y terminales activas.</li>
-                                <li><strong>Índice de Satisfacción Usuaria (%):</strong> Nivel de aprobación y percepción de servicio reportado en las encuestas anuales corporativas de satisfacción de clientes.</li>
                                 <li><strong>Tecnología y Tracción:</strong> Distribución del parque ferroviario en tracción 100% eléctrica (automotores EMU), diésel (locomotoras / buscarril) y bimodal (trenes rápidos 160 km/h BMU).</li>
                             </ul>
+
+                            <div class="formula-subtitle" style="margin-top: 0.55rem;">
+                                <i data-lucide="calculator" style="width: 13px; height: 13px; color: #2563eb;"></i>
+                                Metodología de Cálculo: Demanda Consolidada de Red EFE (MM pasajeros)
+                            </div>
+                            <div class="formula-box">
+                                Demanda_Red_EFE(año) = &Sigma; Demanda_Filial_k(año)
+                            </div>
+                            <p class="formula-explanation">
+                                Para garantizar la integridad contable y trazabilidad con los balances públicos de EFE Trenes de Chile, los valores anuales de demanda se cargan directamente de las cuentas de cada filial. La plataforma calcula en tiempo real la suma total consolidada sumando cada segmento apilado, y permite aislar o enfocar la demanda de filiales específicas mediante el uso de los filtros laterales.
+                            </p>
+
+                            <div class="formula-subtitle" style="margin-top: 0.55rem;">
+                                <i data-lucide="star" style="width: 13px; height: 13px; color: #1e9952;"></i>
+                                Metodología de Cálculo: Satisfacción Usuaria Ponderada por Afluencia (%)
+                            </div>
+                            <div class="formula-box">
+                                Satisfacción_Filial(año) = &Sigma; [ Satisfacción_i(año) &times; Demanda_i ] / &Sigma; Demanda_i
+                            </div>
+                            <p class="formula-explanation">
+                                Siguiendo la metodología oficial de las Memorias Integradas de EFE Trenes de Chile (donde el total corporativo se define textualmente como <em>"Satisfacción NETA ponderada por afluencia"</em>), la plataforma calcula en tiempo real el índice de cada filial mediante una <strong>media ponderada por volumen de pasajeros transportados (demanda)</strong> de cada servicio. De esta manera, servicios de alta afluencia (como Tren Nos, Tren Limache-Puerto o Biotren) poseen una ponderación representativa respecto a servicios regionales de menor frecuencia.
+                            </p>
                         </div>
 
                     </div>

@@ -7,11 +7,7 @@ if (typeof window !== 'undefined') {
 }
 
 function efeFormatInvestment(valueMM) {
-    if (valueMM == null || isNaN(valueMM)) return '—';
-    const v = Number(valueMM);
-    if (v >= 1000) return `US$ ${(v / 1000).toFixed(2)}B`;
-    if (v >= 1) return `US$ ${v.toLocaleString('es-CL', {maximumFractionDigits: 0})} MM`;
-    return `US$ ${v.toFixed(1)} MM`;
+    return CatlecUtils.formatCompactUSD(valueMM);
 }
 window.efeFormatInvestment = efeFormatInvestment;
 
@@ -333,6 +329,7 @@ function exportEFEToExcel() {
     // Append Líneas Operativas if available
     const lines = (window.EFE_DATA && window.EFE_DATA.lines) ? window.EFE_DATA.lines : [];
     if (lines.length > 0) {
+        const exportYear = (typeof getEfeLatestYear === 'function') ? getEfeLatestYear() : '2025';
         const lineRows = lines.map(l => ({
             "Servicio": l.service || '',
             "Filial": l.filial || '',
@@ -340,8 +337,8 @@ function exportEFEToExcel() {
             "Cabeceras / Trazado": l.terminals || '',
             "Longitud (km)": l.length_km || 0,
             "Estaciones": l.stations || 0,
-            "Pasajeros 2025 (MM)": l.passengers_2025_mm != null ? l.passengers_2025_mm : '',
-            "Satisfacción 2025 (%)": l.satisfaction_2025_pct != null ? `${l.satisfaction_2025_pct}%` : '',
+            [`Pasajeros ${exportYear} (MM)`]: l.passengers_2025_mm != null ? l.passengers_2025_mm : '',
+            [`Satisfacción ${exportYear} (%)`]: l.satisfaction_2025_pct != null ? `${l.satisfaction_2025_pct}%` : '',
             "Tiempo Promedio Viaje (min)": l.travel_time_avg_min != null ? l.travel_time_avg_min : '',
             "Tiempo Total Trayecto (min)": l.travel_time_total_min != null ? l.travel_time_total_min : '',
             "Material Rodante": l.rolling_stock || '',
@@ -395,14 +392,14 @@ function exportEFEToGeoJSON() {
             return efeHasValidShapeAttribute(feature);
         }
         const props = feature.properties || {};
-        const cod = props.COD != null ? String(props.COD).trim() : '';
+        const cod = (props.id != null ? String(props.id) : (props.COD != null ? String(props.COD) : '')).trim();
         const hasProj = cod && shapeToProj[cod] && shapeToProj[cod].length > 0;
         const hasLine = cod && typeof efeShapeToLines !== 'undefined' && efeShapeToLines[cod] && efeShapeToLines[cod].length > 0;
         return Boolean(hasProj || hasLine);
     }).map(feature => {
         const cloned = JSON.parse(JSON.stringify(feature));
         const props = cloned.properties || {};
-        const cod = props.COD != null ? String(props.COD).trim() : '';
+        const cod = (props.id != null ? String(props.id) : (props.COD != null ? String(props.COD) : '')).trim();
         if (cod && shapeToProj[cod]) {
             const projs = shapeToProj[cod];
             if (projs.length === 1) {

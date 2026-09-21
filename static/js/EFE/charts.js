@@ -2,25 +2,24 @@
 var efeFilialChart = null;
 var efeDetailChart = null;
 
-// Distinct color palettes matching CATLEC index.html aesthetics
+// Distinct color palettes matching refined efe.cl palette (balanced tones)
 const EFE_FILIAL_COLORS = {
-    'EFE Valparaíso': '#0284c7', // Sky Blue
-    'EFE Central': '#2563eb',   // Royal Blue
-    'EFE Sur': '#d97706',       // Amber / Orange
-    'EFE Arica - La Paz': '#059669', // Emerald
-    'Sin filial específica': '#64748b', // Slate Gray
-    'Nacional': '#8b5cf6'       // Purple
+    'EFE Central': '#d92534',
+    'EFE Valparaíso': '#1694b8',
+    'EFE Sur': '#2b5ec9',
+    'EFE Arica - La Paz': '#1e9952',
+    'Sin filial específica': '#64748b',
+    'Nacional': '#64748b'
 };
 
 const EFE_DETAIL_COLORS = {
-    'Portafolio de Proyectos Estratégicos': '#2563eb', // Royal Blue
-    'Proyectos Preinversionales': '#10b981',           // Emerald
-    'Otros / Extra': '#f59e0b'                         // Amber
+    'Portafolio de Proyectos Estratégicos': '#0f3b6c', // Azul Marino Corporativo
+    'Proyectos Preinversionales': '#2b5ec9',           // Azul Transporte
+    'Otros / Extra': '#64748b'                         // Gris Slate
 };
 
-const EFE_PALETTE = [
-    '#2563eb', '#0284c7', '#d97706', '#8b5cf6', '#ec4899',
-    '#14b8a6', '#10b981', '#6366f1', '#eab308', '#64748b'
+var EFE_PALETTE = window.EFE_PALETTE || [
+    '#0f3b6c', '#d92534', '#2b5ec9', '#1e9952', '#1694b8', '#e69500', '#64748b'
 ];
 
 function efeFormatCompactUSD(val) {
@@ -183,7 +182,7 @@ function efeUpdateAnalyticsCharts(filteredProjects) {
             return `
                 <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.69rem; padding:0.12rem 0; color:var(--text-primary);">
                     <div style="display:flex; align-items:center; gap:0.35rem; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                        <span style="width:7px; height:7px; border-radius:50%; background-color:${col}; flex-shrink:0;"></span>
+                        <span style="width:13px; height:5.5px; border-radius:9999px; background-color:${col}; flex-shrink:0;"></span>
                         <span style="color:var(--text-primary); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${lbl}</span>
                     </div>
                     <span style="font-size:0.68rem; color:var(--text-secondary); font-weight:700; font-variant-numeric:tabular-nums; flex-shrink:0; margin-left:0.25rem;">
@@ -213,7 +212,7 @@ function efeUpdateAnalyticsCharts(filteredProjects) {
     const detailLabels = Object.keys(detailCounts).filter(k => detailCounts[k] > 0);
     const detailData = detailLabels.map(k => detailCounts[k]);
     const totalDetailProjects = detailData.reduce((a, b) => a + b, 0) || 1;
-    const detailColors = detailLabels.map(k => EFE_DETAIL_COLORS[k] || '#64748b');
+    const detailColors = detailLabels.map(k => EFE_DETAIL_COLORS[k] || '#6c757d');
 
     if (efeDetailChart) {
         efeDetailChart.data.labels = detailLabels;
@@ -246,7 +245,7 @@ function efeUpdateAnalyticsCharts(filteredProjects) {
             return `
                 <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.68rem; padding:0.08rem 0; color:var(--text-primary);" title="${lbl}: ${val} proyecto${val !== 1 ? 's' : ''} (${pct}%)">
                     <div style="display:flex; align-items:center; gap:0.3rem; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                        <span style="width:7px; height:7px; border-radius:50%; background-color:${col}; flex-shrink:0;"></span>
+                        <span style="width:13px; height:5.5px; border-radius:9999px; background-color:${col}; flex-shrink:0;"></span>
                         <span style="color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${shortLbl}</span>
                     </div>
                     <span style="font-size:0.68rem; color:var(--text-secondary); font-weight:700; font-variant-numeric:tabular-nums; flex-shrink:0; margin-left:0.25rem;">
@@ -263,9 +262,9 @@ var efeLinesFilialChart = null;
 var efeLinesTraccionChart = null;
 
 const EFE_TRACCION_COLORS = {
-    'Eléctrica': '#0284c7', // Sky Blue
-    'Diésel': '#f59e0b',    // Amber
-    'Bimodal': '#10b981'    // Emerald
+    'Eléctrica': '#2b5ec9', // Azul Transporte
+    'Diésel': '#64748b',    // Gris Slate
+    'Bimodal': '#1e9952'    // Verde Sostenible
 };
 
 function efeGetTractionCategory(tractionStr) {
@@ -423,7 +422,7 @@ function efeUpdateLinesAnalyticsCharts(filteredLines) {
             return `
                 <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.69rem; padding:0.12rem 0; color:var(--text-primary);">
                     <div style="display:flex; align-items:center; gap:0.35rem; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                        <span style="width:7px; height:7px; border-radius:50%; background-color:${col}; flex-shrink:0;"></span>
+                        <span style="width:13px; height:5.5px; border-radius:9999px; background-color:${col}; flex-shrink:0;"></span>
                         <span style="color:var(--text-primary); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${lbl}</span>
                     </div>
                     <span style="font-size:0.68rem; color:var(--text-secondary); font-weight:700; font-variant-numeric:tabular-nums; flex-shrink:0; margin-left:0.25rem;">
@@ -479,7 +478,7 @@ function efeUpdateLinesAnalyticsCharts(filteredLines) {
             return `
                 <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.68rem; padding:0.08rem 0; color:var(--text-primary);" title="${lbl}: ${val} servicio${val !== 1 ? 's' : ''} (${pct}%)">
                     <div style="display:flex; align-items:center; gap:0.3rem; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                        <span style="width:7px; height:7px; border-radius:50%; background-color:${col}; flex-shrink:0;"></span>
+                        <span style="width:13px; height:5.5px; border-radius:9999px; background-color:${col}; flex-shrink:0;"></span>
                         <span style="color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${lbl}</span>
                     </div>
                     <span style="font-size:0.68rem; color:var(--text-secondary); font-weight:700; font-variant-numeric:tabular-nums; flex-shrink:0; margin-left:0.25rem;">

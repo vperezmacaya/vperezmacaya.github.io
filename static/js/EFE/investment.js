@@ -8,27 +8,23 @@ let efeChartInvByTipoInstance = null;
 let efeChartInvByFilialInstance = null;
 let efeChartTopProjectsInstance = null;
 
-// Colores consistentes de filiales
 const EFE_INV_FILIAL_COLORS = {
-    'EFE Central': '#2563eb',
-    'EFE Valparaíso': '#0284c7',
-    'EFE Sur': '#d97706',
-    'EFE Arica - La Paz': '#059669',
+    'EFE Central': '#d92534',
+    'EFE Valparaíso': '#1694b8',
+    'EFE Sur': '#2b5ec9',
+    'EFE Arica - La Paz': '#1e9952',
     'Sin filial específica': '#64748b',
-    'Nacional': '#8b5cf6'
+    'Nacional': '#64748b'
 };
 
 // Formato compacto de dólares USD (valores en MM USD)
 function formatEfeUSD(val) {
-    if (val == null || isNaN(val) || val === 0) return 'US$ 0';
-    if (val >= 1000) {
-        const b = val / 1000;
-        return 'US$ ' + (b % 1 === 0 ? b.toFixed(0) : b.toFixed(2)) + 'B';
-    }
-    if (val >= 1) {
-        return 'US$ ' + Math.round(val).toLocaleString('es-CL') + ' MM';
-    }
-    return 'US$ ' + val.toFixed(1) + ' MM';
+    return CatlecUtils.formatCompactUSD(val, {
+        emptyText: 'US$ 0',
+        treatZeroAsInvalid: true,
+        bWholeStrip: true,
+        mmRounding: 'round'
+    });
 }
 
 // Tooltip compartido para los gráficos de inversión EFE (idéntico al de análisis rápido)
@@ -220,7 +216,6 @@ function renderEfeInvestmentAnalytics(projectsList) {
     const sortedTipos = Object.entries(tipoInv).sort((a, b) => b[1] - a[1]);
     const tipoLabels = sortedTipos.map(e => e[0]);
     const tipoValues = sortedTipos.map(e => e[1]);
-    const tipoColors = tipoLabels.map(t => (typeof EFE_TIPO_COLORS !== 'undefined' && EFE_TIPO_COLORS[t]) ? EFE_TIPO_COLORS[t] : '#2563eb');
 
     const canvasTipo = document.getElementById('efeChartInvByTipo');
     if (canvasTipo) {
@@ -233,7 +228,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
                     datasets: [{
                         label: 'Inversión (MM USD)',
                         data: tipoValues,
-                        backgroundColor: tipoColors,
+                        backgroundColor: '#0f3b6c',
                         borderRadius: 4
                     }]
                 },
@@ -294,7 +289,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
         } else {
             efeChartInvByTipoInstance.data.labels = tipoLabels;
             efeChartInvByTipoInstance.data.datasets[0].data = tipoValues;
-            efeChartInvByTipoInstance.data.datasets[0].backgroundColor = tipoColors;
+            efeChartInvByTipoInstance.data.datasets[0].backgroundColor = '#0f3b6c';
             efeChartInvByTipoInstance.options.scales.x.grid.color = gridColor;
             efeChartInvByTipoInstance.options.scales.x.ticks.color = textColor;
             efeChartInvByTipoInstance.options.scales.x.ticks.font = { size: 10 };
@@ -383,7 +378,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
             itemDiv.style.cssText = 'display:flex; align-items:center; justify-content:space-between; gap:0.4rem; font-size:0.75rem; padding:0.06rem 0;';
             itemDiv.innerHTML = `
                 <div style="display:flex; align-items:center; gap:0.35rem; min-width:0; overflow:hidden;">
-                    <span style="width:7px; height:7px; border-radius:50%; background-color:${col}; flex-shrink:0;"></span>
+                    <span style="width:13px; height:5.5px; border-radius:9999px; background-color:${col}; flex-shrink:0;"></span>
                     <span style="color:var(--text-secondary); white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${lbl}</span>
                 </div>
                 <span style="font-weight:700; color:var(--text-primary); flex-shrink:0; white-space:nowrap;">${formatEfeUSD(val)} <span style="font-weight:400; color:var(--text-muted); font-size:0.68rem;">(${pct}%)</span></span>
@@ -418,7 +413,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
                     datasets: [{
                         label: 'Inversión (USD)',
                         data: projValues,
-                        backgroundColor: '#0284c7',
+                        backgroundColor: '#d92534',
                         borderRadius: 4
                     }]
                 },
@@ -486,7 +481,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
         } else {
             efeChartTopProjectsInstance.data.labels = projLabels;
             efeChartTopProjectsInstance.data.datasets[0].data = projValues;
-            efeChartTopProjectsInstance.data.datasets[0].backgroundColor = '#0284c7';
+            efeChartTopProjectsInstance.data.datasets[0].backgroundColor = '#d92534';
             efeChartTopProjectsInstance.options.scales.x.grid.color = gridColor;
             efeChartTopProjectsInstance.options.scales.x.ticks.color = textColor;
             efeChartTopProjectsInstance.options.scales.x.ticks.font = { size: 10 };

@@ -1,20 +1,19 @@
 const EFE_TRAIN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8"/><path d="M4 11V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6"/><path d="M4 11h16v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/><line x1="8" y1="15" x2="8.01" y2="15"/><line x1="16" y1="15" x2="16.01" y2="15"/><path d="m9 19-3 3"/><path d="m15 19 3 3"/></svg>`;
+const EFE_UPGRADE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>`;
 
 function efeInitLeafletMap() {
-    efeMap = L.map('efe-map', {
-        zoomControl: true,
-        scrollWheelZoom: true,
-        doubleClickZoom: true,
-        zoomSnap: 0.5,
-        zoomDelta: 0.5
-    }).setView([-35.6751, -71.5430], 5);
+    const base = CatlecUtils.createBaseMap('efe-map', {
+        center: [-35.6751, -71.5430],
+        zoom: 5,
+        options: { scrollWheelZoom: true, doubleClickZoom: true, zoomSnap: 0.5, zoomDelta: 0.5 }
+    });
+    efeMap = base.map;
+    efeTileLayer = base.tileLayer;
 
-    // Light CartoDB tile layer
-    efeTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=cb1_2j8c_1_dacb4df364cf092be679e47d', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 20
-    }).addTo(efeMap);
+    // Dedicated Leaflet Pane for Station Points to guarantee they ALWAYS stay on top of lines and polygons
+    efeMap.createPane('stationsPane');
+    efeMap.getPane('stationsPane').style.zIndex = '450';
+    efeMap.getPane('stationsPane').style.pointerEvents = 'auto';
 
     // Clear project & line selection & collapse clusters when clicking map background
     efeMap.on('click', () => {
@@ -43,35 +42,36 @@ function efeInitLeafletMap() {
     efeLoadMapLayers();
 }
 
-function efeIsMixedProject(proj) {
-    if (!proj || !proj.shapes || !Array.isArray(proj.shapes) || proj.shapes.length === 0) return false;
-    let hasPoint = false;
-    let hasLine = false;
+function efeIsExpansionProject(proj) {
+    if (!proj) return false;
+    const t = String(proj.type || proj.projectType || '').trim().toLowerCase();
+    return t.includes('expansi');
+}
 
-    proj.shapes.forEach(shapeId => {
-        const sid = String(shapeId).trim();
-        const layersArr = efeShapeGeometries[sid];
-        if (layersArr) {
-            layersArr.forEach(l => {
-                if (l.feature && l.feature.geometry && l.feature.geometry.type) {
-                    const t = l.feature.geometry.type.toLowerCase();
-                    if (t.includes('point')) hasPoint = true;
-                    if (t.includes('line')) hasLine = true;
-                } else {
-                    if ((l instanceof L.CircleMarker) || (l instanceof L.Marker)) hasPoint = true;
-                    if ((l instanceof L.Polyline) && !(l instanceof L.Polygon)) hasLine = true;
-                }
-            });
-        }
-    });
+function efeIsNationalProject(proj) {
+    if (!proj || !proj.shapes || !Array.isArray(proj.shapes)) return false;
+    return proj.shapes.some(s => String(s).trim().toLowerCase() === 'nacional');
+}
+window.efeIsNationalProject = efeIsNationalProject;
 
-    return hasPoint && hasLine;
+function efeGetProjectColor(proj, state = 'default') {
+    const isExp = efeIsExpansionProject(proj);
+    if (state === 'selected' || state === 'active') {
+        return isExp ? '#15733d' : '#b01c29';
+    }
+    if (state === 'hover') {
+        return isExp ? '#1e9952' : '#d92534';
+    }
+    if (state === 'dimmed') {
+        return isExp ? 'rgba(30, 153, 82, 0.25)' : 'rgba(217, 37, 52, 0.25)';
+    }
+    return isExp ? '#1e9952' : '#d92534';
 }
 
 function efeHasValidShapeAttribute(feature) {
     if (!feature || !feature.properties) return false;
     const props = feature.properties;
-    const cod = props.COD != null ? String(props.COD).trim() : '';
+    const cod = (props.id != null ? String(props.id) : (props.COD != null ? String(props.COD) : '')).trim();
     const hasCod = cod !== '' && cod.toLowerCase() !== 'null' && cod.toLowerCase() !== 'none';
     if (!hasCod) return false;
     // Only include shapes that belong to at least one project or operating line in the database
@@ -157,18 +157,20 @@ function efeLoadMapLayers() {
                 return { radius: 0, opacity: 0, fillOpacity: 0, stroke: false, fill: false };
             }
             const props = feature.properties || {};
-            const cod = props.COD != null ? String(props.COD).trim() : '';
+            const cod = (props.id != null ? String(props.id) : (props.COD != null ? String(props.COD) : '')).trim();
             const hasProject = cod && efeShapeToProjects[cod] && efeShapeToProjects[cod].length > 0;
             const hasLine = cod && efeShapeToLines[cod] && efeShapeToLines[cod].length > 0;
             if (!hasProject && !hasLine) {
                 return { opacity: 0, fillOpacity: 0, stroke: false, fill: false };
             }
-            // Prioridad Verde: Proyectos prevalece sobre Líneas Operativas
+            // Prioridad Proyectos sobre Líneas Operativas (Verde Expansión vs Rojo No-Expansión)
             if (hasProject) {
-                return { color: '#059669', weight: 3.5, opacity: 0.85, fillOpacity: 0.2 };
+                const actProj = efeGetActiveProjectForShape(cod);
+                const col = efeGetProjectColor(actProj, 'default');
+                return { stroke: true, color: col, weight: 3.5, opacity: 0.85, fillOpacity: 0.25, fillColor: col };
             }
-            // Solo Línea Operativa: Azul
-            return { color: '#0284c7', weight: 3.0, opacity: 0.90, fillOpacity: 0 };
+            // Solo Línea Operativa: Azul Marino Corporativo
+            return { stroke: true, color: '#0f3b6c', weight: 3.0, opacity: 0.90, fillOpacity: 0, fillColor: '#0f3b6c' };
         },
         pointToLayer: function (feature, latlng) {
             return L.circleMarker(latlng, {
@@ -182,7 +184,7 @@ function efeLoadMapLayers() {
         },
         onEachFeature: function (feature, layer) {
             const props = feature.properties || {};
-            const cod = props.COD != null ? String(props.COD).trim() : '';
+            const cod = (props.id != null ? String(props.id) : (props.COD != null ? String(props.COD) : '')).trim();
 
             if (cod) {
                 if (!efeShapeGeometries[cod]) {
@@ -295,12 +297,14 @@ function efeLoadMapLayers() {
         }
     }
 
-    // 3. Metro de Santiago Stations Layer (Puntos pequeños y sutiles)
+    // 3. Metro de Santiago Stations Layer (Puntos pequeños en pane superior)
     const metroPointsData = window.METRO_POINTS_DATA;
     if (metroPointsData && metroPointsData.features && metroPointsData.features.length > 0) {
         efeMetroPointsLayer = L.geoJSON(metroPointsData, {
+            pane: 'stationsPane',
             pointToLayer: function (feature, latlng) {
                 return L.circleMarker(latlng, {
+                    pane: 'stationsPane',
                     radius: 2.5,
                     fillColor: '#ffffff',
                     color: '#c53030',
@@ -320,15 +324,17 @@ function efeLoadMapLayers() {
         });
     }
 
-    // 4. Estaciones de Pasajeros EFE (Puntos pequeños y sutiles en azul)
+    // 4. Estaciones de Pasajeros EFE (Puntos sutiles con contorno neutral/negro suave y fondo blanco)
     const efeEstacionesData = window.EFE_ESTACIONES_DATA;
     if (efeEstacionesData && efeEstacionesData.features && efeEstacionesData.features.length > 0) {
         efeEstacionesGeoLayer = L.geoJSON(efeEstacionesData, {
+            pane: 'stationsPane',
             pointToLayer: function (feature, latlng) {
                 return L.circleMarker(latlng, {
+                    pane: 'stationsPane',
                     radius: 2.5,
                     fillColor: '#ffffff',
-                    color: '#0284c7',
+                    color: '#1e293b',
                     weight: 1.3,
                     opacity: 0.9,
                     fillOpacity: 0.95
@@ -498,6 +504,11 @@ function efeToggleProjects(visible) {
     efeShowProjects = !!visible;
     if (!efeMap) return;
 
+    const otherBadge = document.querySelector('.efe-legend-subitem');
+    if (otherBadge) {
+        otherBadge.style.opacity = visible ? '1.0' : '0.4';
+    }
+
     if (!efeShowProjects) {
         // Hide project markers
         efeProjectMarkers.forEach(m => {
@@ -539,23 +550,41 @@ function efeUpdateMapStyles() {
     const hoveredLine = efeState.hoveredOperatingLine;
 
     const allProjects = (window.EFE_DATA && window.EFE_DATA.data) ? window.EFE_DATA.data : [];
+    const allLines = (window.EFE_DATA && window.EFE_DATA.lines) ? window.EFE_DATA.lines : [];
+
     const selectedProj = selectedName ? allProjects.find(p => p.name === selectedName) : null;
-    const selectedShapes = new Set(selectedProj ? (selectedProj.shapes || []).map(s => String(s)) : []);
+    const isSelectedNational = efeIsNationalProject(selectedProj);
+    const selectedShapes = new Set();
+    if (selectedProj) {
+        if (isSelectedNational) {
+            allLines.forEach(l => {
+                (l.shapes || []).forEach(cod => selectedShapes.add(String(cod).trim()));
+            });
+        } else {
+            (selectedProj.shapes || []).forEach(s => selectedShapes.add(String(s).trim()));
+        }
+    }
 
     const hoveredProj = hoveredName ? allProjects.find(p => p.name === hoveredName) : null;
-    const hoveredShapes = new Set(hoveredProj ? (hoveredProj.shapes || []).map(s => String(s)) : []);
+    const isHoveredNational = efeIsNationalProject(hoveredProj);
+    const hoveredShapes = new Set();
+    if (hoveredProj) {
+        if (isHoveredNational) {
+            allLines.forEach(l => {
+                (l.shapes || []).forEach(cod => hoveredShapes.add(String(cod).trim()));
+            });
+        } else {
+            (hoveredProj.shapes || []).forEach(s => hoveredShapes.add(String(s).trim()));
+        }
+    }
 
-    const allLines = (window.EFE_DATA && window.EFE_DATA.lines) ? window.EFE_DATA.lines : [];
     const selectedLineObj = selectedLine ? allLines.find(l => l.service === selectedLine) : null;
     const selectedLineShapes = new Set(selectedLineObj ? (selectedLineObj.shapes || []).map(s => String(s)) : []);
-    const selectedLineColor = '#0284c7';
+    const selectedLineColor = '#0f3b6c';
 
     const hoveredLineObj = hoveredLine ? allLines.find(l => l.service === hoveredLine) : null;
     const hoveredLineShapes = new Set(hoveredLineObj ? (hoveredLineObj.shapes || []).map(s => String(s)) : []);
-    const hoveredLineColor = '#0284c7';
-
-    const isMixedSelected = selectedProj && efeIsMixedProject(selectedProj);
-    const isMixedHovered = hoveredProj && efeIsMixedProject(hoveredProj);
+    const hoveredLineColor = '#0f3b6c';
 
     // Active filtered projects and lines
     const activeProjects = (currentFilteredEFEProjects !== null && typeof currentFilteredEFEProjects !== 'undefined')
@@ -590,7 +619,7 @@ function efeUpdateMapStyles() {
             }
 
             const props = feature.properties || {};
-            const cod = String(props.COD != null ? props.COD : '');
+            const cod = String(props.id != null ? props.id : (props.COD != null ? props.COD : '')).trim();
             const hasActiveProject = cod !== '' && activeFilteredProjectShapes.has(cod);
             const hasActiveLine = cod !== '' && activeFilteredLineShapes.has(cod);
 
@@ -604,9 +633,15 @@ function efeUpdateMapStyles() {
             const isLineSelected = selectedLine && cod && selectedLineShapes.has(cod);
             const isLineHovered = hoveredLine && cod && hoveredLineShapes.has(cod);
 
+            const actProj = efeGetActiveProjectForShape(cod);
+            const projColor = efeGetProjectColor(actProj, 'default');
+            const projDimColor = efeGetProjectColor(actProj, 'dimmed');
+            const projDarkColor = efeGetProjectColor(actProj, 'selected');
+
             if (selectedLine) {
                 if (isLineSelected) {
                     return {
+                        stroke: true,
                         color: selectedLineColor,
                         weight: 6.0,
                         opacity: 1.0,
@@ -615,92 +650,105 @@ function efeUpdateMapStyles() {
                     };
                 } else if (isProjHovered && hasActiveProject) {
                     return {
-                        color: '#059669',
+                        stroke: true,
+                        color: projColor,
                         weight: 4.5,
                         opacity: 0.90,
                         fillOpacity: 0.35,
-                        fillColor: '#059669'
+                        fillColor: projColor
                     };
                 } else {
                     return {
-                        color: hasActiveProject ? '#6ee7b7' : '#94a3b8',
+                        stroke: true,
+                        color: hasActiveProject ? projDimColor : '#94a3b8',
                         weight: 2.0,
                         opacity: 0.30,
                         fillOpacity: 0.05,
-                        fillColor: hasActiveProject ? '#6ee7b7' : '#94a3b8'
+                        fillColor: hasActiveProject ? projDimColor : '#94a3b8'
                     };
                 }
             } else if (selectedName) {
                 if (isProjSelected) {
+                    const selCol = isSelectedNational ? selectedLineColor : efeGetProjectColor(selectedProj, 'selected');
                     return {
-                        color: '#047857',
-                        weight: 5.5,
+                        stroke: true,
+                        color: selCol,
+                        weight: isSelectedNational ? 6.0 : 5.5,
                         opacity: 1.0,
                         fillOpacity: 0.5,
-                        fillColor: '#047857'
+                        fillColor: selCol
                     };
-                } else if (isProjHovered && !isMixedHovered && hasActiveProject) {
+                } else if (isProjHovered && (hasActiveProject || isHoveredNational)) {
+                    const hovCol = isHoveredNational ? hoveredLineColor : projColor;
                     return {
-                        color: '#059669',
-                        weight: 4.5,
+                        stroke: true,
+                        color: hovCol,
+                        weight: isHoveredNational ? 5.5 : 4.5,
                         opacity: 0.85,
                         fillOpacity: 0.35,
-                        fillColor: '#059669'
+                        fillColor: hovCol
                     };
                 } else if (isLineHovered && hasActiveLine) {
                     return {
-                        color: '#0284c7',
+                        stroke: true,
+                        color: '#0f3b6c',
                         weight: 4.5,
                         opacity: 0.85,
                         fillOpacity: 0.35,
-                        fillColor: '#0284c7'
+                        fillColor: '#0f3b6c'
                     };
                 } else {
                     return {
-                        color: hasActiveProject ? '#6ee7b7' : '#94a3b8',
+                        stroke: true,
+                        color: hasActiveProject ? projDimColor : '#94a3b8',
                         weight: 2.0,
                         opacity: 0.30,
                         fillOpacity: 0.08,
-                        fillColor: hasActiveProject ? '#6ee7b7' : '#94a3b8'
+                        fillColor: hasActiveProject ? projDimColor : '#94a3b8'
                     };
                 }
             } else {
                 // No selection active
                 if (isLineHovered && hasActiveLine) {
                     return {
+                        stroke: true,
                         color: hoveredLineColor,
                         weight: 5.5,
                         opacity: 1.0,
                         fillOpacity: 0.4,
                         fillColor: hoveredLineColor
                     };
-                } else if (isProjHovered && !isMixedHovered && hasActiveProject) {
+                } else if (isProjHovered && (hasActiveProject || isHoveredNational)) {
+                    const hovCol = isHoveredNational ? hoveredLineColor : projDarkColor;
                     return {
-                        color: '#047857',
-                        weight: 5.0,
+                        stroke: true,
+                        color: hovCol,
+                        weight: isHoveredNational ? 5.5 : 5.0,
                         opacity: 1.0,
                         fillOpacity: 0.4,
-                        fillColor: '#047857'
+                        fillColor: hovCol
                     };
                 } else {
                     // Default active state:
-                    // 1) Si está asociado a un proyecto activo -> VERDE (#059669)
-                    // 2) Si el proyecto fue filtrado pero el servicio sigue activo -> AZUL (#0284c7)
+                    // 1) Si está asociado a un proyecto activo -> Verde si es Expansión (#1e9952), Rojo si es No-Expansión (#d92534)
+                    // 2) Si el proyecto fue filtrado pero el servicio sigue activo -> Azul Marino (#0f3b6c)
                     if (hasActiveProject) {
                         return {
-                            color: '#059669',
+                            stroke: true,
+                            color: projColor,
                             weight: 3.5,
                             opacity: 0.85,
                             fillOpacity: 0.25,
-                            fillColor: '#059669'
+                            fillColor: projColor
                         };
                     } else {
                         return {
-                            color: '#0284c7',
+                            stroke: true,
+                            color: '#0f3b6c',
                             weight: 3.0,
                             opacity: 0.90,
                             fillOpacity: 0,
-                            fillColor: '#0284c7'
+                            fillColor: '#0f3b6c'
                         };
                     }
                 }
@@ -737,6 +785,7 @@ function efeUpdateMapStyles() {
             if (selectedName || selectedLine) {
                 // Dimming al seleccionar cualquier icono/proyecto/línea
                 return {
+                    stroke: true,
                     color: '#c53030',
                     weight: 1.6,
                     opacity: 0.35,
@@ -746,6 +795,7 @@ function efeUpdateMapStyles() {
             } else {
                 // Estado normal
                 return {
+                    stroke: true,
                     color: '#c53030',
                     weight: 2.3,
                     opacity: 0.75,
@@ -787,10 +837,14 @@ function efeUpdateMapStyles() {
                 return sNorm === normSelLine || sNorm.includes(normSelLine) || normSelLine.includes(sNorm);
             });
 
-            const isMatchProj = selectedProj && projIds.some(pid => {
-                const pStr = String(pid).trim();
-                return pStr === String(selectedProj.id) || (selectedProj.name && pStr === String(selectedProj.name).trim());
-            });
+            const isMatchProj = selectedProj && (
+                isSelectedNational
+                    ? (stInfo ? (stInfo.in_operation === true || stInfo.in_operation === 'Si' || stInfo.in_operation === 1) : true)
+                    : projIds.some(pid => {
+                        const pStr = String(pid).trim();
+                        return pStr === String(selectedProj.id) || (selectedProj.name && pStr === String(selectedProj.name).trim());
+                    })
+            );
 
             if (isMatchLine) {
                 if (layer.setRadius) layer.setRadius(4.5);
@@ -804,11 +858,12 @@ function efeUpdateMapStyles() {
                 });
                 if (layer.bringToFront) layer.bringToFront();
             } else if (isMatchProj) {
+                const projStColor = isSelectedNational ? selectedLineColor : efeGetProjectColor(selectedProj, 'default');
                 if (layer.setRadius) layer.setRadius(4.5);
                 layer.setStyle({
                     radius: 4.5,
                     fillColor: '#ffffff',
-                    color: '#059669',
+                    color: projStColor,
                     weight: 2.2,
                     opacity: 1.0,
                     fillOpacity: 1.0
@@ -820,7 +875,7 @@ function efeUpdateMapStyles() {
                 layer.setStyle({
                     radius: targetRadius,
                     fillColor: '#ffffff',
-                    color: '#0284c7',
+                    color: '#1e293b',
                     weight: isDimmed ? 0.8 : 1.3,
                     opacity: isDimmed ? 0.30 : 0.9,
                     fillOpacity: isDimmed ? 0.30 : 0.95
@@ -878,8 +933,9 @@ function efeUpdateMapStyles() {
                     if (cm.clusterDx != null && cm.clusterDy != null) {
                         const targetPoint = L.point(centerPoint.x + cm.clusterDx, centerPoint.y + cm.clusterDy);
                         const targetLatLng = efeMap.containerPointToLatLng(targetPoint);
+                        const legColor = cm.projectColor || (cm.isExpansion ? '#1e9952' : '#d92534');
                         const leg = L.polyline([centerLatLng, targetLatLng], {
-                            color: '#059669',
+                            color: legColor,
                             weight: 2,
                             opacity: 0.65,
                             dashArray: '3, 3'
@@ -895,7 +951,7 @@ function efeUpdateMapStyles() {
         const dy = (isClusterActive && marker.clusterDy != null) ? marker.clusterDy : 0;
 
         let scaleStr = 'scale(1.0)';
-        const baseColor = marker.projectColor || '#059669';
+        const baseColor = marker.projectColor || (marker.isExpansion ? '#1e9952' : '#d92534');
         let bg = baseColor;
         let zIndex = '100';
 
@@ -933,7 +989,7 @@ function efeUpdateMapStyles() {
                 pulse.classList.add('active-selected');
                 pulse.classList.remove('is-hovered');
                 pulse.classList.remove('dimmed');
-                bg = '#047857';
+                bg = efeGetProjectColor(selectedProj, 'selected');
                 scaleStr = 'scale(1.35)';
                 zIndex = '10000';
                 if (marker.setZIndexOffset) marker.setZIndexOffset(10000);
@@ -1067,6 +1123,7 @@ function efeRenderProjectMarkers(mapProjects) {
 
     mapProjects.forEach(proj => {
         if (!proj.shapes || !Array.isArray(proj.shapes) || proj.shapes.length === 0) return;
+        if (efeIsNationalProject(proj)) return;
 
         let matchedLayers = [];
         proj.shapes.forEach(shapeId => {
@@ -1092,7 +1149,7 @@ function efeRenderProjectMarkers(mapProjects) {
         });
 
         if (pointLayers.length > 0) {
-            // Point or Mixed (Point + Line) project: generate icons at point geometries
+            // Proyectos puntuales: generar marcadores en las coordenadas de sus geometrías de punto
             const isManyPoints = pointLayers.length > 5;
             pointLayers.forEach((l, idx) => {
                 let center = l.getLatLng ? l.getLatLng() : (l.getBounds ? l.getBounds().getCenter() : null);
@@ -1102,7 +1159,7 @@ function efeRenderProjectMarkers(mapProjects) {
                 }
             });
         } else if (lineLayers.length > 0) {
-            // Line-only project: 1 train icon at exact path midpoint
+            // Proyectos lineales: 1 marcador en el punto medio geométrico del trazado
             const midpoint = CatlecUtils.getLineMidpoint(lineLayers);
             if (midpoint) {
                 rawMarkerList.push({ proj, latLng: midpoint, isMini: false });
@@ -1190,8 +1247,9 @@ function efeRenderProjectMarkers(mapProjects) {
 
 function efeCreateTrainMarker(proj, latLng, isMiniDot = false, clusterCount = 1) {
     const badgeHtml = clusterCount > 1 ? `<span class="marker-cluster-badge">${clusterCount}</span>` : '';
-    const typeSvg = EFE_TRAIN_SVG;
-    const typeColor = '#059669';
+    const isExp = efeIsExpansionProject(proj);
+    const typeSvg = isExp ? EFE_TRAIN_SVG : EFE_UPGRADE_SVG;
+    const typeColor = efeGetProjectColor(proj, 'default');
 
     let iconHtml = '';
     if (isMiniDot) {
@@ -1212,10 +1270,12 @@ function efeCreateTrainMarker(proj, latLng, isMiniDot = false, clusterCount = 1)
     marker.projectFilial = proj.filial || 'Sin filial específica';
     marker.projectType = proj.type || '';
     marker.projectColor = typeColor;
+    marker.isExpansion = isExp;
 
+    const tooltipColor = isExp ? '#1e9952' : '#d92534';
     const tooltipContent = clusterCount > 1
         ? `<strong>${clusterCount} proyectos en este lugar</strong>`
-        : `<strong>${proj.name}</strong><br><span style="color:#60a5fa;font-size:0.72rem;font-weight:600;">Tipo: ${proj.type || '—'}</span><br><span style="color:#94a3b8;font-size:0.68rem;">${proj.filial || 'Red General'}</span>`;
+        : `<strong>${proj.name}</strong><br><span style="color:${tooltipColor};font-size:0.72rem;font-weight:600;">Tipo: ${proj.type || '—'}</span><br><span style="color:#94a3b8;font-size:0.68rem;">${proj.filial || 'Red General'}</span>`;
 
     marker.bindTooltip(tooltipContent, { sticky: true, className: 'efe-map-tooltip' });
 
@@ -1239,6 +1299,30 @@ function efeGetProjectsExtentBounds() {
     return bounds;
 }
 
+// ─── Calculate Bounding Box of all Active Operating Passenger Lines ─────────
+function efeGetOperatingLinesBounds() {
+    let bounds = L.latLngBounds();
+    const allLines = (window.EFE_DATA && window.EFE_DATA.lines) ? window.EFE_DATA.lines : [];
+    allLines.forEach(l => {
+        (l.shapes || []).forEach(shapeId => {
+            const sid = String(shapeId).trim();
+            const layersArr = efeShapeGeometries[sid];
+            if (Array.isArray(layersArr)) {
+                layersArr.forEach(layer => {
+                    if (layer.getBounds) {
+                        const b = layer.getBounds();
+                        if (b && b.isValid()) bounds.extend(b);
+                    } else if (layer.getLatLng) {
+                        const ll = layer.getLatLng();
+                        if (ll) bounds.extend(ll);
+                    }
+                });
+            }
+        });
+    });
+    return bounds;
+}
+
 // ─── Apply Default Map View (Synchronized between initial load and reset) ───
 function efeApplyDefaultMapView(animate = false) {
     if (!efeMap) return;
@@ -1255,11 +1339,24 @@ function efeApplyDefaultMapView(animate = false) {
 }
 window.efeApplyDefaultMapView = efeApplyDefaultMapView;
 
-// ─── Zoom to Project (Fly to bounds or midpoint) ────────────────────────────
+// ─── Zoom to Project (Fly to bounds or midpoint con Zoom Adaptativo) ─────────
 function efeZoomToProject(proj) {
     if (!efeMap || !proj) return;
 
-    const isNacional = (!proj.shapes || proj.shapes.length === 0) || (proj.filial && String(proj.filial).toLowerCase().includes('nacional'));
+    if (efeIsNationalProject(proj)) {
+        const lineBounds = efeGetOperatingLinesBounds();
+        if (lineBounds && lineBounds.isValid()) {
+            CatlecUtils.zoomToProject(efeMap, lineBounds, {
+                duration: 1.2,
+                onDefaultView: () => efeApplyDefaultMapView(true),
+                onStart: (ms) => efeStartZoomTransition(ms)
+            });
+            return;
+        }
+    }
+
+    const isNacional = (!proj.shapes || proj.shapes.length === 0) ||
+        (proj.filial && String(proj.filial).toLowerCase().includes('nacional'));
     if (isNacional) {
         efeApplyDefaultMapView(true);
         return;
@@ -1276,35 +1373,11 @@ function efeZoomToProject(proj) {
         });
     }
 
-    if (matchedLayers.length > 0) {
-        let combinedBounds = L.latLngBounds();
-        matchedLayers.forEach(l => {
-            if (l.getBounds) {
-                combinedBounds.extend(l.getBounds());
-            } else if (l.getLatLng) {
-                combinedBounds.extend(l.getLatLng());
-            }
-        });
-
-        if (combinedBounds.isValid()) {
-            efeStartZoomTransition(1200);
-            efeMap.flyToBounds(combinedBounds, {
-                animate: true,
-                duration: 1.2,
-                padding: [70, 70],
-                maxZoom: 10
-            });
-            return;
-        }
-    }
-
-    const midpoint = CatlecUtils.getLineMidpoint(matchedLayers);
-    if (midpoint) {
-        efeStartZoomTransition(1200);
-        efeMap.flyTo(midpoint, 10, { animate: true, duration: 1.2 });
-    } else {
-        efeApplyDefaultMapView(true);
-    }
+    CatlecUtils.zoomToProject(efeMap, matchedLayers, {
+        duration: 1.2,
+        onDefaultView: () => efeApplyDefaultMapView(true),
+        onStart: (ms) => efeStartZoomTransition(ms)
+    });
 }
 
 function efeResetMap() {
@@ -1387,26 +1460,11 @@ function efeZoomToOperatingLine(lineName) {
         if (layersForShape) matchedLayers.push(...layersForShape);
     });
 
-    if (matchedLayers.length > 0) {
-        let combinedBounds = L.latLngBounds();
-        matchedLayers.forEach(l => {
-            if (l.getBounds) combinedBounds.extend(l.getBounds());
-            else if (l.getLatLng) combinedBounds.extend(l.getLatLng());
-        });
-
-        if (combinedBounds.isValid()) {
-            efeStartZoomTransition(1200);
-            efeMap.flyToBounds(combinedBounds, {
-                animate: true,
-                duration: 1.2,
-                padding: [60, 60],
-                maxZoom: 12
-            });
-            return;
-        }
-    }
-
-    efeApplyDefaultMapView(true);
+    CatlecUtils.zoomToProject(efeMap, matchedLayers, {
+        duration: 1.2,
+        onDefaultView: () => efeApplyDefaultMapView(true),
+        onStart: (ms) => efeStartZoomTransition(ms)
+    });
 }
 window.efeZoomToOperatingLine = efeZoomToOperatingLine;
 
@@ -1434,58 +1492,57 @@ function efeUpdateMapBadge(shown, total) {
 function efeAddMapLegend() {
     if (!efeMap) return;
 
-    const legend = L.control({ position: 'bottomleft' });
+    const html = `
+        <div class="efe-legend-title">Leyenda</div>
+        <label class="efe-legend-item efe-legend-toggleable" for="efe-toggle-efe-lines" title="Activar/desactivar líneas de pasajeros EFE">
+            <input type="checkbox" id="efe-toggle-efe-lines" class="efe-legend-checkbox" ${efeShowEfeLines ? 'checked' : ''}>
+            <span class="efe-legend-color-line" style="background-color: #0f3b6c; box-shadow: 0 0 4px rgba(15, 59, 108, 0.45);"></span>
+            <span>Línea de pasajeros EFE</span>
+        </label>
+        <label class="efe-legend-item efe-legend-toggleable" for="efe-toggle-metro-lines" title="Activar/desactivar líneas de Metro de Santiago">
+            <input type="checkbox" id="efe-toggle-metro-lines" class="efe-legend-checkbox" ${efeShowMetroLines ? 'checked' : ''}>
+            <span class="efe-legend-color-line" style="background-color: #c53030;"></span>
+            <span>Líneas Metro de Santiago</span>
+        </label>
+        <label class="efe-legend-item efe-legend-toggleable" for="efe-toggle-projects" title="Activar/desactivar todos los proyectos">
+            <input type="checkbox" id="efe-toggle-projects" class="efe-legend-checkbox" ${efeShowProjects ? 'checked' : ''}>
+            <span class="efe-legend-icon-badge" style="background-color: #1e9952;">
+                ${EFE_TRAIN_SVG}
+            </span>
+            <span>Proyectos Expansión</span>
+        </label>
+        <div class="efe-legend-item efe-legend-subitem" style="padding-left: 1.25rem; ${efeShowProjects ? '' : 'opacity: 0.4;'}">
+            <span class="efe-legend-icon-badge" style="background-color: #d92534;">
+                ${EFE_UPGRADE_SVG}
+            </span>
+            <span>Mejoramiento y Renovación</span>
+        </div>
+    `;
 
-    legend.onAdd = function () {
-        const div = L.DomUtil.create('div', 'efe-map-legend');
-        div.innerHTML = `
-            <div class="efe-legend-title">Leyenda</div>
-            <label class="efe-legend-item efe-legend-toggleable" for="efe-toggle-efe-lines" title="Activar/desactivar líneas de pasajeros EFE">
-                <input type="checkbox" id="efe-toggle-efe-lines" class="efe-legend-checkbox" ${efeShowEfeLines ? 'checked' : ''}>
-                <span class="efe-legend-color-line"></span>
-                <span>Línea de pasajeros EFE</span>
-            </label>
-            <label class="efe-legend-item efe-legend-toggleable" for="efe-toggle-metro-lines" title="Activar/desactivar líneas de Metro de Santiago">
-                <input type="checkbox" id="efe-toggle-metro-lines" class="efe-legend-checkbox" ${efeShowMetroLines ? 'checked' : ''}>
-                <span class="efe-legend-color-line" style="background-color: #c53030;"></span>
-                <span>Líneas Metro de Santiago</span>
-            </label>
-            <label class="efe-legend-item efe-legend-toggleable" for="efe-toggle-projects" title="Activar/desactivar proyectos (íconos y trazados)">
-                <input type="checkbox" id="efe-toggle-projects" class="efe-legend-checkbox" ${efeShowProjects ? 'checked' : ''}>
-                <span class="efe-legend-icon-badge">
-                    ${EFE_TRAIN_SVG}
-                </span>
-                <span>Proyectos</span>
-            </label>
-        `;
+    CatlecUtils.createLegendControl(efeMap, {
+        className: 'efe-map-legend',
+        html,
+        onMount: (div) => {
+            const chkEfe = div.querySelector('#efe-toggle-efe-lines');
+            if (chkEfe) {
+                chkEfe.addEventListener('change', (e) => {
+                    efeToggleEfeLines(e.target.checked);
+                });
+            }
 
-        // Prevent map click or scroll propagation when clicking inside the legend
-        L.DomEvent.disableClickPropagation(div);
-        L.DomEvent.disableScrollPropagation(div);
+            const chkMetro = div.querySelector('#efe-toggle-metro-lines');
+            if (chkMetro) {
+                chkMetro.addEventListener('change', (e) => {
+                    efeToggleMetroLines(e.target.checked);
+                });
+            }
 
-        const chkEfe = div.querySelector('#efe-toggle-efe-lines');
-        if (chkEfe) {
-            chkEfe.addEventListener('change', (e) => {
-                efeToggleEfeLines(e.target.checked);
-            });
+            const chkProjects = div.querySelector('#efe-toggle-projects');
+            if (chkProjects) {
+                chkProjects.addEventListener('change', (e) => {
+                    efeToggleProjects(e.target.checked);
+                });
+            }
         }
-
-        const chkMetro = div.querySelector('#efe-toggle-metro-lines');
-        if (chkMetro) {
-            chkMetro.addEventListener('change', (e) => {
-                efeToggleMetroLines(e.target.checked);
-            });
-        }
-
-        const chkProjects = div.querySelector('#efe-toggle-projects');
-        if (chkProjects) {
-            chkProjects.addEventListener('change', (e) => {
-                efeToggleProjects(e.target.checked);
-            });
-        }
-
-        return div;
-    };
-
-    legend.addTo(efeMap);
+    });
 }

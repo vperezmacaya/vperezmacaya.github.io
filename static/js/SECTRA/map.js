@@ -414,10 +414,13 @@ function zoomToProjectOnMap(projectId) {
     
     const layers = sectraProjectGeometries[projectId];
     if (layers && layers.length > 0) {
-        const group = L.featureGroup(layers);
-        sectraMap.fitBounds(group.getBounds(), { maxZoom: 15, padding: [50, 50] });
-        layers.forEach(l => {
-            if (l.openTooltip) l.openTooltip();
+        CatlecUtils.zoomToProject(sectraMap, layers, {
+            duration: 0.9,
+            onEnd: () => {
+                layers.forEach(l => {
+                    if (l.openTooltip) l.openTooltip();
+                });
+            }
         });
     }
 }

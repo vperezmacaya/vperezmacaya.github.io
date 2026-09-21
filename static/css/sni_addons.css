@@ -1,0 +1,610 @@
+/* ─── static/css/sni_addons.css ──────────────────────────────────────────────
+   Addon modular específico para SNI (Sistema Nacional de Inversiones).
+   Reglas usadas únicamente por SNI.html / static/js/SNI/*.js, extraídas del
+   <style> inline que vivía en el <head> de SNI.html. */
+
+/* Estructura general de pantalla única para SNI */
+.view-subheader.four-tabs {
+    grid-template-columns: repeat(4, 1fr) !important;
+}
+
+.sni-layout {
+    display: grid;
+    grid-template-columns: 275px 1fr;
+    gap: 0.6rem;
+    flex: 1;
+    min-height: 0;
+    padding: 0.5rem 0.75rem;
+    overflow: hidden;
+    width: 100vw;
+    box-sizing: border-box;
+}
+
+.sni-layout.no-sidebar {
+    grid-template-columns: 1fr;
+}
+
+.sni-layout.no-sidebar .sni-sidebar {
+    display: none !important;
+}
+
+.sni-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.sni-sidebar-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md, 12px);
+    padding: 0.65rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    box-shadow: var(--shadow-main);
+}
+
+.sni-sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.25rem;
+    flex-shrink: 0;
+}
+
+.sni-sidebar-header .panel-title {
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.sni-sidebar-header .panel-title i,
+.sni-sidebar-header .panel-title svg {
+    color: var(--primary);
+    width: 14px;
+    height: 14px;
+}
+
+.sni-sidebar-scroll {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-right: 3px;
+}
+
+/* Cajas de Filtros con bordes y límites bien definidos */
+.sni-filter-box {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.45rem 0.55rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sni-filter-box:hover {
+    border-color: rgba(37, 99, 235, 0.4);
+}
+
+.sni-filter-box-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    margin-bottom: 0.1rem;
+}
+
+.sni-filter-box-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.filter-header-action {
+    background: transparent;
+    border: 1px solid rgba(37, 99, 235, 0.25);
+    color: var(--primary);
+    font-size: 9.5px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 1px 5px;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+}
+
+.filter-header-action:hover {
+    background: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+}
+
+.sni-filter-list-scroll {
+    max-height: 125px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-right: 3px;
+}
+
+.sni-filter-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sni-year-chips-wrap {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3px;
+}
+
+.sni-year-chip {
+    padding: 3px 2px;
+    font-size: 10px;
+    font-weight: 500;
+    border-radius: 4px;
+    background: var(--bg-sidebar);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s ease;
+}
+
+.sni-year-chip:hover {
+    border-color: var(--primary);
+    background: rgba(37, 99, 235, 0.1);
+}
+
+.sni-year-chip.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+    font-weight: 600;
+}
+
+.sni-presets-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 0.35rem;
+}
+
+.preset-btn {
+    font-size: 9.5px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--bg-sidebar);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.preset-btn.active,
+.preset-btn:hover {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+#btn-export-excel:hover {
+    background: rgba(16, 185, 129, 0.2) !important;
+    border-color: #10b981 !important;
+    color: #10b981 !important;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+}
+
+.sni-filter-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10.5px;
+    color: var(--text-secondary);
+    padding: 3px 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.12s ease;
+}
+
+.sni-filter-checkbox-label:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+.sni-filter-checkbox-label input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: var(--primary);
+    width: 13px;
+    height: 13px;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.sni-filter-checkbox-label span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sni-color-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.sni-main-area {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* Banner de KPIs superior horizontal */
+.sni-kpi-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.45rem;
+    flex-shrink: 0;
+}
+
+.sni-kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm, 8px);
+    padding: 0.45rem 0.65rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-shadow: var(--shadow-main);
+    min-height: 52px;
+    transition: border-color 0.2s ease;
+}
+
+.sni-kpi-card:hover {
+    border-color: var(--primary);
+}
+
+.sni-kpi-label {
+    font-size: 0.64rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+}
+
+.sni-kpi-value {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--primary);
+    line-height: 1.1;
+}
+
+.sni-kpi-subtext {
+    font-size: 0.62rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sni-viewport {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+}
+
+.sni-view-container {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.sni-grid-1x2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+}
+
+.sni-grid-1x3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+}
+
+.sni-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md, 12px);
+    padding: 0.45rem 0.5rem 0.35rem;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    box-shadow: var(--shadow-main);
+}
+
+.sni-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.15rem;
+    margin-bottom: 0.15rem;
+    flex-shrink: 0;
+    gap: 0.5rem;
+}
+
+.sni-card-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sni-card-title i, .sni-card-title svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+}
+
+.sni-badge {
+    font-size: 0.62rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 12px;
+    background: rgba(37, 99, 235, 0.12);
+    color: var(--primary);
+    border: 1px solid rgba(37, 99, 235, 0.25);
+}
+
+/* Micro-leyendas estandarizadas en cabeceras de cards (catlec-bar-chart) */
+.sni-card-legend {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.6rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.sni-card-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    white-space: nowrap;
+}
+
+.sni-legend-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 1.5px;
+    flex-shrink: 0;
+}
+
+.sni-legend-line {
+    display: inline-block;
+    width: 9px;
+    height: 2px;
+    border-radius: 1px;
+    flex-shrink: 0;
+}
+
+.sni-chart-wrap {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+    width: 100%;
+}
+
+.map-metric-toolbar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    background: var(--bg-card);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 3px;
+    display: flex;
+    gap: 3px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.map-metric-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.map-metric-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.map-metric-btn.active {
+    background: var(--primary);
+    color: #ffffff;
+}
+
+.map-region-detail-card {
+    position: absolute;
+    bottom: 15px;
+    left: 15px;
+    z-index: 1000;
+    background: var(--bg-card);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 10px 12px;
+    width: 250px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+    display: none;
+}
+
+.map-metric-mini-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.35rem;
+    padding-top: 0.35rem;
+    border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.map-metric-mini-kpi {
+    background: var(--bg-sidebar);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 4px 6px;
+    text-align: center;
+}
+
+.map-metric-mini-kpi-label {
+    font-size: 0.58rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.map-metric-mini-kpi-val {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@keyframes sniSpin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.sni-table-wrap {
+    flex: 1;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-sidebar);
+}
+
+.sni-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+}
+
+.sni-table th {
+    position: sticky;
+    top: 0;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-align: left;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border-color);
+    z-index: 1;
+}
+
+.sni-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.sni-table tr:hover {
+    background: rgba(37, 99, 235, 0.05);
+}
+
+.sni-badge-min {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.sni-page-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-size: 10.5px;
+    cursor: pointer;
+}
+
+.sni-page-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.sni-page-number {
+    font-size: 10.5px;
+    color: var(--text-secondary);
+    align-self: center;
+}

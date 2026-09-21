@@ -242,7 +242,6 @@ function resetAllSNIFilters() {
     sniState.selectedRegions = [];
     sniState.selectedMinistries = [];
     sniState.selectedSources = [];
-    sniState.selectedSubtitles = [];
 
     // Reset visual checkboxes & chips
     document.querySelectorAll('.sni-year-chip').forEach(c => c.classList.remove('active'));

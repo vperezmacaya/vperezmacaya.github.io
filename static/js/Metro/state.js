@@ -183,10 +183,17 @@ function metroInitStationsLookup() {
         }
 
         // 2. Indexar por Clave Compuesta Línea + Nombre (ej: 'linea 5::cumming' vs 'linea 7::cumming')
-        const compositeKey = `${normLine}::${normName}`;
-        METRO_STATIONS_BY_LINE_NAME[compositeKey] = st;
+        const activeLines = st.lines && Array.isArray(st.lines) && st.lines.length > 0 ? st.lines : (mainLine ? [mainLine] : []);
+        activeLines.forEach(l => {
+            const compositeKey = `${metroNormalizeStationText(l)}::${normName}`;
+            METRO_STATIONS_BY_LINE_NAME[compositeKey] = st;
+        });
+        if (mainLine) {
+            const compositeKeyMain = `${normLine}::${normName}`;
+            METRO_STATIONS_BY_LINE_NAME[compositeKeyMain] = st;
+        }
 
-        // 3. Indexar por nombre preservando prioridad a operativas en caso de colisión
+        // 3. Indexar por nombre (para casos sin colisión o fallback operativo)
         if (!METRO_STATIONS_MAP[normName] || st.status === 'Operativa') {
             METRO_STATIONS_MAP[normName] = st;
         }
@@ -194,8 +201,6 @@ function metroInitStationsLookup() {
             METRO_STATIONS_MAP[normName]._list = [];
         }
         METRO_STATIONS_MAP[normName]._list.push(st);
-
-        const activeLines = st.lines || (mainLine ? [mainLine] : []);
 
         // Todas las líneas incluyendo futuras combinaciones
         const allLines = [...activeLines];
@@ -205,8 +210,10 @@ function metroInitStationsLookup() {
             });
         }
 
-        METRO_STATION_LINE_MAP[normName] = mainLine;
-        METRO_STATION_LINE_MAP[compositeKey] = mainLine;
+        activeLines.forEach(l => {
+            const compositeKey = `${metroNormalizeStationText(l)}::${normName}`;
+            METRO_STATION_LINE_MAP[compositeKey] = l;
+        });
         if (shapeId) METRO_STATION_LINE_MAP[shapeId] = mainLine;
 
         const hasFutureComb = Boolean(
@@ -218,17 +225,23 @@ function metroInitStationsLookup() {
 
         if (isCombStation) {
             METRO_COMBINATION_STATIONS.add(normName);
-            METRO_COMBINATION_LINE_MAP[normName] = allLines;
-            METRO_COMBINATION_LINE_MAP[compositeKey] = allLines;
+            activeLines.forEach(l => {
+                const compositeKey = `${metroNormalizeStationText(l)}::${normName}`;
+                METRO_COMBINATION_LINE_MAP[compositeKey] = allLines;
+            });
             if (shapeId) METRO_COMBINATION_LINE_MAP[shapeId] = allLines;
             if (activeLines.length > 1) {
-                METRO_ACTIVE_COMBINATIONS[normName] = activeLines;
-                METRO_ACTIVE_COMBINATIONS[compositeKey] = activeLines;
+                activeLines.forEach(l => {
+                    const compositeKey = `${metroNormalizeStationText(l)}::${normName}`;
+                    METRO_ACTIVE_COMBINATIONS[compositeKey] = activeLines;
+                });
                 if (shapeId) METRO_ACTIVE_COMBINATIONS[shapeId] = activeLines;
             }
         } else {
-            METRO_EXCLUSIVE_STATIONS_MAP[normName] = mainLine;
-            METRO_EXCLUSIVE_STATIONS_MAP[compositeKey] = mainLine;
+            activeLines.forEach(l => {
+                const compositeKey = `${metroNormalizeStationText(l)}::${normName}`;
+                METRO_EXCLUSIVE_STATIONS_MAP[compositeKey] = mainLine;
+            });
             if (shapeId) METRO_EXCLUSIVE_STATIONS_MAP[shapeId] = mainLine;
         }
     });

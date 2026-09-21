@@ -1,0 +1,36 @@
+/* ─── static/css/metro_addons.css ───────────────────────────────────────────
+   Addon modular específico para Metro de Santiago. Reglas usadas únicamente
+   por Metro.html / static/js/Metro/*.js, separadas de efe_addons.css (que
+   mantiene solo lo verdaderamente compartido entre EFE y Metro, más lo
+   exclusivo de EFE). */
+
+/* ─── Metro Comuna Name Tooltip & Click Popup ────────────────────────────── */
+.metro-comuna-name-tooltip {
+    background: #0f172a !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+    font-family: var(--font-sans) !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    border-radius: 4px !important;
+    padding: 0.15rem 0.45rem !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+    pointer-events: none !important;
+}
+body.light-theme .metro-comuna-name-tooltip {
+    background: #1e293b !important;
+    color: #f8fafc !important;
+    border: 1px solid #334155 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18) !important;
+}
+.metro-comuna-popup .leaflet-popup-content-wrapper {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    padding: 0.2rem !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+}
+.metro-comuna-popup .leaflet-popup-content {
+    margin: 8px 10px !important;
+    line-height: 1.4 !important;
+}

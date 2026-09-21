@@ -9,7 +9,8 @@
     <link rel="icon" type="image/png" href="logo/favicon.png">
     <link rel="shortcut icon" href="logo/favicon.ico">
     <!-- Shared stylesheet (navbar, footer, panel-card, forms, etc.) -->
-    <link rel="stylesheet" href="static/css/styles.css?v=20260910">
+    <link rel="stylesheet" href="static/css/styles.css?v=20260920_1">
+    <link rel="stylesheet" href="static/css/mop_addons.css">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- SheetJS for Client-Side Excel Export -->
@@ -18,168 +19,6 @@
     <script src="static/data/mop_data.js"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-
-    <style>
-        /* ── Layout overrides for MOP ────────────────────────────────────── */
-        .mop-grid {
-            display: grid;
-            grid-template-columns: 260px 1fr;
-            gap: 0.6rem;
-            width: 100%;
-            height: 100%;
-            min-height: 0;
-        }
-
-        /* ── KPI Banner ──────────────────────────────────────────────────── */
-        .mop-kpi-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 0.45rem;
-            flex-shrink: 0;
-        }
-
-        /* ── Panel cards ──────────────────────────────────────────────────── */
-        .mop-card {
-            background: var(--card-bg, rgba(255,255,255,0.85));
-            border: 1px solid var(--border-color, rgba(0,0,0,0.08));
-            border-radius: 12px;
-            padding: 0.65rem 0.8rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.45rem;
-            min-height: 0;
-            overflow: hidden;
-        }
-
-        .mop-card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.07));
-            padding-bottom: 0.3rem;
-            flex-shrink: 0;
-        }
-
-        .mop-card-title {
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            gap: 0.35rem;
-            margin: 0;
-        }
-
-        .mop-badge {
-            font-size: 0.6rem; font-weight: 600;
-            padding: 0.12rem 0.4rem;
-            border-radius: 20px;
-            background: rgba(59,130,246,0.12);
-            color: #3b82f6;
-            border: 1px solid rgba(59,130,246,0.25);
-        }
-
-        /* ── Canvas wrappers ─────────────────────────────────────────────── */
-        .chart-wrap {
-            flex: 1;
-            position: relative;
-            min-height: 0;
-        }
-
-        /* ── Filters ─────────────────────────────────────────────────────── */
-        .mop-form-group { display: flex; flex-direction: column; gap: 0.18rem; }
-        .mop-label { font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); }
-        .mop-input, .mop-select {
-            width: 100%;
-            padding: 0.3rem 0.5rem;
-            background: var(--bg-sidebar, #fff);
-            border: 1px solid var(--border-color, rgba(0,0,0,0.1));
-            border-radius: 7px;
-            color: var(--text-primary);
-            font-size: 0.71rem;
-            font-family: inherit;
-            outline: none;
-            transition: border-color 0.15s;
-        }
-        .mop-input:focus, .mop-select:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
-        }
-
-        /* ── Top projects table ──────────────────────────────────────────── */
-        .top-table { width: 100%; border-collapse: collapse; }
-        .top-table thead th {
-            font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
-            letter-spacing: 0.04em; color: var(--text-muted);
-            padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--border-color);
-            text-align: left;
-        }
-        .top-table tbody tr:hover { background: rgba(59,130,246,0.05); }
-
-        /* ── Right panel scroll ──────────────────────────────────────────── */
-        .right-scroll { flex: 1; overflow-y: auto; min-height: 0; }
-        .right-scroll::-webkit-scrollbar { width: 3px; }
-        .right-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
-
-        /* ── Subheader tab override for 3 tabs ───────────────────────────── */
-        .view-subheader.mop-tabs { grid-template-columns: repeat(3, 1fr); }
-
-        /* ── MOP Data Table Column Sizing (Aligned with index.html data-table) ─── */
-        .data-table.mop-data-table {
-            table-layout: fixed;
-            width: 100%;
-        }
-        .data-table.mop-data-table th:nth-child(1),
-        .data-table.mop-data-table td:nth-child(1) {
-            width: 36px;
-            text-align: center;
-        }
-        .data-table.mop-data-table th:nth-child(2),
-        .data-table.mop-data-table td:nth-child(2) {
-            width: 220px;
-        }
-        .data-table.mop-data-table th:nth-child(3),
-        .data-table.mop-data-table td:nth-child(3) {
-            width: 90px;
-            font-family: var(--font-mono, monospace);
-            font-size: 0.7rem;
-        }
-        .data-table.mop-data-table th:nth-child(4),
-        .data-table.mop-data-table td:nth-child(4) {
-            width: 105px;
-        }
-        .data-table.mop-data-table th:nth-child(5),
-        .data-table.mop-data-table td:nth-child(5) {
-            width: 120px;
-            font-weight: 500;
-        }
-        .data-table.mop-data-table th:nth-child(6),
-        .data-table.mop-data-table td:nth-child(6) {
-            width: 140px;
-        }
-        .data-table.mop-data-table th:nth-child(7),
-        .data-table.mop-data-table td:nth-child(7) {
-            width: 85px;
-        }
-        .data-table.mop-data-table th:nth-child(8),
-        .data-table.mop-data-table td:nth-child(8) {
-            width: 110px;
-            text-align: right;
-        }
-        .data-table.mop-data-table th:nth-child(9),
-        .data-table.mop-data-table td:nth-child(9) {
-            width: 70px;
-            text-align: center;
-        }
-        .data-table.mop-data-table th:nth-child(10),
-        .data-table.mop-data-table td:nth-child(10) {
-            width: 70px;
-            text-align: center;
-        }
-
-        /* ── Hidden utility ──────────────────────────────────────────────── */
-        .hidden { display: none !important; }
-    </style>
 </head>
 
 <body class="light-theme">
@@ -622,10 +461,17 @@
 
     </div><!-- /app-container -->
 
-    <!-- MOP chart logic -->
+    <!-- MOP logic -->
     <script src="static/js/common/tooltip.js?v=1"></script>
-    <script src="static/js/common/utils.js?v=1"></script>
-    <script src="static/js/MOP/charts.js?v=4"></script>
+    <script src="static/js/common/utils.js?v=20260920_1"></script>
+    <script src="static/js/MOP/state.js"></script>
+    <script src="static/js/MOP/utils.js"></script>
+    <script src="static/js/MOP/filters.js"></script>
+    <script src="static/js/MOP/table.js"></script>
+    <script src="static/js/MOP/project-detail.js"></script>
+    <script src="static/js/MOP/charts.js?v=5"></script>
+    <script src="static/js/MOP/export.js"></script>
+    <script src="static/js/MOP/ui.js"></script>
 
     <!-- Nav Menu JS -->
     <script src="static/js/common/nav-menu.js?v=1"></script>

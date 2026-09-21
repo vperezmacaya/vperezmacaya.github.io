@@ -923,16 +923,9 @@ function metroZoomToComuna(comunaName) {
     });
 
     if (targetLayer) {
-        if (targetLayer.getBounds) {
-            const bounds = targetLayer.getBounds();
-            if (bounds && bounds.isValid && bounds.isValid()) {
-                if (typeof metroMap.flyToBounds === 'function') {
-                    metroMap.flyToBounds(bounds, { padding: [50, 50], maxZoom: 14, duration: 0.8 });
-                } else {
-                    metroMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
-                }
-            }
-        }
+        CatlecUtils.zoomToProject(metroMap, targetLayer, {
+            duration: 0.8
+        });
         // Resaltar la comuna seleccionada
         targetLayer.setStyle({
             weight: 3.5,

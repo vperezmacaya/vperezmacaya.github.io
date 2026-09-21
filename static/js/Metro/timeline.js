@@ -80,11 +80,8 @@ function hideMetroTimelineView() {
     }
 }
 
-function metroSvgEl(tag, attrs = {}) {
-    const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
-    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
-    return el;
-}
+const metroSvgEl = CatlecTimeline.svgEl;
+const metroTimelineTooltip = CatlecTimeline.createCursorTooltip({ domId: 'metro-timeline-tooltip', offsetX: 14 });
 
 
 // ── Convierte fechas / años de proyectos Metro a año decimal ──
@@ -844,9 +841,6 @@ function renderMetroTimeline(projects, highlightId = null) {
 
 // ── Tooltip interactivo flotante idéntico a index.html ───────────────────────
 function showMetroTimelineTooltip(e, p, sch, stageInfo) {
-    const tip = document.getElementById('metro-timeline-tooltip');
-    if (!tip) return;
-
     const info = stageInfo || getMetroStageInfo(p);
     const color = info.color;
     const stageLabel = info.label;
@@ -861,75 +855,27 @@ function showMetroTimelineTooltip(e, p, sch, stageInfo) {
 
     const rcaStatus = p.environmental_classification || p.environmental_status || 'En evaluación';
 
-    tip.innerHTML = `
-        <div style="font-weight: 800; font-size: 0.8rem; color: ${color}; margin-bottom: 0.35rem; line-height: 1.25; border-bottom: 1px solid rgba(0,0,0,0.08); padding-bottom: 0.25rem;">
-            ${p.name}
-        </div>
-        <div class="timeline-tooltip-row" style="display:flex; justify-content:space-between; gap:0.5rem; margin-bottom:0.18rem; font-size:0.72rem;">
-            <span style="color:var(--text-secondary);">Etapa Actual:</span>
-            <span style="font-weight:700; color:${color};">${stageLabel}</span>
-        </div>
-        <div class="timeline-tooltip-row" style="display:flex; justify-content:space-between; gap:0.5rem; margin-bottom:0.18rem; font-size:0.72rem;">
-            <span style="color:var(--text-secondary);">Avance Físico:</span>
-            <span style="font-weight:700; color:var(--text-primary);">${avFisico}</span>
-        </div>
-        <div class="timeline-tooltip-row" style="display:flex; justify-content:space-between; gap:0.5rem; margin-bottom:0.18rem; font-size:0.72rem;">
-            <span style="color:var(--text-secondary);">Inversión:</span>
-            <span style="font-weight:700; color:var(--text-primary);">${inv}</span>
-        </div>
-        <div class="timeline-tooltip-row" style="display:flex; justify-content:space-between; gap:0.5rem; font-size:0.72rem;">
-            <span style="color:var(--text-secondary);">Estado de RCA:</span>
-            <span style="font-weight:600; color:var(--text-primary);">${rcaStatus}</span>
-        </div>
-    `;
-    tip.style.display = 'block';
-    moveMetroTimelineTooltip(e);
+    const html = CatlecTimeline.tooltipName(p.name, color)
+        + CatlecTimeline.tooltipRow('Etapa Actual:', stageLabel, `font-weight:700;color:${color};`)
+        + CatlecTimeline.tooltipRow('Avance Físico:', avFisico)
+        + CatlecTimeline.tooltipRow('Inversión:', inv)
+        + CatlecTimeline.tooltipRow('Estado de RCA:', rcaStatus);
+    metroTimelineTooltip.show(e, html);
 }
 
 function showMetroMilestoneTooltip(e, projectName, milestoneType, dateVal, color) {
-    const tip = document.getElementById('metro-timeline-tooltip');
-    if (!tip) return;
-
-    tip.innerHTML = `
-        <div style="font-weight: 800; font-size: 0.78rem; color: ${color}; margin-bottom: 0.25rem;">
-            ${projectName}
-        </div>
-        <div class="timeline-tooltip-row" style="display:flex; justify-content:space-between; gap:0.5rem; margin-bottom:0.15rem; font-size:0.72rem;">
-            <span style="color:var(--text-secondary);">Hito:</span>
-            <span style="font-weight:700; color:${color};">${milestoneType}</span>
-        </div>
-        <div class="timeline-tooltip-row" style="display:flex; justify-content:space-between; gap:0.5rem; font-size:0.72rem;">
-            <span style="color:var(--text-secondary);">Fecha / Periodo:</span>
-            <span style="font-weight:600; color:var(--text-primary);">${dateVal}</span>
-        </div>
-    `;
-    tip.style.display = 'block';
-    moveMetroTimelineTooltip(e);
+    const html = CatlecTimeline.tooltipName(projectName, color)
+        + CatlecTimeline.tooltipRow('Hito:', milestoneType, `font-weight:700;color:${color};`)
+        + CatlecTimeline.tooltipRow('Fecha / Periodo:', dateVal);
+    metroTimelineTooltip.show(e, html);
 }
 
 function moveMetroTimelineTooltip(e) {
-    const tip = document.getElementById('metro-timeline-tooltip');
-    if (!tip || tip.style.display === 'none') return;
-    const tw = tip.offsetWidth;
-    const th = tip.offsetHeight;
-    let tx = e.clientX + 14;
-    let ty = e.clientY - 12;
-
-    if (tx + tw + 10 > window.innerWidth) {
-        tx = e.clientX - tw - 14;
-    }
-    if (ty + th + 10 > window.innerHeight) {
-        ty = window.innerHeight - th - 10;
-    }
-    if (ty < 10) ty = 10;
-
-    tip.style.left = tx + 'px';
-    tip.style.top = ty + 'px';
+    metroTimelineTooltip.move(e);
 }
 
 function hideMetroTimelineTooltip() {
-    const tip = document.getElementById('metro-timeline-tooltip');
-    if (tip) tip.style.display = 'none';
+    metroTimelineTooltip.hide();
 }
 
 // ── Listener de redimensionamiento de ventana (Auto-fit dinámico) ───────────

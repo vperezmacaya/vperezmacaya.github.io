@@ -5,6 +5,9 @@ const LABEL_W = 210;    // px for label column
 const BAR_PAD = 7;      // vertical padding inside row
 const MILESTONE_R = 6.5; // radius of milestone icons (larger hit area)
 
+const svgEl = CatlecTimeline.svgEl;
+const dgcTimelineTooltip = CatlecTimeline.createCursorTooltip({ domId: 'timeline-tooltip' });
+
 function showTimelineView() {
     if (typeof leafletMap !== 'undefined' && leafletMap && leafletMap.getCenter) {
         appState.savedMapCenter = leafletMap.getCenter();
@@ -590,43 +593,18 @@ function renderTimeline(data, highlightCode = null) {
 // 
 // ── Tooltip helpers ───────────────────────────────────────────
 function showTimelineTooltip(e, seg, licitNum, color) {
-    const tip = document.getElementById('timeline-tooltip');
-    if (!tip) return;
     const fmt = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('es-CL', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
-    tip.innerHTML = `
-        <span class="timeline-tooltip-name" style="color:${color};">${seg.common_name || seg.name || '—'}</span>
-        <div class="timeline-tooltip-row">
-            <span class="timeline-tooltip-label">Inicio Contrato</span>
-            <span class="timeline-tooltip-val">${fmt(seg.start_date)}</span>
-        </div>
-        <div class="timeline-tooltip-row">
-            <span class="timeline-tooltip-label">Término Contrato</span>
-            <span class="timeline-tooltip-val">${fmt(seg.end_date)}</span>
-        </div>
-        <div class="timeline-tooltip-row">
-            <span class="timeline-tooltip-label">Estado</span>
-            <span class="timeline-tooltip-val">${seg.status || '—'}</span>
-        </div>
-        ${seg.tender_date ? `<div class="timeline-tooltip-row">
-            <span class="timeline-tooltip-label">Llamado Licitación</span>
-            <span class="timeline-tooltip-val" style="color:#94a3b8; font-weight:600;">${fmt(seg.tender_date)}</span>
-        </div>` : ''}
-        ${seg.adjudication_date ? `<div class="timeline-tooltip-row">
-            <span class="timeline-tooltip-label">Adjudicación</span>
-            <span class="timeline-tooltip-val" style="color:#a78bfa; font-weight:600;">${fmt(seg.adjudication_date)}</span>
-        </div>` : ''}
-        ${seg.resolution_date ? `<div class="timeline-tooltip-row">
-            <span class="timeline-tooltip-label">Resolución</span>
-            <span class="timeline-tooltip-val" style="color:#fbbf24; font-weight:600;">${fmt(seg.resolution_date)}</span>
-        </div>` : ''}
-    `;
-    tip.style.display = 'block';
-    moveTimelineTooltip(e);
+    const html = CatlecTimeline.tooltipName(seg.common_name || seg.name || '—', color)
+        + CatlecTimeline.tooltipRow('Inicio Contrato', fmt(seg.start_date))
+        + CatlecTimeline.tooltipRow('Término Contrato', fmt(seg.end_date))
+        + CatlecTimeline.tooltipRow('Estado', seg.status || '—')
+        + (seg.tender_date ? CatlecTimeline.tooltipRow('Llamado Licitación', fmt(seg.tender_date), 'color:#94a3b8; font-weight:600;') : '')
+        + (seg.adjudication_date ? CatlecTimeline.tooltipRow('Adjudicación', fmt(seg.adjudication_date), 'color:#a78bfa; font-weight:600;') : '')
+        + (seg.resolution_date ? CatlecTimeline.tooltipRow('Resolución', fmt(seg.resolution_date), 'color:#fbbf24; font-weight:600;') : '');
+    dgcTimelineTooltip.show(e, html);
 }
 
 function showMilestoneTooltip(e, commonName, milestoneType, dateVal, color) {
-    const tip = document.getElementById('timeline-tooltip');
-    if (!tip) return;
     const fmt = (d) => {
         if (!d) return '—';
         const str = String(d).split('T')[0];
@@ -637,44 +615,18 @@ function showMilestoneTooltip(e, commonName, milestoneType, dateVal, color) {
         }
         return d;
     };
-    tip.innerHTML = `
-        <span class="timeline-tooltip-name" style="color:${color};">${commonName || '—'}</span>
-        <div class="timeline-tooltip-row">
-            <span class="timeline-tooltip-label">Hito</span>
-            <span class="timeline-tooltip-val" style="color:${color}; font-weight:700;">${milestoneType}</span>
-        </div>
-        <div class="timeline-tooltip-row">
-            <span class="timeline-tooltip-label">Fecha</span>
-            <span class="timeline-tooltip-val">${fmt(dateVal)}</span>
-        </div>
-    `;
-    tip.style.display = 'block';
-    moveTimelineTooltip(e);
+    const html = CatlecTimeline.tooltipName(commonName || '—', color)
+        + CatlecTimeline.tooltipRow('Hito', milestoneType, `color:${color}; font-weight:700;`)
+        + CatlecTimeline.tooltipRow('Fecha', fmt(dateVal));
+    dgcTimelineTooltip.show(e, html);
 }
 
 function moveTimelineTooltip(e) {
-    const tip = document.getElementById('timeline-tooltip');
-    if (!tip || tip.style.display === 'none') return;
-    const tw = tip.offsetWidth;
-    const th = tip.offsetHeight;
-    let tx = e.clientX + 12;
-    let ty = e.clientY - 12;
-
-    if (tx + tw + 10 > window.innerWidth) {
-        tx = e.clientX - tw - 12;
-    }
-    if (ty + th + 10 > window.innerHeight) {
-        ty = window.innerHeight - th - 10;
-    }
-    if (ty < 10) ty = 10;
-
-    tip.style.left = tx + 'px';
-    tip.style.top = ty + 'px';
+    dgcTimelineTooltip.move(e);
 }
 
 function hideTimelineTooltip() {
-    const tip = document.getElementById('timeline-tooltip');
-    if (tip) tip.style.display = 'none';
+    dgcTimelineTooltip.hide();
 }
 
 function initTimelineEvents() {

@@ -12,6 +12,7 @@ Genera:
 
 import os
 import json
+import re
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MAPS_DIR = os.path.join(BASE_DIR, 'Mapas vectoriales')
@@ -94,7 +95,6 @@ for fname in efe_filenames:
                     geom = ft.get('geometry')
                     if not geom or not geom.get('coordinates'):
                         continue  # skip features with null/empty geometry
-                    ft['geometry']['coordinates'] = round_coords(ft['geometry']['coordinates'])
                     efe_fc['features'].append(ft)
         except Exception as e:
             print(f"⚠ Error al leer {fname}: {e}")
@@ -152,8 +152,6 @@ metro_points_fc = {
 # Cargar EFE_estaciones.json (Estaciones de EFE con servicio activo de pasajeros enriquecidas desde Excel)
 efe_estaciones_fc = {"type": "FeatureCollection", "features": []}
 efe_est_path = os.path.join(EFE_DIR, 'EFE_estaciones.json')
-if not os.path.exists(efe_est_path):
-    efe_est_path = os.path.join(EFE_DIR, 'EFE_estaciones_filtradas.json')
 efe_excel_path = os.path.join(BASE_DIR, 'Bases de dato', 'EFE.xlsx')
 
 efe_stations_excel_lookup = {}
@@ -167,13 +165,23 @@ if os.path.exists(efe_excel_path):
             s_raw = str(r.get('Servicio', '')).strip()
             s_arr = [s.strip() for s in s_raw.split(',') if s.strip()] if s_raw and s_raw != 'nan' else []
             proj_raw = str(r.get('ID Proyecto', '')).strip()
-            proj_arr = [p.strip() for p in proj_raw.split(',') if p.strip()] if proj_raw and proj_raw != 'nan' else []
+            proj_arr = []
+            if proj_raw and proj_raw.lower() != 'nan':
+                for p in re.split(r'[,;/\n]', proj_raw):
+                    p_clean = p.strip()
+                    if p_clean and p_clean.lower() != 'nan':
+                        if re.match(r'^\d+(\.0)?$', p_clean):
+                            p_clean = f"P-{int(float(p_clean))}"
+                        proj_arr.append(p_clean)
+            op_raw = str(r.get('En Operacion', '')).strip().lower()
+            in_op = op_raw in ['si', 'sí', 'true', '1', 'yes'] or (not op_raw and len(s_arr) > 0)
             efe_stations_excel_lookup[sid] = {
                 'station_id': sid,
                 'name': str(r.get('Nombre Estación', '')).strip(),
                 'services': s_arr,
                 'services_str': s_raw if s_raw != 'nan' else '',
-                'project_ids': proj_arr
+                'project_ids': proj_arr,
+                'in_operation': 'Si' if in_op else 'No'
             }
         print(f"  -> {len(efe_stations_excel_lookup)} estaciones EFE indexadas desde hoja 'Estaciones' en {efe_excel_path}.")
     except Exception as e_est_ex:
@@ -188,29 +196,34 @@ if os.path.exists(efe_est_path):
                 geom = ft.get('geometry')
                 if not geom or not geom.get('coordinates'):
                     continue
-                ft['geometry']['coordinates'] = round_coords(ft['geometry']['coordinates'])
                 
                 # Enrich with Excel data
-                fid = str(ft.get('id') or ft.get('properties', {}).get('station_id') or '')
+                fid = str(ft.get('properties', {}).get('id') or ft.get('id') or '').strip()
                 st_info = efe_stations_excel_lookup.get(fid)
                 if 'properties' not in ft: ft['properties'] = {}
+                # Remove top-level id if present to conform to Option B
+                if 'id' in ft:
+                    del ft['id']
                 if st_info:
-                    ft['id'] = st_info['station_id']
-                    ft['properties']['station_id'] = st_info['station_id']
+                    ft['properties']['id'] = st_info['station_id']
                     ft['properties']['name'] = st_info['name']
                     ft['properties']['services'] = st_info['services']
                     ft['properties']['servicios_activos'] = st_info['services']
                     ft['properties']['services_str'] = st_info['services_str']
                     ft['properties']['project_ids'] = st_info['project_ids']
+                    ft['properties']['in_operation'] = st_info['in_operation']
                 else:
-                    ft['properties']['station_id'] = fid
-                    ft['properties']['services'] = ft['properties'].get('servicios_activos', [])
+                    ft['properties']['id'] = fid
+                    ft['properties']['services'] = []
+                    ft['properties']['servicios_activos'] = []
+                    ft['properties']['services_str'] = ''
                     ft['properties']['project_ids'] = []
+                    ft['properties']['in_operation'] = 'No'
 
                 efe_estaciones_fc['features'].append(ft)
         print(f"  -> {len(efe_estaciones_fc['features'])} estaciones activas de EFE enriquecidas y agregadas.")
     except Exception as e:
-        print(f"⚠ Error al leer EFE_estaciones_filtradas.json: {e}")
+        print(f"⚠ Error al leer EFE_estaciones.json: {e}")
 
 out_efe_js = os.path.join(OUT_DIR, 'efe_geo.js')
 with open(out_efe_js, 'w', encoding='utf-8') as f:
@@ -231,6 +244,21 @@ import pandas as pd
 
 SECTRA_DIR = os.path.join(MAPS_DIR, 'SECTRA')
 sectra_fc = {"type": "FeatureCollection", "features": []}
+
+def read_excel_flexible_header(excel_path, sheet_name, required_keywords, header_candidates=(2, 1, 0, 3)):
+    """Lee una hoja de Excel probando varias posiciones de fila de encabezado
+    hasta encontrar una cuyas columnas contengan alguna de las keywords esperadas.
+    Evita que insertar/quitar una fila de título arriba del encabezado real
+    rompa silenciosamente la detección de columnas."""
+    for h in header_candidates:
+        try:
+            df = pd.read_excel(excel_path, sheet_name=sheet_name, header=h)
+        except Exception:
+            continue
+        cols_str = ' '.join([str(c).lower() for c in df.columns])
+        if any(kw in cols_str for kw in required_keywords):
+            return df
+    return pd.read_excel(excel_path, sheet_name=sheet_name, header=header_candidates[0])
 
 def clean_feat_name(s):
     if not s: return ''
@@ -399,7 +427,7 @@ metro_stations_by_comuna = {}
 
 if os.path.exists(metro_excel_path):
     try:
-        df_est_geo = pd.read_excel(metro_excel_path, sheet_name='Estaciones', header=2)
+        df_est_geo = read_excel_flexible_header(metro_excel_path, 'Estaciones', ['código shape', 'nombre estaci'], header_candidates=(2, 1, 0, 3))
         for _, r in df_est_geo.iterrows():
             st_name = str(r.get('Nombre Estación', '')).strip()
             if not st_name or st_name == 'nan': continue
@@ -527,31 +555,29 @@ if os.path.exists(gran_stgo_path):
         
         with open(gran_stgo_path, 'r', encoding='utf-8') as f:
             raw_comunas = json.load(f)
-            
-        FUTURE_PROJECTS_BY_COMUNA = {
-            'Renca': ['Línea 7 (Renca - Vitacura)'],
-            'Cerro Navia': ['Línea 7 (Renca - Vitacura)', 'Línea A (Acceso Aeropuerto AMB)'],
-            'Vitacura': ['Línea 7 (Renca - Vitacura)', 'Extensión Línea 6 Oriente'],
-            'La Pintana': ['Línea 9 (Cal y Canto - Plaza La Pintana - Puente Alto)'],
-            'Puente Alto': ['Línea 8 (Los Leones - Puente Alto)', 'Línea 9 Tramo 3 (La Pintana - Puente Alto)'],
-            'Providencia': ['Línea 7 (Renca - Vitacura)', 'Línea 8 (Los Leones - Puente Alto)'],
-            'Santiago': ['Línea 7 (Renca - Vitacura)', 'Línea 9 (Cal y Canto - Plaza La Pintana)'],
-            'Recoleta': ['Línea 7 (Renca - Vitacura)', 'Línea 9 (Cal y Canto - Plaza La Pintana)'],
-            'Quinta Normal': ['Línea 7 (Renca - Vitacura)'],
-            'Las Condes': ['Línea 7 (Renca - Vitacura)'],
-            'Cerrillos': ['Extensión Línea 6 Poniente (Cerrillos - Lo Errázuriz)'],
-            'San Miguel': ['Línea 9 (Tramos 1 y 2)'],
-            'San Joaquín': ['Línea 9 (Tramos 1 y 2)'],
-            'La Granja': ['Línea 9 (Tramos 1 y 2)'],
-            'San Ramón': ['Línea 9 (Tramos 1 y 2)'],
-            'Ñuñoa': ['Línea 8 (Los Leones - Puente Alto)'],
-            'Macul': ['Línea 8 (Los Leones - Puente Alto)'],
-            'Peñalolén': ['Línea 8 (Los Leones - Puente Alto)'],
-            'La Florida': ['Línea 8 (Los Leones - Puente Alto)'],
-            'Pudahuel': ['Línea A (Acceso Aeropuerto AMB)'],
-            'Lo Prado': ['Línea A (Acceso Aeropuerto AMB)']
-        }
-        
+
+        # Proyectos futuros por comuna, derivados dinámicamente de la hoja 'Proyectos Metro'
+        # (columna 'Comunas Conectadas', separada por ';') en vez de un diccionario escrito a mano.
+        FUTURE_PROJECTS_BY_COMUNA = {}
+        try:
+            df_proj_geo = read_excel_flexible_header(metro_excel_path, 'Proyectos Metro', ['id proyecto'], header_candidates=(2, 1, 0, 3))
+            for _, r in df_proj_geo.iterrows():
+                proj_name = str(r.get('Proyecto', '')).strip()
+                comunas_raw = str(r.get('Comunas Conectadas', '')).strip()
+                if not proj_name or proj_name == 'nan' or not comunas_raw or comunas_raw == 'nan':
+                    continue
+                for c in comunas_raw.split(';'):
+                    c_clean = c.strip()
+                    if not c_clean:
+                        continue
+                    c_key = normalize_key(c_clean)
+                    FUTURE_PROJECTS_BY_COMUNA.setdefault(c_key, [])
+                    if proj_name not in FUTURE_PROJECTS_BY_COMUNA[c_key]:
+                        FUTURE_PROJECTS_BY_COMUNA[c_key].append(proj_name)
+            print(f"  -> Proyectos futuros por comuna calculados dinámicamente desde 'Proyectos Metro' ({len(FUTURE_PROJECTS_BY_COMUNA)} comunas).")
+        except Exception as e_fut:
+            print(f"  ⚠ No se pudo calcular proyectos futuros por comuna desde el Excel: {e_fut}")
+
         main_lines_geom = []
         for ft in metro_fc.get('features', []):
             props = ft.get('properties', {})
@@ -598,7 +624,7 @@ if os.path.exists(gran_stgo_path):
                     lines_crossing.add(l_name)
                         
             has_metro = len(st_in_comuna) > 0
-            future_projs = FUTURE_PROJECTS_BY_COMUNA.get(c_name, [])
+            future_projs = FUTURE_PROJECTS_BY_COMUNA.get(c_norm, [])
             
             if has_metro:
                 exp_status = 'Servicio Activo'

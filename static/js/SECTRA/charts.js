@@ -2,25 +2,7 @@
 
 function shortenRegionLabel(name) {
     if (!name) return 'Otras';
-    let str = String(name).trim();
-    str = str.replace(/^Región\s+(de\s+la\s+|del\s+|de\s+)?/i, '');
-    if (/metropolitana/i.test(str)) return 'RM';
-    if (/libertador|bernardo|o'higgins/i.test(str)) return "O'Higgins";
-    if (/magallanes/i.test(str)) return 'Magallanes';
-    if (/ays[eé]n/i.test(str)) return 'Aysén';
-    if (/arica/i.test(str)) return 'Arica';
-    if (/biob[ií]o/i.test(str)) return 'Biobío';
-    if (/valpara[ií]so/i.test(str)) return 'Valparaíso';
-    if (/antofagasta/i.test(str)) return 'Antofagasta';
-    if (/coquimbo/i.test(str)) return 'Coquimbo';
-    if (/atacama/i.test(str)) return 'Atacama';
-    if (/maule/i.test(str)) return 'Maule';
-    if (/ñuble|nuble/i.test(str)) return 'Ñuble';
-    if (/araucan[ií]a/i.test(str)) return 'Araucanía';
-    if (/r[ií]os/i.test(str)) return 'Los Ríos';
-    if (/lagos/i.test(str)) return 'Los Lagos';
-    if (/tarapac[aá]/i.test(str)) return 'Tarapacá';
-    return str;
+    return CatlecUtils.shortenRegionName(name);
 }
 
 function initSectraCharts() {

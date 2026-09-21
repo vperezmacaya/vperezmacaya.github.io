@@ -2,20 +2,11 @@
 var currentFilteredMetroProjects = [];
 
 function metroFormatInvestment(valueMM, rawStr) {
-    if (valueMM != null && !isNaN(valueMM) && valueMM !== '' && Number(valueMM) > 0) {
-        const v = Number(valueMM);
-        if (v >= 1000) return `US$ ${(v / 1000).toFixed(2)}B`;
-        if (v >= 1) return `US$ ${v.toLocaleString('es-CL', { maximumFractionDigits: 0 })} MM`;
-        return `US$ ${v.toFixed(1)} MM`;
-    }
     const literal = rawStr || (typeof valueMM === 'string' && isNaN(valueMM) ? valueMM : null);
-    if (literal && typeof literal === 'string') {
-        const trimmed = literal.trim();
-        if (trimmed !== '' && trimmed !== '—' && trimmed !== '-' && trimmed.toLowerCase() !== 'nan') {
-            return trimmed;
-        }
-    }
-    return '—';
+    return CatlecUtils.formatCompactUSD(valueMM, {
+        rawFallback: literal,
+        requirePositive: true
+    });
 }
 window.metroFormatInvestment = metroFormatInvestment;
 

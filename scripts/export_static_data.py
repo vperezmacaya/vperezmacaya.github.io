@@ -90,7 +90,7 @@ def parse_regions_from_row(region_str):
             cleaned.append(p)
     return cleaned
 
-def parse_shapes_list(val):
+def parse_dgc_shapes_list(val):
     if val is None:
         return []
     try:
@@ -99,18 +99,77 @@ def parse_shapes_list(val):
     except Exception:
         pass
     if isinstance(val, (int, np.integer)):
-        return [str(val)]
+        return [int(val)]
     if isinstance(val, (float, np.floating)):
         if np.isnan(val):
             return []
         if val == int(val):
-            return [str(int(val))]
+            return [int(val)]
         val_str = str(val)
-        return [p for p in val_str.split('.') if p.strip()]
+        return [int(p.strip()) if p.strip().isdigit() else p.strip() for p in val_str.split('.') if p.strip()]
     if isinstance(val, str):
-        cleaned_str = val.replace(';', ',').replace('.', ',')
-        return [p.strip() for p in cleaned_str.split(',') if p.strip()]
+        cleaned_str = val.replace(';', ',')
+        parts = []
+        for p in cleaned_str.split(','):
+            p = p.strip()
+            if not p or p.lower() in ['none', 'nan', 'null']:
+                continue
+            if p.isdigit():
+                parts.append(int(p))
+            else:
+                parts.append(p)
+        return parts
     return []
+
+def parse_efe_shapes_list(val):
+    if val is None:
+        return []
+    try:
+        if pd.isna(val):
+            return []
+    except Exception:
+        pass
+    if isinstance(val, (int, np.integer)):
+        return [f"S-{val}"]
+    if isinstance(val, (float, np.floating)):
+        if np.isnan(val):
+            return []
+        if val == int(val):
+            return [f"S-{int(val)}"]
+        val_str = str(val)
+        return [f"S-{p.strip()}" if p.strip().isdigit() else p.strip() for p in val_str.split('.') if p.strip()]
+    if isinstance(val, str):
+        cleaned_str = val.replace(';', ',')
+        parts = []
+        for p in cleaned_str.split(','):
+            p = p.strip()
+            if not p or p.lower() in ['none', 'nan', 'null']:
+                continue
+            if re.match(r'^\d+$', p):
+                parts.append(f"S-{p}")
+            else:
+                parts.append(p)
+        return parts
+    return []
+
+def read_excel_flexible_header(excel_path, sheet_name, required_keywords, header_candidates=(0, 1, 2, 3)):
+    """Lee una hoja de Excel probando varias posiciones de fila de encabezado
+    hasta encontrar una cuyas columnas contengan alguna de las keywords esperadas.
+    Evita que insertar/quitar una fila de título arriba del encabezado real
+    rompa silenciosamente la detección de columnas (mismo patrón usado para 'Estaciones')."""
+    for h in header_candidates:
+        try:
+            df = pd.read_excel(excel_path, sheet_name=sheet_name, header=h)
+        except Exception:
+            continue
+        cols_str = ' '.join([str(c).lower() for c in df.columns])
+        if any(kw in cols_str for kw in required_keywords):
+            return df
+    # Fallback: si ninguna posición coincidió con las keywords, devolver la primera candidata igual
+    return pd.read_excel(excel_path, sheet_name=sheet_name, header=header_candidates[0])
+
+def parse_shapes_list(val):
+    return parse_dgc_shapes_list(val)
 
 def get_row_shapes_val(row_dict):
     for k, v in row_dict.items():
@@ -449,16 +508,24 @@ try:
             continue
 
         id_val = latest_row.get(col_id)
-        try:
-            id_int = int(id_val) if id_val is not None and not pd.isna(id_val) else None
-        except Exception:
-            id_int = None
+        id_str = None
+        if id_val is not None and not pd.isna(id_val):
+            raw_s = str(id_val).strip()
+            if raw_s and raw_s.lower() != 'nan':
+                if re.match(r'^\d+(\.0)?$', raw_s):
+                    id_str = f"P-{int(float(raw_s))}"
+                else:
+                    id_str = raw_s
 
         # Construir historial (all_records)
         all_records = []
         if df_history is not None:
-            if id_int is not None and col_id in df_history.columns:
-                h_rows = df_history[df_history[col_id] == id_int]
+            if id_str is not None and col_id in df_history.columns:
+                def _match_hid(val):
+                    if val is None or pd.isna(val): return None
+                    vs = str(val).strip()
+                    return f"P-{int(float(vs))}" if re.match(r'^\d+(\.0)?$', vs) else vs
+                h_rows = df_history[df_history[col_id].apply(_match_hid) == id_str]
             elif col_proyecto in df_history.columns:
                 h_rows = df_history[df_history[col_proyecto] == proj_name]
             else:
@@ -509,10 +576,10 @@ try:
         descripcion = sanitize_value(latest_row.get(col_descripcion))
 
         shapes_val = latest_row.get(col_shapes)
-        shapes = parse_shapes_list(shapes_val)
+        shapes = parse_efe_shapes_list(shapes_val)
 
         estaciones_col = 'Estaciones' if 'Estaciones' in latest_row.index else ('estaciones' if 'estaciones' in latest_row.index else None)
-        stations = parse_shapes_list(latest_row.get(estaciones_col)) if estaciones_col else []
+        stations = parse_efe_shapes_list(latest_row.get(estaciones_col)) if estaciones_col else []
 
         filial_raw = latest_row.get(col_filial)
         filial = None
@@ -527,16 +594,17 @@ try:
         # Cruce automático de fotos
         matched_photos = []
         proj_norm = _normalize_name_for_match(proj_name)
+        id_norm = _normalize_name_for_match(id_str)
         for pf in efe_photo_files:
             base, _ = os.path.splitext(pf)
             f_norm = _normalize_name_for_match(base)
-            if f_norm == proj_norm or (len(f_norm) > 8 and f_norm in proj_norm) or (len(proj_norm) > 8 and proj_norm in f_norm):
+            if (id_norm and f_norm == id_norm) or (f_norm == proj_norm) or (len(f_norm) > 8 and f_norm in proj_norm) or (len(proj_norm) > 8 and proj_norm in f_norm):
                 matched_photos.append(f'Fotos/EFE/{pf}')
 
         photo = matched_photos[0] if matched_photos else None
 
         efe_projects.append({
-            'id': id_int,
+            'id': id_str,
             'name': str(proj_name),
             'type': tipo_raw,
             'stage': etapa_raw,
@@ -558,78 +626,24 @@ try:
     # Sort by investment descending (None last)
     efe_projects.sort(key=lambda p: p.get('investment_mm_usd') or 0, reverse=True)
 
-    # ── Cargar Hoja: Estaciones (Estaciones de Pasajeros EFE) ──
-    efe_stations = []
-    try:
-        df_est = None
-        for h in [2, 1, 0]:
-            try:
-                temp_df = pd.read_excel(EFE_EXCEL_PATH, sheet_name='Estaciones', header=h)
-                cols_str = ' '.join([str(c).lower() for c in temp_df.columns])
-                if 'estaci' in cols_str or 'id' in cols_str:
-                    df_est = temp_df
-                    break
-            except Exception:
-                pass
-
-        if df_est is not None:
-            col_id = next((c for c in df_est.columns if 'id' in str(c).lower()), 'ID Estación')
-            col_name = next((c for c in df_est.columns if 'nombre' in str(c).lower()), 'Nombre Estación')
-            col_serv = next((c for c in df_est.columns if 'servicio' in str(c).lower()), 'Servicio')
-            col_proj = next((c for c in df_est.columns if 'proyecto' in str(c).lower()), 'ID Proyecto')
-
-            for _, r in df_est.iterrows():
-                st_id = str(r.get(col_id) or '').strip()
-                st_name = str(r.get(col_name) or '').strip()
-                if not st_id or st_id.lower() == 'nan' or 'id estaci' in st_id.lower():
-                    continue
-
-                srv_raw = r.get(col_serv)
-                srv_list = []
-                if pd.notna(srv_raw) and str(srv_raw).strip() and str(srv_raw).lower() != 'nan':
-                    srv_list = [s.strip().replace('\u2013', '-').replace('\u2014', '-') for s in re.split(r'[,;/·\n]', str(srv_raw)) if s.strip()]
-
-                proj_raw = r.get(col_proj)
-                proj_list = []
-                if pd.notna(proj_raw) and str(proj_raw).strip() and str(proj_raw).lower() != 'nan':
-                    proj_list = [str(p).strip() for p in re.split(r'[,;/\n]', str(proj_raw)) if str(p).strip()]
-
-                efe_stations.append({
-                    'id': st_id,
-                    'name': st_name,
-                    'services': srv_list,
-                    'project_ids': proj_list
-                })
-            print(f"  -> {len(efe_stations)} estaciones de pasajeros cargadas desde 'Estaciones'")
-    except Exception as e_est:
-        print(f"  AVISO: No se pudo cargar hoja 'Estaciones' de EFE: {e_est}")
-
-    def efe_norm_service_key(s):
-        if not s: return ''
-        s_clean = str(s).lower().replace('\u2013', '-').replace('\u2014', '-')
-        s_clean = ''.join(c for c in unicodedata.normalize('NFD', s_clean) if unicodedata.category(c) != 'Mn')
-        return re.sub(r'[^a-z0-9]', '', s_clean)
-
-    def count_service_stations(serv_name):
-        if not serv_name: return 0
-        norm_target = efe_norm_service_key(serv_name)
-        count = 0
-        for st in efe_stations:
-            for s in st.get('services', []):
-                norm_st = efe_norm_service_key(s)
-                if norm_target == norm_st or norm_target in norm_st or norm_st in norm_target:
-                    count += 1
-                    break
-        return count
-
-    # ── Cargar Hoja: Líneas Operativas (Servicios Regulares de Pasajeros Memoria 2025) ──
+    # ── 1. Cargar Hoja Maestra: Líneas Operativas (Servicios Regulares de Pasajeros) ──
     efe_lines = []
+    service_master = {}
     try:
-        df_lines = pd.read_excel(EFE_EXCEL_PATH, sheet_name='Líneas Operativas', header=2)
-        for _, r in df_lines.iterrows():
-            serv_name = str(r.get('Servicio', '')).strip()
+        df_lines = read_excel_flexible_header(EFE_EXCEL_PATH, 'Líneas Operativas', ['servicio'], header_candidates=(2, 1, 0, 3))
+        col_srv_id = next((c for c in df_lines.columns if 'id' in str(c).lower() and 'serv' in str(c).lower()), None)
+        if not col_srv_id:
+            col_srv_id = next((c for c in df_lines.columns if 'id' in str(c).lower()), 'ID Servicio')
+        col_srv_name = next((c for c in df_lines.columns if 'servicio' in str(c).lower() and 'id' not in str(c).lower()), 'Servicio')
+
+        for idx_l, r in df_lines.iterrows():
+            serv_name = str(r.get(col_srv_name, '')).strip()
             if not serv_name or serv_name == 'nan':
                 continue
+
+            serv_id = str(r.get(col_srv_id, '')).strip() if col_srv_id in df_lines.columns else ''
+            if not serv_id or serv_id.lower() == 'nan':
+                serv_id = f"SRV-{idx_l+1:02d}"
 
             pax_val = r.get('Pasajeros 2025 (MM)')
             try:
@@ -649,42 +663,232 @@ try:
             except Exception:
                 km = 0.0
 
-            # Conteo dinámico según las asignaciones reales de la hoja Estaciones
-            dynamic_est = count_service_stations(serv_name)
-            if dynamic_est > 0:
-                est = dynamic_est
-            else:
-                est_val = r.get('Estaciones')
-                try:
-                    est = int(est_val) if pd.notna(est_val) else 0
-                except Exception:
-                    est = 0
-
-            efe_lines.append({
+            line_entry = {
+                'id': serv_id,
                 'service': serv_name,
                 'filial': sanitize_value(r.get('Filial')),
                 'operational_classification': sanitize_value(r.get('Clasificación Operacional')),
                 'terminals': sanitize_value(r.get('Cabeceras / Trazado')),
                 'length_km': km,
-                'stations': est,
+                'stations': 0,  # Se calcula dinámicamente con Estaciones
                 'passengers_2025_mm': pax_2025,
+                'demand_history': {},
                 'satisfaction_2025_pct': sat_2025,
+                'satisfaction_history': {},
                 'travel_time_avg_min': int(r.get('Tiempo Promedio Viaje (min)')) if pd.notna(r.get('Tiempo Promedio Viaje (min)')) else None,
                 'travel_time_total_min': int(r.get('Tiempo Total Trayecto (min)')) if pd.notna(r.get('Tiempo Total Trayecto (min)')) else None,
                 'rolling_stock': sanitize_value(r.get('Material Rodante')),
                 'traction': sanitize_value(r.get('Tracción / Alimentación')),
                 'regions': sanitize_value(r.get('Regiones Conectadas')),
-                'shapes': parse_shapes_list(r.get('Shapes')),
+                'shapes': parse_efe_shapes_list(r.get('Shapes')),
                 'source': sanitize_value(r.get('Fuente Memoria 2025'))
-            })
-        print(f"  -> {len(efe_lines)} servicios regulares de pasajeros cargados desde 'Líneas Operativas' (conteo dinámico de estaciones)")
+            }
+            efe_lines.append(line_entry)
+            service_master[serv_id] = line_entry
+            # Registrar también sub-tokens si el ID es compuesto (ej. 'SRV-07;SRV-08' -> mapea también 'SRV-07' y 'SRV-08')
+            for sub_id in serv_id.split(';'):
+                sub_id_clean = sub_id.strip()
+                if sub_id_clean and sub_id_clean not in service_master:
+                    service_master[sub_id_clean] = line_entry
+
+        print(f"  -> {len(efe_lines)} servicios regulares cargados desde 'Líneas Operativas' (Clave Maestra por ID Servicio)")
     except Exception as e_l:
         print(f"  AVISO: No se pudo cargar hoja 'Líneas Operativas' de EFE: {e_l}")
+
+    # ── 2. Cargar Hoja: Satisfacción Histórica (Cruzada 100% por ID Servicio) ──
+    sat_years = []
+    try:
+        if 'Satisfacción Histórica' in efe_excel_file.sheet_names:
+            df_sat = read_excel_flexible_header(EFE_EXCEL_PATH, 'Satisfacción Histórica', ['id', 'servicio'])
+            col_sat_id = next((c for c in df_sat.columns if 'id' in str(c).lower()), 'ID Servicio')
+
+            # Detectar dinámicamente columnas de año (ej. 2018, 2019, ..., 2025)
+            found_sat_years = []
+            for col in df_sat.columns:
+                col_str = str(col).strip()
+                if col_str.isdigit() and len(col_str) == 4:
+                    found_sat_years.append(col_str)
+            sat_years = sorted(list(set(found_sat_years)), key=lambda y: int(y))
+            if not sat_years:
+                sat_years = ['2019', '2020', '2021', '2022', '2023', '2024', '2025']
+
+            # 'Satisfacción Histórica' es la única fuente de verdad para la satisfacción.
+            # Se resetea en service_master para que cualquier servicio eliminado de esta hoja quede en None.
+            for s_entry in service_master.values():
+                s_entry['satisfaction_2025_pct'] = None
+                s_entry['satisfaction_history'] = {}
+
+            latest_sat_year = sat_years[-1] if sat_years else '2025'
+
+            for _, r_sat in df_sat.iterrows():
+                sid = str(r_sat.get(col_sat_id) or '').strip()
+                if not sid or sid.lower() == 'nan':
+                    continue
+
+                hist_map = {}
+                for yr in sat_years:
+                    val = r_sat.get(yr) if yr in df_sat.columns else r_sat.get(int(yr))
+                    if pd.notna(val):
+                        try:
+                            hist_map[yr] = float(val)
+                        except Exception:
+                            hist_map[yr] = None
+                    else:
+                        hist_map[yr] = None
+
+                # Cruzar por ID de servicio operativo (SRV-XX o compuesto ej. SRV-07;SRV-08) con Líneas Operativas
+                target_entry = service_master.get(sid)
+                if not target_entry:
+                    for sub_id in sid.split(';'):
+                        if sub_id.strip() in service_master:
+                            target_entry = service_master[sub_id.strip()]
+                            break
+                if target_entry:
+                    target_entry['satisfaction_history'] = hist_map
+                    if hist_map.get(latest_sat_year) is not None:
+                        target_entry['satisfaction_2025_pct'] = hist_map[latest_sat_year]
+
+            print(f"  -> Satisfacción histórica cargada y cruzada por ID ({len(sat_years)} años: {', '.join(sat_years)})")
+    except Exception as e_sat:
+        print(f"  AVISO: No se pudo cargar hoja 'Satisfacción Histórica': {e_sat}")
+
+    # ── 3. Cargar Hoja: Demanda Histórica por Filial (Dinámica por Años) ──
+    demand_summary = {}
+    demand_filiales = []
+    demand_years = []
+    try:
+        if 'Demanda Histórica' in efe_excel_file.sheet_names:
+            df_dem = read_excel_flexible_header(EFE_EXCEL_PATH, 'Demanda Histórica', ['filial'])
+            col_fil = next((c for c in df_dem.columns if 'filial' in str(c).lower()), df_dem.columns[0])
+
+            # Detectar dinámicamente columnas de año (ej. 2018, 2019, ..., 2025)
+            found_years = []
+            for col in df_dem.columns:
+                col_str = str(col).strip()
+                if col_str.isdigit() and len(col_str) == 4:
+                    found_years.append(col_str)
+            demand_years = sorted(list(set(found_years)), key=lambda y: int(y))
+            if not demand_years:
+                demand_years = ['2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025']
+
+            for _, r_dem in df_dem.iterrows():
+                f_name = str(r_dem.get(col_fil) or '').strip()
+                if not f_name or f_name.lower() == 'nan' or 'total' in f_name.lower():
+                    continue
+
+                hist_map = {}
+                for yr in demand_years:
+                    val = r_dem.get(yr) if yr in df_dem.columns else r_dem.get(int(yr))
+                    if pd.notna(val):
+                        try:
+                            hist_map[yr] = round(float(val), 2)
+                        except Exception:
+                            hist_map[yr] = None
+                    else:
+                        hist_map[yr] = None
+
+                demand_summary[f_name] = hist_map
+                if f_name not in demand_filiales:
+                    demand_filiales.append(f_name)
+
+            print(f"  -> Demanda histórica por filial cargada ({len(demand_filiales)} filiales, {len(demand_years)} años: {', '.join(demand_years)})")
+    except Exception as e_dem:
+        print(f"  AVISO: No se pudo cargar hoja 'Demanda Histórica': {e_dem}")
+
+    # ── 4. Cargar Hoja: Estaciones (Resolviendo nombres desde ID Servicio) ──
+    efe_stations = []
+    try:
+        df_est = None
+        for h in [2, 1, 0]:
+            try:
+                temp_df = pd.read_excel(EFE_EXCEL_PATH, sheet_name='Estaciones', header=h)
+                cols_str = ' '.join([str(c).lower() for c in temp_df.columns])
+                if 'estaci' in cols_str or 'id' in cols_str:
+                    df_est = temp_df
+                    break
+            except Exception:
+                pass
+
+        if df_est is not None:
+            col_id = next((c for c in df_est.columns if 'id' in str(c).lower() and 'estaci' in str(c).lower()), 'ID Estación')
+            if col_id not in df_est.columns:
+                col_id = next((c for c in df_est.columns if 'id' in str(c).lower()), 'ID Estación')
+            col_name = next((c for c in df_est.columns if 'nombre' in str(c).lower()), 'Nombre Estación')
+            col_serv = next((c for c in df_est.columns if 'servicio' in str(c).lower()), 'ID Servicio')
+            col_proj = next((c for c in df_est.columns if 'proyecto' in str(c).lower()), 'ID Proyecto')
+            col_op = next((c for c in df_est.columns if 'operacion' in str(c).lower() or 'operación' in str(c).lower()), 'En Operacion')
+
+            for _, r in df_est.iterrows():
+                st_id = str(r.get(col_id) or '').strip()
+                st_name = str(r.get(col_name) or '').strip()
+                if not st_id or st_id.lower() == 'nan' or 'id estaci' in st_id.lower():
+                    continue
+
+                srv_raw = r.get(col_serv)
+                srv_ids = []
+                srv_names = []
+                if pd.notna(srv_raw) and str(srv_raw).strip() and str(srv_raw).lower() != 'nan':
+                    tokens = [s.strip().replace('\u2013', '-').replace('\u2014', '-') for s in re.split(r'[,;/·\n]', str(srv_raw)) if s.strip()]
+                    for tok in tokens:
+                        if tok in service_master:
+                            srv_ids.append(tok)
+                            srv_names.append(service_master[tok]['service'])
+                        else:
+                            # Fallback por coincidencia de nombre si se usó texto
+                            matched_by_name = False
+                            for sid, sinfo in service_master.items():
+                                if sinfo['service'].lower() == tok.lower():
+                                    srv_ids.append(sid)
+                                    srv_names.append(sinfo['service'])
+                                    matched_by_name = True
+                                    break
+                            if not matched_by_name:
+                                srv_names.append(tok)
+
+                proj_raw = r.get(col_proj)
+                proj_list = []
+                if pd.notna(proj_raw) and str(proj_raw).strip() and str(proj_raw).lower() != 'nan':
+                    for p in re.split(r'[,;/\n]', str(proj_raw)):
+                        p_clean = str(p).strip()
+                        if p_clean and p_clean.lower() != 'nan':
+                            if re.match(r'^\d+(\.0)?$', p_clean):
+                                p_clean = f"P-{int(float(p_clean))}"
+                            proj_list.append(p_clean)
+
+                op_raw = str(r.get(col_op) or '').strip().lower() if col_op in df_est.columns else ''
+                in_op = op_raw in ['si', 'sí', 'true', '1', 'yes'] or (not op_raw and len(srv_names) > 0)
+
+                efe_stations.append({
+                    'id': st_id,
+                    'name': st_name,
+                    'service_ids': srv_ids,
+                    'services': srv_names,
+                    'project_ids': proj_list,
+                    'in_operation': in_op
+                })
+            print(f"  -> {len(efe_stations)} estaciones de pasajeros cargadas desde 'Estaciones' ({sum(1 for s in efe_stations if s['in_operation'])} en operación)")
+    except Exception as e_est:
+        print(f"  AVISO: No se pudo cargar hoja 'Estaciones' de EFE: {e_est}")
+
+    # ── 4. Conteo dinámico de estaciones por servicio ──
+    for line in efe_lines:
+        lid = str(line.get('id') or '')
+        l_tokens = [t.strip() for t in lid.split(';') if t.strip()]
+        lname = line.get('service', '').lower()
+        cnt = sum(1 for st in efe_stations if (
+            any(t in st.get('service_ids', []) for t in l_tokens) or
+            lid in st.get('service_ids', []) or
+            lname in [s.lower() for s in st.get('services', [])]
+        ))
+        line['stations'] = cnt
 
     efe_payload = {
         'data': efe_projects,
         'lines': efe_lines,
-        'stations': efe_stations
+        'stations': efe_stations,
+        'demand_summary': demand_summary,
+        'demand_filiales': demand_filiales,
+        'demand_years': demand_years
     }
     out_efe_js = os.path.join(OUT_DIR, 'efe_data.js')
     efe_json_str = json.dumps(efe_payload, ensure_ascii=False, indent=None, separators=(',', ':'))
@@ -1080,7 +1284,7 @@ except Exception as e:
 try:
     if os.path.exists(METRO_EXCEL_PATH):
         print(f"\nProcesando Metro desde: {METRO_EXCEL_PATH}...")
-        df_metro = pd.read_excel(METRO_EXCEL_PATH, sheet_name='Proyectos Metro', header=2)
+        df_metro = read_excel_flexible_header(METRO_EXCEL_PATH, 'Proyectos Metro', ['id proyecto'], header_candidates=(2, 1, 0, 3))
         print(f"  -> {len(df_metro)} filas cargadas desde hoja 'Proyectos Metro'")
 
         metro_projects = []
@@ -1160,6 +1364,7 @@ try:
                 'stations': est_num,
                 'terminals': str(row.get('Terminales', '')),
                 'communes': str(row.get('Comunas Conectadas', '')),
+                'communes_list': [c.strip() for c in str(row.get('Comunas', '')).split(';') if c.strip()] if row.get('Comunas') and str(row.get('Comunas')).strip().lower() != 'nan' else [],
                 'benefited_population': pob_num or sanitize_value(row.get('Población Beneficiada (hab)')),
                 'travel_time': str(row.get('Tiempo de Viaje / Reducción', '')),
                 'operation_year': str(row.get('Puesta en Servicio', '')),
@@ -1185,7 +1390,7 @@ try:
         # ── Cargar Líneas Operativas ──
         metro_lines = []
         try:
-            df_lines = pd.read_excel(METRO_EXCEL_PATH, sheet_name='Líneas Operativas', header=2)
+            df_lines = read_excel_flexible_header(METRO_EXCEL_PATH, 'Líneas Operativas', ['terminales'], header_candidates=(2, 1, 0, 3))
             for _, r in df_lines.iterrows():
                 l_name = str(r.get('Línea', '')).strip()
                 if not l_name or 'TOTAL' in l_name.upper():
@@ -1231,6 +1436,7 @@ try:
                         'daily_trips_mm': float(r.get('Viajes Día Hábil (MM Pax/día)')) if pd.notna(r.get('Viajes Día Hábil (MM Pax/día)')) else 0.0,
                         'revenue_mm_clp': float(r.get('Ingresos Tarifarios (MM CLP)')) if pd.notna(r.get('Ingresos Tarifarios (MM CLP)')) else 0.0
                     })
+            historical_demand.sort(key=lambda d: d['year'])
             print(f"  -> {len(historical_demand)} registros cargados desde 'Demanda Histórica'")
         except Exception as e_d:
             print(f"  AVISO: No se pudo cargar hoja 'Demanda Histórica': {e_d}")
@@ -1248,6 +1454,7 @@ try:
                         'energy_gwh': float(r.get('Consumo Energía (GWh)')) if pd.notna(r.get('Consumo Energía (GWh)')) else 0.0,
                         'energy_efficiency': float(r.get('Eficiencia (GWh / MMCKm)')) if pd.notna(r.get('Eficiencia (GWh / MMCKm)')) else 0.0
                     })
+            operational_supply.sort(key=lambda d: d['year'])
             print(f"  -> {len(operational_supply)} registros cargados desde 'Oferta Operacional'")
         except Exception as e_s:
             print(f"  AVISO: No se pudo cargar hoja 'Oferta Operacional': {e_s}")
@@ -1299,29 +1506,37 @@ try:
         except Exception as e_v:
             print(f"  AVISO: No se pudo calcular 'Tipologías de Vías': {e_v}")
 
-        # ── Cargar Hoja: Confiabilidad y Averías ──
+        # ── Cargar Hoja: Confiabilidad y Averías (años detectados dinámicamente) ──
         operational_indicators = []
+        operational_indicator_years = []
         try:
             df_ind = pd.read_excel(METRO_EXCEL_PATH, sheet_name='Confiabilidad y Averías')
+
+            # Detectar dinámicamente las columnas de año (numéricas o strings de 4 dígitos, ej. 2019, '2025')
+            ind_year_cols = [c for c in df_ind.columns if re.match(r'^\d{4}(\.0)?$', str(c).strip())]
+            ind_year_cols.sort(key=lambda c: int(float(str(c))))
+            operational_indicator_years = [str(int(float(str(c)))) for c in ind_year_cols]
+
             for _, r in df_ind.iterrows():
                 ind_name = str(r.get('Indicador de Desempeño', '')).strip()
                 if ind_name and ind_name != 'nan':
+                    values = {}
+                    for col in ind_year_cols:
+                        year_key = str(int(float(str(col))))
+                        val = r.get(col)
+                        values[year_key] = float(val) if pd.notna(val) else None
                     operational_indicators.append({
                         'indicator': ind_name,
-                        'y2019': float(r.get(2019)) if pd.notna(r.get(2019)) else (float(r.get('2019')) if pd.notna(r.get('2019')) else 0.0),
-                        'y2022': float(r.get(2022)) if pd.notna(r.get(2022)) else (float(r.get('2022')) if pd.notna(r.get('2022')) else 0.0),
-                        'y2023': float(r.get(2023)) if pd.notna(r.get(2023)) else (float(r.get('2023')) if pd.notna(r.get('2023')) else 0.0),
-                        'y2024': float(r.get(2024)) if pd.notna(r.get(2024)) else (float(r.get('2024')) if pd.notna(r.get('2024')) else 0.0),
-                        'y2025': float(r.get(2025)) if pd.notna(r.get(2025)) else (float(r.get('2025')) if pd.notna(r.get('2025')) else 0.0)
+                        'values': values
                     })
-            print(f"  -> {len(operational_indicators)} indicadores cargados desde 'Confiabilidad y Averías'")
+            print(f"  -> {len(operational_indicators)} indicadores cargados desde 'Confiabilidad y Averías' ({len(operational_indicator_years)} años: {', '.join(operational_indicator_years)})")
         except Exception as e_i:
             print(f"  AVISO: No se pudo cargar hoja 'Confiabilidad y Averías': {e_i}")
 
         # ── Cargar Hoja: Estaciones ──
         metro_stations = []
         try:
-            df_est = pd.read_excel(METRO_EXCEL_PATH, sheet_name='Estaciones', header=2)
+            df_est = read_excel_flexible_header(METRO_EXCEL_PATH, 'Estaciones', ['código shape', 'nombre estaci'], header_candidates=(2, 1, 0, 3))
             for _, r in df_est.iterrows():
                 st_name = str(r.get('Nombre Estación', '')).strip()
                 if not st_name or st_name == 'nan':
@@ -1372,6 +1587,16 @@ try:
             st_future_by_comuna = {}
             lines_by_comuna = {}
             proj_by_comuna = {}
+
+            # Proyectos futuros por comuna, derivados de la columna 'Comunas' en 'Proyectos Metro'
+            # (independiente de si la hoja 'Estaciones' ya tiene filas para ese proyecto)
+            future_projects_by_comuna = {}
+            for p in metro_projects:
+                for c in p.get('communes_list', []):
+                    ck = _normalize_col(c)
+                    future_projects_by_comuna.setdefault(ck, [])
+                    if p['name'] not in future_projects_by_comuna[ck]:
+                        future_projects_by_comuna[ck].append(p['name'])
 
             for st in metro_stations:
                 st_coms = st.get('communes', [])
@@ -1444,14 +1669,16 @@ try:
                     proy_list = [p.strip() for p in str(proy_val).split(',') if p.strip()]
                 else:
                     proy_list = sorted(list(proj_by_comuna.get(cn, set())))
-                    
+                    if not proy_list:
+                        proy_list = future_projects_by_comuna.get(cn, [])
+
                 # Estado Metro calculado automáticamente
                 status_val = r.get('Estado Metro', r.get('Estado'))
                 if pd.notna(status_val) and str(status_val).strip() and str(status_val).strip() != 'nan':
                     metro_stat = str(status_val).strip()
                 elif est > 0:
                     metro_stat = 'Servicio Activo'
-                elif fut_est > 0 or len(proy_list) > 0 or cn in ['cerro navia', 'la pintana', 'renca', 'vitacura']:
+                elif fut_est > 0 or len(proy_list) > 0 or cn in future_projects_by_comuna:
                     metro_stat = 'En Expansión'
                 else:
                     metro_stat = 'Sin Cobertura'
@@ -1524,16 +1751,6 @@ try:
                 'total_stations': tot_est,
                 'by_classification': by_class,
                 'by_type': by_type,
-                'current_network': {
-                    'total_length_km': 143.0,
-                    'total_stations': 143,
-                    'total_communes': 27,
-                    'trips_2025_mm': 661.0,
-                    'daily_trips_2025_mm': 2.22,
-                    'car_km_2025_mm': 166.25,
-                    'punctuality_pct': 99.0,
-                    'headway_avg_min': '1:40 min'
-                },
                 'demographics': {
                     'total_population': total_pob_gs,
                     'pop_with_metro': pob_con_metro,
@@ -1552,7 +1769,8 @@ try:
             'historical_demand': historical_demand,
             'operational_supply': operational_supply,
             'track_types': track_types,
-            'operational_indicators': operational_indicators
+            'operational_indicators': operational_indicators,
+            'operational_indicator_years': operational_indicator_years
         }
 
         out_metro_js = os.path.join(OUT_DIR, 'metro_data.js')

@@ -452,17 +452,27 @@ function renderMetroDemandaAnalytics() {
         });
     }
 
-    // ── 5. GRÁFICO: Desempeño y Averías (2019-2025) ──
+    // ── 5. GRÁFICO: Desempeño y Averías (años detectados dinámicamente) ──
     const ctxAverias = document.getElementById('metroChartAverias');
     if (ctxAverias && indicatorData.length > 0) {
         if (metroChartAveriasInstance) metroChartAveriasInstance.destroy();
 
-        const years = ['2019', '2022', '2023', '2024', '2025'];
+        let years = window.METRO_DATA?.operational_indicator_years;
+        if (!Array.isArray(years) || years.length === 0) {
+            const yearSet = new Set();
+            indicatorData.forEach(i => {
+                if (i.values && typeof i.values === 'object') {
+                    Object.keys(i.values).forEach(y => yearSet.add(y));
+                }
+            });
+            years = Array.from(yearSet).sort((a, b) => Number(a) - Number(b));
+        }
+
         const avMat = indicatorData.find(i => i.indicator.includes('material rodante (averías'));
         const avVias = indicatorData.find(i => i.indicator.includes('energía, vías'));
 
-        const dataMat = avMat ? [avMat.y2019, avMat.y2022, avMat.y2023, avMat.y2024, avMat.y2025] : [];
-        const dataVias = avVias ? [avVias.y2019, avVias.y2022, avVias.y2023, avVias.y2024, avVias.y2025] : [];
+        const dataMat = avMat ? years.map(y => avMat.values?.[y] ?? null) : [];
+        const dataVias = avVias ? years.map(y => avVias.values?.[y] ?? null) : [];
 
         metroChartAveriasInstance = new Chart(ctxAverias, {
             type: 'line',

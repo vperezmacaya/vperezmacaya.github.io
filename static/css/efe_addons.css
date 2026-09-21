@@ -26,12 +26,8 @@
 .view-subheader.four-tabs {
     grid-template-columns: repeat(4, 1fr);
 }
-.view-subheader.efe-tabs,
-.view-subheader.three-tabs {
+.view-subheader.efe-tabs {
     grid-template-columns: repeat(3, 1fr);
-}
-.view-subheader.two-tabs {
-    grid-template-columns: repeat(2, 1fr);
 }
 
 /* ─── Dashboard Layout ────────────────────────────────────────────────────── */
@@ -58,14 +54,7 @@ body.light-theme .map-panel {
     border: 1px solid rgba(0, 0, 0, 0.08);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
 }
-.right-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    height: 100%;
-    min-height: 0;
-    overflow: hidden;
-}
+/* .right-panel: idéntico al de styles.css (.right-panel, .results-panel), sin override aquí. */
 
 /* ─── KPI Compact Grid ────────────────────────────────────────────────────── */
 .kpi-grid {
@@ -74,70 +63,9 @@ body.light-theme .map-panel {
     gap: 0.4rem;
     flex-shrink: 0;
 }
-.card-kpi {
-    background: var(--bg-card);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 0.5rem 0.65rem;
-    min-height: 57.56px;
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-    box-shadow: var(--shadow-main);
-    transition: border-color var(--transition-fast);
-}
-body.light-theme .card-kpi {
-    background: #ffffff;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-}
-.card-kpi:hover {
-    border-color: rgba(37, 99, 235, 0.4);
-}
-body.light-theme .card-kpi:hover {
-    border-color: rgba(37, 99, 235, 0.35);
-}
-.kpi-icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    background: rgba(37, 99, 235, 0.1);
-    border: 1px solid rgba(37, 99, 235, 0.22);
-    color: var(--primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-.kpi-icon svg {
-    width: 15px;
-    height: 15px;
-}
-.kpi-val-container {
-    display: flex;
-    flex-direction: column;
-    gap: 0.05rem;
-    min-width: 0;
-}
-.kpi-label {
-    font-size: 0.65rem;
-    font-weight: 500;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.kpi-value {
-    font-family: var(--font-heading);
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    line-height: 1.1;
-}
+/* .card-kpi / .kpi-icon / .kpi-val-container / .kpi-label / .kpi-value:
+   overrides removidos a modo de prueba (2026) — EFE usa ahora los valores
+   "globales" de styles.css (los mismos que DGC) para estas tarjetas KPI. */
 .panel-card {
     background: var(--bg-card);
     backdrop-filter: blur(10px);
@@ -228,55 +156,7 @@ body.light-theme .form-input:focus {
 }
 
 /* ─── Buttons ─────────────────────────────────────────────────────────────── */
-.btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    padding: 0.35rem 0.75rem;
-    border-radius: var(--radius-sm);
-    font-family: var(--font-sans);
-    font-size: 0.74rem;
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-    transition: all var(--transition-fast);
-}
-.btn-ghost {
-    background: transparent;
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
-}
-body.light-theme .btn-ghost {
-    background: #ffffff;
-    border: 1px solid #d1d5db;
-    color: #4b5563;
-}
-.btn-ghost:hover {
-    border-color: var(--border-color-focus);
-    color: var(--text-primary);
-}
-body.light-theme .btn-ghost:hover {
-    border-color: #2563eb;
-    color: #2563eb;
-    background: #f8fafc;
-}
-.btn-primary {
-    background: var(--primary-gradient);
-    color: #ffffff;
-}
-.btn-primary:hover {
-    opacity: 0.9;
-}
-body.light-theme #btn-efe-export-excel {
-    background: rgba(16, 185, 129, 0.1);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-    color: #059669;
-}
-body.light-theme #btn-efe-export-excel:hover {
-    background: rgba(16, 185, 129, 0.2);
-    color: #047857;
-}
+/* .btn: idéntico al de styles.css, sin override aquí. */
 
 /* ─── Map ─────────────────────────────────────────────────────────────────── */
 .map-panel {
@@ -362,7 +242,6 @@ body.light-theme .efe-legend-item {
     opacity: 0.25;
     filter: grayscale(80%);
 }
-.efe-legend-checkbox:not(:checked) ~ .efe-legend-proj-icons,
 .efe-legend-checkbox:not(:checked) ~ .efe-legend-icon-badge {
     opacity: 0.35;
     filter: grayscale(70%);
@@ -418,16 +297,6 @@ body.light-theme .efe-map-legend {
     color: #1e293b !important;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08) !important;
 }
-.efe-map-badge {
-    font-size: 0.7rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-    background: rgba(37, 99, 235, 0.1);
-    border: 1px solid rgba(37, 99, 235, 0.2);
-    border-radius: 99px;
-    padding: 0.15rem 0.55rem;
-}
-
 /* ─── Leaflet Map Tooltips (Estándar Oficial EFE / CATLEC) ─────────────────── */
 .catlec-map-tooltip,
 .efe-map-tooltip,
@@ -512,36 +381,8 @@ body.light-theme .sectra-map-tooltip {
     border-right-color: #1e293b !important;
 }
 
-/* ─── Metro Comuna Name Tooltip & Click Popup ────────────────────────────── */
-.metro-comuna-name-tooltip {
-    background: #0f172a !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    color: #ffffff !important;
-    font-family: var(--font-sans) !important;
-    font-size: 0.72rem !important;
-    font-weight: 600 !important;
-    border-radius: 4px !important;
-    padding: 0.15rem 0.45rem !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
-    pointer-events: none !important;
-}
-body.light-theme .metro-comuna-name-tooltip {
-    background: #1e293b !important;
-    color: #f8fafc !important;
-    border: 1px solid #334155 !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18) !important;
-}
-.metro-comuna-popup .leaflet-popup-content-wrapper {
-    background: #ffffff !important;
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 8px !important;
-    padding: 0.2rem !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
-}
-.metro-comuna-popup .leaflet-popup-content {
-    margin: 8px 10px !important;
-    line-height: 1.4 !important;
-}
+/* Nota: .metro-comuna-name-tooltip / .metro-comuna-popup (exclusivos de Metro)
+   viven en static/css/metro_addons.css. */
 
 /* ─── UI Buttons (btn-reset) ─────────────────────────────────────────────── */
 .btn-reset {
@@ -845,217 +686,9 @@ path.leaflet-interactive {
     box-shadow: none !important;
 }
 
-/* ─── Investment View Full Panel ─────────────────────────────────────────── */
-#investment-full-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    flex: 1;
-    min-height: 0;
-    width: 100%;
-    overflow: hidden;
-}
-.efe-inv-kpis {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.5rem;
-    flex-shrink: 0;
-}
-.efe-inv-kpi-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 0.65rem 0.85rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    box-shadow: var(--shadow-main);
-    transition: border-color var(--transition-fast);
-}
-body.light-theme .efe-inv-kpi-card {
-    background: #ffffff;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-}
-.efe-inv-kpi-card:hover {
-    border-color: rgba(37, 99, 235, 0.35);
-}
-.efe-inv-kpi-icon {
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-.efe-inv-kpi-icon-1 {
-    background: rgba(37, 99, 235, 0.12);
-    border: 1px solid rgba(37, 99, 235, 0.25);
-    color: #2563eb;
-}
-.efe-inv-kpi-icon-2 {
-    background: rgba(124, 58, 237, 0.12);
-    border: 1px solid rgba(124, 58, 237, 0.25);
-    color: #7c3aed;
-}
-.efe-inv-kpi-icon-3 {
-    background: rgba(14, 165, 233, 0.12);
-    border: 1px solid rgba(14, 165, 233, 0.25);
-    color: #0284c7;
-}
-.efe-inv-kpi-lbl {
-    font-size: 0.68rem;
-    font-weight: 500;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-.efe-inv-kpi-val {
-    font-family: var(--font-heading);
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    line-height: 1.15;
-}
-.efe-inv-charts-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem;
-    flex: 1;
-    min-height: 0;
-}
-.efe-inv-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 0.75rem;
-    box-shadow: var(--shadow-main);
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    overflow: hidden;
-}
-body.light-theme .efe-inv-card {
-    background: #ffffff;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-}
-.efe-inv-card-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 0.4rem;
-}
-body.light-theme .efe-inv-card-header {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-}
-.efe-inv-card-title {
-    font-family: var(--font-heading);
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-}
-.efe-inv-card-subtitle {
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    font-style: italic;
-}
-
 /* =============================================================
-   TIMELINE PANEL — Full-width Gantt chart view for EFE
+   TIMELINE PANEL — overrides removidos a modo de prueba (2026): EFE usa ahora
+   los valores "globales" de styles.css para el panel/eje/tooltip del timeline.
+   Los parámetros de .timeline-tooltip de EFE (padding, max-width, line-height)
+   se portaron a la clase global en styles.css.
    ============================================================= */
-.timeline-full-panel,
-#efe-timeline-full-panel {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 0;
-    background-color: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-main);
-    overflow: hidden;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-}
-body.light-theme #efe-timeline-full-panel {
-    background-color: #ffffff;
-    border-color: rgba(0, 0, 0, 0.08);
-}
-
-/* Timeline Header */
-body.light-theme .timeline-header {
-    background-color: rgba(248, 250, 252, 0.9);
-    border-bottom-color: rgba(0, 0, 0, 0.06);
-}
-
-/* Axis sticky row */
-.timeline-label-col,
-#efe-timeline-label-col {
-    width: 240px;
-    min-width: 240px;
-    flex-shrink: 0;
-    border-right: 1px solid var(--border-color);
-    background-color: rgba(248, 250, 252, 0.95);
-}
-body:not(.light-theme) .timeline-label-col,
-body:not(.light-theme) #efe-timeline-label-col {
-    background-color: rgba(15, 22, 38, 0.9);
-}
-.timeline-axis-scroll,
-#efe-timeline-axis-scroll {
-    flex: 1;
-    overflow: hidden;
-}
-
-/* Scrollable body */
-.timeline-body,
-#efe-timeline-body {
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-.timeline-bars-scroll,
-#efe-timeline-bars-scroll {
-    flex: 1;
-    position: relative;
-}
-
-/* Tooltip */
-.timeline-tooltip,
-#efe-timeline-tooltip {
-    position: fixed;
-    z-index: 9999;
-    background: #ffffff;
-    border: 1px solid rgba(37, 99, 235, 0.18);
-    border-radius: 8px;
-    padding: 0.5rem 0.75rem;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
-    font-family: var(--font-sans);
-    font-size: 0.72rem;
-    color: var(--text-primary);
-    pointer-events: none;
-    max-width: 260px;
-    line-height: 1.45;
-}
-body:not(.light-theme) .timeline-tooltip,
-body:not(.light-theme) #efe-timeline-tooltip {
-    background: #0f172a;
-    border-color: rgba(255, 255, 255, 0.12);
-    color: #f8fafc;
-}
-.timeline-tooltip-name {
-    font-weight: 700;
-    font-size: 0.76rem;
-    color: var(--primary);
-    margin-bottom: 0.2rem;
-    display: block;
-}

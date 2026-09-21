@@ -198,6 +198,50 @@ window.CatlecUtils = {
         }
     },
 
+    // Plugin de Chart.js: dibuja el valor dentro de cada segmento de barra apilada vertical,
+    // centrado vertical y horizontalmente si la altura y ancho del segmento son suficientes.
+    stackedBarDataLabelsPlugin: {
+        id: 'stackedBarDataLabelsPlugin',
+        afterDatasetsDraw: (chart, args, pluginOptions) => {
+            const ctx = chart.ctx;
+            const formatter = (pluginOptions && pluginOptions.formatter) || ((v) => (typeof v === 'number' ? v.toFixed(1) : String(v)));
+            const minHeight = (pluginOptions && pluginOptions.minHeight) !== undefined ? pluginOptions.minHeight : 10;
+            const font = (pluginOptions && pluginOptions.font) || '700 8.5px Inter, system-ui, -apple-system, sans-serif';
+            const color = (pluginOptions && pluginOptions.color) || '#ffffff';
+
+            ctx.save();
+            ctx.font = font;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = color;
+
+            chart.data.datasets.forEach((dataset, dIdx) => {
+                const meta = chart.getDatasetMeta(dIdx);
+                if (!meta || meta.hidden || !meta.data) return;
+
+                meta.data.forEach((bar, index) => {
+                    const rawVal = dataset.data[index];
+                    if (rawVal === undefined || rawVal === null || Number(rawVal) <= 0) return;
+
+                    const height = Math.abs(bar.base - bar.y);
+                    if (height < minHeight) return;
+
+                    const text = formatter(rawVal);
+                    const textWidth = ctx.measureText(text).width;
+                    const barWidth = bar.width || 20;
+                    if (barWidth > 0 && barWidth < textWidth - 2) return;
+
+                    const x = bar.x;
+                    const y = (bar.y + bar.base) / 2;
+
+                    ctx.fillText(text, x, y);
+                });
+            });
+
+            ctx.restore();
+        }
+    },
+
     // Arma un dropdown de filtro multiselect (checkboxes + "seleccionar todos"
     // + texto de resumen en el botón), asumiendo la convención de IDs/clases del
     // design system: ${idPrefix}-multiselect-btn/-dropdown/-check-all/-options-list/
@@ -259,6 +303,121 @@ window.CatlecUtils = {
         }
     },
 
+    // Formatea un monto en millones de USD de forma compacta ("US$ 1.234 MM",
+    // "US$ 2.50B", "US$ 0.8 MM"), unificando las variantes que existían
+    // duplicadas en EFE (efeFormatInvestment/efeFormatUSD, formatEfeUSD) y
+    // Metro (metroFormatInvestment/metroFormatUSD). `val` se asume expresado en
+    // millones de USD. Las opciones reproducen las pequeñas diferencias que
+    // tenía cada implementación original, para no alterar el output existente:
+    //   - emptyText: texto cuando el valor no es válido (default '—').
+    //   - rawFallback: string literal a mostrar si el valor no es numérico
+    //     (ej. "En evaluación"), usado por Metro antes de caer a emptyText.
+    //   - requirePositive: si es true, valores <= 0 se consideran inválidos
+    //     (comportamiento de Metro).
+    //   - treatZeroAsInvalid: si es true, val === 0 también cae a emptyText
+    //     (comportamiento legacy de formatEfeUSD, con emptyText = 'US$ 0').
+    //   - bWholeStrip: si es true, en la rama >= 1000 MM (miles de millones)
+    //     omite los decimales cuando son ,00 (comportamiento legacy de
+    //     formatEfeUSD); si es false, siempre usa 2 decimales.
+    //   - mmRounding: 'locale' (toLocaleString con maximumFractionDigits: 0,
+    //     usado por EFE/Metro) o 'round' (Math.round, usado por formatEfeUSD).
+    formatCompactUSD(val, opts = {}) {
+        const {
+            emptyText = '—',
+            rawFallback = null,
+            requirePositive = false,
+            treatZeroAsInvalid = false,
+            bWholeStrip = false,
+            mmRounding = 'locale'
+        } = opts;
+
+        const num = Number(val);
+        const isNullish = val == null || val === '' || isNaN(num);
+        const isInvalid = isNullish
+            || (requirePositive && num <= 0)
+            || (treatZeroAsInvalid && num === 0);
+
+        if (isInvalid) {
+            if (typeof rawFallback === 'string') {
+                const trimmed = rawFallback.trim();
+                if (trimmed !== '' && trimmed !== '—' && trimmed !== '-' && trimmed.toLowerCase() !== 'nan') {
+                    return trimmed;
+                }
+            }
+            return emptyText;
+        }
+
+        if (num >= 1000) {
+            const b = num / 1000;
+            return bWholeStrip
+                ? `US$ ${b % 1 === 0 ? b.toFixed(0) : b.toFixed(2)}B`
+                : `US$ ${b.toFixed(2)}B`;
+        }
+        if (num >= 1) {
+            const mm = mmRounding === 'round'
+                ? Math.round(num).toLocaleString('es-CL')
+                : num.toLocaleString('es-CL', { maximumFractionDigits: 0 });
+            return `US$ ${mm} MM`;
+        }
+        return `US$ ${num.toFixed(1)} MM`;
+    },
+
+    // Acorta el nombre oficial de una región chilena para mostrar en UI (ej.
+    // "Región de Valparaíso" -> "Valparaíso", "Región Metropolitana de
+    // Santiago" -> "Metropolitana"). Quita el prefijo "Región de/del/la" vía
+    // regex y solo reescribe los 4 casos cuyo nombre oficial no queda legible
+    // tal cual tras el recorte (Metropolitana, Aysén, Magallanes, O'Higgins);
+    // el resto de regiones se muestra con su nombre completo post-prefijo
+    // (ej. "Arica y Parinacota", "Los Ríos"). Estándar único usado por DGC,
+    // MOP y SECTRA (antes cada uno tenía su propia variante, incluyendo un
+    // acortado adicional a una sola palabra en SECTRA y una etiqueta "RM"
+    // para la Metropolitana, ambos removidos para unificar el output).
+    shortenRegionName(name) {
+        if (!name) return '';
+        let str = String(name).trim();
+        // "Regi[oó]n" tolera datos de origen sin tilde (ej. SECTRA trae
+        // "Region de Arica y Parinacota" sin acento para esa entrada).
+        str = str.replace(/^Regi[oó]n\s+(de\s+la\s+|del\s+|de\s+)?/i, '');
+
+        if (/metropolitana/i.test(str)) return 'Metropolitana';
+        if (/ays[eé]n/i.test(str)) return 'Aysén';
+        if (/magallanes/i.test(str)) return 'Magallanes';
+        if (/o'higgins|bernardo/i.test(str)) return "O'Higgins";
+
+        return str;
+    },
+
+    // Divide un string de regiones separadas por ; , / o salto de línea en un
+    // arreglo de nombres ya acortados vía shortenRegionName (ej. proyectos que
+    // abarcan más de una región). Filtra vacíos.
+    splitRegionString(regionStr) {
+        if (!regionStr) return [];
+        const str = String(regionStr).replace(/&nbsp;/g, ' ');
+        return str.split(/[;,/\n]+/).map(p => this.shortenRegionName(p.trim())).filter(Boolean);
+    },
+
+    // Renderiza la celda/valor de región de un proyecto como texto simple,
+    // pill "Nacional" (si el valor indica cobertura nacional/interregional), o
+    // varias pills si el proyecto abarca más de una región. Estándar único
+    // usado por DGC y MOP (antes duplicado con pequeñas diferencias en los
+    // textos vacíos reconocidos por cada uno).
+    formatRegionCell(regionStr) {
+        const trimmed = regionStr ? String(regionStr).trim() : '';
+        if (!trimmed || trimmed === 'N/A' || trimmed === '—') {
+            return '<span style="color:var(--text-muted);font-style:italic">Sin región</span>';
+        }
+        if (/nacional|interregional/i.test(trimmed)) {
+            return '<span class="region-pill">Nacional</span>';
+        }
+
+        const parts = this.splitRegionString(trimmed);
+        if (parts.length > 1) {
+            return `<div class="region-pills-wrap">${parts.map(p => `<span class="region-pill">${p}</span>`).join('')}</div>`;
+        }
+
+        return `<span>${parts[0] || trimmed}</span>`;
+    },
+
     // Cierra todos los dropdowns de multiselect abiertos en la página.
     closeAllMultiselects() {
         document.querySelectorAll('.multiselect-dropdown').forEach(d => {
@@ -281,4 +440,175 @@ window.CatlecUtils = {
         downloadAnchor.remove();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
     },
+
+    // Calcula dinámicamente el nivel de maxZoom y padding óptimos según la
+    // extensión geográfica diagonal (en km) del bounding box del proyecto.
+    calculateAdaptiveZoom(bounds) {
+        if (!bounds || typeof bounds.isValid !== 'function' || !bounds.isValid()) {
+            return { maxZoom: 11.5, padding: [60, 60], spanKm: 0, isPoint: true };
+        }
+
+        const sw = bounds.getSouthWest();
+        const ne = bounds.getNorthEast();
+        const distMeters = (sw && ne && typeof sw.distanceTo === 'function') ? sw.distanceTo(ne) : 0;
+        const spanKm = distMeters / 1000;
+
+        // Escalas adaptativas:
+        // 1. Proyecto Puntual / Solo un punto (< 0.25 km): Estación puntual, edificio, peaje
+        //    Se aplica un menor nivel de zoom (11.5) para no sobre-acercar la cámara a nivel de calle
+        //    y permitir apreciar la ubicación dentro de la ciudad/entorno.
+        if (spanKm < 0.25) {
+            return { maxZoom: 11.5, padding: [50, 50], spanKm, isPoint: true };
+        }
+        // 2. Trazado Corto / Urbano (0.25 km a 8 km): Puentes, túneles, variantes, tramos cortos
+        if (spanKm < 8) {
+            return { maxZoom: 13.0, padding: [50, 50], spanKm, isPoint: false };
+        }
+        // 3. Intercomunal / Suburbano (8 km a 30 km): Batuco, Limache-Calera, autopistas
+        if (spanKm < 30) {
+            return { maxZoom: 11.5, padding: [60, 60], spanKm, isPoint: false };
+        }
+        // 4. Suburbano Extenso (30 km a 100 km): Melipilla, Tren Rancagua, Ruta 68
+        if (spanKm < 100) {
+            return { maxZoom: 10.0, padding: [65, 65], spanKm, isPoint: false };
+        }
+        // 5. Interurbano Regional (100 km a 250 km): Tren San Fernando, Tramos Ruta 5
+        if (spanKm < 250) {
+            return { maxZoom: 8.5, padding: [70, 70], spanKm, isPoint: false };
+        }
+        // 6. Macro / Multirregional (>= 250 km): Santiago - Chillán (400 km)
+        return { maxZoom: 7.0, padding: [80, 80], spanKm, isPoint: false };
+    },
+
+    // Función global y estandarizada para hacer zoom fluido y adaptativo a un
+    // proyecto, línea, comuna o conjunto de geometrías en cualquier mapa Leaflet de CATLEC.
+    zoomToProject(map, target, options = {}) {
+        if (!map) return false;
+
+        const {
+            duration = 1.2,
+            maxZoomOverride = null,
+            paddingOverride = null,
+            onDefaultView = null,
+            onStart = null,
+            onEnd = null
+        } = options;
+
+        let bounds = null;
+
+        // 1. Si target ya es un LatLngBounds válido
+        if (target && typeof target.isValid === 'function' && target.isValid()) {
+            bounds = target;
+        }
+        // 2. Si target es un arreglo de capas o coordenadas
+        else if (Array.isArray(target) && target.length > 0) {
+            bounds = L.latLngBounds();
+            target.forEach(l => {
+                if (!l) return;
+                if (typeof l.getBounds === 'function') {
+                    const b = l.getBounds();
+                    if (b && typeof b.isValid === 'function' && b.isValid()) bounds.extend(b);
+                } else if (typeof l.getLatLng === 'function') {
+                    const ll = l.getLatLng();
+                    if (ll) bounds.extend(ll);
+                } else if (Array.isArray(l) && l.length === 2 && typeof l[0] === 'number' && typeof l[1] === 'number') {
+                    bounds.extend(l);
+                }
+            });
+        }
+        // 3. Si target es una sola capa Leaflet
+        else if (target && typeof target.getBounds === 'function') {
+            const b = target.getBounds();
+            if (b && typeof b.isValid === 'function' && b.isValid()) bounds = b;
+        } else if (target && typeof target.getLatLng === 'function') {
+            const ll = target.getLatLng();
+            if (ll) bounds = L.latLngBounds([ll, ll]);
+        }
+        // 4. Si target es una coordenada [lat, lng] o L.LatLng
+        else if (target && target instanceof L.LatLng) {
+            bounds = L.latLngBounds([target, target]);
+        } else if (Array.isArray(target) && target.length === 2 && typeof target[0] === 'number' && typeof target[1] === 'number') {
+            bounds = L.latLngBounds([target, target]);
+        }
+
+        // Si se obtuvo un bounds válido:
+        if (bounds && typeof bounds.isValid === 'function' && bounds.isValid()) {
+            const adaptive = this.calculateAdaptiveZoom(bounds);
+            const targetMaxZoom = maxZoomOverride != null ? maxZoomOverride : adaptive.maxZoom;
+            const targetPadding = paddingOverride != null ? paddingOverride : adaptive.padding;
+
+            if (typeof onStart === 'function') onStart(Math.round(duration * 1000));
+
+            if (typeof map.flyToBounds === 'function') {
+                map.flyToBounds(bounds, {
+                    animate: true,
+                    duration: duration,
+                    padding: targetPadding,
+                    maxZoom: targetMaxZoom
+                });
+            } else {
+                map.fitBounds(bounds, {
+                    padding: targetPadding,
+                    maxZoom: targetMaxZoom,
+                    animate: true
+                });
+            }
+
+            if (typeof onEnd === 'function') {
+                setTimeout(onEnd, Math.round(duration * 1000) + 50);
+            }
+            return true;
+        }
+
+        // Fallback si no hay geometrías válidas
+        if (typeof onDefaultView === 'function') {
+            onDefaultView(true);
+            return false;
+        }
+
+        return false;
+    },
+
+    // Crea un control de leyenda flotante de Leaflet (bottomleft) a partir de un
+    // bloque de HTML ya armado por el módulo llamante. Encapsula la plomería común
+    // a EFE y Metro: creación del control, inserción del div, bloqueo de
+    // propagación de clicks/scroll hacia el mapa, y devuelve el div ya montado
+    // para que el módulo enganche sus propios checkboxes vía `onMount`.
+    createLegendControl(map, { className = 'efe-map-legend', html, onMount } = {}) {
+        if (!map || !html) return null;
+
+        const legend = L.control({ position: 'bottomleft' });
+
+        legend.onAdd = function () {
+            const div = L.DomUtil.create('div', className);
+            div.innerHTML = html;
+
+            L.DomEvent.disableClickPropagation(div);
+            L.DomEvent.disableScrollPropagation(div);
+
+            if (typeof onMount === 'function') onMount(div);
+
+            return div;
+        };
+
+        legend.addTo(map);
+        return legend;
+    },
+
+    // Inicializa un mapa Leaflet con la capa base CartoDB Light que usan todos
+    // los dashboards CATLEC (misma URL, API key y atribución). `options` son las
+    // opciones propias de L.map de cada módulo (minZoom, zoomDelta, etc.); si se
+    // pasa `center`, se aplica un setView inicial. Devuelve { map, tileLayer }.
+    createBaseMap(elId, { center, zoom, options = {} } = {}) {
+        const map = L.map(elId, Object.assign({ zoomControl: true, zoomSnap: 0.5 }, options));
+        if (center) map.setView(center, zoom);
+
+        const tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=cb1_2j8c_1_dacb4df364cf092be679e47d', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
+        }).addTo(map);
+
+        return { map, tileLayer };
+    }
 };

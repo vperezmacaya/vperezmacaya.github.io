@@ -1,18 +1,12 @@
 function initLeafletMap() {
     // Center map on Chile's geographical center
-    leafletMap = L.map('leaflet-map', {
-        zoomControl: true,
-        minZoom: 3,
-        maxZoom: 18,
-        zoomSnap: 0.5
-    }).setView([-37.6751, -71.5430], 4.0);
-
-    // Set initial theme tile layer
-    tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=cb1_2j8c_1_dacb4df364cf092be679e47d', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 20
-    }).addTo(leafletMap);
+    const base = CatlecUtils.createBaseMap('leaflet-map', {
+        center: [-37.6751, -71.5430],
+        zoom: 4.0,
+        options: { minZoom: 3, maxZoom: 18, zoomSnap: 0.5 }
+    });
+    leafletMap = base.map;
+    tileLayer = base.tileLayer;
     // Load map layers asynchronously
     loadMapLayers();
 
@@ -220,10 +214,9 @@ function onEachRegionFeature(feature, layer) {
                     }
 
                     if (groupBounds.isValid()) {
-                        leafletMap.flyToBounds(groupBounds, {
-                            animate: true,
+                        CatlecUtils.zoomToProject(leafletMap, groupBounds, {
                             duration: 1.5,
-                            padding: [60, 60]
+                            paddingOverride: [60, 60]
                         });
                     }
                 });
@@ -761,27 +754,14 @@ function zoomToProjectCode(code) {
     }
 
     if (matchedLayers.length > 0) {
-        let combinedBounds = L.latLngBounds();
-
-        matchedLayers.forEach(l => {
-            if (l.getBounds) {
-                combinedBounds.extend(l.getBounds());
-            } else if (l.getLatLng) {
-                combinedBounds.extend(l.getLatLng());
-            }
+        CatlecUtils.zoomToProject(leafletMap, matchedLayers, {
+            duration: 1.2
         });
-
-        if (combinedBounds.isValid()) {
-            leafletMap.flyToBounds(combinedBounds, {
-                animate: true,
-                duration: 1.2,
-                padding: [50, 50],
-                maxZoom: 12
-            });
-            leafletMap.closePopup();
-        }
+        leafletMap.closePopup();
     } else if (targetLatLng) {
-        leafletMap.flyTo(targetLatLng, 11, { animate: true, duration: 1.2 });
+        CatlecUtils.zoomToProject(leafletMap, targetLatLng, {
+            duration: 1.2
+        });
         leafletMap.closePopup();
     }
 }

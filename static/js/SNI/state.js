@@ -9,8 +9,7 @@ const sniState = {
     selectedRegions: [],     // [] = todas
     selectedMinistries: [],  // [] = todos
     selectedSources: [],     // [] = todas
-    selectedSubtitles: [],   // [] = todos
-    
+
     // Vista y UI
     currentView: 'map',      // 'map' | 'territorial' | 'ministries' | 'temporal' | 'table'
     selectedMapMetric: 'total', // 'total' | 'per_capita' | 'km2' | 'pib_ratio'
@@ -59,14 +58,13 @@ const SNI_COLORS = {
  */
 function getFilteredSNIMatrix() {
     if (!window.SNI_DATA || !window.SNI_DATA.matrix) return [];
-    const { selectedYears, selectedRegions, selectedMinistries, selectedSources, selectedSubtitles } = sniState;
+    const { selectedYears, selectedRegions, selectedMinistries, selectedSources } = sniState;
 
     return window.SNI_DATA.matrix.filter(row => {
         if (selectedYears.length > 0 && !selectedYears.includes(row.y)) return false;
         if (selectedRegions.length > 0 && !selectedRegions.includes(row.r)) return false;
         if (selectedMinistries.length > 0 && !selectedMinistries.includes(row.m)) return false;
         if (selectedSources.length > 0 && !selectedSources.includes(row.f)) return false;
-        if (selectedSubtitles.length > 0 && !selectedSubtitles.includes(row.s)) return false;
         return true;
     });
 }

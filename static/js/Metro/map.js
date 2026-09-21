@@ -39,20 +39,13 @@ function metroInitLeafletMap() {
     if (!mapContainer || metroMap) return;
 
     // Inicializar mapa centrado con soporte para zoom fraccional (zoomSnap: 0.5)
-    metroMap = L.map('metro-map', {
-        zoomControl: true,
-        scrollWheelZoom: true,
-        doubleClickZoom: true,
-        zoomSnap: 0.5,
-        zoomDelta: 0.5
-    }).setView(METRO_DEFAULT_CENTER, METRO_DEFAULT_ZOOM);
-
-    // Light CartoDB tile layer con API key oficial (idéntica a EFE.html)
-    metroTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=cb1_2j8c_1_dacb4df364cf092be679e47d', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 20
-    }).addTo(metroMap);
+    const base = CatlecUtils.createBaseMap('metro-map', {
+        center: METRO_DEFAULT_CENTER,
+        zoom: METRO_DEFAULT_ZOOM,
+        options: { scrollWheelZoom: true, doubleClickZoom: true, zoomSnap: 0.5, zoomDelta: 0.5 }
+    });
+    metroMap = base.map;
+    metroTileLayer = base.tileLayer;
 
     // Panes específicos para trazados de expansión (zIndex 500) y estaciones (zIndex 550) sobre líneas operativas (400)
     metroMap.createPane('metroExpansionPane');
@@ -240,18 +233,15 @@ function metroStationServesLine(stationOrFeature, targetLineName) {
 
     let stInfo = null;
     let featProps = null;
-    let stationName = '';
 
     if (typeof stationOrFeature === 'object') {
         featProps = stationOrFeature.properties || stationOrFeature;
         stInfo = (typeof metroFindStation === 'function') ? metroFindStation(stationOrFeature) : null;
-        stationName = (stInfo && stInfo.name) || featProps.name || '';
     } else {
-        stationName = String(stationOrFeature).trim();
-        stInfo = (typeof metroFindStation === 'function') ? metroFindStation(stationName, targetLineName) : null;
+        stInfo = (typeof metroFindStation === 'function') ? metroFindStation(stationOrFeature, targetLineName) : null;
     }
 
-    // A. Si se resolvió estación exacta en el Excel (por shape_id o composite key)
+    // A. Asociación estricta según registro en Excel (Hoja Estaciones, Columna 'Línea' y 'Combinación Futura')
     if (stInfo) {
         if (stInfo.lines && Array.isArray(stInfo.lines)) {
             if (stInfo.lines.some(lineMatches)) return true;
@@ -262,9 +252,10 @@ function metroStationServesLine(stationOrFeature, targetLineName) {
             if (typeof stInfo.future_combination === 'string' && lineMatches(stInfo.future_combination)) return true;
         }
         if (stInfo.future_combination_str && lineMatches(stInfo.future_combination_str)) return true;
+        return false;
     }
 
-    // B. Si hay propiedades directas del feature
+    // B. Si hay propiedades directas del feature GeoJSON
     if (featProps) {
         if (featProps.lines && Array.isArray(featProps.lines)) {
             if (featProps.lines.some(lineMatches)) return true;
@@ -276,19 +267,9 @@ function metroStationServesLine(stationOrFeature, targetLineName) {
             if (Array.isArray(futComb) && futComb.some(lineMatches)) return true;
             if (typeof futComb === 'string' && lineMatches(futComb)) return true;
         }
+        return false;
     }
 
-    // C. Fallback por nombre en mapas globales
-    const clean = typeof metroNormalizeText === 'function' ? metroNormalizeText(stationName) : stationName.toLowerCase().trim();
-    const combLineMap = window.METRO_COMBINATION_LINE_MAP || METRO_COMBINATION_LINE_MAP;
-    if (combLineMap && combLineMap[clean]) {
-        if (Array.isArray(combLineMap[clean]) && combLineMap[clean].some(lineMatches)) return true;
-        if (typeof combLineMap[clean] === 'string' && lineMatches(combLineMap[clean])) return true;
-    }
-    const stationLineMap = window.METRO_STATION_LINE_MAP || METRO_STATION_LINE_MAP;
-    if (stationLineMap && stationLineMap[clean]) {
-        if (lineMatches(stationLineMap[clean])) return true;
-    }
     return false;
 }
 if (typeof window !== 'undefined') window.metroStationServesLine = metroStationServesLine;
@@ -307,21 +288,19 @@ function metroStationBelongsToProject(stationOrFeature, targetProjId) {
         if (ids.includes(normProjId)) return true;
     }
 
-    // 2. Fallback buscando en METRO_DATA.stations (cargado desde Excel)
+    // 2. Lookup en METRO_DATA.stations buscando estrictamente por shape_id o id de estación (NUNCA por nombre solo)
     if (window.METRO_DATA && Array.isArray(window.METRO_DATA.stations)) {
-        const shapeId = String(p.shape_id || stationOrFeature.id || p['@id'] || '').trim();
-        const stName = String(p.name || '').trim().toLowerCase();
-        const st = window.METRO_DATA.stations.find(s => 
-            (shapeId && s.shape_id === shapeId) ||
-            (s.name && s.name.toLowerCase() === stName)
-        );
-        if (st) {
-            if (Array.isArray(st.project_ids) && st.project_ids.some(id => String(id).trim().toUpperCase() === normProjId)) {
-                return true;
-            }
-            if (st.project_id && typeof st.project_id === 'string') {
-                const ids = st.project_id.split(',').map(s => s.trim().toUpperCase());
-                if (ids.includes(normProjId)) return true;
+        const shapeId = String(p.shape_id || stationOrFeature.id || p['@id'] || (typeof stationOrFeature === 'string' ? stationOrFeature : '')).trim();
+        if (shapeId) {
+            const st = window.METRO_DATA.stations.find(s => String(s.shape_id || s.id).trim() === shapeId);
+            if (st) {
+                if (Array.isArray(st.project_ids) && st.project_ids.some(id => String(id).trim().toUpperCase() === normProjId)) {
+                    return true;
+                }
+                if (st.project_id && typeof st.project_id === 'string') {
+                    const ids = st.project_id.split(',').map(s => s.trim().toUpperCase());
+                    if (ids.includes(normProjId)) return true;
+                }
             }
         }
     }
@@ -698,12 +677,9 @@ function metroFocusOperatingLine(lineName, shouldZoom = false) {
 
     if (shouldZoom && metroMap) {
         const layers = metroFindOperatingLayers(lineName);
-        if (layers && layers.length > 0) {
-            const group = L.featureGroup(layers);
-            if (group.getBounds && group.getBounds().isValid()) {
-                metroMap.fitBounds(group.getBounds(), { padding: [50, 50], maxZoom: 13.5, animate: true });
-            }
-        }
+        CatlecUtils.zoomToProject(metroMap, layers, {
+            duration: 0.9
+        });
     }
 
     if (typeof metroUpdateOperatingLinesTableSelection === 'function') {
@@ -1757,44 +1733,22 @@ function metroZoomToProject(proj) {
 
     // Buscar si tiene shapes asociados
     const cods = proj.shapes || [];
-    let bounds = L.latLngBounds([]);
+    let matchedLayers = [];
 
     cods.forEach(cod => {
         const layers = metroShapeGeometries[String(cod)] || [];
-        layers.forEach(layer => {
-            if (layer.getBounds) {
-                bounds.extend(layer.getBounds());
-            } else if (layer.getLatLng) {
-                bounds.extend(layer.getLatLng());
-            }
-        });
+        layers.forEach(layer => matchedLayers.push(layer));
     });
 
-    if (!bounds.isValid() && Array.isArray(metroProjectMarkers)) {
+    if (matchedLayers.length === 0 && Array.isArray(metroProjectMarkers)) {
         const marker = metroProjectMarkers.find(m => m.projectName === proj.name);
-        if (marker && marker.getLatLng) {
-            bounds.extend(marker.getLatLng());
-        }
+        if (marker) matchedLayers.push(marker);
     }
 
-    if (bounds.isValid()) {
-        if (metroMap.flyToBounds) {
-            metroMap.flyToBounds(bounds, {
-                animate: true,
-                duration: 0.9,
-                padding: [50, 50],
-                maxZoom: 14
-            });
-        } else {
-            metroMap.fitBounds(bounds, {
-                padding: [50, 50],
-                maxZoom: 14,
-                animate: true
-            });
-        }
-    } else {
-        metroApplyDefaultMapView(true);
-    }
+    CatlecUtils.zoomToProject(metroMap, matchedLayers, {
+        duration: 0.9,
+        onDefaultView: () => metroApplyDefaultMapView(true)
+    });
 }
 window.metroZoomToProject = metroZoomToProject;
 
@@ -1826,81 +1780,74 @@ function metroResetMap() {
 function metroAddMapLegend() {
     if (!metroMap) return;
 
-    const legend = L.control({ position: 'bottomleft' });
+    const html = `
+        <div class="efe-legend-title">Leyenda</div>
+        <label class="efe-legend-item efe-legend-toggleable" for="metro-toggle-metro-lines" title="Activar/desactivar líneas de Metro de Santiago">
+            <input type="checkbox" id="metro-toggle-metro-lines" class="efe-legend-checkbox" ${metroShowExistingLines ? 'checked' : ''}>
+            <span class="efe-legend-color-line" style="background-color: #c53030;"></span>
+            <span>Líneas Metro de Santiago</span>
+        </label>
+        <label class="efe-legend-item efe-legend-toggleable" for="metro-toggle-projects" title="Activar/desactivar trazados y marcadores de proyectos de expansión de Metro">
+            <input type="checkbox" id="metro-toggle-projects" class="efe-legend-checkbox" ${metroShowProjects ? 'checked' : ''}>
+            <span style="display:inline-flex; align-items:center; gap:3px; margin-left: 2px; margin-right: 4px; flex-shrink: 0;">
+                <span style="width: 7px; height: 7px; border-radius: 50%; background-color: #7b1fa2;" title="Línea 6: Morado"></span>
+                <span style="width: 7px; height: 7px; border-radius: 50%; background-color: #52525b;" title="Línea 7: Gris"></span>
+                <span style="width: 7px; height: 7px; border-radius: 50%; background-color: #ea580c;" title="Línea 8: Naranjo"></span>
+                <span style="width: 7px; height: 7px; border-radius: 50%; background-color: #db2777;" title="Línea 9: Rosado"></span>
+                <span style="width: 7px; height: 7px; border-radius: 50%; background-color: #06b6d4;" title="Línea A: Cian"></span>
+            </span>
+            <span>Proyectos de Expansión</span>
+        </label>
+        <label class="efe-legend-item efe-legend-toggleable" for="metro-toggle-stations" title="Activar/desactivar estaciones operativas">
+            <input type="checkbox" id="metro-toggle-stations" class="efe-legend-checkbox" ${metroShowStations ? 'checked' : ''}>
+            <span style="display:inline-flex; align-items:center; gap:3px; margin-left: 4px; margin-right: 4px;">
+                <span style="width: 7px; height: 7px; border-radius: 50%; background: #d7141a; border: 1px solid #ffffff; display: inline-block; box-shadow: 0 0 2px rgba(0,0,0,0.3);"></span>
+                <span style="width: 8.5px; height: 8.5px; border-radius: 50%; background: #ffffff; border: 1.5px solid #0f172a; display: inline-block; box-shadow: 0 0 2px rgba(0,0,0,0.3);"></span>
+            </span>
+            <span>Estaciones (Línea / Comb.)</span>
+        </label>
+        <label class="efe-legend-item efe-legend-toggleable" for="metro-toggle-comunas" title="Activar/desactivar límites de comunas del Gran Santiago">
+            <input type="checkbox" id="metro-toggle-comunas" class="efe-legend-checkbox" ${metroShowComunas ? 'checked' : ''}>
+            <span style="width: 13px; height: 9px; border: 1.5px solid #059669; background: rgba(5,150,105,0.25); display: inline-block; border-radius: 2px; margin-left: 4px; margin-right: 4px; flex-shrink: 0;"></span>
+            <span>Comunas Gran Santiago</span>
+        </label>
+    `;
 
-    legend.onAdd = function () {
-        const div = L.DomUtil.create('div', 'efe-map-legend');
-        div.innerHTML = `
-            <div class="efe-legend-title">Leyenda</div>
-            <label class="efe-legend-item efe-legend-toggleable" for="metro-toggle-metro-lines" title="Activar/desactivar líneas de Metro de Santiago">
-                <input type="checkbox" id="metro-toggle-metro-lines" class="efe-legend-checkbox" ${metroShowExistingLines ? 'checked' : ''}>
-                <span class="efe-legend-color-line" style="background-color: #c53030;"></span>
-                <span>Líneas Metro de Santiago</span>
-            </label>
-            <label class="efe-legend-item efe-legend-toggleable" for="metro-toggle-projects" title="Activar/desactivar trazados y marcadores de proyectos de expansión de Metro">
-                <input type="checkbox" id="metro-toggle-projects" class="efe-legend-checkbox" ${metroShowProjects ? 'checked' : ''}>
-                <span style="display:inline-flex; align-items:center; gap:3px; margin-left: 2px; margin-right: 4px; flex-shrink: 0;">
-                    <span style="width: 7px; height: 7px; border-radius: 50%; background-color: #7b1fa2;" title="Línea 6: Morado"></span>
-                    <span style="width: 7px; height: 7px; border-radius: 50%; background-color: #52525b;" title="Línea 7: Gris"></span>
-                    <span style="width: 7px; height: 7px; border-radius: 50%; background-color: #ea580c;" title="Línea 8: Naranjo"></span>
-                    <span style="width: 7px; height: 7px; border-radius: 50%; background-color: #db2777;" title="Línea 9: Rosado"></span>
-                    <span style="width: 7px; height: 7px; border-radius: 50%; background-color: #06b6d4;" title="Línea A: Cian"></span>
-                </span>
-                <span>Proyectos de Expansión</span>
-            </label>
-            <label class="efe-legend-item efe-legend-toggleable" for="metro-toggle-stations" title="Activar/desactivar estaciones operativas">
-                <input type="checkbox" id="metro-toggle-stations" class="efe-legend-checkbox" ${metroShowStations ? 'checked' : ''}>
-                <span style="display:inline-flex; align-items:center; gap:3px; margin-left: 4px; margin-right: 4px;">
-                    <span style="width: 7px; height: 7px; border-radius: 50%; background: #d7141a; border: 1px solid #ffffff; display: inline-block; box-shadow: 0 0 2px rgba(0,0,0,0.3);"></span>
-                    <span style="width: 8.5px; height: 8.5px; border-radius: 50%; background: #ffffff; border: 1.5px solid #0f172a; display: inline-block; box-shadow: 0 0 2px rgba(0,0,0,0.3);"></span>
-                </span>
-                <span>Estaciones (Línea / Comb.)</span>
-            </label>
-            <label class="efe-legend-item efe-legend-toggleable" for="metro-toggle-comunas" title="Activar/desactivar límites de comunas del Gran Santiago">
-                <input type="checkbox" id="metro-toggle-comunas" class="efe-legend-checkbox" ${metroShowComunas ? 'checked' : ''}>
-                <span style="width: 13px; height: 9px; border: 1.5px solid #059669; background: rgba(5,150,105,0.25); display: inline-block; border-radius: 2px; margin-left: 4px; margin-right: 4px; flex-shrink: 0;"></span>
-                <span>Comunas Gran Santiago</span>
-            </label>
-        `;
+    CatlecUtils.createLegendControl(metroMap, {
+        className: 'efe-map-legend',
+        html,
+        onMount: (div) => {
+            const chkMetro = div.querySelector('#metro-toggle-metro-lines');
+            if (chkMetro) {
+                chkMetro.addEventListener('change', (e) => {
+                    metroToggleExistingLines(e.target.checked);
+                });
+            }
 
-        // Prevent map click or scroll propagation when clicking inside the legend
-        L.DomEvent.disableClickPropagation(div);
-        L.DomEvent.disableScrollPropagation(div);
+            const chkProjects = div.querySelector('#metro-toggle-projects');
+            if (chkProjects) {
+                chkProjects.addEventListener('change', (e) => {
+                    metroToggleProjects(e.target.checked);
+                });
+            }
 
-        const chkMetro = div.querySelector('#metro-toggle-metro-lines');
-        if (chkMetro) {
-            chkMetro.addEventListener('change', (e) => {
-                metroToggleExistingLines(e.target.checked);
-            });
+            const chkStations = div.querySelector('#metro-toggle-stations');
+            if (chkStations) {
+                chkStations.addEventListener('change', (e) => {
+                    metroToggleStations(e.target.checked);
+                });
+            }
+
+            const chkComunas = div.querySelector('#metro-toggle-comunas');
+            if (chkComunas) {
+                chkComunas.addEventListener('change', (e) => {
+                    metroUserExplicitlyEnabledComunas = e.target.checked;
+                    if (window.metroState) {
+                        window.metroState.userExplicitlyEnabledComunas = e.target.checked;
+                    }
+                    metroToggleComunas(e.target.checked);
+                });
+            }
         }
-
-        const chkProjects = div.querySelector('#metro-toggle-projects');
-        if (chkProjects) {
-            chkProjects.addEventListener('change', (e) => {
-                metroToggleProjects(e.target.checked);
-            });
-        }
-
-        const chkStations = div.querySelector('#metro-toggle-stations');
-        if (chkStations) {
-            chkStations.addEventListener('change', (e) => {
-                metroToggleStations(e.target.checked);
-            });
-        }
-
-        const chkComunas = div.querySelector('#metro-toggle-comunas');
-        if (chkComunas) {
-            chkComunas.addEventListener('change', (e) => {
-                metroUserExplicitlyEnabledComunas = e.target.checked;
-                if (window.metroState) {
-                    window.metroState.userExplicitlyEnabledComunas = e.target.checked;
-                }
-                metroToggleComunas(e.target.checked);
-            });
-        }
-
-        return div;
-    };
-
-    legend.addTo(metroMap);
+    });
 }

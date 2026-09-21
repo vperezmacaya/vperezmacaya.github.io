@@ -40,12 +40,12 @@ function efeGetDetailCategory(detailStr) {
 
 // Colores consistentes por Tipo de Proyecto
 const EFE_TIPO_COLORS = {
-    'Expansión': '#2563eb',             // Royal Blue
-    'Mejoramiento': '#059669',          // Emerald
-    'Ampliación': '#0284c7',            // Sky Blue
-    'Reposición': '#d97706',            // Amber / Orange
-    'Mejoramiento Sistemas': '#8b5cf6', // Purple
-    'Logística': '#e11d48'              // Rose / Crimson
+    'Expansión': '#1e9952',             // Verde Sostenible
+    'Ampliación': '#1e9952',            // Verde Sostenible
+    'Mejoramiento': '#d92534',          // Rojo EFE
+    'Reposición': '#d92534',            // Rojo EFE
+    'Mejoramiento Sistemas': '#d92534', // Rojo EFE
+    'Logística': '#d92534'              // Rojo EFE
 };
 
 // Generador de Iconos SVG según Tipo de Proyecto

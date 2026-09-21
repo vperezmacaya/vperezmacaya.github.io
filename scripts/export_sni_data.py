@@ -250,7 +250,6 @@ def main():
 
     ministries_ranked = df.groupby('ministerio')['usd_2024'].sum().sort_values(ascending=False).index.tolist()
     sources_ranked = df.groupby('fuente')['usd_2024'].sum().sort_values(ascending=False).index.tolist()
-    subtitles = sorted(df['subtitulo'].unique().tolist())
 
     # Cargar contexto regional dinámicamente desde la hoja 'contexto regional'
     regional_context = load_regional_context(EXCEL_PATH)
@@ -270,8 +269,7 @@ def main():
             'years': years,
             'regions': regions_ordered,
             'ministries': ministries_ranked,
-            'sources': sources_ranked,
-            'subtitles': subtitles
+            'sources': sources_ranked
         },
         'regional_context': regional_context,
         'matrix': agg_main_list,

@@ -171,8 +171,8 @@ function efeUpdateOperatingLinesTableSelection() {
     const selected = efeState.selectedOperatingLine;
     rows.forEach(row => {
         const isSelected = selected && row.getAttribute('data-service') === selected;
-        row.style.backgroundColor = isSelected ? 'rgba(2, 132, 199, 0.12)' : '';
-        row.style.boxShadow = isSelected ? 'inset 4px 0 0 #0284c7' : '';
+        row.style.backgroundColor = isSelected ? 'rgba(15, 59, 108, 0.12)' : '';
+        row.style.boxShadow = isSelected ? 'inset 4px 0 0 #0f3b6c' : '';
     });
 }
 window.efeUpdateOperatingLinesTableSelection = efeUpdateOperatingLinesTableSelection;
@@ -194,7 +194,7 @@ function efeRenderOperatingLinesTable(linesToRender) {
 
     tbody.innerHTML = '';
     lines.forEach((l, idx) => {
-        const lineColor = '#0284c7';
+        const lineColor = '#0f3b6c';
         const isSelected = efeState.selectedOperatingLine && efeState.selectedOperatingLine === l.service;
 
         const tr = document.createElement('tr');
@@ -205,8 +205,8 @@ function efeRenderOperatingLinesTable(linesToRender) {
         tr.style.borderBottom = '1px solid var(--border-color)';
         tr.style.transition = 'background 0.15s ease, box-shadow 0.15s ease';
         if (isSelected) {
-            tr.style.backgroundColor = 'rgba(2, 132, 199, 0.12)';
-            tr.style.boxShadow = 'inset 4px 0 0 #0284c7';
+            tr.style.backgroundColor = 'rgba(15, 59, 108, 0.12)';
+            tr.style.boxShadow = 'inset 4px 0 0 #0f3b6c';
         }
 
         tr.innerHTML = `
@@ -299,13 +299,13 @@ function efeShowProjectDetailView(proj, currentFilteredProjects) {
     const hasSource = rawSource && String(rawSource).trim() !== '' && String(rawSource).trim().toLowerCase() !== 'none';
 
     const filialColors = {
-        'EFE Valparaíso': '#0284c7',
-        'EFE Central': '#2563eb',
-        'EFE Sur': '#d97706',
-        'EFE Arica - La Paz': '#059669'
+        'EFE Central': '#d92534',
+        'EFE Valparaíso': '#1694b8',
+        'EFE Sur': '#2b5ec9',
+        'EFE Arica - La Paz': '#1e9952'
     };
     const hasFilial = proj.filial && String(proj.filial).trim() !== '' && String(proj.filial).trim().toLowerCase() !== 'nan';
-    const filialColor = hasFilial ? (filialColors[proj.filial] || '#3b82f6') : 'var(--text-muted)';
+    const filialColor = hasFilial ? (filialColors[proj.filial] || '#64748b') : 'var(--text-muted)';
     const subtitleText = hasFilial ? `Filial ${proj.filial}` : 'Sin filial específica';
 
     const badgeClass = proj.filial === 'EFE Sur' ? 'badge-warning' : (proj.filial === 'EFE Valparaíso' ? 'badge-info' : (proj.filial === 'EFE Central' ? 'badge-info' : (proj.filial === 'EFE Arica - La Paz' ? 'badge-success' : 'badge-neutral')));
@@ -336,12 +336,12 @@ function efeShowProjectDetailView(proj, currentFilteredProjects) {
 
     // Renderizado de fotografía(s) asociada(s) desde Fotos/EFE (después de la descripción y antes de los datos)
     let photoHTML = '';
-    const photosList = proj.photos && proj.photos.length > 0 ? proj.photos : (proj.photo ? [proj.photo] : []);
+    const photosList = (proj.photos && proj.photos.length > 0) ? proj.photos : (proj.photo ? [proj.photo] : []);
     if (photosList.length === 1) {
-        const encodedUrl = encodeURI(photosList[0]);
+        const pUrl = photosList[0];
         photoHTML = `
         <div class="detail-photo-wrapper">
-            <img src="${encodedUrl}" alt="${proj.name}" class="detail-project-photo" onerror="this.parentElement.style.display='none'">
+            <img src="${pUrl}" alt="${proj.name}" class="detail-project-photo" loading="eager" onerror="console.warn('No se pudo cargar la imagen de EFE:', this.src);">
             <div class="detail-photo-caption">Fuente: EFE</div>
         </div>
         `;
@@ -349,10 +349,9 @@ function efeShowProjectDetailView(proj, currentFilteredProjects) {
         photoHTML = `
         <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem; margin-bottom: 0.5rem;">
             ${photosList.map((pUrl, pIdx) => {
-                const enc = encodeURI(pUrl);
                 return `
                 <div class="detail-photo-wrapper" style="margin: 0;">
-                    <img src="${enc}" alt="${proj.name} - Foto ${pIdx + 1}" class="detail-project-photo" onerror="this.parentElement.style.display='none'">
+                    <img src="${pUrl}" alt="${proj.name} - Foto ${pIdx + 1}" class="detail-project-photo" loading="eager" onerror="console.warn('No se pudo cargar la imagen de EFE:', this.src);">
                     <div class="detail-photo-caption">Fuente: EFE (${pIdx + 1}/${photosList.length})</div>
                 </div>
                 `;

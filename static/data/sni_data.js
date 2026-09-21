@@ -74,12 +74,6 @@ window.SNI_DATA = {
       "EFE VALPARAISO",
       "EFE ARICA",
       "EFE SUR"
-    ],
-    "subtitles": [
-      "0",
-      "29",
-      "31",
-      "33"
     ]
   },
   "regional_context": {

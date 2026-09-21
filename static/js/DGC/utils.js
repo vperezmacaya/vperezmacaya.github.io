@@ -1,22 +1,9 @@
 function shortenRegionName(name) {
-    if (!name) return '';
-    let str = String(name).trim();
-    str = str.replace(/^Región\s+(de\s+la\s+|del\s+|de\s+)?/i, '');
-
-    if (/metropolitana/i.test(str)) return 'Metropolitana';
-    if (/ays[eé]n/i.test(str)) return 'Aysén';
-    if (/magallanes/i.test(str)) return 'Magallanes';
-    if (/o'higgins|bernardo/i.test(str)) return "O'Higgins";
-
-    return str;
+    return CatlecUtils.shortenRegionName(name);
 }
 
 function _parseRegionsFromVal(regionStr) {
-    if (!regionStr) return [];
-    const str = String(regionStr).replace(/&nbsp;/g, ' ').replace(/ /g, ' ');
-    return str.split(/[;,/]/).map(p => {
-        return shortenRegionName(p.trim());
-    }).filter(Boolean);
+    return CatlecUtils.splitRegionString(regionStr);
 }
 
 // Generate Chart.js display (Dual charts displayed simultaneously)
@@ -134,12 +121,7 @@ function getRegionStyle(feature) {
 
 
 // ── Show / Hide timeline ──────────────────────────────────────────────
-
-function svgEl(tag, attrs = {}) {
-    const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
-    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
-    return el;
-}
+// svgEl ahora vive en static/js/common/timeline.js (CatlecTimeline.svgEl)
 
 // ── Chart.js Helper Utilities (DGC Dashboard) ───────────────────────────
 
