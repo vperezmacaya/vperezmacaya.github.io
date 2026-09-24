@@ -96,7 +96,6 @@ function efeGetProjectTypeSvg(tipo, w = 13, h = 13, stroke = 'currentColor') {
 // Leaflet Map state
 var efeMap = null;
 var efeTileLayer = null;
-var efeRegionsGeoLayer = null;  // GeoJSON layer for regional boundaries
 var efeGeoLayer = null;         // GeoJSON layer for all EFE shapes
 var efeMetroGeoLayer = null;    // GeoJSON layer for Metro de Santiago lines
 var efeMetroPointsLayer = null; // GeoJSON layer for Metro de Santiago stations

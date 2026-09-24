@@ -1,4 +1,4 @@
-// Tabla global de proyectos MOP: orden, paginación y tabla de top 10 megaproyectos
+// Tabla global de proyectos MOP: orden y paginación
 
 function formatRegionCell(regionStr) {
     return CatlecUtils.formatRegionCell(regionStr);
@@ -142,29 +142,4 @@ function bindTableSortEvents() {
             }
         });
     }
-}
-
-// ── Tabla: Top 10 Megaproyectos ───────────────────────────────────────
-function renderTopTable() {
-    const tbody = document.getElementById('top-projects-tbody');
-    if (!tbody) return;
-
-    const top10 = [...filteredProjects]
-        .filter(p => p.cost_mm > 0)
-        .sort((a,b) => b.cost_mm - a.cost_mm)
-        .slice(0, 10);
-
-    if (!top10.length) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:1rem;">Sin resultados</td></tr>';
-        return;
-    }
-
-    tbody.innerHTML = top10.map((p, i) => `
-        <tr>
-            <td style="padding:0.4rem 0.5rem;font-size:0.7rem;color:var(--text-muted);">${i+1}</td>
-            <td style="padding:0.4rem 0.5rem;font-size:0.7rem;color:var(--text-primary);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${p.nombre}">${p.nombre || '—'}</td>
-            <td style="padding:0.4rem 0.5rem;font-size:0.7rem;color:var(--text-secondary);">${shortRegion(p.region || '—')}</td>
-            <td style="padding:0.4rem 0.5rem;font-size:0.7rem;font-weight:700;color:#3b82f6;text-align:right;">$${p.cost_mm.toLocaleString('es-CL')} M</td>
-        </tr>
-    `).join('');
 }

@@ -81,11 +81,10 @@ function renderMetroDemandaAnalytics() {
         Chart.defaults.devicePixelRatio = Math.max(2.5, window.devicePixelRatio || 1);
     }
 
-    const isLight = document.body.classList.contains('light-theme');
-    const textColor = isLight ? '#0f172a' : '#f8fafc';
-    const textSecColor = isLight ? '#64748b' : '#94a3b8';
-    const gridColor = isLight ? '#e2e8f0' : '#334155';
-    const cardBg = isLight ? '#ffffff' : '#1e293b';
+    const textColor = '#0f172a';
+    const textSecColor = '#64748b';
+    const gridColor = '#e2e8f0';
+    const cardBg = '#ffffff';
 
     const demandData = (window.METRO_DATA && window.METRO_DATA.historical_demand) ? window.METRO_DATA.historical_demand : [];
     const supplyData = (window.METRO_DATA && window.METRO_DATA.operational_supply) ? window.METRO_DATA.operational_supply : [];
@@ -352,7 +351,7 @@ function renderMetroDemandaAnalytics() {
                 datasets: [{
                     data: tipologiaValues,
                     backgroundColor: tipologiaColors,
-                    borderColor: isLight ? '#ffffff' : '#1e293b',
+                    borderColor: '#ffffff',
                     borderWidth: 1.5
                 }]
             },

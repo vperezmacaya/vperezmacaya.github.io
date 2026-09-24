@@ -6,24 +6,24 @@
     --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
-    /* Colors - Dark Theme (Default) */
-    --bg-app: #090d16;
-    --bg-sidebar: #0f1626;
-    --bg-card: rgba(20, 30, 54, 0.45);
-    --bg-card-hover: rgba(28, 41, 74, 0.6);
-    --border-color: rgba(255, 255, 255, 0.08);
-    --border-color-focus: rgba(59, 130, 246, 0.5);
+    /* Colors (tema claro único) */
+    --bg-app: #f3f4f6;
+    --bg-sidebar: #ffffff;
+    --bg-card: rgba(255, 255, 255, 0.8);
+    --bg-card-hover: rgba(255, 255, 255, 0.95);
+    --border-color: rgba(0, 0, 0, 0.08);
+    --border-color-focus: rgba(37, 99, 235, 0.5);
 
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --text-muted: #64748b;
+    --text-primary: #111827;
+    --text-secondary: #4b5563;
+    --text-muted: #9ca3af;
 
     /* Brand & Accents */
-    --primary: #3b82f6;
-    --primary-gradient: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    --accent: #8b5cf6;
+    --primary: #2563eb;
+    --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    --accent: #7c3aed;
     --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-    --accent-glow: rgba(139, 92, 246, 0.15);
+    --accent-glow: rgba(124, 58, 237, 0.08);
 
     /* Status Colors */
     --success: #10b981;
@@ -39,31 +39,10 @@
     --radius-sm: 8px;
     --radius-md: 14px;
     --radius-lg: 20px;
-    --shadow-main: 0 8px 30px rgba(0, 0, 0, 0.3);
-    --shadow-inset: inset 0 2px 4px rgba(255, 255, 255, 0.03);
-    --transition-fast: 0.15s ease;
-    --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Light Theme overrides */
-body.light-theme {
-    --bg-app: #f3f4f6;
-    --bg-sidebar: #ffffff;
-    --bg-card: rgba(255, 255, 255, 0.8);
-    --bg-card-hover: rgba(255, 255, 255, 0.95);
-    --border-color: rgba(0, 0, 0, 0.08);
-    --border-color-focus: rgba(37, 99, 235, 0.5);
-
-    --text-primary: #111827;
-    --text-secondary: #4b5563;
-    --text-muted: #9ca3af;
-
-    --primary: #2563eb;
-    --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    --accent: #7c3aed;
-    --accent-glow: rgba(124, 58, 237, 0.08);
     --shadow-main: 0 8px 24px rgba(0, 0, 0, 0.04);
     --shadow-inset: inset 0 2px 4px rgba(0, 0, 0, 0.01);
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Base resets & layout */
@@ -138,17 +117,12 @@ h6 {
     padding: 0 1.25rem;
     height: 38px;
     min-height: 38px;
-    background: linear-gradient(90deg, #0d1a35 0%, #0f1d3d 60%, #101830 100%);
-    border-bottom: 1px solid rgba(59, 130, 246, 0.18);
+    background: linear-gradient(90deg, #1e3a6e 0%, #1a3460 60%, #1b3055 100%);
+    border-bottom: 1px solid rgba(59, 130, 246, 0.25);
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
     position: relative;
     z-index: 2500;
     flex-shrink: 0;
-}
-
-body.light-theme .top-navbar {
-    background: linear-gradient(90deg, #1e3a6e 0%, #1a3460 60%, #1b3055 100%);
-    border-bottom: 1px solid rgba(59, 130, 246, 0.25);
 }
 
 .top-navbar-left {
@@ -166,6 +140,13 @@ body.light-theme .top-navbar {
     opacity: 0.92;
 }
 
+.top-navbar-logo-udec {
+    height: 26px;
+    width: auto;
+    display: block;
+    object-fit: contain;
+}
+
 /* Subheader View Selector Bar */
 .view-subheader {
     display: grid;
@@ -173,8 +154,8 @@ body.light-theme .top-navbar {
     gap: 1px;
     height: 36px;
     min-height: 36px;
-    background: #0b1528;
-    border-bottom: 2px solid #1d4ed8;
+    background: #1e3a6e;
+    border-bottom: 2px solid #2563eb;
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
     flex-shrink: 0;
     z-index: 150;
@@ -192,11 +173,6 @@ body.light-theme .top-navbar {
 
 .view-subheader.five-tabs {
     grid-template-columns: repeat(5, 1fr);
-}
-
-body.light-theme .view-subheader {
-    background: #1e3a6e;
-    border-bottom: 2px solid #2563eb;
 }
 
 .view-tab-btn {
@@ -273,6 +249,30 @@ body.light-theme .view-subheader {
     vertical-align: middle;
 }
 
+/* Animación tipo carpeta: al abrir, las filas crecen su alto desde 0 (el panel se
+   despliega hacia abajo) y al cerrar se pliegan hacia arriba. CatlecNav.open/close
+   ponen las clases temporales .expanding/.collapsing (overflow:hidden solo mientras
+   dura la animación, para no recortar los submenús laterales). Los submenús se
+   despliegan en horizontal hacia la izquierda. */
+.nav-menu {
+    --ms-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.nav-menu:has(.nav-menu-dropdown.open:not(.collapsing)) .nav-menu-btn {
+    background: rgba(59, 130, 246, 0.18);
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.nav-menu-chevron {
+    transition: transform 0.28s var(--ms-ease), color 0.15s ease;
+}
+
+.nav-menu:has(.nav-menu-dropdown.open:not(.collapsing)) .nav-menu-chevron {
+    transform: rotate(180deg);
+    color: #ffffff;
+}
+
 .nav-menu-dropdown {
     display: none;
     position: absolute;
@@ -291,6 +291,38 @@ body.light-theme .view-subheader {
     display: block;
 }
 
+.nav-menu-dropdown.expanding > .nav-menu-group {
+    overflow: hidden;
+    animation: nav-row-in 0.22s var(--ms-ease);
+}
+
+.nav-menu-dropdown.collapsing {
+    pointer-events: none;
+    animation: nav-panel-out 0.2s ease forwards;
+}
+
+.nav-menu-dropdown.collapsing > .nav-menu-group {
+    overflow: hidden;
+    animation: nav-row-out 0.2s ease forwards;
+}
+
+/* 64px = alto de una fila con la etiqueta en dos líneas */
+@keyframes nav-row-in {
+    from { max-height: 0; opacity: 0; }
+    to   { max-height: 64px; opacity: 1; }
+}
+
+@keyframes nav-row-out {
+    from { max-height: 64px; }
+    to   { max-height: 0; opacity: 0; }
+}
+
+/* El borde del panel se desvanece al final del pliegue */
+@keyframes nav-panel-out {
+    70% { opacity: 1; }
+    to  { opacity: 0; }
+}
+
 .nav-menu-group {
     position: relative;
 }
@@ -299,8 +331,18 @@ body.light-theme .view-subheader {
     justify-content: space-between;
 }
 
+/* Submenú lateral: se revela desde el borde del menú hacia la izquierda y se
+   repliega hacia la derecha. Los insets negativos del clip-path dejan pasar la
+   sombra y el puente de hover (::after). */
 .nav-submenu {
-    display: none;
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    clip-path: inset(-40px -40px -40px 100%);
+    transition:
+        clip-path 0.16s ease,
+        opacity 0.16s ease,
+        visibility 0s linear 0.16s;
     position: absolute;
     top: 0;
     right: 100%;
@@ -339,7 +381,30 @@ body.light-theme .view-subheader {
 .nav-menu-group:hover .nav-submenu,
 .nav-menu-group.open .nav-submenu,
 .nav-menu-group:focus-within .nav-submenu {
-    display: block;
+    visibility: visible;
+    opacity: 1;
+    clip-path: inset(-40px);
+    z-index: 521; /* el que se abre queda sobre el que se está replegando */
+    transition:
+        clip-path 0.22s var(--ms-ease),
+        opacity 0.18s ease,
+        visibility 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav-menu-chevron,
+    .nav-submenu,
+    .nav-menu-group:hover .nav-submenu,
+    .nav-menu-group.open .nav-submenu,
+    .nav-menu-group:focus-within .nav-submenu {
+        transition: none;
+    }
+
+    .nav-menu-dropdown.expanding > .nav-menu-group,
+    .nav-menu-dropdown.collapsing,
+    .nav-menu-dropdown.collapsing > .nav-menu-group {
+        animation: none;
+    }
 }
 
 .nav-submenu-item {
@@ -440,7 +505,6 @@ body.light-theme .view-subheader {
     gap: 0.4rem;
 }
 
-
 @keyframes proto-pulse {
 
     0%,
@@ -468,7 +532,6 @@ body.light-theme .view-subheader {
     letter-spacing: 0.01em;
     font-style: italic;
 }
-
 
 /* Dashboard Body Wrapper */
 .dashboard-content {
@@ -554,8 +617,6 @@ body.light-theme .view-subheader {
 
 .card-kpi {
     background-color: var(--bg-card);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-main);
     border-radius: var(--radius-sm);
@@ -647,6 +708,8 @@ body.light-theme .view-subheader {
     font-weight: 700;
     color: var(--text-primary);
     line-height: 1.1;
+    /* Dígitos de ancho fijo: el contador animado (CatlecKpiAnimate) no hace temblar la tarjeta */
+    font-variant-numeric: tabular-nums;
 }
 
 .kpi-notes {
@@ -655,8 +718,6 @@ body.light-theme .view-subheader {
 
 .panel-card {
     background-color: var(--bg-card);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-main);
@@ -716,7 +777,7 @@ body.light-theme .view-subheader {
 
 .form-input {
     width: 100%;
-    background-color: rgba(9, 13, 22, 0.4);
+    background-color: rgba(255, 255, 255, 0.8);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
     font-family: var(--font-sans);
@@ -727,17 +788,17 @@ body.light-theme .view-subheader {
     transition: all var(--transition-fast);
 }
 
-body.light-theme .form-input {
-    background-color: rgba(255, 255, 255, 0.8);
-}
-
 .form-input:focus {
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
-/* Custom Multi-Select Dropdown Component */
+/* Custom Multi-Select Dropdown Component
+   Se abre/cierra con la clase .open en .custom-multiselect (CatlecUtils.setupMultiselect
+   / closeAllMultiselects): la lista aparece con fundido + leve desplazamiento/escala y
+   la flecha gira 180°. No usar style.display ni display:none inline en la lista. */
 .custom-multiselect {
+    --ms-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
     position: relative;
     width: 100%;
 }
@@ -755,7 +816,31 @@ body.light-theme .form-input {
     padding-right: 0.65rem !important;
 }
 
+/* Trigger abierto: mismo borde y halo que .form-input:focus */
+.custom-multiselect.open .multiselect-trigger {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* Flecha (svg Lucide del trigger): gira 180° al abrir */
+.multiselect-trigger svg {
+    transition: transform 0.28s var(--ms-ease), color 0.15s ease;
+}
+
+.custom-multiselect.open .multiselect-trigger svg {
+    transform: rotate(180deg);
+    color: var(--primary);
+}
+
 .multiselect-dropdown {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px) scale(0.97);
+    transform-origin: top left;
+    transition:
+        opacity 0.16s ease,
+        transform 0.2s var(--ms-ease),
+        visibility 0s linear 0.2s;
     position: absolute;
     top: calc(100% + 4px);
     left: 0;
@@ -773,18 +858,27 @@ body.light-theme .form-input {
     overflow: visible;
 }
 
-body:not(.light-theme) .multiselect-dropdown {
-    background-color: #0f172a;
-    border-color: rgba(255, 255, 255, 0.15);
+.custom-multiselect.open .multiselect-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition:
+        opacity 0.18s ease,
+        transform 0.24s var(--ms-ease),
+        visibility 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .multiselect-dropdown,
+    .custom-multiselect.open .multiselect-dropdown,
+    .multiselect-trigger svg {
+        transition: none;
+    }
 }
 
 .multiselect-actions {
     padding: 0.3rem 0.6rem;
     border-bottom: 1px solid var(--border-color);
-    background-color: rgba(15, 22, 38, 0.5);
-}
-
-body.light-theme .multiselect-actions {
     background-color: rgba(240, 243, 248, 0.9);
 }
 
@@ -893,23 +987,12 @@ body.light-theme .multiselect-actions {
 }
 
 .btn-ghost {
-    background: transparent;
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
-}
-
-body.light-theme .btn-ghost {
     background: #ffffff;
     border: 1px solid #d1d5db;
     color: #4b5563;
 }
 
 .btn-ghost:hover {
-    border-color: var(--border-color-focus);
-    color: var(--text-primary);
-}
-
-body.light-theme .btn-ghost:hover {
     border-color: #2563eb;
     color: #2563eb;
     background: #f8fafc;
@@ -1074,16 +1157,8 @@ body.light-theme .btn-ghost:hover {
 .table-header-wrapper {
     width: 100%;
     flex-shrink: 0;
-    background-color: var(--bg-sidebar);
-    scrollbar-gutter: stable;
-}
-
-body:not(.light-theme) .table-header-wrapper {
-    background-color: #0f1626;
-}
-
-body.light-theme .table-header-wrapper {
     background-color: #e5e7eb;
+    scrollbar-gutter: stable;
 }
 
 .table-body-wrapper {
@@ -1137,13 +1212,6 @@ body.light-theme .table-header-wrapper {
     user-select: none;
     white-space: nowrap;
     vertical-align: middle;
-}
-
-body:not(.light-theme) .data-table th {
-    background-color: #0f1626;
-}
-
-body.light-theme .data-table th {
     background-color: #e5e7eb;
 }
 
@@ -1164,11 +1232,6 @@ body.light-theme .data-table th {
 
 .data-table tbody tr.row-main:hover:not(.row-selected),
 .data-table tbody tr.row-main:hover:not(.row-selected) td {
-    background-color: rgba(59, 130, 246, 0.14) !important;
-}
-
-body.light-theme .data-table tbody tr.row-main:hover:not(.row-selected),
-body.light-theme .data-table tbody tr.row-main:hover:not(.row-selected) td {
     background-color: rgba(37, 99, 235, 0.08) !important;
 }
 
@@ -1176,10 +1239,16 @@ body.light-theme .data-table tbody tr.row-main:hover:not(.row-selected) td {
     background-color: rgba(59, 130, 246, 0.04);
 }
 
-/* La selección (click) debe verse instantánea, sin animar background-color/box-shadow —
-   solo el hover normal usa la transición suave heredada de .row-main. */
+/* La selección (click) debe verse instantánea en el fondo, sin animar background-color —
+   pero el borde izquierdo (box-shadow) sí anima tanto al aparecer como al desaparecer. */
 .data-table tbody tr.row-main.row-selected {
-    transition: color 0.15s ease;
+    transition: color 0.15s ease, box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Las celdas también reciben el fondo de hover; al seleccionar deben soltarlo al instante
+   para que no se vea un destello mientras se desvanece sobre el fondo de selección. */
+.data-table tbody tr.row-main.row-selected td {
+    transition: none;
 }
 
 /* Sort Icons */
@@ -1211,10 +1280,6 @@ body.light-theme .data-table tbody tr.row-main:hover:not(.row-selected) td {
 /* Detail Drawer Row */
 .row-detail {
     display: none;
-    background-color: rgba(9, 13, 22, 0.2);
-}
-
-body.light-theme .row-detail {
     background-color: rgba(0, 0, 0, 0.01);
 }
 
@@ -1257,6 +1322,40 @@ body.light-theme .row-detail {
     color: var(--text-secondary);
     font-size: 0.85rem;
     line-height: 1.6;
+}
+
+/* Foto del proyecto en la vista de detalle (compartida por EFE y DGC) */
+.detail-photo-wrapper {
+    margin-top: 0.55rem;
+    margin-bottom: 0.65rem;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    position: relative;
+    width: 100%;
+    flex-shrink: 0;
+}
+.detail-project-photo {
+    width: 100%;
+    height: 220px;
+    max-height: 250px;
+    object-fit: cover;
+    display: block;
+    cursor: default;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+.detail-photo-caption {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    padding: 0.28rem 0.6rem;
+    text-align: right;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border-color);
+    font-style: italic;
+    font-weight: 500;
 }
 
 .detail-grid {
@@ -1328,9 +1427,9 @@ body.light-theme .row-detail {
 }
 
 .badge-licitacion {
-    background-color: rgba(139, 92, 246, 0.15);
-    color: #a78bfa;
-    border: 1px solid rgba(139, 92, 246, 0.3);
+    background-color: rgba(124, 58, 237, 0.1);
+    color: var(--accent);
+    border: 1px solid rgba(124, 58, 237, 0.25);
 }
 
 .btn-action-link {
@@ -1392,6 +1491,51 @@ body.light-theme .row-detail {
 .fade-in-quick {
     animation: fadeIn var(--transition-fast) forwards;
 }
+
+/* Transición tabla ↔ ficha de detalle de proyecto (CatlecUtils.swapView):
+   fundido cruzado + desplazamiento horizontal simétrico (DGC, EFE, Metro, MOP).
+   La salida es corta y acelera; la entrada es algo más larga y desacelera, así
+   la vista nueva "se asienta" en vez de frenar en seco. */
+@keyframes catlecViewOutToLeft {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(-12px); }
+}
+
+@keyframes catlecViewOutToRight {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(12px); }
+}
+
+@keyframes catlecViewInFromRight {
+    from { opacity: 0; transform: translateX(16px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes catlecViewInFromLeft {
+    from { opacity: 0; transform: translateX(-16px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.catlec-view-out-left,
+.catlec-view-out-right {
+    animation-duration: 0.16s;
+    animation-timing-function: cubic-bezier(0.4, 0, 1, 1);
+    animation-fill-mode: forwards;
+    will-change: opacity, transform;
+}
+
+.catlec-view-in-left,
+.catlec-view-in-right {
+    animation-duration: 0.26s;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    animation-fill-mode: both;
+    will-change: opacity, transform;
+}
+
+.catlec-view-out-left { animation-name: catlecViewOutToLeft; }
+.catlec-view-out-right { animation-name: catlecViewOutToRight; }
+.catlec-view-in-right { animation-name: catlecViewInFromRight; }
+.catlec-view-in-left { animation-name: catlecViewInFromLeft; }
 
 /* Pagination panel */
 .pagination-container {
@@ -1504,7 +1648,7 @@ footer {
 
 .map-wrapper {
     box-shadow: var(--shadow-inset);
-    background-color: var(--bg-sidebar);
+    background-color: #f8fafc;
 }
 
 /* Chile Region Path styling inside vector SVG */
@@ -1557,15 +1701,6 @@ footer {
 
 .marker-core {
     transition: r var(--transition-fast), stroke-width var(--transition-fast);
-}
-
-/* Theme specifics for map wrapper background to look awesome */
-body:not(.light-theme) .map-wrapper {
-    background-color: #0b0f19;
-}
-
-body.light-theme .map-wrapper {
-    background-color: #f8fafc;
 }
 
 /* --- Grouped Linear Timeline Styles --- */
@@ -1728,12 +1863,100 @@ body.light-theme .map-wrapper {
     outline: none !important;
 }
 
-
-/* Custom leaflet style overrides for dark/light themes */
+/* Custom leaflet style overrides */
 .leaflet-container {
     background: var(--bg-sidebar) !important;
     color: var(--text-primary) !important;
     font-family: var(--font-sans) !important;
+}
+
+/* Créditos del mapa contraíbles tras un botón "i" (CatlecUtils.enableCollapsibleAttribution).
+   El recorte anima su max-width entre el ancho medido del texto (--catlec-attr-w) y 0. */
+.leaflet-container .leaflet-control-attribution.catlec-attribution {
+    display: flex;
+    align-items: center;
+    margin: 0 8px 8px 0;
+    padding: 2px;
+    background: var(--bg-card-hover);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    box-shadow: var(--shadow-main);
+    color: var(--text-secondary);
+    font-size: 0.68rem;
+    line-height: 1.3;
+}
+
+.catlec-attribution-clip {
+    max-width: var(--catlec-attr-w, 480px);
+    overflow: hidden;
+    transition: max-width 0.35s ease;
+}
+
+.catlec-attribution.collapsed .catlec-attribution-clip {
+    max-width: 0;
+    transition-duration: 0.3s;
+}
+
+.catlec-attribution-text {
+    display: block;
+    padding: 0 4px 0 8px;
+    white-space: nowrap;
+    opacity: 1;
+    transition: opacity 0.2s ease 0.12s;
+}
+
+.catlec-attribution.collapsed .catlec-attribution-text {
+    opacity: 0;
+    transition-delay: 0s;
+}
+
+.leaflet-container .catlec-attribution a {
+    color: var(--primary);
+}
+
+.catlec-attribution-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.catlec-attribution-toggle svg {
+    width: 14px;
+    height: 14px;
+}
+
+.catlec-attribution-toggle:hover,
+.catlec-attribution:not(.collapsed) .catlec-attribution-toggle {
+    color: var(--primary);
+}
+
+.catlec-attribution-toggle:hover {
+    background: rgba(37, 99, 235, 0.08);
+}
+
+.catlec-attribution-toggle:focus-visible {
+    outline: 2px solid var(--border-color-focus);
+    outline-offset: 1px;
+}
+
+/* Desvanecido de vectores durante zooms grandes (CatlecUtils.enableSmoothZoom) */
+.catlec-zoom-fade {
+    transition: opacity 0.18s ease;
+}
+
+.catlec-map-zooming .catlec-zoom-fade {
+    opacity: 0;
+    transition-duration: 0.12s;
 }
 
 .leaflet-bar a,
@@ -1749,7 +1972,7 @@ body.light-theme .map-wrapper {
 }
 
 .leaflet-popup-content-wrapper {
-    background: var(--bg-sidebar) !important;
+    background: #ffffff !important;
     color: var(--text-primary) !important;
     border-radius: var(--radius-md) !important;
     border: 1px solid var(--border-color) !important;
@@ -1759,7 +1982,7 @@ body.light-theme .map-wrapper {
 }
 
 .leaflet-popup-tip {
-    background: var(--bg-sidebar) !important;
+    background: #ffffff !important;
     border: 1px solid var(--border-color) !important;
 }
 
@@ -1794,15 +2017,7 @@ body.light-theme .map-wrapper {
     stroke-width: 1.8;
 }
 
-body.light-theme .leaflet-popup-content-wrapper {
-    background: #ffffff !important;
-}
-
-body.light-theme .leaflet-popup-tip {
-    background: #ffffff !important;
-}
-
-body.light-theme .leaflet-bar a {
+.leaflet-bar a {
     background-color: #ffffff !important;
 }
 
@@ -1966,10 +2181,6 @@ body.light-theme .leaflet-bar a {
     flex-wrap: wrap;
 }
 
-body:not(.light-theme) .timeline-header {
-    background-color: rgba(15, 22, 38, 0.7);
-}
-
 .timeline-header-left {
     display: flex;
     align-items: center;
@@ -2063,20 +2274,12 @@ body:not(.light-theme) .timeline-header {
     overflow: hidden;
 }
 
-body:not(.light-theme) .timeline-axis-wrapper {
-    background-color: rgba(15, 22, 38, 0.8);
-}
-
 .timeline-label-col {
     width: 210px;
     min-width: 210px;
     flex-shrink: 0;
     border-right: 1px solid var(--border-color);
     background-color: rgba(248, 250, 252, 0.95);
-}
-
-body:not(.light-theme) .timeline-label-col {
-    background-color: rgba(15, 22, 38, 0.9);
 }
 
 .timeline-axis-scroll {
@@ -2132,12 +2335,6 @@ body:not(.light-theme) .timeline-label-col {
     line-height: 1.45;
 }
 
-body:not(.light-theme) .timeline-tooltip {
-    background: #0f172a;
-    border-color: rgba(255, 255, 255, 0.12);
-    color: #f8fafc;
-}
-
 .timeline-tooltip-name {
     font-weight: 700;
     font-size: 0.75rem;
@@ -2169,16 +2366,11 @@ body:not(.light-theme) .timeline-tooltip {
     padding: 0 1.25rem;
     height: 32px;
     min-height: 32px;
-    background: linear-gradient(90deg, #0d1a35 0%, #0f1d3d 60%, #101830 100%);
-    border-top: 1px solid rgba(59, 130, 246, 0.15);
+    background: linear-gradient(90deg, #1e3a6e 0%, #1a3460 60%, #1b3055 100%);
+    border-top: 1px solid rgba(59, 130, 246, 0.22);
     flex-shrink: 0;
     position: relative;
     z-index: 100;
-}
-
-body.light-theme .app-footer {
-    background: linear-gradient(90deg, #1e3a6e 0%, #1a3460 60%, #1b3055 100%);
-    border-top: 1px solid rgba(59, 130, 246, 0.22);
 }
 
 .app-footer-left {
@@ -2228,9 +2420,9 @@ body.light-theme .app-footer {
 }
 
 .region-pill {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.04);
     border: 1px solid var(--border-color);
-    color: var(--text-secondary);
+    color: var(--text-primary);
     font-size: 0.62rem;
     font-weight: 500;
     padding: 0.12rem 0.4rem;
@@ -2239,12 +2431,6 @@ body.light-theme .app-footer {
     line-height: 1.25;
     white-space: normal;
     word-break: break-word;
-}
-
-body.light-theme .region-pill {
-    background: rgba(0, 0, 0, 0.04);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
 }
 
 /* Nota: .company-* (modal de Participaciones de la Empresa, vista Oferentes de

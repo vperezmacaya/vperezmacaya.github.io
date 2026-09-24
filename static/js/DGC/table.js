@@ -14,13 +14,8 @@ function renderTable(contracts) {
     emptyState.style.display = 'none';
 
     contracts.forEach((item, index) => {
-        let badgeClass = 'badge-neutral';
         const status = item['ESTADO'] || '';
-        if (status === 'Operación') badgeClass = 'badge-success';
-        else if (status === 'Construcción') badgeClass = 'badge-info';
-        else if (status === 'Construcción y Operación') badgeClass = 'badge-warning';
-        else if (status === 'En Licitación' || status.toLowerCase().includes('licitaci')) badgeClass = 'badge-licitacion';
-        else if (status === 'Finalizado') badgeClass = 'badge-neutral';
+        const badgeClass = getStatusBadgeClass(status);
 
         const tr = document.createElement('tr');
         tr.className = 'row-main';
@@ -40,15 +35,13 @@ function renderTable(contracts) {
         });
 
         tr.addEventListener('mouseenter', () => {
-            if (item['Código proyecto']) {
-                appState.hoveredProjectCode = item['Código proyecto'].toString().trim();
-                if (typeof updateMapStyles === 'function') updateMapStyles();
+            if (item['Código proyecto'] && typeof setHoveredProject === 'function') {
+                setHoveredProject(item['Código proyecto'].toString().trim());
             }
         });
 
         tr.addEventListener('mouseleave', () => {
-            appState.hoveredProjectCode = null;
-            if (typeof updateMapStyles === 'function') updateMapStyles();
+            if (typeof setHoveredProject === 'function') setHoveredProject(null);
         });
 
         tableBody.appendChild(tr);
@@ -56,8 +49,13 @@ function renderTable(contracts) {
 }
 
 function showTableListView() {
-    if (projectDetailView) projectDetailView.style.display = 'none';
-    if (tableContainerView) tableContainerView.style.display = 'flex';
+    const wasDetailOpen = projectDetailView && projectDetailView.style.display === 'flex';
+    if (wasDetailOpen && tableContainerView && typeof CatlecUtils !== 'undefined') {
+        CatlecUtils.swapView(projectDetailView, tableContainerView, { direction: 'back' });
+    } else {
+        if (projectDetailView) projectDetailView.style.display = 'none';
+        if (tableContainerView) tableContainerView.style.display = 'flex';
+    }
     if (detailViewBody) detailViewBody.scrollTop = 0;
 }
 

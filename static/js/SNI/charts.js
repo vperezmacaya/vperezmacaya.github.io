@@ -35,10 +35,9 @@ const sniExternalTooltip = CatlecTooltip.create({ domId: 'sni-shared-tooltip' })
 
 // Opciones comunes y tema unificado (idéntico a index.html)
 function getChartThemeOptions() {
-    const isDark = !document.body.classList.contains('light-theme');
-    const textColor = isDark ? '#cbd5e1' : '#334155';
-    const textMuted = isDark ? '#94a3b8' : '#334155';
-    const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
+    const textColor = '#334155';
+    const textMuted = '#334155';
+    const gridColor = 'rgba(0, 0, 0, 0.06)';
 
     return {
         responsive: true,
@@ -951,7 +950,7 @@ function updateTemporalEvolutionChart() {
                         ticks: {
                             ...baseOpts.scales.y.ticks,
                             font: { size: 10, weight: '600' },
-                            callback: (v) => `US$ ${v}M`
+                            callback: (v) => v.toLocaleString('es-CL')
                         },
                         title: { display: true, text: 'Inversión Anual (MM USD 2024)', color: baseOpts.scales.y.ticks.color, font: { size: 9.5, weight: '600' } }
                     }
@@ -1046,7 +1045,7 @@ function updatePrePostGovChart() {
                         ticks: {
                             ...baseOpts.scales.y.ticks,
                             font: { size: 10, weight: '600' },
-                            callback: (v) => `US$ ${v}M`
+                            callback: (v) => v.toLocaleString('es-CL')
                         },
                         title: { display: true, text: 'Promedio Anual (MM USD 2024)', color: baseOpts.scales.y.ticks.color, font: { size: 9.5, weight: '600' } }
                     }

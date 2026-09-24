@@ -54,7 +54,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (regionMultiselectText) regionMultiselectText.textContent = 'Todas las regiones';
         if (sectorMultiselectText) sectorMultiselectText.textContent = 'Todos los sectores';
         if (statusMultiselectText) statusMultiselectText.textContent = 'Todos los estados';
-        if (layers.regions) layers.regions.setStyle(getRegionStyle);
 
         showTableListView();
         fetchData();

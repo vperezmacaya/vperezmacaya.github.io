@@ -40,8 +40,7 @@ function efeFormatCompactUSD(val) {
 const efeExternalTooltip = CatlecTooltip.create({ domId: 'efe-analysis-tooltip' });
 
 function efeInitAnalyticsCharts() {
-    const isLight = document.body.classList.contains('light-theme');
-    const borderColor = isLight ? '#ffffff' : '#0f1626';
+    const borderColor = '#ffffff';
 
     // Chart 1: Filial Pie Chart
     const ctxFilial = document.getElementById('efeFilialChart');
@@ -124,8 +123,7 @@ function efeUpdateAnalyticsCharts(filteredProjects) {
     Chart.defaults.devicePixelRatio = Math.max(2.5, window.devicePixelRatio || 1);
     efeInitAnalyticsCharts();
 
-    const isLight = document.body.classList.contains('light-theme');
-    const borderColor = isLight ? '#ffffff' : '#0f1626';
+    const borderColor = '#ffffff';
 
     const projects = filteredProjects || [];
 
@@ -285,8 +283,7 @@ function efeGetTractionCategory(tractionStr) {
 }
 
 function efeInitLinesAnalyticsCharts() {
-    const isLight = document.body.classList.contains('light-theme');
-    const borderColor = isLight ? '#ffffff' : '#0f1626';
+    const borderColor = '#ffffff';
 
     // Lines Chart 1: Filial Pie Chart
     const ctxFilial = document.getElementById('efeLinesFilialChart');
@@ -369,8 +366,7 @@ function efeUpdateLinesAnalyticsCharts(filteredLines) {
     Chart.defaults.devicePixelRatio = Math.max(2.5, window.devicePixelRatio || 1);
     efeInitLinesAnalyticsCharts();
 
-    const isLight = document.body.classList.contains('light-theme');
-    const borderColor = isLight ? '#ffffff' : '#0f1626';
+    const borderColor = '#ffffff';
 
     const lines = filteredLines || (window.EFE_DATA && window.EFE_DATA.lines ? window.EFE_DATA.lines : []);
 

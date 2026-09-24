@@ -6,6 +6,30 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "8894"],
       "port": 8894
+    },
+    {
+      "name": "catlec-static-alt",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8895"],
+      "port": 8895
+    },
+    {
+      "name": "catlec-static-verify",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8896"],
+      "port": 8896
+    },
+    {
+      "name": "catlec-static-map",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8897"],
+      "port": 8897
+    },
+    {
+      "name": "catlec-static-rowanim",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8898"],
+      "port": 8898
     }
   ]
 }

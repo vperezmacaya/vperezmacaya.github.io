@@ -104,15 +104,12 @@ function efeUpdateSortHeaderIcons() {
 
 function efeFetchData() {
     const allProjects = (window.EFE_DATA && window.EFE_DATA.data) ? window.EFE_DATA.data : [];
-    const searchNorm = CatlecUtils.normalizeAccents(efeState.search);
+    const matchSearch = CatlecUtils.createSearchMatcher(efeState.search);
 
     // ─── 1. Filter Projects (Search, Filial, Cartera, Tipo) ───────────────
     let filtered = allProjects.filter(proj => {
         // Search
-        if (searchNorm) {
-            const haystack = CatlecUtils.normalizeAccents(proj.name + ' ' + (proj.filial || '') + ' ' + (proj.stage || '') + ' ' + (proj.detail || '') + ' ' + (proj.type || '') + ' ' + (proj.description || ''));
-            if (!haystack.includes(searchNorm)) return false;
-        }
+        if (!matchSearch(proj.name, proj.filial, proj.stage, proj.detail, proj.type, proj.description)) return false;
         // Filial filter
         if (!efeFilialMatchesFilter(proj.filial, efeState.selectedFiliales)) return false;
         // Cartera / Detalle filter (Estratégico vs Preinversional vs Otros)
@@ -125,18 +122,7 @@ function efeFetchData() {
     // ─── 2. Filter Operating Lines (Search & Filial) ─────────────────────────
     const allLines = (window.EFE_DATA && window.EFE_DATA.lines) ? window.EFE_DATA.lines : [];
     let filteredLines = allLines.filter(l => {
-        if (searchNorm) {
-            const haystack = CatlecUtils.normalizeAccents(
-                (l.service || '') + ' ' +
-                (l.filial || '') + ' ' +
-                (l.terminals || '') + ' ' +
-                (l.operational_classification || '') + ' ' +
-                (l.regions || '') + ' ' +
-                (l.rolling_stock || '') + ' ' +
-                (l.traction || '')
-            );
-            if (!haystack.includes(searchNorm)) return false;
-        }
+        if (!matchSearch(l.service, l.filial, l.terminals, l.operational_classification, l.regions, l.rolling_stock, l.traction)) return false;
         if (!efeFilialMatchesFilter(l.filial, efeState.selectedFiliales)) return false;
         return true;
     });

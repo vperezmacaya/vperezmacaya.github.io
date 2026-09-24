@@ -69,9 +69,8 @@ function hideContractsView() {
 function renderContractsAnalytics(contractsList) {
     if (!contractsList) return;
 
-    const isDark = document.body.classList.contains('dark-theme');
-    const textColor = isDark ? '#94a3b8' : '#374151';
-    const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+    const textColor = '#374151';
+    const gridColor = 'rgba(0,0,0,0.06)';
 
     if (typeof Chart !== 'undefined') {
         Chart.defaults.devicePixelRatio = Math.max(2.5, window.devicePixelRatio || 1);
@@ -260,7 +259,6 @@ function renderContractsAnalytics(contractsList) {
         colors: metColors,
         cutout: '65%',
         borderWidth: 1.5,
-        isDark: isDark,
         externalTooltip: investmentExternalTooltip,
         tooltipLabelCallback: (ctx) => ` ${((ctx.raw / totalMetCnt) * 100).toFixed(1)}% (${formatContractVal(ctx.raw)} contratos)`,
         legendContainerId: 'chartContractsByMetodoLegend',
@@ -290,7 +288,6 @@ function renderContractsAnalytics(contractsList) {
         colors: initColors,
         cutout: '65%',
         borderWidth: 1.5,
-        isDark: isDark,
         externalTooltip: investmentExternalTooltip,
         tooltipLabelCallback: (ctx) => ` ${((ctx.raw / totalInitCnt) * 100).toFixed(1)}% (${formatContractVal(ctx.raw)} contratos)`,
         legendContainerId: 'chartContractsByIniciativaLegend',

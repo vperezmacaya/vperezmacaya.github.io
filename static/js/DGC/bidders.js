@@ -59,9 +59,8 @@ function hideBiddersView(skipRestoreCenter) {
 function renderBiddersAnalytics(contractsList) {
     if (!contractsList) return;
 
-    const isDark = document.body.classList.contains('dark-theme');
-    const textColor = isDark ? '#94a3b8' : '#374151';
-    const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+    const textColor = '#374151';
+    const gridColor = 'rgba(0,0,0,0.06)';
 
     if (typeof Chart !== 'undefined') {
         Chart.defaults.devicePixelRatio = Math.max(2.5, window.devicePixelRatio || 1);
@@ -181,7 +180,7 @@ function renderBiddersAnalytics(contractsList) {
     });
     const byPeriodSnapshot = Object.assign({}, byPeriod); // capture for closure
 
-    const budgetLineColor = isDark ? '#e2e8f0' : '#000000';
+    const budgetLineColor = '#000000';
 
     chartBiddersHistogramInstance = createOrUpdateChart('chartBiddersHistogram', chartBiddersHistogramInstance, {
         type: 'bar',
@@ -302,7 +301,6 @@ function renderBiddersAnalytics(contractsList) {
         cutout: '62%',
         borderWidth: 2,
         hoverOffset: 4,
-        isDark: isDark,
         externalTooltip: investmentExternalTooltip,
         tooltipLabelCallback: (ctx) => {
             if (!hasAdjData) return ' Sin datos';

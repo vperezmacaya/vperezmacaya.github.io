@@ -159,30 +159,83 @@ window.CatlecNav = (function () {
         return `<button class="nav-menu-btn" id="nav-menu-btn" aria-haspopup="true" aria-expanded="false">
                 ${logoHtml(current.logo, current.label)}
                 Seleccionar Base de Datos
-                <i data-lucide="chevron-down" style="width:12px;height:12px;"></i>
+                <i data-lucide="chevron-down" class="nav-menu-chevron" style="width:12px;height:12px;"></i>
             </button>
             <div class="nav-menu-dropdown" id="nav-menu-dropdown">
                 ${groupsHtml}
             </div>`;
     }
 
+    // ─── Apertura / cierre con animación tipo carpeta ─────────────────────────
+    // Igual que las carpetas del cancionero: clases temporales .expanding /
+    // .collapsing (ver styles.css) que se quitan al terminar la animación, con un
+    // temporizador de respaldo por si no llega el animationend.
+    let navBtn = null;
+    let navDropdown = null;
+    let endTimer = null;
+    const ANIM_FALLBACK_MS = 300;
+
+    const prefersReducedMotion = () =>
+        window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function isOpen() {
+        return !!navDropdown && navDropdown.classList.contains('open') && !navDropdown.classList.contains('collapsing');
+    }
+
+    function finishClose() {
+        clearTimeout(endTimer);
+        navDropdown.classList.remove('open', 'collapsing');
+    }
+
+    function open() {
+        if (!navDropdown || isOpen()) return;
+        clearTimeout(endTimer);
+        navDropdown.classList.remove('collapsing', 'expanding');
+        navDropdown.classList.add('open');
+        if (prefersReducedMotion()) return;
+        void navDropdown.offsetWidth; // reinicia la animación si se reabre mientras se plegaba
+        navDropdown.classList.add('expanding');
+        endTimer = setTimeout(() => navDropdown.classList.remove('expanding'), ANIM_FALLBACK_MS);
+    }
+
+    function close() {
+        if (!isOpen()) return;
+        clearTimeout(endTimer);
+        navDropdown.querySelectorAll('.nav-menu-group.open').forEach(g => g.classList.remove('open'));
+        navDropdown.classList.remove('expanding');
+        if (prefersReducedMotion()) {
+            navDropdown.classList.remove('open');
+            return;
+        }
+        navDropdown.classList.add('collapsing');
+        endTimer = setTimeout(finishClose, ANIM_FALLBACK_MS);
+    }
+
+    function toggle() {
+        if (isOpen()) close(); else open();
+    }
+
     function wireInteractions() {
-        const navBtn = document.getElementById('nav-menu-btn');
-        const navDropdown = document.getElementById('nav-menu-dropdown');
+        navBtn = document.getElementById('nav-menu-btn');
+        navDropdown = document.getElementById('nav-menu-dropdown');
         if (!navBtn || !navDropdown) return;
+
+        // aria-expanded sigue al estado visible (abierto y no plegándose), también
+        // si algún código quita .open directamente.
+        new MutationObserver(() => {
+            navBtn.setAttribute('aria-expanded', String(isOpen()));
+        }).observe(navDropdown, { attributes: true, attributeFilter: ['class'] });
+
+        navDropdown.addEventListener('animationend', (e) => {
+            if (e.animationName === 'nav-row-in') navDropdown.classList.remove('expanding');
+            if (e.target === navDropdown && e.animationName === 'nav-panel-out') finishClose();
+        });
 
         navBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            navDropdown.classList.toggle('open');
-            navBtn.setAttribute('aria-expanded', navDropdown.classList.contains('open'));
+            toggle();
         });
-        document.addEventListener('click', () => {
-            navDropdown.classList.remove('open');
-            NAV_MODULES.forEach(m => {
-                const group = document.getElementById(`nav-${m.id}-group`);
-                if (group) group.classList.remove('open');
-            });
-        });
+        document.addEventListener('click', close);
         navDropdown.addEventListener('click', (e) => e.stopPropagation());
 
         NAV_MODULES.forEach(m => {
@@ -212,5 +265,5 @@ window.CatlecNav = (function () {
         }
     }
 
-    return { render, NAV_MODULES, detectCurrentModuleId };
+    return { render, open, close, toggle, NAV_MODULES, detectCurrentModuleId };
 })();

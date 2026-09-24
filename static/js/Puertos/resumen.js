@@ -13,7 +13,6 @@ function renderVistaResumen() {
     if (c1) {
         destroyChart('chart-carga-evolucion');
         const tonsMM = agg.map(d => roundNumber(d.carga_total / 1e6, 2));
-        const varsPct = agg.map(d => d.var_anual_carga_pct);
 
         chartInstances['chart-carga-evolucion'] = new Chart(c1.getContext('2d'), {
             type: 'bar',
@@ -31,21 +30,6 @@ function renderVistaResumen() {
                         borderRadius: 3,
                         yAxisID: 'y',
                         order: 2
-                    },
-                    {
-                        type: 'line',
-                        label: 'Variación Anual (%)',
-                        data: varsPct,
-                        borderColor: COLORS.amber,
-                        backgroundColor: COLORS.amber,
-                        borderWidth: 2.2,
-                        tension: 0.2,
-                        pointRadius: 3.5,
-                        pointHoverRadius: 5.5,
-                        pointBackgroundColor: COLORS.amber,
-                        fill: false,
-                        yAxisID: 'y1',
-                        order: 1
                     }
                 ]
             },
@@ -61,12 +45,7 @@ function renderVistaResumen() {
                         external: puertosExternalTooltip,
                         callbacks: {
                             title: (items) => `Año ${items[0].label}`,
-                            label: (ctx) => {
-                                if (ctx.dataset.type === 'line') {
-                                    return ` Variación: ${ctx.raw > 0 ? '+' : ''}${ctx.raw}%`;
-                                }
-                                return ` Carga Total: ${formatNumber(ctx.raw, 2)} MM Ton`;
-                            }
+                            label: (ctx) => ` Carga Total: ${formatNumber(ctx.raw, 2)} MM Ton`
                         }
                     },
                     groupedBarDataLabelsPlugin: {
@@ -87,17 +66,6 @@ function renderVistaResumen() {
                         grid: { color: COLORS.grid },
                         ticks: { color: COLORS.textPrimary, font: { size: 10, weight: '600' } },
                         title: { display: true, text: 'Millones de Toneladas (MM Ton)', color: COLORS.textPrimary, font: { size: 9.5, weight: '600' } }
-                    },
-                    y1: {
-                        type: 'linear',
-                        position: 'right',
-                        grid: { drawOnChartArea: false },
-                        ticks: {
-                            color: COLORS.amber,
-                            font: { size: 10, weight: '600' },
-                            callback: (v) => `${v}%`
-                        },
-                        title: { display: true, text: 'Var. Interanual (%)', color: COLORS.amber, font: { size: 9.5, weight: '600' } }
                     }
                 }
             }

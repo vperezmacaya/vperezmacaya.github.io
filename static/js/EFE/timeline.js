@@ -282,13 +282,12 @@ function renderEfeTimeline(projects, highlightName = null) {
     const yearRange = maxYear - minYear;
     function toPx(y) { return PADDING_LEFT + ((y - minYear) / yearRange) * chartInnerW; }
 
-    const isLight = document.body.classList.contains('light-theme');
-    const textColor = isLight ? '#374151' : '#94a3b8';
-    const gridColor = isLight ? 'rgba(0,0,0,0.055)' : 'rgba(255,255,255,0.055)';
-    const rowAltColor = isLight ? 'rgba(241,245,249,0.7)' : 'rgba(255,255,255,0.018)';
-    const labelBg = isLight ? '#f8fafc' : '#0f1626';
-    const labelColor = isLight ? '#1e293b' : '#e2e8f0';
-    const sepColor = isLight ? 'rgba(0,0,0,0.09)' : 'rgba(255,255,255,0.07)';
+    const textColor = '#374151';
+    const gridColor = 'rgba(0,0,0,0.055)';
+    const rowAltColor = 'rgba(241,245,249,0.7)';
+    const labelBg = '#f8fafc';
+    const labelColor = '#1e293b';
+    const sepColor = 'rgba(0,0,0,0.09)';
 
     let highlightedRowIdx = -1;
 
@@ -322,7 +321,7 @@ function renderEfeTimeline(projects, highlightName = null) {
         if (isHighlighted) highlightedRowIdx = i;
 
         const rowBg = isHighlighted
-            ? (isLight ? 'rgba(37, 99, 235, 0.18)' : 'rgba(37, 99, 235, 0.30)')
+            ? 'rgba(37, 99, 235, 0.18)'
             : (i % 2 === 0 ? rowAltColor : 'transparent');
 
         // Background
@@ -410,7 +409,7 @@ function renderEfeTimeline(projects, highlightName = null) {
         const x = toPx(yr);
         axisSvg.appendChild(efeSvgEl('line', {
             x1: x, y1: EFE_TL_AXIS_H - 8, x2: x, y2: EFE_TL_AXIS_H,
-            stroke: isLight ? '#cbd5e1' : '#334155', 'stroke-width': 1
+            stroke: '#cbd5e1', 'stroke-width': 1
         }));
         const lbl = efeSvgEl('text', {
             x: x, y: EFE_TL_AXIS_H - 12, 'text-anchor': 'middle',
@@ -440,7 +439,7 @@ function renderEfeTimeline(projects, highlightName = null) {
 
     axisSvg.appendChild(efeSvgEl('line', {
         x1: 0, y1: EFE_TL_AXIS_H - 1, x2: chartW, y2: EFE_TL_AXIS_H - 1,
-        stroke: isLight ? '#e2e8f0' : '#1e293b', 'stroke-width': 1
+        stroke: '#e2e8f0', 'stroke-width': 1
     }));
 
     // ── 3. BUILD BARS (Gantt Rows) ──────────────────────────────────────────
@@ -482,7 +481,7 @@ function renderEfeTimeline(projects, highlightName = null) {
         const isHighlighted = highlightName && p.name === highlightName;
 
         const rowBg = isHighlighted
-            ? (isLight ? 'rgba(37, 99, 235, 0.12)' : 'rgba(37, 99, 235, 0.22)')
+            ? 'rgba(37, 99, 235, 0.12)'
             : (i % 2 === 0 ? rowAltColor : 'transparent');
 
         // Row background rect
@@ -851,7 +850,7 @@ function renderEfeTimeline(projects, highlightName = null) {
             const yearLbl = efeSvgEl('text', {
                 x: mx + d + 5, y: my + 0.5,
                 'dominant-baseline': 'middle',
-                fill: isLight ? '#059669' : '#34d399',
+                fill: '#059669',
                 'font-family': "'Plus Jakarta Sans', sans-serif",
                 'font-size': '9', 'font-weight': '700',
                 'pointer-events': 'none'
@@ -897,7 +896,7 @@ function renderEfeTimeline(projects, highlightName = null) {
             const txt = efeSvgEl('text', {
                 x: bw + 6, y: barY + EFE_TL_BAR_H / 2 + 0.5,
                 'dominant-baseline': 'middle',
-                fill: isLight ? '#64748b' : '#94a3b8',
+                fill: '#64748b',
                 'font-family': "'Plus Jakarta Sans', sans-serif",
                 'font-size': '8.5', 'font-style': 'italic',
                 'pointer-events': 'none'

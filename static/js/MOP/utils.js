@@ -26,13 +26,10 @@ function shortRegion(name) {
     return CatlecUtils.shortenRegionName(name);
 }
 
-// ── Detección de tema oscuro y estilos idénticos a index.html ─────────────
-function isDark() {
-    return document.body.classList.contains('dark-theme');
-}
-function gridColor() { return isDark() ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'; }
-function labelColor() { return isDark() ? '#94a3b8' : '#374151'; }
-function titleColor() { return isDark() ? '#cbd5e1' : '#334155'; }
+// ── Colores de gráficos idénticos a index.html ─────────────────────────────
+function gridColor() { return 'rgba(0,0,0,0.06)'; }
+function labelColor() { return '#374151'; }
+function titleColor() { return '#334155'; }
 
 function escapeHtml(str) {
     if (!str) return '';

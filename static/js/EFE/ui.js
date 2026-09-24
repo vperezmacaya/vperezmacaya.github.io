@@ -62,12 +62,10 @@ function efeRenderTable(projects) {
 
         // Hover highlight
         tr.addEventListener('mouseenter', () => {
-            efeState.hoveredProjectName = proj.name;
-            if (typeof efeUpdateMapStyles === 'function') efeUpdateMapStyles();
+            if (typeof efeSetHover === 'function') efeSetHover(proj.name, efeState.hoveredOperatingLine);
         });
         tr.addEventListener('mouseleave', () => {
-            efeState.hoveredProjectName = null;
-            if (typeof efeUpdateMapStyles === 'function') efeUpdateMapStyles();
+            if (typeof efeSetHover === 'function') efeSetHover(null, efeState.hoveredOperatingLine);
         });
 
         efeTableBody.appendChild(tr);
@@ -77,15 +75,21 @@ function efeRenderTable(projects) {
 }
 
 function efeShowTableListView() {
-    if (efeProjectDetailView) efeProjectDetailView.style.display = 'none';
     const linesContainer = document.getElementById('efe-lines-container-view');
-    if (efeState.tableMode === 'lines') {
-        if (efeTableContainerView) efeTableContainerView.style.display = 'none';
-        if (linesContainer) linesContainer.style.display = 'flex';
-        efeRenderOperatingLinesTable();
+    const targetView = efeState.tableMode === 'lines' ? linesContainer : efeTableContainerView;
+    const otherView = efeState.tableMode === 'lines' ? efeTableContainerView : linesContainer;
+    const wasDetailOpen = efeProjectDetailView && efeProjectDetailView.style.display === 'flex';
+
+    if (wasDetailOpen && targetView && typeof CatlecUtils !== 'undefined') {
+        CatlecUtils.swapView(efeProjectDetailView, targetView, { direction: 'back' });
     } else {
-        if (linesContainer) linesContainer.style.display = 'none';
-        if (efeTableContainerView) efeTableContainerView.style.display = 'flex';
+        if (efeProjectDetailView) efeProjectDetailView.style.display = 'none';
+        if (targetView) targetView.style.display = 'flex';
+    }
+    if (otherView) otherView.style.display = 'none';
+
+    if (efeState.tableMode === 'lines') {
+        efeRenderOperatingLinesTable();
     }
 }
 
@@ -204,7 +208,6 @@ function efeRenderOperatingLinesTable(linesToRender) {
         tr.setAttribute('data-service', l.service);
         tr.style.cursor = 'pointer';
         tr.style.borderBottom = '1px solid var(--border-color)';
-        tr.style.transition = 'background 0.15s ease, box-shadow 0.15s ease';
         if (isSelected) {
             tr.classList.add('row-selected');
             tr.style.backgroundColor = 'rgba(15, 59, 108, 0.12)';
@@ -280,13 +283,21 @@ function efeShowProjectDetailView(proj, currentFilteredProjects) {
     }
 
     const linesContainer = document.getElementById('efe-lines-container-view');
-    if (linesContainer) linesContainer.style.display = 'none';
+    const alreadyOpen = efeProjectDetailView && efeProjectDetailView.style.display === 'flex';
+    const visibleListView = (linesContainer && linesContainer.style.display !== 'none') ? linesContainer
+        : (efeTableContainerView && efeTableContainerView.style.display !== 'none') ? efeTableContainerView
+        : null;
 
-    if (efeTableContainerView) efeTableContainerView.style.display = 'none';
-    if (efeProjectDetailView) {
-        efeProjectDetailView.style.display = 'flex';
-        efeProjectDetailView.scrollTop = 0;
+    if (!alreadyOpen && visibleListView && efeProjectDetailView && typeof CatlecUtils !== 'undefined') {
+        CatlecUtils.swapView(visibleListView, efeProjectDetailView, { direction: 'forward' });
+        if (linesContainer && linesContainer !== visibleListView) linesContainer.style.display = 'none';
+        if (efeTableContainerView && efeTableContainerView !== visibleListView) efeTableContainerView.style.display = 'none';
+    } else {
+        if (linesContainer) linesContainer.style.display = 'none';
+        if (efeTableContainerView) efeTableContainerView.style.display = 'none';
+        if (efeProjectDetailView) efeProjectDetailView.style.display = 'flex';
     }
+    if (efeProjectDetailView) efeProjectDetailView.scrollTop = 0;
 
     if (!efeDetailViewBody) return;
     efeDetailViewBody.scrollTop = 0;

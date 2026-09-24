@@ -25,7 +25,7 @@ function populateFilters() {
 function bindFilterEvents() {
     const searchInput = document.getElementById('mop-search-input');
     if (searchInput) {
-        searchInput.addEventListener('input', applyFilters);
+        searchInput.addEventListener('input', CatlecUtils.debounce(applyFilters, 300));
     }
 
     // Click outside closes dropdowns
@@ -90,13 +90,13 @@ function resetFilters() {
 
 function applyFilters() {
     if (typeof hideProjectDetail === 'function') hideProjectDetail();
-    const query = (document.getElementById('mop-search-input')?.value || '').toLowerCase().trim();
+    const matchSearch = CatlecUtils.createSearchMatcher(document.getElementById('mop-search-input')?.value);
 
     filteredProjects = window.MOP_DATA.projects.filter(p => {
         if (selectedRegions.length > 0 && !selectedRegions.includes(p.region)) return false;
         if (selectedServicios.length > 0 && !selectedServicios.includes(p.servicio)) return false;
         if (selectedEtapas.length > 0 && !selectedEtapas.includes(p.etapa)) return false;
-        if (query && !p.nombre.toLowerCase().includes(query) && !p.bip.toLowerCase().includes(query)) return false;
+        if (!matchSearch(p.nombre, p.bip)) return false;
         return true;
     });
 

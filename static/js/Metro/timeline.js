@@ -361,14 +361,13 @@ function renderMetroTimeline(projects, highlightId = null) {
         return PAD_X + ((y - minYear) / yearRange) * (chartW - PAD_X * 2);
     }
 
-    const isLight = document.body.classList.contains('light-theme');
-    const textColor = isLight ? '#374151' : '#94a3b8';
-    const gridColor = isLight ? 'rgba(0,0,0,0.055)' : 'rgba(255,255,255,0.055)';
-    const rowAltColor = isLight ? 'rgba(241,245,249,0.7)' : 'rgba(255,255,255,0.018)';
-    const labelBg = isLight ? '#f8fafc' : '#0f1626';
-    const labelColor = isLight ? '#1e293b' : '#e2e8f0';
-    const textMuted = isLight ? '#64748b' : '#94a3b8';
-    const sepColor = isLight ? 'rgba(0,0,0,0.09)' : 'rgba(255,255,255,0.07)';
+    const textColor = '#374151';
+    const gridColor = 'rgba(0,0,0,0.055)';
+    const rowAltColor = 'rgba(241,245,249,0.7)';
+    const labelBg = '#f8fafc';
+    const labelColor = '#1e293b';
+    const textMuted = '#64748b';
+    const sepColor = 'rgba(0,0,0,0.09)';
 
     let highlightedRowIdx = -1;
 
@@ -389,7 +388,7 @@ function renderMetroTimeline(projects, highlightId = null) {
 
         // Background row
         const rowBg = isHighlighted
-            ? (isLight ? 'rgba(37, 99, 235, 0.18)' : 'rgba(37, 99, 235, 0.30)')
+            ? 'rgba(37, 99, 235, 0.18)'
             : (i % 2 === 0 ? rowAltColor : 'transparent');
 
         labelSvg.appendChild(metroSvgEl('rect', {
@@ -462,7 +461,7 @@ function renderMetroTimeline(projects, highlightId = null) {
         axisSvg.appendChild(metroSvgEl('line', {
             x1: x, y1: isMajor ? METRO_TL_AXIS_H - 10 : METRO_TL_AXIS_H - 5,
             x2: x, y2: METRO_TL_AXIS_H,
-            stroke: isLight ? '#cbd5e1' : '#334155',
+            stroke: '#cbd5e1',
             'stroke-width': isMajor ? 1.5 : 1
         }));
 
@@ -498,7 +497,7 @@ function renderMetroTimeline(projects, highlightId = null) {
 
     axisSvg.appendChild(metroSvgEl('line', {
         x1: 0, y1: METRO_TL_AXIS_H - 1, x2: chartW, y2: METRO_TL_AXIS_H - 1,
-        stroke: isLight ? '#e2e8f0' : '#1e293b', 'stroke-width': 1
+        stroke: '#e2e8f0', 'stroke-width': 1
     }));
 
     // ── 3. CONSTRUCCIÓN DE LAS BARRAS Y GANTT ────────────────────────────────
@@ -530,7 +529,7 @@ function renderMetroTimeline(projects, highlightId = null) {
 
         // Background row
         const rowBg = isHighlighted
-            ? (isLight ? 'rgba(37, 99, 235, 0.12)' : 'rgba(37, 99, 235, 0.22)')
+            ? 'rgba(37, 99, 235, 0.12)'
             : (i % 2 === 0 ? rowAltColor : 'transparent');
 
         barsSvg.appendChild(metroSvgEl('rect', {

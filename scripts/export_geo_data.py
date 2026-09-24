@@ -1,11 +1,10 @@
 """
 export_geo_data.py
 -------------------
-Exporta las capas GeoJSON del mapa (Regiones, DGC y EFE) como archivos JS estáticos
+Exporta las capas GeoJSON del mapa (DGC y EFE) como archivos JS estáticos
 con coordenadas optimizadas a 5 decimales (~1m de precisión).
 
 Genera:
-  static/data/regions_data.js -> window.REGIONS_DATA
   static/data/dgc_data.js     -> window.DGC_DATA
   static/data/efe_geo.js      -> window.EFE_GEO_DATA
 """
@@ -21,37 +20,71 @@ JSONS_DIR = os.path.join(MAPS_DIR, 'JSONS')
 OUT_DIR  = os.path.join(BASE_DIR, 'static', 'data')
 os.makedirs(OUT_DIR, exist_ok=True)
 
+import math
+from shapely.geometry import shape, mapping
+from shapely.ops import transform
+
+# Tolerancia de simplificación (Douglas-Peucker) para las formas DGC, en metros.
+# El mapa DGC llega a zoom 18, donde 1 px ≈ 0,5 m en Santiago, y las coordenadas
+# se redondean a 5 decimales (±0,55 m): con 0,5 m la diferencia es invisible en
+# cualquier zoom. Subirla a 1 m ya se nota (2-3 px) en curvas a zoom 18.
+DGC_SIMPLIFY_TOLERANCE_M = 0.5
+
 def round_coords(coords, precision=5):
     if isinstance(coords, (int, float)):
         return round(coords, precision)
-    if isinstance(coords, list):
+    if isinstance(coords, (list, tuple)):
         return [round_coords(c, precision) for c in coords]
     return coords
 
-# 1. Cargar y optimizar Regiones
-reg_path = os.path.join(JSONS_DIR, 'Regional_simplified.json')
-regions_fc = {"type": "FeatureCollection", "features": []}
+def count_vertices(coords):
+    if not coords:
+        return 0
+    if isinstance(coords[0], (int, float)):
+        return 1
+    return sum(count_vertices(c) for c in coords)
 
-if os.path.exists(reg_path):
-    print(f"Procesando regiones: {reg_path}")
-    with open(reg_path, 'r', encoding='utf-8') as f:
-        raw_reg = json.load(f)
-        for ft in raw_reg.get('features', []):
-            ft['geometry']['coordinates'] = round_coords(ft['geometry']['coordinates'])
-            regions_fc['features'].append(ft)
-else:
-    print(f"⚠ No se encontró {reg_path}")
+def _dedupe_consecutive(coords, is_ring):
+    """Quita vértices consecutivos repetidos (los deja el redondeo a 5 decimales)
+    sin bajar del mínimo válido: 2 puntos por línea, 4 por anillo cerrado."""
+    if not coords:
+        return coords
+    if isinstance(coords[0][0], (int, float)):
+        out = [coords[0]]
+        for p in coords[1:]:
+            if p != out[-1]:
+                out.append(p)
+        if is_ring and out[-1] != out[0]:
+            out.append(out[0])
+        return out if len(out) >= (4 if is_ring else 2) else coords
+    return [_dedupe_consecutive(c, is_ring) for c in coords]
 
-out_regions_js = os.path.join(OUT_DIR, 'regions_data.js')
-with open(out_regions_js, 'w', encoding='utf-8') as f:
-    f.write('window.REGIONS_DATA = ' + json.dumps(regions_fc, ensure_ascii=False, separators=(',', ':')) + ';')
+def simplify_geometry(geom, tol_m):
+    """Simplifica líneas/polígonos en metros locales y devuelve coordenadas
+    redondeadas a 5 decimales. Los puntos se devuelven solo redondeados."""
+    gtype = geom.get('type')
+    if gtype in ('Point', 'MultiPoint') or not geom.get('coordinates'):
+        return round_coords(geom.get('coordinates'))
 
-size_reg_mb = os.path.getsize(out_regions_js) / 1024 / 1024
-print(f"OK Regiones exportado: {out_regions_js} ({size_reg_mb:.2f} MB)")
+    shp = shape(geom)
+    minx, miny, maxx, maxy = shp.bounds
+    kx = 111320 * math.cos(math.radians((miny + maxy) / 2))
+    ky = 110540
+    to_m = lambda x, y, z=None: (x * kx, y * ky)
+    to_deg = lambda x, y, z=None: (x / kx, y / ky)
+
+    simplified = transform(to_deg, transform(to_m, shp).simplify(tol_m, preserve_topology=True))
+    if simplified.is_empty or simplified.geom_type != shp.geom_type:
+        return round_coords(geom['coordinates'])
+
+    coords = round_coords(mapping(simplified)['coordinates'])
+    return _dedupe_consecutive(coords, is_ring=gtype in ('Polygon', 'MultiPolygon'))
 
 # 2. Cargar y optimizar capas DGC (puntos, líneas, polígonos)
 dgc_fc = {"type": "FeatureCollection", "features": []}
 dgc_filenames = ['DGC_point.json', 'DGC_polygon.json', 'DGC_line.json']
+dgc_vertices_before = 0
+dgc_vertices_after = 0
 
 for fname in dgc_filenames:
     fpath = os.path.join(DGC_DIR, fname)
@@ -62,7 +95,9 @@ for fname in dgc_filenames:
                 raw_dgc = json.load(f)
                 features = raw_dgc.get('features', [])
                 for ft in features:
-                    ft['geometry']['coordinates'] = round_coords(ft['geometry']['coordinates'])
+                    dgc_vertices_before += count_vertices(ft['geometry']['coordinates'])
+                    ft['geometry']['coordinates'] = simplify_geometry(ft['geometry'], DGC_SIMPLIFY_TOLERANCE_M)
+                    dgc_vertices_after += count_vertices(ft['geometry']['coordinates'])
                     dgc_fc['features'].append(ft)
         except Exception as e:
             print(f"⚠ Error al leer {fname}: {e}")
@@ -76,6 +111,7 @@ with open(out_dgc_js, 'w', encoding='utf-8') as f:
 size_dgc_mb = os.path.getsize(out_dgc_js) / 1024 / 1024
 print(f"OK DGC exportado: {out_dgc_js} ({size_dgc_mb:.2f} MB)")
 print(f"Total features DGC: {len(dgc_fc['features'])}")
+print(f"Vértices DGC: {dgc_vertices_before} -> {dgc_vertices_after} (simplificación {DGC_SIMPLIFY_TOLERANCE_M} m)")
 
 # 3. Cargar y optimizar capas EFE (líneas y puntos)
 EFE_DIR = os.path.join(MAPS_DIR, 'EFE')

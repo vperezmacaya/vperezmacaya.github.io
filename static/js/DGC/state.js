@@ -67,29 +67,14 @@ let activeClusterMarkers = [];   // array of active cluster markers
 let activeSpiderLegs = [];       // array of spider leg connector lines
 let spiderfiedClusterGroupKey = null; // key of currently expanded cluster group
 let layers = {
-    regions: null,
     dgc: null
 };
 
 
 // Colors configurations for premium aesthetic
 const chartColors = {
-    dark: {
-        grid: 'rgba(255,255,255,0.06)',
-        text: '#94a3b8',
-        palette: [
-            '#3b82f6', '#8b5cf6', '#10b981', '#f59e0b',
-            '#0ea5e9', '#ec4899', '#f43f5e', '#14b8a6'
-        ]
-    },
-    light: {
-        grid: 'rgba(0,0,0,0.05)',
-        text: '#4b5563',
-        palette: [
-            '#2563eb', '#7c3aed', '#059669', '#d97706',
-            '#0284c7', '#db2777', '#e11d48', '#0d9488'
-        ]
-    }
+    grid: 'rgba(0,0,0,0.05)',
+    text: '#4b5563'
 };
 
 // DOM elements

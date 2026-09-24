@@ -47,8 +47,13 @@ function showProjectDetail(p, globalIndex) {
     const detailBody = document.getElementById('mop-detail-view-body');
     if (!tableView || !detailView || !detailBody || !p) return;
 
-    tableView.style.display = 'none';
-    detailView.style.display = 'flex';
+    const alreadyOpen = detailView.style.display === 'flex';
+    if (!alreadyOpen && tableView.style.display !== 'none' && typeof CatlecUtils !== 'undefined') {
+        CatlecUtils.swapView(tableView, detailView, { direction: 'forward' });
+    } else {
+        tableView.style.display = 'none';
+        detailView.style.display = 'flex';
+    }
     detailView.scrollTop = 0;
     detailBody.scrollTop = 0;
 
@@ -124,7 +129,11 @@ function showProjectDetail(p, globalIndex) {
 function hideProjectDetail() {
     const tableView = document.getElementById('mop-table-container-view');
     const detailView = document.getElementById('mop-project-detail-view');
-    if (tableView && detailView) {
+    if (!tableView || !detailView) return;
+
+    if (detailView.style.display === 'flex' && typeof CatlecUtils !== 'undefined') {
+        CatlecUtils.swapView(detailView, tableView, { direction: 'back' });
+    } else {
         detailView.style.display = 'none';
         tableView.style.display = 'flex';
     }

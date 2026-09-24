@@ -54,11 +54,16 @@ async function showProjectDetailView(code) {
     if (!code) return;
     const cleanCode = code.toString().trim();
 
-    if (tableContainerView) tableContainerView.style.display = 'none';
-    if (projectDetailView) {
-        projectDetailView.style.display = 'flex';
-        projectDetailView.scrollTop = 0;
+    const alreadyOpen = projectDetailView && projectDetailView.style.display === 'flex';
+    const visibleListView = (tableContainerView && tableContainerView.style.display !== 'none') ? tableContainerView : null;
+
+    if (!alreadyOpen && visibleListView && projectDetailView && typeof CatlecUtils !== 'undefined') {
+        CatlecUtils.swapView(visibleListView, projectDetailView, { direction: 'forward' });
+    } else {
+        if (tableContainerView) tableContainerView.style.display = 'none';
+        if (projectDetailView) projectDetailView.style.display = 'flex';
     }
+    if (projectDetailView) projectDetailView.scrollTop = 0;
     if (detailViewBody) {
         detailViewBody.scrollTop = 0;
     }
@@ -101,24 +106,10 @@ async function showProjectDetailView(code) {
 function renderProjectDetailBody(cleanCode, item) {
     const sector = item ? item['Sector del proyecto'] : (projectMetadata[cleanCode] ? projectMetadata[cleanCode].sector : '');
     const status = item ? item['ESTADO'] : (projectMetadata[cleanCode] ? projectMetadata[cleanCode].status : '');
-    const secCfg = getSectorConfig(sector);
 
-    let badgeClass = 'badge-neutral';
-    if (status === 'Operación') badgeClass = 'badge-success';
-    else if (status === 'Construcción') badgeClass = 'badge-info';
-    else if (status === 'Construcción y Operación') badgeClass = 'badge-warning';
-    else if (status === 'En Licitación' || (status && status.toLowerCase().includes('licitaci'))) badgeClass = 'badge-licitacion';
+    const badgeClass = getStatusBadgeClass(status);
 
     const titleName = (item && item['Nombre de uso común']) || (item && item['Nombre de la Concesión ']) || (projectMetadata[cleanCode] && projectMetadata[cleanCode].name) || 'Concesión';
-
-    const timelineBtnHTML = `
-        <div style="margin-top: 0.1rem; margin-bottom: 0.1rem;">
-            <button id="btn-view-in-timeline" class="btn-action-link" style="width: 100%; justify-content: center; padding: 0.45rem 0.75rem; font-size: 0.76rem; font-weight: 600; background: linear-gradient(135deg, rgba(37,99,235,0.1), rgba(37,99,235,0.04)); border: 1px solid rgba(37,99,235,0.3); color: var(--primary); border-radius: 8px; cursor: pointer; transition: all 0.2s ease; gap: 0.4rem;">
-                <i data-lucide="gantt-chart" style="width: 15px; height: 15px;"></i>
-                Ver en línea de tiempo
-            </button>
-        </div>
-    `;
 
     const linkCMF = item && item['Link a CMF de SC'] && item['Link a CMF de SC'] !== 'SIN' && item['Link a CMF de SC'] !== 'Sin informar'
         ? `<a href="${item['Link a CMF de SC']}" target="_blank" class="btn-action-link" style="font-size: 0.72rem; padding: 0.3rem 0.6rem;"><i data-lucide="external-link"></i> Perfil CMF</a>`
@@ -164,26 +155,45 @@ function renderProjectDetailBody(cleanCode, item) {
         `;
     }
 
+    // Foto de referencia (Fotos/DGC → WebP en static/img/fotos/DGC, cruce por código en el ETL)
+    let photoHTML = '';
+    const photoUrl = item && item.photo;
+    if (photoUrl) {
+        photoHTML = `
+            <div class="detail-photo-wrapper">
+                <img src="${encodeURI(photoUrl)}" data-full="${encodeURI(item.photo_full || photoUrl)}" alt="${titleName}" class="detail-project-photo dgc-photo-zoomable" title="Ver imagen completa" loading="eager" onerror="this.closest('.detail-photo-wrapper').remove();">
+                <span class="dgc-photo-ai-note">Imagen de referencia generada por IA</span>
+            </div>
+        `;
+    }
+
     // Build bidders HTML section (Contenedores por oferente con desglose de consorcio)
     const biddersList = (item && item.bidders) || (projectMetadata[cleanCode] && projectMetadata[cleanCode].bidders) || [];
-    const isEnLicitacion = (status === 'En Licitación' || (item && item['ESTADO'] === 'En Licitación') || (status && status.toLowerCase().includes('licitaci')));
+    const isEnLicitacion = getStatusKey(status) === 'licitacion';
+
+    const biddersTitle = (countBadge = '') => `
+        <h4 class="detail-title dgc-bidders-title">
+            <span><i data-lucide="users" class="icon-14 icon-color-primary"></i>Oferentes / Licitantes</span>
+            ${countBadge}
+        </h4>
+    `;
 
     let biddersHTML = '';
     if (biddersList && biddersList.length > 0) {
         const bidderItems = biddersList.map(b => {
             const isAwarded = b.adjudicado || (b.adjudicado_raw && b.adjudicado_raw.toUpperCase().startsWith('S'));
             const badge = isAwarded
-                ? `<span class="badge badge-success" style="font-size: 0.62rem; padding: 0.1rem 0.35rem; font-weight: 600; flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.2rem;"><i data-lucide="award" style="width: 10px; height: 10px;"></i>Adjudicado</span>`
+                ? `<span class="badge badge-success"><i data-lucide="award"></i>Adjudicado</span>`
                 : '';
             const empresasFmt = b.empresas
                 ? b.empresas.split(';').map(s => s.trim()).filter(Boolean).join(' - ')
                 : '';
 
             return `
-                <li style="padding: 0.4rem 0.55rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.74rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 0.45rem; margin-bottom: 0.3rem;">
-                    <div style="display: flex; flex-direction: column; min-width: 0; flex: 1;">
-                        <span style="font-weight: 600; color: var(--text-primary); word-break: break-word; line-height: 1.35;">${b.name}</span>
-                        ${empresasFmt ? `<span style="font-size: 0.65rem; color: var(--text-muted); line-height: 1.25; margin-top: 0.15rem;">${empresasFmt}</span>` : ''}
+                <li class="dgc-bidder-item">
+                    <div class="dgc-bidder-info">
+                        <span class="dgc-bidder-name">${b.name}</span>
+                        ${empresasFmt ? `<span class="dgc-bidder-members">${empresasFmt}</span>` : ''}
                     </div>
                     ${badge}
                 </li>
@@ -191,127 +201,59 @@ function renderProjectDetailBody(cleanCode, item) {
         }).join('');
 
         biddersHTML = `
-            <div class="detail-section" style="margin-top: 0.65rem;">
-                <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.4rem; display: flex; align-items: center; justify-content: space-between;">
-                    <span style="display: flex; align-items: center; gap: 0.35rem;">
-                        <i data-lucide="users" style="width: 14px; height: 14px; color: var(--primary);"></i>
-                        Oferentes / Licitantes
-                    </span>
-                    <span class="badge" style="font-size: 0.68rem; background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 0.1rem 0.4rem;">${biddersList.length}</span>
-                </h4>
-                <ul style="list-style: none; padding: 0; margin: 0; max-height: 180px; overflow-y: auto;">
+            <div class="detail-section">
+                ${biddersTitle(`<span class="badge badge-neutral">${biddersList.length}</span>`)}
+                <ul class="dgc-bidder-list">
                     ${bidderItems}
                 </ul>
             </div>
         `;
     } else if (isEnLicitacion) {
         biddersHTML = `
-            <div class="detail-section" style="margin-top: 0.65rem;">
-                <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.35rem;">
-                    <i data-lucide="users" style="width: 14px; height: 14px; color: #a78bfa;"></i>
-                    Oferentes / Licitantes
-                </h4>
-                <p class="detail-desc" style="font-size: 0.75rem; color: #c4b5fd; font-style: italic; background: rgba(139, 92, 246, 0.08); padding: 0.45rem 0.6rem; border-radius: 6px; border: 1px solid rgba(139, 92, 246, 0.25); display: flex; align-items: center; gap: 0.35rem;">
-                    <i data-lucide="info" style="width: 13px; height: 13px; flex-shrink: 0; color: #a78bfa;"></i>
-                    El proyecto se encuentra actualmente en proceso de licitación.
-                </p>
+            <div class="detail-section">
+                ${biddersTitle()}
+                <div class="dgc-detail-notice dgc-detail-notice--licitacion">
+                    <i data-lucide="hourglass"></i>
+                    <span>Concesión en proceso de licitación. Los oferentes se publicarán tras la apertura de ofertas.</span>
+                </div>
             </div>
         `;
     } else {
         biddersHTML = `
-            <div class="detail-section" style="margin-top: 0.65rem;">
-                <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.35rem;">
-                    <i data-lucide="users" style="width: 14px; height: 14px; color: var(--text-muted);"></i>
-                    Oferentes / Licitantes
-                </h4>
-                <p class="detail-desc" style="font-size: 0.75rem; color: var(--text-muted); font-style: italic; background: rgba(255, 255, 255, 0.02); padding: 0.4rem 0.5rem; border-radius: 6px; border: 1px dashed var(--border-color);">No se registran licitantes en la base de datos para este proyecto.</p>
+            <div class="detail-section">
+                ${biddersTitle()}
+                <div class="dgc-detail-notice dgc-detail-notice--empty">
+                    <i data-lucide="info"></i>
+                    <span>No se registran licitantes en la base de datos para este proyecto.</span>
+                </div>
             </div>
         `;
     }
 
-    // Build relicitation navigation bar (shown only when group has > 1 concession)
+    // Historial de licitaciones (solo si el grupo tiene más de una concesión)
     let relicitNavHTML = '';
     const groupNodes = (item && item.group_timeline) ? item.group_timeline : [];
     // Sort by seq ascending (1=primera, 2=segunda, ...)
     const sortedNodes = [...groupNodes].sort((a, b) => a.seq - b.seq);
     if (sortedNodes.length > 1) {
-        const currentSeq = sortedNodes.find(n => n.code === cleanCode);
-        const currentIdx = sortedNodes.indexOf(currentSeq);
-        const prevNode = currentIdx > 0 ? sortedNodes[currentIdx - 1] : null;
-        const nextNode = currentIdx < sortedNodes.length - 1 ? sortedNodes[currentIdx + 1] : null;
-
         const seqWords = ['Primera', 'Segunda', 'Tercera', 'Cuarta', 'Quinta', 'Sexta', 'Séptima', 'Octava'];
         const seqLabel = (seq) => (seqWords[seq - 1] || `N°${seq}`) + ' Licitación';
+        const compact = sortedNodes.length > 3;
 
-        const pills = sortedNodes.map((node, idx) => {
+        const segments = sortedNodes.map(node => {
             const isActive = node.code === cleanCode;
-            const statusColors = {
-                'Operación': '#059669',
-                'Construcción': '#0284c7',
-                'Construcción y Operación': '#d97706',
-                'En Licitación': '#8b5cf6'
-            };
-            const dotColor = statusColors[node.status] || '#64748b';
-            return `<button
-                onclick="zoomToProjectCode('${node.code}')"
-                title="${seqLabel(node.seq)}: ${node.name || node.code}"
-                style="
-                    display: inline-flex; align-items: center; gap: 0.3rem;
-                    font-size: 0.68rem; font-weight: ${isActive ? '700' : '500'};
-                    padding: 0.2rem 0.5rem; border-radius: 20px; border: 1.5px solid ${isActive ? secCfg.color : 'var(--border-color)'};
-                    background: ${isActive ? secCfg.color + '22' : 'transparent'};
-                    color: ${isActive ? secCfg.color : 'var(--text-secondary)'};
-                    cursor: ${isActive ? 'default' : 'pointer'};
-                    transition: all 0.2s ease;
-                    white-space: nowrap;
-                "
-                ${isActive ? 'disabled' : ''}
-            >
-                <span style="width: 6px; height: 6px; border-radius: 50%; background: ${dotColor}; flex-shrink: 0;"></span>
-                ${node.seq}ª
+            return `<button type="button" class="dgc-seg-btn${isActive ? ' active' : ''}" role="tab"
+                aria-selected="${isActive}" data-code="${node.code}"
+                title="${seqLabel(node.seq)}: ${node.name || node.code}${node.status ? ` (${node.status})` : ''}">
+                <span class="dgc-status-dot dgc-status-dot--${getStatusKey(node.status)}"></span>
+                ${node.seq}ª${compact ? '' : ' Licitación'}
             </button>`;
         }).join('');
 
-        const prevBtn = prevNode
-            ? `<button onclick="zoomToProjectCode('${prevNode.code}')" title="Ir a ${seqLabel(prevNode.seq)}"
-                style="display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.72rem; font-weight: 600; padding: 0.25rem 0.55rem; border-radius: 8px; border: 1.5px solid var(--border-color); background: transparent; color: var(--text-secondary); cursor: pointer; transition: all 0.2s ease;"
-                onmouseover="this.style.borderColor='${secCfg.color}';this.style.color='${secCfg.color}'"
-                onmouseout="this.style.borderColor='var(--border-color)';this.style.color='var(--text-secondary)'"
-              ><i data-lucide="chevron-left" style="width: 12px; height: 12px;"></i> Anterior</button>`
-            : `<button disabled style="display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.72rem; font-weight: 600; padding: 0.25rem 0.55rem; border-radius: 8px; border: 1.5px solid transparent; background: transparent; color: transparent; cursor: default; visibility: hidden;"><i style="width: 12px; height: 12px;"></i> Anterior</button>`;
-
-        const nextBtn = nextNode
-            ? `<button onclick="zoomToProjectCode('${nextNode.code}')" title="Ir a ${seqLabel(nextNode.seq)}"
-                style="display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.72rem; font-weight: 600; padding: 0.25rem 0.55rem; border-radius: 8px; border: 1.5px solid var(--border-color); background: transparent; color: var(--text-secondary); cursor: pointer; transition: all 0.2s ease;"
-                onmouseover="this.style.borderColor='${secCfg.color}';this.style.color='${secCfg.color}'"
-                onmouseout="this.style.borderColor='var(--border-color)';this.style.color='var(--text-secondary)'"
-              >Siguiente <i data-lucide="chevron-right" style="width: 12px; height: 12px;"></i></button>`
-            : `<button disabled style="display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.72rem; font-weight: 600; padding: 0.25rem 0.55rem; border-radius: 8px; border: 1.5px solid transparent; background: transparent; color: transparent; cursor: default; visibility: hidden;">Siguiente <i style="width: 12px; height: 12px;"></i></button>`;
-
         relicitNavHTML = `
-            <div style="
-                margin-top: 0.1rem;
-                padding: 0.55rem 0.7rem;
-                background: linear-gradient(135deg, ${secCfg.color}08, ${secCfg.color}12);
-                border: 1px solid ${secCfg.color}30;
-                border-radius: 10px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 0.5rem;
-                flex-wrap: wrap;
-            ">
-                <div style="display: flex; align-items: center; gap: 0.3rem; flex-shrink: 0;">
-                    <i data-lucide="git-branch" style="width: 13px; height: 13px; color: ${secCfg.color};"></i>
-                    <span style="font-size: 0.68rem; font-weight: 700; color: ${secCfg.color}; text-transform: uppercase; letter-spacing: 0.04em;">${sortedNodes.length} Licitaciones</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap; flex: 1; justify-content: center;">
-                    ${pills}
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.3rem; flex-shrink: 0;">
-                    ${prevBtn}
-                    ${nextBtn}
-                </div>
+            <div class="detail-section dgc-relicit">
+                <span class="dgc-section-caption">Historial de licitaciones · ${sortedNodes.length}</span>
+                <div class="dgc-seg" role="tablist">${segments}</div>
             </div>
         `;
     }
@@ -329,22 +271,27 @@ function renderProjectDetailBody(cleanCode, item) {
 
     if (detailViewBody) {
         detailViewBody.innerHTML = `
-            <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.1rem;">
-                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
-                    <h3 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--text-primary); line-height: 1.35; font-family: var(--font-heading); flex: 1; min-width: 0;">${titleName}</h3>
-                    <span class="badge ${badgeClass}" style="flex-shrink: 0; font-size: 0.7rem; padding: 0.2rem 0.5rem; white-space: nowrap; margin-top: 2px;">${status || sector}</span>
+            <div class="dgc-detail-head">
+                <div class="dgc-detail-head-row">
+                    <h3 class="dgc-detail-title">${titleName}</h3>
+                    <span class="badge ${badgeClass}">${status || sector}</span>
                 </div>
-                <div style="font-size: 0.75rem; color: ${secCfg.color}; font-weight: 600; margin-top: 0.25rem;">${sector}</div>
+                <div class="dgc-detail-subrow">
+                    <button type="button" id="btn-view-in-timeline" class="btn btn-ghost btn-xs" title="Ver en línea de tiempo">
+                        <i data-lucide="gantt-chart"></i>
+                        Línea de tiempo
+                    </button>
+                </div>
             </div>
 
             ${relicitNavHTML}
-
-            ${timelineBtnHTML}
 
             <div class="detail-section">
                 <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.35rem;">Descripción</h4>
                 <p class="detail-desc" style="font-size: 0.76rem; line-height: 1.45;">${(item && item['Descripción ']) || 'No se registra descripción en la base de datos.'}</p>
             </div>
+
+            ${photoHTML}
 
             ${streetViewHTML}
 
@@ -406,5 +353,73 @@ function renderProjectDetailBody(cleanCode, item) {
         });
     }
 
+    const photoImg = detailViewBody && detailViewBody.querySelector('.dgc-photo-zoomable');
+    if (photoImg) {
+        photoImg.addEventListener('click', () => openDgcPhotoLightbox(photoImg.dataset.full, photoImg.alt));
+    }
+
+    const relicitSeg = detailViewBody && detailViewBody.querySelector('.dgc-seg');
+    if (relicitSeg) {
+        relicitSeg.addEventListener('click', (e) => {
+            const btn = e.target.closest('.dgc-seg-btn');
+            if (btn && !btn.classList.contains('active') && btn.dataset.code) {
+                zoomToProjectCode(btn.dataset.code);
+            }
+        });
+    }
+
     lucide.createIcons();
+}
+
+// Visor a tamaño completo de la foto de referencia (se crea una sola vez)
+let dgcPhotoLightbox = null;
+let dgcPhotoLightboxReleaseTimer = null;
+
+function openDgcPhotoLightbox(src, alt) {
+    if (dgcPhotoLightboxReleaseTimer) {
+        clearTimeout(dgcPhotoLightboxReleaseTimer);
+        dgcPhotoLightboxReleaseTimer = null;
+    }
+    if (!dgcPhotoLightbox) {
+        dgcPhotoLightbox = document.createElement('div');
+        dgcPhotoLightbox.className = 'dgc-photo-lightbox';
+        dgcPhotoLightbox.setAttribute('role', 'dialog');
+        dgcPhotoLightbox.setAttribute('aria-modal', 'true');
+        dgcPhotoLightbox.innerHTML = `
+            <button type="button" class="dgc-photo-lightbox-close" title="Cerrar (Esc)" aria-label="Cerrar">
+                <i data-lucide="x"></i>
+            </button>
+            <figure class="dgc-photo-lightbox-figure">
+                <img class="dgc-photo-lightbox-img" alt="">
+                <span class="dgc-photo-ai-note">Imagen de referencia generada por IA</span>
+            </figure>
+        `;
+        document.body.appendChild(dgcPhotoLightbox);
+
+        dgcPhotoLightbox.addEventListener('click', (e) => {
+            if (!e.target.closest('.dgc-photo-lightbox-img')) closeDgcPhotoLightbox();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && dgcPhotoLightbox.classList.contains('open')) closeDgcPhotoLightbox();
+        });
+        lucide.createIcons();
+    }
+
+    const img = dgcPhotoLightbox.querySelector('.dgc-photo-lightbox-img');
+    img.src = src;
+    img.alt = alt || '';
+    dgcPhotoLightbox.classList.add('open');
+}
+
+function closeDgcPhotoLightbox() {
+    if (!dgcPhotoLightbox || !dgcPhotoLightbox.classList.contains('open')) return;
+    dgcPhotoLightbox.classList.remove('open');
+
+    // Suelta la foto (y su versión decodificada) al terminar el fundido de
+    // cierre (0,2 s en dgc_addons.css); openDgcPhotoLightbox cancela el
+    // temporizador si el visor se vuelve a abrir entretanto.
+    dgcPhotoLightboxReleaseTimer = setTimeout(() => {
+        dgcPhotoLightboxReleaseTimer = null;
+        dgcPhotoLightbox.querySelector('.dgc-photo-lightbox-img').removeAttribute('src');
+    }, 250);
 }

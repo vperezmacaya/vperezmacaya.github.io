@@ -7,6 +7,10 @@ function initLeafletMap() {
     });
     leafletMap = base.map;
     tileLayer = base.tileLayer;
+
+    // Desvanece las shapes en zooms grandes y evita tooltips pegados
+    CatlecUtils.enableSmoothZoom(leafletMap);
+
     // Load map layers asynchronously
     loadMapLayers();
 
@@ -99,139 +103,6 @@ function getFeatureStyle(feature, sector) {
     };
 }
 
-function onEachRegionFeature(feature, layer) {
-    let clickTimeout = null;
-
-    layer.on({
-        mouseover: (e) => {
-            const l = e.target;
-            const regionName = feature.properties ? feature.properties.Region : '';
-            const dbRegionValue = mapGeojsonRegionToDbRegion(regionName);
-            const isSelected = appState.selectedRegions && appState.selectedRegions.length > 0 && dbRegionValue && appState.selectedRegions.includes(dbRegionValue);
-
-            l.setStyle({
-                fillOpacity: isSelected ? 0.38 : 0.25,
-                strokeOpacity: 0.85,
-                weight: isSelected ? 2.5 : 1.5
-            });
-        },
-        mouseout: (e) => {
-            const l = e.target;
-            l.setStyle(getRegionStyle(feature));
-        },
-        click: (e) => {
-            const regionName = feature.properties ? feature.properties.Region : '';
-            const dbRegionValue = mapGeojsonRegionToDbRegion(regionName);
-
-            if (dbRegionValue) {
-                if (clickTimeout) {
-                    clearTimeout(clickTimeout);
-                    clickTimeout = null;
-                    return;
-                }
-
-                clickTimeout = setTimeout(() => {
-                    clickTimeout = null;
-                    const cb = document.querySelector(`.region-checkbox[value="${dbRegionValue}"]`);
-                    if (cb) {
-                        cb.checked = !cb.checked;
-                        cb.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
-                }, 250);
-            }
-        },
-        dblclick: (e) => {
-            L.DomEvent.stopPropagation(e);
-            if (e.originalEvent) {
-                e.originalEvent.preventDefault();
-            }
-            if (clickTimeout) {
-                clearTimeout(clickTimeout);
-                clickTimeout = null;
-            }
-
-            const regionName = feature.properties ? feature.properties.Region : '';
-            const dbRegionValue = mapGeojsonRegionToDbRegion(regionName);
-
-            if (dbRegionValue) {
-                const cb = document.querySelector(`.region-checkbox[value="${dbRegionValue}"]`);
-                if (cb && !cb.checked) {
-                    cb.checked = true;
-                    cb.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-
-                fetchData().then(() => {
-                    let groupBounds = L.latLngBounds();
-                    const isValparaiso = dbRegionValue && dbRegionValue.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("valparaiso");
-
-                    if (isValparaiso) {
-                        function traverseLatLngs(latlngs) {
-                            if (Array.isArray(latlngs)) {
-                                if (latlngs.length > 0 && latlngs[0] instanceof L.LatLng) {
-                                    latlngs.forEach(ll => {
-                                        if (ll.lng >= -75.0) {
-                                            groupBounds.extend(ll);
-                                        }
-                                    });
-                                } else {
-                                    latlngs.forEach(item => traverseLatLngs(item));
-                                }
-                            }
-                        }
-                        if (layer.getLatLngs) {
-                            traverseLatLngs(layer.getLatLngs());
-                        }
-                        if (!groupBounds.isValid() && layer.getBounds) {
-                            groupBounds = L.latLngBounds(layer.getBounds());
-                        }
-                    } else {
-                        groupBounds = layer.getBounds ? L.latLngBounds(layer.getBounds()) : L.latLngBounds();
-                    }
-
-                    if (layers.dgc) {
-                        layers.dgc.eachLayer(l => {
-                            const lCode = l.feature && l.feature.properties && l.feature.properties.COD
-                                ? l.feature.properties.COD.toString().trim()
-                                : '';
-                            const projCodesSet = shapeToProjectCodes[lCode];
-                            let isActive = false;
-                            if (projCodesSet) {
-                                for (let pc of projCodesSet) {
-                                    if (activeMapCodes.has(pc)) {
-                                        isActive = true;
-                                        break;
-                                    }
-                                }
-                            }
-                            if (isActive) {
-                                if (l.getBounds) {
-                                    groupBounds.extend(l.getBounds());
-                                } else if (l.getLatLng) {
-                                    groupBounds.extend(l.getLatLng());
-                                }
-                            }
-                        });
-                    }
-
-                    if (groupBounds.isValid()) {
-                        CatlecUtils.zoomToProject(leafletMap, groupBounds, {
-                            duration: 1.5,
-                            paddingOverride: [60, 60]
-                        });
-                    }
-                });
-            }
-        }
-    });
-
-    if (feature.properties && feature.properties.Region) {
-        layer.bindTooltip(`<b>${feature.properties.Region}</b>`, {
-            sticky: true,
-            className: 'custom-tooltip'
-        });
-    }
-}
-
 function onEachProjectFeature(feature, layer, sector) {
     const code = feature.properties && feature.properties.COD ? feature.properties.COD.toString().trim() : '';
 
@@ -279,16 +150,11 @@ function onEachProjectFeature(feature, layer, sector) {
             return dateB.localeCompare(dateA);
         });
 
-        const firstProj = activeCodesList[0];
-        if (appState.hoveredProjectCode === firstProj) return;
-        appState.hoveredProjectCode = firstProj;
-        updateMapStyles();
+        setHoveredProject(activeCodesList[0]);
     });
 
     layer.on('mouseout', (e) => {
-        if (appState.hoveredProjectCode === null) return;
-        appState.hoveredProjectCode = null;
-        updateMapStyles();
+        setHoveredProject(null);
     });
 }
 
@@ -300,13 +166,6 @@ const PRINCIPAL_SHAPES = {
 async function loadMapLayers() {
     try {
         shapeGeometries = {};
-
-        // Regions (VERSIÓN ESTÁTICA)
-        const dataRegions = window.REGIONS_DATA || { type: 'FeatureCollection', features: [] };
-        layers.regions = L.geoJSON(dataRegions, {
-            style: getRegionStyle,
-            onEachFeature: onEachRegionFeature
-        }).addTo(leafletMap);
 
         // Consolidated DGC Layers (VERSIÓN ESTÁTICA)
         const dataDGC = window.DGC_DATA || { type: 'FeatureCollection', features: [] };
@@ -426,15 +285,11 @@ function createSingleProjectMarker(proj, latLng, isSpiderfied = false, isMiniDot
     });
 
     marker.on('mouseover', () => {
-        if (appState.hoveredProjectCode === proj.code) return;
-        appState.hoveredProjectCode = proj.code;
-        updateMapStyles();
+        setHoveredProject(proj.code);
     });
 
     marker.on('mouseout', () => {
-        if (appState.hoveredProjectCode === null) return;
-        appState.hoveredProjectCode = null;
-        updateMapStyles();
+        setHoveredProject(null);
     });
 
     return marker;
@@ -562,10 +417,6 @@ function renderProjectMarkersOnMap(mapProjects) {
 }
 
 function updateMapStyles() {
-    if (layers.regions) {
-        layers.regions.setStyle(getRegionStyle);
-    }
-
     if (layers.dgc) {
         layers.dgc.setStyle((f) => getFeatureStyle(f, f.properties.Sector_DGC));
 
@@ -663,9 +514,6 @@ function updateMapStyles() {
         });
     }
 
-    const selectedCode = appState.selectedProjectCode;
-    const hoveredCode = appState.hoveredProjectCode;
-
     // Collect all unique marker instances
     const allUniqueMarkers = new Set();
     Object.values(projectMarkersMap).forEach(arr => {
@@ -675,55 +523,85 @@ function updateMapStyles() {
         });
     });
 
-    allUniqueMarkers.forEach(marker => {
-        if (!marker || !marker.getElement()) return;
-
-        const codes = marker.associatedProjectCodes || [marker.projectCode];
-        const isActiveInFilter = codes.some(c => activeMapCodes.has(c));
-        const isSelected = codes.includes(selectedCode);
-        const isHovered = codes.includes(hoveredCode);
-
-        if (!isActiveInFilter) {
-            marker.setOpacity(0);
-            marker.setZIndexOffset(-1000);
-            marker.getElement().style.pointerEvents = 'none';
-        } else {
-            marker.getElement().style.pointerEvents = 'auto';
-
-            if (selectedCode) {
-                const isTarget = isSelected || isHovered;
-                marker.setOpacity(isTarget ? 1.0 : 0.35);
-                marker.setZIndexOffset(isTarget ? 1000 : 100);
-            } else {
-                marker.setOpacity(1.0);
-                marker.setZIndexOffset(100);
-            }
-
-            const el = marker.getElement().querySelector('.centroid-marker-pulse');
-
-            if (el) {
-                const secCfg = getSectorConfig(marker.projectSector);
-                if (isSelected) {
-                    el.classList.add('active-selected');
-                    el.style.transform = marker.isMiniDot ? 'scale(2.2)' : 'scale(1.35)';
-                    if (marker.isMiniDot) el.style.boxShadow = `0 0 8px ${secCfg.color}`;
-                } else if (isHovered) {
-                    el.classList.remove('active-selected');
-                    el.style.transform = marker.isMiniDot ? 'scale(1.8)' : 'scale(1.25)';
-                    if (marker.isMiniDot) el.style.boxShadow = `0 0 6px ${secCfg.color}`;
-                } else {
-                    el.classList.remove('active-selected');
-                    el.style.transform = '';
-                    if (marker.isMiniDot) el.style.boxShadow = '';
-                }
-            }
-        }
-    });
+    allUniqueMarkers.forEach(applyProjectMarkerState);
 
     if (mapStatsBadge) {
         mapStatsBadge.textContent = `${activeMapCodes.size} contratos (${allUniqueMarkers.size} íconos)`;
     }
 }
+
+// Estilo de un ícono de proyecto según filtro, selección y hover actuales
+function applyProjectMarkerState(marker) {
+    if (!marker || !marker.getElement()) return;
+
+    const selectedCode = appState.selectedProjectCode;
+    const hoveredCode = appState.hoveredProjectCode;
+    const codes = marker.associatedProjectCodes || [marker.projectCode];
+    const isActiveInFilter = codes.some(c => activeMapCodes.has(c));
+    const isSelected = codes.includes(selectedCode);
+    const isHovered = codes.includes(hoveredCode);
+
+    if (!isActiveInFilter) {
+        marker.setOpacity(0);
+        marker.setZIndexOffset(-1000);
+        marker.getElement().style.pointerEvents = 'none';
+        return;
+    }
+
+    marker.getElement().style.pointerEvents = 'auto';
+
+    if (selectedCode) {
+        const isTarget = isSelected || isHovered;
+        marker.setOpacity(isTarget ? 1.0 : 0.35);
+        marker.setZIndexOffset(isTarget ? 1000 : 100);
+    } else {
+        marker.setOpacity(1.0);
+        marker.setZIndexOffset(100);
+    }
+
+    const el = marker.getElement().querySelector('.centroid-marker-pulse');
+
+    if (el) {
+        const secCfg = getSectorConfig(marker.projectSector);
+        if (isSelected) {
+            el.classList.add('active-selected');
+            el.style.transform = marker.isMiniDot ? 'scale(2.2)' : 'scale(1.35)';
+            if (marker.isMiniDot) el.style.boxShadow = `0 0 8px ${secCfg.color}`;
+        } else if (isHovered) {
+            el.classList.remove('active-selected');
+            el.style.transform = marker.isMiniDot ? 'scale(1.8)' : 'scale(1.25)';
+            if (marker.isMiniDot) el.style.boxShadow = `0 0 6px ${secCfg.color}`;
+        } else {
+            el.classList.remove('active-selected');
+            el.style.transform = '';
+            if (marker.isMiniDot) el.style.boxShadow = '';
+        }
+    }
+}
+
+// ─── Hover liviano (mapa y tabla) ────────────────────────────────────────────
+// Cambia el proyecto en hover y reestiliza SOLO las shapes e íconos del hover
+// anterior y del nuevo. No llama a updateMapStyles(): recalcular todo el mapa
+// y reordenar el SVG (bringToFront) bajo el cursor en cada hover disparaba
+// mouseout/mouseover falsos y parpadeos.
+function setHoveredProject(code) {
+    const prev = appState.hoveredProjectCode;
+    if (prev === code) return;
+    appState.hoveredProjectCode = code;
+    if (!leafletMap) return;
+
+    const affectedCodes = [prev, code].filter(Boolean);
+    affectedCodes.forEach(pc => {
+        const proj = projectMetadata[pc];
+        (proj && proj.shapes ? proj.shapes : []).forEach(shapeId => {
+            (shapeGeometries[shapeId.toString().trim()] || []).forEach(l => {
+                if (l.feature && l.setStyle) l.setStyle(getFeatureStyle(l.feature, l.feature.properties.Sector_DGC));
+            });
+        });
+        (projectMarkersMap[pc] || []).forEach(applyProjectMarkerState);
+    });
+}
+window.setHoveredProject = setHoveredProject;
 
 function zoomToProjectCode(code) {
     if (!leafletMap || !code) return;
@@ -753,15 +631,18 @@ function zoomToProjectCode(code) {
         });
     }
 
-    if (matchedLayers.length > 0) {
-        CatlecUtils.zoomToProject(leafletMap, matchedLayers, {
-            duration: 1.2
-        });
-        leafletMap.closePopup();
-    } else if (targetLatLng) {
-        CatlecUtils.zoomToProject(leafletMap, targetLatLng, {
-            duration: 1.2
-        });
+    // El vuelo se inicia tras el repintado, para que el render del panel de
+    // detalle no se coma los primeros cuadros de la animación.
+    const zoomTarget = matchedLayers.length > 0 ? matchedLayers : targetLatLng;
+    if (zoomTarget) {
+        // Zoom hardcodeado para "Estaciones de Transbordo para Transantiago": sus
+        // estaciones se dispersan por 22 comunas de Santiago, lo que hace que el
+        // zoom adaptativo por defecto quede demasiado alejado.
+        const zoomOptions = { duration: 1.2 };
+        if (cleanCode === '050_ETTT1') {
+            zoomOptions.maxZoomOverride = 12.5;
+        }
+        CatlecUtils.afterNextPaint(() => CatlecUtils.zoomToProject(leafletMap, zoomTarget, zoomOptions));
         leafletMap.closePopup();
     }
 }

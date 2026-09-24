@@ -12,7 +12,6 @@ async function loadFilters() {
         appState.selectedRegions = selected;
         appState.page = 1;
         appState.selectedProjectCode = null;
-        if (layers.regions) layers.regions.setStyle(getRegionStyle);
         fetchData();
     });
 
@@ -45,7 +44,7 @@ function staticFetchData(params) {
 
     const PAGE_SIZE = 50;
 
-    const searchNorm = CatlecUtils.normalizeAccents(searchRaw);
+    const matchSearch = CatlecUtils.createSearchMatcher(searchRaw);
     const selRegions = regionRaw ? regionRaw.split(',').map(r => r.trim()).filter(Boolean) : [];
     const selSectors = sectorRaw ? sectorRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
     const selStatuses = statusRaw ? statusRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
@@ -64,18 +63,16 @@ function staticFetchData(params) {
             const st = item['ESTADO'] || '';
             if (!selStatuses.includes(st)) return false;
         }
-        if (searchNorm) {
-            const code = CatlecUtils.normalizeAccents(item['Código proyecto']);
-            const name1 = CatlecUtils.normalizeAccents(item['Nombre de la Concesión ']);
-            const name2 = CatlecUtils.normalizeAccents(item['Nombre de uso común']);
-            const desc = CatlecUtils.normalizeAccents(item['Descripción ']);
-            const soc = CatlecUtils.normalizeAccents(item['Nombre sociedad concesionaria']);
-            const reg = CatlecUtils.normalizeAccents(item['Región geográfica']);
-            const sec = CatlecUtils.normalizeAccents(item['Sector del proyecto']);
-            const bidders = (item.bidders || []).map(b => CatlecUtils.normalizeAccents(b.name + ' ' + b.code)).join(' ');
-            const haystack = [code, name1, name2, desc, soc, reg, sec, bidders].join(' ');
-            if (!haystack.includes(searchNorm)) return false;
-        }
+        if (!matchSearch(
+            item['Código proyecto'],
+            item['Nombre de la Concesión '],
+            item['Nombre de uso común'],
+            item['Descripción '],
+            item['Nombre sociedad concesionaria'],
+            item['Región geográfica'],
+            item['Sector del proyecto'],
+            (item.bidders || []).map(b => b.name + ' ' + b.code)
+        )) return false;
         return true;
     });
 
@@ -220,7 +217,7 @@ async function fetchData() {
         updatePaginationControls(resData.pagination);
 
         // 5. Redraw Chart Analytics visual elements
-        renderChart(resData.stats, 'light');
+        renderChart(resData.stats);
 
         // 6. Refresh Map Visualizer Markers Map elements
         appState.lastMapProjects = resData.map_projects;
@@ -262,13 +259,13 @@ let currentFilteredContractsList = [];
 // Shared external tooltip for DGC analysis panel charts
 const customChartTooltip = CatlecTooltip.create({ domId: 'dgc-analysis-tooltip' });
 
-function renderChart(statsData, currentThemeMode) {
+function renderChart(statsData) {
     const sectorCanvas = document.getElementById('sectorChart');
     const statusCanvas = document.getElementById('statusChart');
     const sectorLegendEl = document.getElementById('sectorChartLegend');
     if (!sectorCanvas || !statusCanvas) return;
 
-    const themeConfig = chartColors[currentThemeMode];
+    const themeConfig = chartColors;
 
     if (typeof Chart !== 'undefined') {
         Chart.defaults.devicePixelRatio = Math.max(2.5, window.devicePixelRatio || 1);
@@ -291,7 +288,6 @@ function renderChart(statsData, currentThemeMode) {
         colors: sectorColorsList,
         cutout: '68%',
         borderWidth: 2,
-        isDark: currentThemeMode === 'dark',
         hoverOffset: 3,
         externalTooltip: customChartTooltip,
         tooltipLabelCallback: (ctx) => {
@@ -311,7 +307,7 @@ function renderChart(statsData, currentThemeMode) {
     // 2. Status Bar Chart (Uniform single color for all bars)
     const statusLabels = Object.keys(statsData.status || {});
     const statusCounts = Object.values(statsData.status || {});
-    const uniformBarColor = currentThemeMode === 'dark' ? '#3b82f6' : '#2563eb';
+    const uniformBarColor = '#2563eb';
 
     statusChartInstance = createOrUpdateChart(statusCanvas, statusChartInstance, {
         type: 'bar',

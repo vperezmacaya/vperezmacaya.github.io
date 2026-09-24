@@ -17,7 +17,6 @@ let sectraState = {
 // Leaflet Map state
 let sectraMap = null;
 let sectraTileLayer = null;
-let sectraRegionsGeoLayer = null;
 let sectraGeoLayer = null;
 let sectraProjectGeometries = {}; // id or name -> array of Leaflet layer objects
 
@@ -55,21 +54,11 @@ function getFilteredProjects() {
     if (!window.SECTRA_DATA || !window.SECTRA_DATA.projects) return [];
     
     let projs = window.SECTRA_DATA.projects;
-    const s = (sectraState.search || '').trim().toLowerCase();
-    
+    const matchSearch = CatlecUtils.createSearchMatcher(sectraState.search);
+
     return projs.filter(p => {
         // Search Filter
-        if (s) {
-            const matchName = (p.name || '').toLowerCase().includes(s);
-            const matchDesc = (p.description || '').toLowerCase().includes(s);
-            const matchCity = (p.city || '').toLowerCase().includes(s);
-            const matchReg = (p.region || '').toLowerCase().includes(s);
-            const matchMand = (p.mandante || '').toLowerCase().includes(s);
-            const matchStat = (p.status || '').toLowerCase().includes(s);
-            if (!matchName && !matchDesc && !matchCity && !matchReg && !matchMand && !matchStat) {
-                return false;
-            }
-        }
+        if (!matchSearch(p.name, p.description, p.city, p.region, p.mandante, p.status)) return false;
         
         // Region Filter
         if (sectraState.selectedRegions.length > 0) {
@@ -98,14 +87,10 @@ function getFilteredProjects() {
 function getFilteredConurbations() {
     if (!window.SECTRA_DATA || !window.SECTRA_DATA.conurbations) return [];
     let conurbs = window.SECTRA_DATA.conurbations;
-    const s = (sectraState.search || '').trim().toLowerCase();
-    
+    const matchSearch = CatlecUtils.createSearchMatcher(sectraState.search);
+
     return conurbs.filter(c => {
-        if (s) {
-            const matchCity = (c.city || '').toLowerCase().includes(s);
-            const matchReg = (c.region || '').toLowerCase().includes(s);
-            if (!matchCity && !matchReg) return false;
-        }
+        if (!matchSearch(c.city, c.region)) return false;
         if (sectraState.selectedRegions.length > 0) {
             if (!sectraState.selectedRegions.includes(c.region)) return false;
         }

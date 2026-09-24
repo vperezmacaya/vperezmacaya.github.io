@@ -9,16 +9,16 @@
     <link rel="icon" type="image/png" href="logo/favicon.png">
     <link rel="shortcut icon" href="logo/favicon.ico">
     <!-- Shared stylesheet (navbar, footer, panel-card, forms, etc.) -->
-    <link rel="stylesheet" href="static/css/styles.css?v=20260920_1">
-    <link rel="stylesheet" href="static/css/mop_addons.css">
+    <link rel="stylesheet" href="static/css/styles.css?v=20260924_11">
+    <link rel="stylesheet" href="static/css/mop_addons.css?v=20260924_1">
     <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
     <!-- SheetJS for Client-Side Excel Export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- MOP static data -->
     <script src="static/data/mop_data.js"></script>
     <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@1.48.0/dist/umd/lucide.min.js"></script>
 </head>
 
 <body class="light-theme">
@@ -27,6 +27,7 @@
         <!-- ═══════════════════════════════ HEADER (identical to index.html) -->
         <header class="top-navbar">
             <div class="top-navbar-left">
+                <img src="logo/Escudo_udec.gif" alt="Escudo UdeC" class="top-navbar-logo-udec">
                 <img src="logo/cropped-Logo-CATLEC-horizontal-sin-fondo-1.png" alt="Logo CATLEC" class="top-navbar-logo">
                 <span class="top-navbar-title">Visor de datos - Cartera de Proyectos MOP</span>
                 <span class="top-navbar-divider"></span>
@@ -95,7 +96,7 @@
                                     <span id="mop-region-multiselect-text">Todas las regiones</span>
                                     <i data-lucide="chevron-down" style="width: 13px; height: 13px; margin-left: 0.35rem; flex-shrink: 0;"></i>
                                 </button>
-                                <div class="multiselect-dropdown" id="mop-region-multiselect-dropdown" style="display: none;">
+                                <div class="multiselect-dropdown" id="mop-region-multiselect-dropdown">
                                     <div class="multiselect-actions">
                                         <label class="multiselect-option select-all-option" style="padding: 0.2rem 0; font-weight: 700;">
                                             <input type="checkbox" id="mop-region-check-all">
@@ -116,7 +117,7 @@
                                     <span id="mop-servicio-multiselect-text">Todos los servicios</span>
                                     <i data-lucide="chevron-down" style="width: 13px; height: 13px; margin-left: 0.35rem; flex-shrink: 0;"></i>
                                 </button>
-                                <div class="multiselect-dropdown" id="mop-servicio-multiselect-dropdown" style="display: none;">
+                                <div class="multiselect-dropdown" id="mop-servicio-multiselect-dropdown">
                                     <div class="multiselect-actions">
                                         <label class="multiselect-option select-all-option" style="padding: 0.2rem 0; font-weight: 700;">
                                             <input type="checkbox" id="mop-servicio-check-all">
@@ -137,7 +138,7 @@
                                     <span id="mop-etapa-multiselect-text">Todas las etapas</span>
                                     <i data-lucide="chevron-down" style="width: 13px; height: 13px; margin-left: 0.35rem; flex-shrink: 0;"></i>
                                 </button>
-                                <div class="multiselect-dropdown" id="mop-etapa-multiselect-dropdown" style="display: none;">
+                                <div class="multiselect-dropdown" id="mop-etapa-multiselect-dropdown">
                                     <div class="multiselect-actions">
                                         <label class="multiselect-option select-all-option" style="padding: 0.2rem 0; font-weight: 700;">
                                             <input type="checkbox" id="mop-etapa-check-all">
@@ -453,8 +454,6 @@
                 <span class="app-footer-text">Desarrollado por: Jose Oliveros, Vicente Pérez</span>
             </div>
             <div class="app-footer-right">
-                <img src="logo/Escudo_udec.gif" alt="Escudo UdeC"
-                    style="height:18px;width:auto;margin-right:0.35rem;vertical-align:middle;display:inline-block;">
                 <span class="app-footer-text">Universidad de Concepción &nbsp;·&nbsp; Facultad de Ingeniería</span>
             </div>
         </footer>
@@ -463,23 +462,24 @@
 
     <!-- MOP logic -->
     <script src="static/js/common/tooltip.js?v=1"></script>
-    <script src="static/js/common/utils.js?v=20260920_1"></script>
+    <script src="static/js/common/utils.js?v=20260924_8"></script>
+    <script src="static/js/common/kpi-animate.js?v=20260924_2"></script>
+    <script src="static/js/common/table-fade.js?v=20260924_1"></script>
     <script src="static/js/MOP/state.js"></script>
-    <script src="static/js/MOP/utils.js"></script>
-    <script src="static/js/MOP/filters.js"></script>
-    <script src="static/js/MOP/table.js"></script>
+    <script src="static/js/MOP/utils.js?v=20260924_1"></script>
+    <script src="static/js/MOP/filters.js?v=20260924_1"></script>
+    <script src="static/js/MOP/table.js?v=20260924_1"></script>
     <script src="static/js/MOP/project-detail.js"></script>
-    <script src="static/js/MOP/charts.js?v=5"></script>
+    <script src="static/js/MOP/charts.js?v=20260924_2"></script>
     <script src="static/js/MOP/export.js"></script>
     <script src="static/js/MOP/ui.js"></script>
 
     <!-- Nav Menu JS -->
-    <script src="static/js/common/nav-menu.js?v=1"></script>
+    <script src="static/js/common/nav-menu.js?v=20260924_5"></script>
     <script>
         (function () {
             CatlecNav.render();
 
-            const navDropdown = document.getElementById('nav-menu-dropdown');
             const navMopGroup = document.getElementById('nav-mop-group');
 
             // MOP parent link & submenu items: switch tab without reloading
@@ -489,8 +489,7 @@
                     mopMainLink.addEventListener('click', function (e) {
                         e.preventDefault();
                         if (typeof window.switchMOPTab === 'function') window.switchMOPTab('resumen');
-                        navDropdown.classList.remove('open');
-                        navMopGroup.classList.remove('open');
+                        CatlecNav.close();
                     });
                 }
 
@@ -502,24 +501,21 @@
                     subRes.addEventListener('click', function (e) {
                         e.preventDefault();
                         if (typeof window.switchMOPTab === 'function') window.switchMOPTab('resumen');
-                        navDropdown.classList.remove('open');
-                        navMopGroup.classList.remove('open');
+                        CatlecNav.close();
                     });
                 }
                 if (subInv) {
                     subInv.addEventListener('click', function (e) {
                         e.preventDefault();
                         if (typeof window.switchMOPTab === 'function') window.switchMOPTab('inversion');
-                        navDropdown.classList.remove('open');
-                        navMopGroup.classList.remove('open');
+                        CatlecNav.close();
                     });
                 }
                 if (subPrg) {
                     subPrg.addEventListener('click', function (e) {
                         e.preventDefault();
                         if (typeof window.switchMOPTab === 'function') window.switchMOPTab('programas');
-                        navDropdown.classList.remove('open');
-                        navMopGroup.classList.remove('open');
+                        CatlecNav.close();
                     });
                 }
             }

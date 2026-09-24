@@ -11,6 +11,27 @@ window.CatlecUtils = {
         return str ? String(str).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '') : '';
     },
 
+    // Normaliza texto para buscadores: sin tildes (ñ -> n), minúsculas, signos
+    // de puntuación como espacio y espacios colapsados (ej. "Bío-Bío" -> "bio bio").
+    normalizeSearch(str) {
+        return CatlecUtils.normalizeAccents(str).replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+    },
+
+    // Estándar para los buscadores de texto de los filtros: crea un matcher para
+    // `query` que recibe los campos buscables de una fila (strings, null o
+    // arrays) y devuelve true si la consulta está vacía o aparece en ellos.
+    // La consulta se normaliza una sola vez; los campos se concatenan, así que
+    // una búsqueda puede abarcar más de un campo.
+    // Uso: const matchSearch = CatlecUtils.createSearchMatcher(state.search);
+    //      rows.filter(r => matchSearch(r.name, r.region, r.tags));
+    createSearchMatcher(query) {
+        const q = CatlecUtils.normalizeSearch(query);
+        if (!q) return () => true;
+        return (...fields) => CatlecUtils.normalizeSearch(
+            fields.flat().filter(f => f != null).join(' ')
+        ).includes(q);
+    },
+
     // Retrasa la ejecución de fn hasta que pase `delay` ms sin nuevas llamadas
     // (uso típico: buscadores reactivos que no deben filtrar en cada tecla).
     debounce(fn, delay) {
@@ -245,8 +266,8 @@ window.CatlecUtils = {
     },
 
     // Plugin de Chart.js: dibuja el valor sobre el extremo superior de cada barra
-    // vertical (agrupadas o simples, NO apiladas), ignorando datasets tipo 'line'
-    // en gráficos combo (uso: rankings/combos de barras verticales con etiquetas).
+    // vertical (agrupadas o simples, NO apiladas). En combos, si una línea pasa por
+    // la etiqueta, la mueve dentro de la barra o, si no cabe, por encima de la línea.
     groupedBarDataLabelsPlugin: {
         id: 'groupedBarDataLabelsPlugin',
         afterDatasetsDraw: (chart, args, pluginOptions) => {
@@ -255,25 +276,86 @@ window.CatlecUtils = {
             const font = (pluginOptions && pluginOptions.font) || '700 9.5px Helvetica Neue, Helvetica, Arial, sans-serif';
             const colorOpt = (pluginOptions && pluginOptions.color) || '#334155';
             const offset = (pluginOptions && pluginOptions.offset) !== undefined ? pluginOptions.offset : 4;
+            const insideColor = '#ffffff';
+
+            const lineMetas = chart.data.datasets
+                .map((ds, i) => ({ ds, meta: chart.getDatasetMeta(i) }))
+                .filter(({ ds, meta }) => (ds.type || chart.config.type) === 'line' && meta && !meta.hidden && meta.data && meta.data.length);
+
+            // Rango vertical [minY, maxY] (px, con margen) que ocupa la línea entre x0 y x1, o null si no pasa por ahí.
+            const lineRangeInSpan = ({ ds, meta }, x0, x1) => {
+                const pts = meta.data.filter(p => p && !p.skip && Number.isFinite(p.x) && Number.isFinite(p.y));
+                if (!pts.length || x1 < pts[0].x || x0 > pts[pts.length - 1].x) return null;
+
+                const yAt = (x) => {
+                    for (let i = 0; i < pts.length - 1; i++) {
+                        const a = pts[i], b = pts[i + 1];
+                        if (x >= a.x && x <= b.x) return b.x === a.x ? a.y : a.y + (b.y - a.y) * (x - a.x) / (b.x - a.x);
+                    }
+                    return null;
+                };
+
+                const ys = [yAt(Math.max(x0, pts[0].x)), yAt(Math.min(x1, pts[pts.length - 1].x))].filter(y => y !== null);
+                let pointPad = 0;
+                pts.forEach(p => {
+                    if (p.x >= x0 && p.x <= x1) {
+                        ys.push(p.y);
+                        pointPad = Math.max(pointPad, (p.options && p.options.radius) || 0);
+                    }
+                });
+                if (!ys.length) return null;
+
+                const pad = (ds.borderWidth || 2) / 2 + pointPad + 2;
+                return [Math.min(...ys) - pad, Math.max(...ys) + pad];
+            };
 
             ctx.save();
             ctx.font = font;
             ctx.textAlign = 'center';
-            ctx.textBaseline = 'bottom';
 
             chart.data.datasets.forEach((dataset, dIdx) => {
-                if (dataset.type === 'line') return;
+                if ((dataset.type || chart.config.type) === 'line') return;
                 const meta = chart.getDatasetMeta(dIdx);
                 if (!meta || meta.hidden || !meta.data) return;
 
-                ctx.fillStyle = typeof colorOpt === 'function' ? colorOpt(dIdx, dataset) : colorOpt;
+                const baseColor = typeof colorOpt === 'function' ? colorOpt(dIdx, dataset) : colorOpt;
 
                 meta.data.forEach((bar, index) => {
                     const rawVal = dataset.data[index];
                     if (rawVal === undefined || rawVal === null || Number(rawVal) === 0) return;
 
                     const text = formatter(rawVal, dIdx, index);
-                    ctx.fillText(text, bar.x, bar.y - offset);
+                    const x = bar.x;
+                    let y = bar.y - offset;
+                    let baseline = 'bottom';
+                    let color = baseColor;
+
+                    if (lineMetas.length && bar.y < bar.base) {
+                        const m = ctx.measureText(text);
+                        const w = m.width;
+                        const h = (m.actualBoundingBoxAscent || 0) + (m.actualBoundingBoxDescent || 0) || 10;
+                        const boxTop = y - h;
+                        const boxBottom = y;
+
+                        const collisions = lineMetas
+                            .map(lm => lineRangeInSpan(lm, x - w / 2, x + w / 2))
+                            .filter(r => r && r[0] <= boxBottom && r[1] >= boxTop);
+
+                        if (collisions.length) {
+                            if (bar.base - bar.y >= h + 2 * offset + 2) {
+                                y = bar.y + offset;
+                                baseline = 'top';
+                                color = insideColor;
+                            } else {
+                                const aboveY = Math.min(...collisions.map(r => r[0])) - offset;
+                                if (aboveY - h >= 0) y = aboveY;
+                            }
+                        }
+                    }
+
+                    ctx.textBaseline = baseline;
+                    ctx.fillStyle = color;
+                    ctx.fillText(text, x, y);
                 });
             });
 
@@ -341,13 +423,17 @@ window.CatlecUtils = {
             listEl.appendChild(label);
         });
 
+        // Abrir/cerrar = alternar .open en el contenedor; la animación vive en el CSS.
+        const container = dropdown.closest('.custom-multiselect') || dropdown.parentElement;
+        btn.setAttribute('aria-haspopup', 'listbox');
+        btn.setAttribute('aria-expanded', 'false');
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const wasOpen = dropdown.dataset.open === 'true';
+            const wasOpen = container.classList.contains('open');
             CatlecUtils.closeAllMultiselects();
             if (!wasOpen) {
-                dropdown.style.display = 'flex';
-                dropdown.dataset.open = 'true';
+                container.classList.add('open');
+                btn.setAttribute('aria-expanded', 'true');
             }
         });
         dropdown.addEventListener('click', (e) => e.stopPropagation());
@@ -498,9 +584,10 @@ window.CatlecUtils = {
 
     // Cierra todos los dropdowns de multiselect abiertos en la página.
     closeAllMultiselects() {
-        document.querySelectorAll('.multiselect-dropdown').forEach(d => {
-            d.style.display = 'none';
-            d.dataset.open = 'false';
+        document.querySelectorAll('.custom-multiselect.open').forEach(c => {
+            c.classList.remove('open');
+            const trigger = c.querySelector('.multiselect-trigger');
+            if (trigger) trigger.setAttribute('aria-expanded', 'false');
         });
     },
 
@@ -687,6 +774,294 @@ window.CatlecUtils = {
             maxZoom: 20
         }).addTo(map);
 
+        this.enableCollapsibleAttribution(map);
+
         return { map, tileLayer };
+    },
+
+    // Alterna entre dos vistas contenedoras (tabla ↔ ficha de detalle) con un
+    // fundido cruzado + desplazamiento horizontal (ver .catlec-view-* en
+    // styles.css). `direction: 'forward'` (ir al detalle) hace que `hideEl`
+    // salga hacia la izquierda mientras `showEl` entra desde la derecha;
+    // `'back'` (volver a la tabla) invierte ambos sentidos. Estándar único
+    // para DGC, EFE, Metro y MOP.
+    swapView(hideEl, showEl, { direction = 'forward', showDisplay = 'flex' } = {}) {
+        if (!hideEl || !showEl) return;
+        // Si el usuario alterna antes de que termine la animación anterior, se
+        // cierra de golpe para no dejar listeners ni estilos colgando.
+        [hideEl, showEl].forEach(el => { if (el._catlecSwapFinish) el._catlecSwapFinish(); });
+
+        const forward = direction === 'forward';
+        const outClass = forward ? 'catlec-view-out-left' : 'catlec-view-out-right';
+        const inClass = forward ? 'catlec-view-in-right' : 'catlec-view-in-left';
+
+        // Ambas vistas suelen ser hermanas flex con `flex: 1`: si conviven en el
+        // flujo se reparten la altura y todo salta al terminar. La saliente se
+        // fija en absoluto sobre su misma caja para que la entrante ocupe el
+        // espacio completo desde el primer cuadro.
+        const OVERLAY_PROPS = ['position', 'top', 'left', 'width', 'height', 'margin', 'pointerEvents', 'zIndex'];
+        const prevStyles = {};
+        OVERLAY_PROPS.forEach(p => { prevStyles[p] = hideEl.style[p]; });
+        Object.assign(hideEl.style, {
+            position: 'absolute',
+            top: `${hideEl.offsetTop}px`,
+            left: `${hideEl.offsetLeft}px`,
+            width: `${hideEl.offsetWidth}px`,
+            height: `${hideEl.offsetHeight}px`,
+            margin: '0',
+            pointerEvents: 'none',
+            zIndex: '1'
+        });
+
+        const track = (el, cls, onDone) => {
+            let timer = null;
+            const finish = () => {
+                clearTimeout(timer);
+                el.removeEventListener('animationend', onEnd);
+                el.classList.remove(cls);
+                delete el._catlecSwapFinish;
+                if (onDone) onDone();
+            };
+            const onEnd = (e) => { if (e.target === el) finish(); };
+            el.addEventListener('animationend', onEnd);
+            // Respaldo si animationend no llega (pestaña en segundo plano, animaciones desactivadas).
+            timer = setTimeout(finish, 500);
+            el._catlecSwapFinish = finish;
+            el.classList.add(cls);
+        };
+
+        track(hideEl, outClass, () => {
+            OVERLAY_PROPS.forEach(p => { hideEl.style[p] = prevStyles[p]; });
+            hideEl.style.display = 'none';
+        });
+
+        showEl.style.display = showDisplay;
+        track(showEl, inClass);
+    },
+
+    // Ejecuta `fn` después del próximo repintado (doble requestAnimationFrame).
+    // Útil para iniciar un flyTo recién cuando el navegador terminó de pintar el
+    // trabajo pesado previo (tablas, paneles), ya que la animación de Leaflet se
+    // mide por tiempo y "salta" si sus primeros cuadros quedan bloqueados.
+    afterNextPaint(fn) {
+        requestAnimationFrame(() => requestAnimationFrame(fn));
+    },
+
+    // Cierra todos los tooltips abiertos de un mapa Leaflet usando su API (los
+    // tooltips abiertos son capas del mapa). No vaciar el tooltipPane a mano:
+    // Leaflet seguiría creyéndolos abiertos y no volvería a mostrarlos.
+    closeAllMapTooltips(map) {
+        if (!map) return;
+        const pane = map.getPane('tooltipPane');
+        if (pane && pane.childElementCount === 0) return;
+        const open = [];
+        map.eachLayer(l => { if (l instanceof L.Tooltip) open.push(l); });
+        open.forEach(t => map.closeTooltip(t));
+    },
+
+    // Suaviza las transiciones de zoom de un mapa Leaflet (opt-in por mapa):
+    // 1. Durante la animación Leaflet no redibuja los vectores: escala con CSS
+    //    la capa SVG completa, por lo que en un flyTo de varios niveles las
+    //    shapes crecen hasta cubrir el mapa. Si el zoom cambia más de
+    //    `threshold` niveles, los panes `fadePanes` se desvanecen y reaparecen
+    //    ya redibujados al terminar (clases .catlec-zoom-fade /
+    //    .catlec-map-zooming en styles.css). Zooms cortos de rueda no parpadean.
+    // 2. Ningún tooltip se muestra mientras el mapa se mueve por un arrastre
+    //    (incluida la inercia), aunque el arrastre empiece sobre un ícono o
+    //    shape. Al terminar, el tooltip solo reaparece con el siguiente
+    //    movimiento del mouse y si el cursor sigue sobre su capa. Esto también
+    //    evita el tooltip "pegado" de Leaflet, que abre al soltar el tooltip de
+    //    una capa sobrevolada durante el arrastre aunque el cursor ya no esté
+    //    encima (y como nunca llega un mouseout, queda fijo en pantalla).
+    //    El tooltip abierto también se cierra al iniciar un zoom.
+    enableSmoothZoom(map, { threshold = 1, fadePanes = ['overlayPane'] } = {}) {
+        if (!map) return;
+        const container = map.getContainer();
+        fadePanes.forEach(name => {
+            const pane = map.getPane(name);
+            if (pane) pane.classList.add('catlec-zoom-fade');
+        });
+
+        let startZoom = null;
+        const fadeIfFar = (zoom) => {
+            if (startZoom !== null && Math.abs(zoom - startZoom) > threshold) {
+                container.classList.add('catlec-map-zooming');
+            }
+        };
+
+        let openTooltip = null;
+        const closeOpenTooltip = () => {
+            if (openTooltip) map.closeTooltip(openTooltip);
+        };
+
+        map.on('zoomstart', () => {
+            startZoom = map.getZoom();
+            closeOpenTooltip();
+        });
+        map.on('zoomanim', (e) => fadeIfFar(e.zoom));
+        map.on('zoom', () => fadeIfFar(map.getZoom()));
+        map.on('zoomend', () => {
+            startZoom = null;
+            container.classList.remove('catlec-map-zooming');
+        });
+
+        // Bloqueo de tooltips desde 'dragstart' hasta el 'moveend' que cierra el
+        // arrastre (tras la inercia). Leaflet abre sus tooltips diferidos dentro
+        // de ese 'moveend', por eso el bloqueo se libera en el tick siguiente.
+        // `pendingSource` recuerda la capa cuyo tooltip se bloqueó, para
+        // reabrirlo en el próximo mousemove si el cursor sigue sobre ella.
+        let dragBlocking = false;
+        let dragEnded = false;
+        let releaseTimer = null;
+        let pendingSource = null;
+        const isHovered = (layer) => {
+            const el = layer && typeof layer.getElement === 'function' ? layer.getElement() : null;
+            return !!(el && el.matches(':hover'));
+        };
+        const releaseDragBlock = () => {
+            clearTimeout(releaseTimer);
+            dragBlocking = false;
+            dragEnded = false;
+        };
+
+        map.on('dragstart', () => {
+            clearTimeout(releaseTimer);
+            dragBlocking = true;
+            dragEnded = false;
+            if (openTooltip) {
+                pendingSource = openTooltip._source || null;
+                map.closeTooltip(openTooltip);
+            }
+        });
+        map.on('dragend', () => {
+            dragEnded = true;
+            // Respaldo por si el 'moveend' final no llegara: nunca dejar los
+            // tooltips bloqueados indefinidamente.
+            releaseTimer = setTimeout(releaseDragBlock, 2000);
+        });
+        map.on('moveend', () => {
+            if (dragBlocking && dragEnded) setTimeout(releaseDragBlock, 0);
+        });
+        map.on('mousemove', (e) => {
+            if (dragBlocking || !pendingSource) return;
+            const source = pendingSource;
+            pendingSource = null;
+            if (isHovered(source) && typeof source.openTooltip === 'function') {
+                source.openTooltip(e.latlng);
+            }
+        });
+
+        map.on('tooltipopen', (e) => {
+            if (dragBlocking) {
+                // Se cierra en una microtarea (antes del repintado, así que
+                // nunca llega a verse) para no interrumpir el onAdd de Leaflet.
+                pendingSource = e.tooltip._source || null;
+                queueMicrotask(() => map.closeTooltip(e.tooltip));
+                return;
+            }
+            openTooltip = e.tooltip;
+        });
+        map.on('tooltipclose', (e) => {
+            if (openTooltip === e.tooltip) openTooltip = null;
+        });
+    },
+
+    // Convierte el control de atribución de Leaflet en un botón "i" que
+    // despliega los créditos con animación (estilos .catlec-attribution-* en
+    // styles.css). Para cumplir las guías de atribución de OpenStreetMap, los
+    // créditos parten DESPLEGADOS y solo se contraen solos tras la primera
+    // interacción del usuario con el mapa (arrastre, clic o rueda) o después de
+    // `autoCollapseMs` de estar visible en pantalla. El conteo empieza recién
+    // cuando el mapa es visible (IntersectionObserver), porque varios mapas se
+    // crean dentro de pestañas ocultas. Después, solo el botón los abre/cierra.
+    // createBaseMap lo aplica automáticamente.
+    enableCollapsibleAttribution(map, { autoCollapseMs = 6000 } = {}) {
+        const ctrl = map && map.attributionControl;
+        const container = ctrl && ctrl.getContainer();
+        if (!container || container.classList.contains('catlec-attribution')) return;
+
+        // `clip` es el recorte que anima su max-width (ancho medido del texto
+        // ↔ 0); `text` recibe el HTML de Leaflet con su padding, para que el
+        // recorte llegue a 0 real.
+        const clip = L.DomUtil.create('div', 'catlec-attribution-clip');
+        clip.id = `catlec-attribution-${L.Util.stamp(map)}`;
+        const text = L.DomUtil.create('span', 'catlec-attribution-text', clip);
+        const btn = L.DomUtil.create('button', 'catlec-attribution-toggle');
+        btn.type = 'button';
+        btn.title = 'Créditos del mapa';
+        btn.setAttribute('aria-label', 'Créditos del mapa');
+        btn.setAttribute('aria-controls', clip.id);
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>';
+
+        // Leaflet reescribe el innerHTML de su contenedor en cada _update (al
+        // agregar/quitar capas con atribución); se redirige esa escritura al
+        // span de texto para no borrar el botón.
+        ctrl._update = function () {
+            const outer = this._container;
+            this._container = text;
+            L.Control.Attribution.prototype._update.call(this);
+            this._container = outer;
+            measure();
+        };
+        // Ancho real del texto para animar el max-width sin tramos muertos. Con
+        // el mapa oculto mide 0 y se conserva el valor previo (o el respaldo
+        // del CSS); se vuelve a medir al hacerse visible y al desplegar.
+        const measure = () => {
+            const w = text.scrollWidth;
+            if (w) clip.style.setProperty('--catlec-attr-w', `${w}px`);
+        };
+        container.innerHTML = '';
+        container.classList.add('catlec-attribution');
+        container.append(clip, btn);
+        ctrl._update();
+
+        const setExpanded = (expanded) => {
+            if (expanded) measure();
+            container.classList.toggle('collapsed', !expanded);
+            btn.setAttribute('aria-expanded', String(expanded));
+        };
+        setExpanded(true);
+        if (document.fonts) document.fonts.ready.then(measure);
+
+        let autoDone = false;
+        let timer = null;
+        let observer = null;
+        const autoCollapse = () => {
+            if (autoDone) return;
+            autoDone = true;
+            clearTimeout(timer);
+            if (observer) observer.disconnect();
+            map.off('dragstart click', autoCollapse);
+            L.DomEvent.off(map.getContainer(), 'wheel', autoCollapse);
+            setExpanded(false);
+        };
+        map.on('dragstart click', autoCollapse);
+        L.DomEvent.on(map.getContainer(), 'wheel', autoCollapse);
+
+        const startTimer = () => {
+            if (!timer && !autoDone) timer = setTimeout(autoCollapse, autoCollapseMs);
+        };
+        if (typeof IntersectionObserver === 'function') {
+            observer = new IntersectionObserver((entries) => {
+                if (entries.some(e => e.isIntersecting)) {
+                    observer.disconnect();
+                    measure();
+                    startTimer();
+                }
+            });
+            observer.observe(map.getContainer());
+        } else {
+            startTimer();
+        }
+
+        L.DomEvent.on(btn, 'click', (e) => {
+            L.DomEvent.stop(e);
+            if (!autoDone) {
+                // Si el usuario cierra antes del auto-contraído, se respeta.
+                autoCollapse();
+                return;
+            }
+            setExpanded(container.classList.contains('collapsed'));
+        });
     }
 };

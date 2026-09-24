@@ -16,16 +16,15 @@
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <!-- CATLEC Global Stylesheet & EFE Addon -->
-    <link rel="stylesheet" href="static/css/styles.css?v=20260920_1">
-    <link rel="stylesheet" href="static/css/efe_addons.css?v=20260920_1">
+    <link rel="stylesheet" href="static/css/styles.css?v=20260924_11">
+    <link rel="stylesheet" href="static/css/efe_addons.css?v=20260924_2">
 
     <!-- SheetJS for Client-Side Excel Export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <!-- Static Data -->
-    <script src="static/data/efe_data.js?v=20260919_2325"></script>
+    <script src="static/data/efe_data.js?v=20260924_1"></script>
     <script src="static/data/efe_geo.js?v=20260919_2325"></script>
-    <script src="static/data/regions_data.js?v=20260919_2325"></script>
 </head>
 
 <body class="light-theme">
@@ -34,6 +33,7 @@
         <!-- Top Navigation Banner -->
         <header class="top-navbar">
             <div class="top-navbar-left">
+                <img src="logo/Escudo_udec.gif" alt="Escudo UdeC" class="top-navbar-logo-udec">
                 <img src="logo/cropped-Logo-CATLEC-horizontal-sin-fondo-1.png" alt="Logo CATLEC"
                     class="top-navbar-logo">
                 <span class="top-navbar-title">Visor de datos - EFE Trenes de
@@ -86,7 +86,7 @@
                         <div
                             style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border-color);padding-bottom:0.25rem;">
                             <h2 class="panel-title" style="border:none;padding:0;margin:0;font-size:0.8rem;">
-                                <i data-lucide="sliders-horizontal" style="width:14px;height:14px;"></i>
+                                <i data-lucide="sliders-horizontal"></i>
                                 Filtros & Búsqueda
                             </h2>
                         </div>
@@ -95,10 +95,10 @@
                         <div class="form-group" style="gap:0.15rem;">
                             <label class="form-label" for="efe-search-input" style="font-size:0.7rem;">Buscar</label>
                             <div class="search-wrapper">
-                                <i data-lucide="search" style="width:13px;height:13px;"></i>
+                                <i data-lucide="search"></i>
                                 <input type="text" id="efe-search-input" class="form-input"
                                     placeholder="Buscar proyecto, servicio o filial..."
-                                    style="padding:0.3rem 0.55rem 0.3rem 1.8rem;font-size:0.76rem;">
+                                    style="padding:0.3rem 0.55rem 0.3rem 2.25rem;font-size:0.76rem;">
                             </div>
                         </div>
 
@@ -106,11 +106,12 @@
                         <div class="form-group" style="gap:0.15rem; position:relative; z-index:90;">
                             <label class="form-label" style="font-size:0.7rem;">Filial</label>
                             <div class="custom-multiselect" id="efe-filial-multiselect-container">
-                                <button type="button" class="form-input multiselect-trigger" id="efe-filial-multiselect-btn">
+                                <button type="button" class="form-input multiselect-trigger" id="efe-filial-multiselect-btn"
+                                    style="padding: 0.3rem 0.55rem; font-size: 0.76rem;">
                                     <span id="efe-filial-multiselect-text">Todas las filiales</span>
                                     <i data-lucide="chevron-down" style="width:12px;height:12px;flex-shrink:0;"></i>
                                 </button>
-                                <div class="multiselect-dropdown" id="efe-filial-multiselect-dropdown" style="display: none;">
+                                <div class="multiselect-dropdown" id="efe-filial-multiselect-dropdown">
                                     <div class="multiselect-actions">
                                         <label class="multiselect-option select-all-option" style="padding: 0.2rem 0; font-weight: 700;">
                                             <input type="checkbox" id="efe-filial-check-all">
@@ -126,11 +127,12 @@
                         <div class="form-group" style="gap:0.15rem; position:relative; z-index:85;">
                             <label class="form-label" style="font-size:0.7rem;">Tipo de Proyecto</label>
                             <div class="custom-multiselect" id="efe-tipo-multiselect-container">
-                                <button type="button" class="form-input multiselect-trigger" id="efe-tipo-multiselect-btn">
+                                <button type="button" class="form-input multiselect-trigger" id="efe-tipo-multiselect-btn"
+                                    style="padding: 0.3rem 0.55rem; font-size: 0.76rem;">
                                     <span id="efe-tipo-multiselect-text">Todos los tipos</span>
                                     <i data-lucide="chevron-down" style="width:12px;height:12px;flex-shrink:0;"></i>
                                 </button>
-                                <div class="multiselect-dropdown" id="efe-tipo-multiselect-dropdown" style="display: none;">
+                                <div class="multiselect-dropdown" id="efe-tipo-multiselect-dropdown">
                                     <div class="multiselect-actions">
                                         <label class="multiselect-option select-all-option" style="padding: 0.2rem 0; font-weight: 700;">
                                             <input type="checkbox" id="efe-tipo-check-all">
@@ -146,11 +148,12 @@
                         <div class="form-group" style="gap:0.15rem; position:relative; z-index:80;">
                             <label class="form-label" style="font-size:0.7rem;">Cartera de proyectos</label>
                             <div class="custom-multiselect" id="efe-detail-multiselect-container">
-                                <button type="button" class="form-input multiselect-trigger" id="efe-detail-multiselect-btn">
+                                <button type="button" class="form-input multiselect-trigger" id="efe-detail-multiselect-btn"
+                                    style="padding: 0.3rem 0.55rem; font-size: 0.76rem;">
                                     <span id="efe-detail-multiselect-text">Toda la cartera</span>
                                     <i data-lucide="chevron-down" style="width:12px;height:12px;flex-shrink:0;"></i>
                                 </button>
-                                <div class="multiselect-dropdown" id="efe-detail-multiselect-dropdown" style="display: none;">
+                                <div class="multiselect-dropdown" id="efe-detail-multiselect-dropdown">
                                     <div class="multiselect-actions">
                                         <label class="multiselect-option select-all-option" style="padding: 0.2rem 0; font-weight: 700;">
                                             <input type="checkbox" id="efe-detail-check-all">
@@ -733,8 +736,6 @@
             <span class="app-footer-text">Desarrollado por: Jose Oliveros, Vicente Pérez</span>
         </div>
         <div class="app-footer-right">
-            <img src="logo/Escudo_udec.gif" alt="Escudo UdeC"
-                style="height: 18px; width: auto; margin-right: 0.35rem; vertical-align: middle; display: inline-block;">
             <span class="app-footer-text">Universidad de Concepción &nbsp;·&nbsp; Facultad de Ingeniería</span>
         </div>
     </footer>
@@ -743,30 +744,31 @@
     <div id="efe-timeline-tooltip" class="timeline-tooltip" style="display:none;"></div>
 
     <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
     <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@1.48.0/dist/umd/lucide.min.js"></script>
 
     <!-- EFE App Logic -->
     <script src="static/js/common/tooltip.js?v=20260919_2325"></script>
-    <script src="static/js/common/utils.js?v=20260920_1"></script>
+    <script src="static/js/common/utils.js?v=20260924_8"></script>
+    <script src="static/js/common/kpi-animate.js?v=20260924_2"></script>
+    <script src="static/js/common/table-fade.js?v=20260924_1"></script>
     <script src="static/js/common/timeline.js?v=20260920_1"></script>
     <script src="static/js/EFE/state.js?v=20260919_2325"></script>
-    <script src="static/js/EFE/charts.js?v=20260919_2325"></script>
-    <script src="static/js/EFE/investment.js?v=20260919_2325"></script>
-    <script src="static/js/EFE/timeline.js?v=20260919_2325"></script>
+    <script src="static/js/EFE/charts.js?v=20260924_1"></script>
+    <script src="static/js/EFE/investment.js?v=20260924_1"></script>
+    <script src="static/js/EFE/timeline.js?v=20260924_1"></script>
     <script src="static/js/EFE/operacion.js?v=20260919_2325"></script>
-    <script src="static/js/EFE/map.js?v=20260919_2325"></script>
-    <script src="static/js/EFE/filters.js?v=20260919_2325"></script>
-    <script src="static/js/EFE/ui.js?v=20260919_2325"></script>
+    <script src="static/js/EFE/map.js?v=20260924_1"></script>
+    <script src="static/js/EFE/filters.js?v=20260924_1"></script>
+    <script src="static/js/EFE/ui.js?v=20260924_2"></script>
 
     <!-- Nav Menu & View Switcher Logic -->
-    <script src="static/js/common/nav-menu.js?v=20260919_2325"></script>
+    <script src="static/js/common/nav-menu.js?v=20260924_5"></script>
     <script>
         (function () {
             CatlecNav.render();
 
-            const navDropdown = document.getElementById('nav-menu-dropdown');
 
             // ─── Subheader Switcher Buttons ──────────────────────────────────
             const btnMap = document.getElementById('btn-efe-view-map');
@@ -803,7 +805,7 @@
             if (navSubMap) {
                 navSubMap.addEventListener('click', (e) => {
                     e.preventDefault();
-                    navDropdown.classList.remove('open');
+                    CatlecNav.close();
                     if (typeof hideEfeInvestmentView === 'function') hideEfeInvestmentView();
                     if (typeof hideEfeTimelineView === 'function') hideEfeTimelineView();
                     if (typeof hideEfeOperacionView === 'function') hideEfeOperacionView();
@@ -812,21 +814,21 @@
             if (navSubTl) {
                 navSubTl.addEventListener('click', (e) => {
                     e.preventDefault();
-                    navDropdown.classList.remove('open');
+                    CatlecNav.close();
                     if (typeof showEfeTimelineView === 'function') showEfeTimelineView();
                 });
             }
             if (navSubInv) {
                 navSubInv.addEventListener('click', (e) => {
                     e.preventDefault();
-                    navDropdown.classList.remove('open');
+                    CatlecNav.close();
                     if (typeof showEfeInvestmentView === 'function') showEfeInvestmentView();
                 });
             }
             if (navSubOp) {
                 navSubOp.addEventListener('click', (e) => {
                     e.preventDefault();
-                    navDropdown.classList.remove('open');
+                    CatlecNav.close();
                     if (typeof showEfeOperacionView === 'function') showEfeOperacionView();
                 });
             }

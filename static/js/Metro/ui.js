@@ -81,18 +81,14 @@ function metroRenderTable(projects) {
         });
 
         tr.addEventListener('mouseenter', () => {
-            metroState.hoveredProjectName = proj.name;
-            metroState.hoveredProjectId = proj.id;
-            if (typeof metroUpdateMapStyles === 'function') {
-                metroUpdateMapStyles(typeof currentFilteredMetroProjects !== 'undefined' ? currentFilteredMetroProjects : projects);
+            if (typeof metroSetHover === 'function') {
+                metroSetHover(proj.name, metroState.hoveredOperatingLine, proj.id);
             }
         });
 
         tr.addEventListener('mouseleave', () => {
-            metroState.hoveredProjectName = null;
-            metroState.hoveredProjectId = null;
-            if (typeof metroUpdateMapStyles === 'function') {
-                metroUpdateMapStyles(typeof currentFilteredMetroProjects !== 'undefined' ? currentFilteredMetroProjects : projects);
+            if (typeof metroSetHover === 'function') {
+                metroSetHover(null, metroState.hoveredOperatingLine, null);
             }
         });
 
@@ -110,22 +106,25 @@ function metroShowTableListView() {
     const tableComunasContainer = document.getElementById('metro-comunas-container-view');
     const detailContainer = document.getElementById('metro-project-detail-view');
 
+    const targetView = metroState.tableMode === 'lines' ? tableLinesContainer
+        : metroState.tableMode === 'comunas' ? tableComunasContainer
+        : tableProjectsContainer;
+    const otherViews = [tableProjectsContainer, tableLinesContainer, tableComunasContainer].filter(v => v && v !== targetView);
+    const wasDetailOpen = detailContainer && detailContainer.style.display === 'flex';
+
+    if (wasDetailOpen && targetView && typeof CatlecUtils !== 'undefined') {
+        CatlecUtils.swapView(detailContainer, targetView, { direction: 'back' });
+    } else {
+        if (detailContainer) detailContainer.style.display = 'none';
+        if (targetView) targetView.style.display = 'flex';
+    }
+    otherViews.forEach(v => { v.style.display = 'none'; });
+
     if (metroState.tableMode === 'lines') {
-        if (tableProjectsContainer) tableProjectsContainer.style.display = 'none';
-        if (tableLinesContainer) tableLinesContainer.style.display = 'flex';
-        if (tableComunasContainer) tableComunasContainer.style.display = 'none';
         metroRenderOperatingLinesTable();
     } else if (metroState.tableMode === 'comunas') {
-        if (tableProjectsContainer) tableProjectsContainer.style.display = 'none';
-        if (tableLinesContainer) tableLinesContainer.style.display = 'none';
-        if (tableComunasContainer) tableComunasContainer.style.display = 'flex';
         metroRenderSideComunasTable();
-    } else {
-        if (tableProjectsContainer) tableProjectsContainer.style.display = 'flex';
-        if (tableLinesContainer) tableLinesContainer.style.display = 'none';
-        if (tableComunasContainer) tableComunasContainer.style.display = 'none';
     }
-    if (detailContainer) detailContainer.style.display = 'none';
 }
 
 function setMetroTableMode(mode) {
@@ -271,7 +270,7 @@ function metroRenderOperatingLinesTable() {
         }
 
         html += `
-            <tr class="row-main" id="metro-line-row-${idx}" data-line="${l.line}" style="cursor: pointer; border-bottom: 1px solid var(--border-color); transition: background-color 0.2s ease, box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);"
+            <tr class="row-main" id="metro-line-row-${idx}" data-line="${l.line}" style="cursor: pointer; border-bottom: 1px solid var(--border-color);"
                 onmouseenter="metroOnHoverOperatingLine('${l.line}', true)"
                 onmouseleave="metroOnHoverOperatingLine('${l.line}', false)"
                 onclick="metroOnClickOperatingLine('${l.line}')">
@@ -334,9 +333,8 @@ window.metroUpdateOperatingLinesTableSelection = metroUpdateOperatingLinesTableS
 
 function metroOnHoverOperatingLine(lineName, isHover) {
     if (metroState.selectedProjectName || metroState.selectedOperatingLine) return;
-    metroState.hoveredOperatingLine = isHover ? lineName : null;
-    if (typeof metroUpdateMapStyles === 'function') {
-        metroUpdateMapStyles(typeof currentFilteredMetroProjects !== 'undefined' ? currentFilteredMetroProjects : (window.METRO_DATA ? window.METRO_DATA.data : []));
+    if (typeof metroSetHover === 'function') {
+        metroSetHover(metroState.hoveredProjectName, isHover ? lineName : null, metroState.hoveredProjectId);
     }
 }
 window.metroOnHoverOperatingLine = metroOnHoverOperatingLine;
@@ -450,7 +448,8 @@ function metroRenderSideComunasTable() {
 
     const allComunas = [...(stats.ranking_estaciones || []), ...(stats.lista_sin_metro || [])];
     const searchInput = document.getElementById('metro-side-comunas-search');
-    const searchVal = (searchInput && searchInput.value) ? (typeof metroNormalizeText === 'function' ? metroNormalizeText(searchInput.value) : searchInput.value.toLowerCase().trim()) : '';
+    const searchVal = CatlecUtils.normalizeSearch(searchInput ? searchInput.value : '');
+    const matchSearch = CatlecUtils.createSearchMatcher(searchVal);
 
     const filtered = allComunas.filter(c => {
         // Filtro de botones de estado
@@ -459,29 +458,14 @@ function metroRenderSideComunasTable() {
         if (metroSideComunasFilterState === 'en_expansion' && (c.has_metro || c.expansion_status !== 'En Expansión')) return false;
 
         // Filtro de búsqueda de texto
-        if (searchVal) {
-            const normName = typeof metroNormalizeText === 'function' ? metroNormalizeText(c.comuna) : c.comuna.toLowerCase();
-            const normStatus = typeof metroNormalizeText === 'function' ? metroNormalizeText(c.expansion_status || '') : (c.expansion_status || '').toLowerCase();
-            const matchLines = (c.lineas || []).some(l => {
-                const normL = typeof metroNormalizeText === 'function' ? metroNormalizeText(l) : l.toLowerCase();
-                return normL.includes(searchVal);
-            });
-            const matchFuturos = (c.proyectos_futuros || []).some(p => {
-                const normP = typeof metroNormalizeText === 'function' ? metroNormalizeText(p) : p.toLowerCase();
-                return normP.includes(searchVal);
-            });
-
-            if (!normName.includes(searchVal) && !normStatus.includes(searchVal) && !matchLines && !matchFuturos) {
-                return false;
-            }
-        }
-        return true;
+        return matchSearch(c.comuna, c.expansion_status, c.lineas, c.proyectos_futuros);
     });
 
     if (searchVal) {
+        // Prioriza coincidencia exacta del nombre de comuna, luego coincidencia parcial del nombre
         filtered.sort((a, b) => {
-            const normA = typeof metroNormalizeText === 'function' ? metroNormalizeText(a.comuna) : a.comuna.toLowerCase();
-            const normB = typeof metroNormalizeText === 'function' ? metroNormalizeText(b.comuna) : b.comuna.toLowerCase();
+            const normA = CatlecUtils.normalizeSearch(a.comuna);
+            const normB = CatlecUtils.normalizeSearch(b.comuna);
             const aExact = normA === searchVal;
             const bExact = normB === searchVal;
             if (aExact && !bExact) return -1;
@@ -764,12 +748,23 @@ function metroShowProjectDetailView(proj) {
     const tableComunasContainer = document.getElementById('metro-comunas-container-view');
     const detailContainer = document.getElementById('metro-project-detail-view');
     const detailBody = document.getElementById('metro-detail-view-body');
-
-    if (tableProjectsContainer) tableProjectsContainer.style.display = 'none';
-    if (tableLinesContainer) tableLinesContainer.style.display = 'none';
-    if (tableComunasContainer) tableComunasContainer.style.display = 'none';
     if (!detailContainer || !detailBody) return;
-    detailContainer.style.display = 'flex';
+
+    const alreadyOpen = detailContainer.style.display === 'flex';
+    const visibleListView = [tableProjectsContainer, tableLinesContainer, tableComunasContainer]
+        .find(v => v && v.style.display !== 'none') || null;
+
+    if (!alreadyOpen && visibleListView && typeof CatlecUtils !== 'undefined') {
+        CatlecUtils.swapView(visibleListView, detailContainer, { direction: 'forward' });
+        [tableProjectsContainer, tableLinesContainer, tableComunasContainer].forEach(v => {
+            if (v && v !== visibleListView) v.style.display = 'none';
+        });
+    } else {
+        if (tableProjectsContainer) tableProjectsContainer.style.display = 'none';
+        if (tableLinesContainer) tableLinesContainer.style.display = 'none';
+        if (tableComunasContainer) tableComunasContainer.style.display = 'none';
+        detailContainer.style.display = 'flex';
+    }
 
     const lineColor = (typeof metroGetProjectColor === 'function')
         ? metroGetProjectColor(proj.line || proj.name)

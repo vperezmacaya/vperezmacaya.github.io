@@ -60,21 +60,7 @@ function initSectraMap() {
         subdomains: 'abcd',
         maxZoom: 20
     }).addTo(sectraMap);
-    
-    // Capa de Regiones Geográficas (Sin highlight al hover, estática)
-    if (window.REGIONS_DATA) {
-        sectraRegionsGeoLayer = L.geoJSON(window.REGIONS_DATA, {
-            style: {
-                color: '#3b82f6',
-                weight: 1.2,
-                opacity: 0.45,
-                dashArray: '3, 4',
-                fillColor: '#3b82f6',
-                fillOpacity: 0.04
-            },
-            interactive: false // Deshabilita hover / highlight en regiones
-        }).addTo(sectraMap);
-    }
+    CatlecUtils.enableCollapsibleAttribution(sectraMap);
     
     // Capa de Proyectos Vectoriales SECTRA
     loadSectraVectorLayers();

@@ -8,29 +8,7 @@ function metroApplyDefaultMapView(animate = false) {
 }
 
 function metroCloseAllTooltips() {
-    if (!metroMap) return;
-    try {
-        if (metroExpansionLayer && typeof metroExpansionLayer.eachLayer === 'function') {
-            metroExpansionLayer.eachLayer(l => {
-                if (l && typeof l.closeTooltip === 'function') {
-                    l.closeTooltip();
-                }
-            });
-        }
-        if (Array.isArray(metroProjectMarkers)) {
-            metroProjectMarkers.forEach(m => {
-                if (m && typeof m.closeTooltip === 'function') {
-                    m.closeTooltip();
-                }
-            });
-        }
-        const tipPane = metroMap.getPane('tooltipPane');
-        if (tipPane) {
-            tipPane.innerHTML = '';
-        }
-    } catch (e) {
-        console.warn('metroCloseAllTooltips error:', e);
-    }
+    CatlecUtils.closeAllMapTooltips(metroMap);
 }
 window.metroCloseAllTooltips = metroCloseAllTooltips;
 
@@ -53,6 +31,9 @@ function metroInitLeafletMap() {
 
     metroMap.createPane('metroStationsPane');
     metroMap.getPane('metroStationsPane').style.zIndex = 550;
+
+    // Desvanece trazados/estaciones en zooms grandes y evita tooltips pegados
+    CatlecUtils.enableSmoothZoom(metroMap, { fadePanes: ['overlayPane', 'metroExpansionPane', 'metroStationsPane'] });
 
     // Deseleccionar al hacer clic en el fondo del mapa
     metroMap.on('click', () => {
@@ -89,11 +70,7 @@ function metroInitLeafletMap() {
 
         if (!isInteractivePathOrMarker) {
             if (metroState.hoveredProjectName) {
-                const wasHovered = metroState.hoveredProjectName;
-                metroState.hoveredProjectName = null;
-                if (metroState.selectedProjectName !== wasHovered) {
-                    metroUpdateMapStyles(typeof currentFilteredMetroProjects !== 'undefined' ? currentFilteredMetroProjects : (window.METRO_DATA ? window.METRO_DATA.data : []));
-                }
+                metroSetHover(null, metroState.hoveredOperatingLine);
             }
             metroCloseAllTooltips();
         }
@@ -101,17 +78,16 @@ function metroInitLeafletMap() {
 
     mapContainer.addEventListener('mouseleave', () => {
         if (metroState.hoveredProjectName) {
-            const wasHovered = metroState.hoveredProjectName;
-            metroState.hoveredProjectName = null;
-            if (metroState.selectedProjectName !== wasHovered) {
-                metroUpdateMapStyles(typeof currentFilteredMetroProjects !== 'undefined' ? currentFilteredMetroProjects : (window.METRO_DATA ? window.METRO_DATA.data : []));
-            }
+            metroSetHover(null, metroState.hoveredOperatingLine);
         }
         metroCloseAllTooltips();
     });
 
-    // Re-render leg lines y visibilidad en zoom
-    metroMap.on('zoomend moveend zoom', () => {
+    // Re-render leg lines y visibilidad una vez terminado el zoom.
+    // (Solo 'zoomend': 'zoom' se dispara en cada cuadro de un flyTo y recalcular
+    // todo el mapa ahí causaba el stuttering; un pan no altera las patas porque
+    // se calculan con offsets en píxeles.)
+    metroMap.on('zoomend', () => {
         if (metroClusterLegLayers.length > 0) {
             metroUpdateMapStyles(typeof currentFilteredMetroProjects !== 'undefined' ? currentFilteredMetroProjects : (window.METRO_DATA ? window.METRO_DATA.data : []));
         }
@@ -467,7 +443,7 @@ function metroLoadMapLayers() {
         });
 
         // Visibilidad de estaciones condicionada al zoom (visible desde el zoom inicial de la web: zoom 12)
-        metroMap.on('zoomend moveend zoom', metroUpdateStationsVisibility);
+        metroMap.on('zoomend', metroUpdateStationsVisibility);
         metroUpdateStationsVisibility();
     }
 
@@ -589,16 +565,7 @@ function metroLoadMapLayers() {
 
                 layer.on('mouseover', () => {
                     if (projs.length > 0) {
-                        const pName = projs[0].name;
-                        // Si el proyecto ya está seleccionado, no reordenar DOM ni re-aplicar estilos para no romper eventos de puntero
-                        if (metroState.selectedProjectName === pName) {
-                            metroState.hoveredProjectName = pName;
-                            return;
-                        }
-                        if (metroState.hoveredProjectName !== pName) {
-                            metroState.hoveredProjectName = pName;
-                            metroUpdateMapStyles(typeof currentFilteredMetroProjects !== 'undefined' ? currentFilteredMetroProjects : projects);
-                        }
+                        metroSetHover(projs[0].name, metroState.hoveredOperatingLine);
                     }
                 });
 
@@ -621,11 +588,7 @@ function metroLoadMapLayers() {
                     }
                     metroCloseAllTooltips();
                     if (metroState.hoveredProjectName) {
-                        const wasHovered = metroState.hoveredProjectName;
-                        metroState.hoveredProjectName = null;
-                        if (metroState.selectedProjectName !== wasHovered) {
-                            metroUpdateMapStyles(typeof currentFilteredMetroProjects !== 'undefined' ? currentFilteredMetroProjects : projects);
-                        }
+                        metroSetHover(null, metroState.hoveredOperatingLine);
                     }
                 });
             }
@@ -677,9 +640,9 @@ function metroFocusOperatingLine(lineName, shouldZoom = false) {
 
     if (shouldZoom && metroMap) {
         const layers = metroFindOperatingLayers(lineName);
-        CatlecUtils.zoomToProject(metroMap, layers, {
+        CatlecUtils.afterNextPaint(() => CatlecUtils.zoomToProject(metroMap, layers, {
             duration: 0.9
-        });
+        }));
     }
 
     if (typeof metroUpdateOperatingLinesTableSelection === 'function') {
@@ -691,8 +654,7 @@ window.metroFocusOperatingLine = metroFocusOperatingLine;
 
 function metroResetOperatingLine(lineName) {
     if (!metroState.selectedOperatingLine && !metroState.selectedProjectName) {
-        metroState.hoveredOperatingLine = null;
-        metroUpdateMapStyles(typeof currentFilteredMetroProjects !== 'undefined' ? currentFilteredMetroProjects : (window.METRO_DATA ? window.METRO_DATA.data : []));
+        metroSetHover(metroState.hoveredProjectName, null, metroState.hoveredProjectId);
     }
 }
 window.metroResetOperatingLine = metroResetOperatingLine;
@@ -849,14 +811,7 @@ function metroRenderProjectMarkers(mapProjects) {
             });
 
             m.on('mouseover', () => {
-                if (metroState.selectedProjectName === m.projectName) {
-                    metroState.hoveredProjectName = m.projectName;
-                    return;
-                }
-                if (metroState.hoveredProjectName !== m.projectName) {
-                    metroState.hoveredProjectName = m.projectName;
-                    metroUpdateMapStyles(typeof currentFilteredMetroProjects !== 'undefined' ? currentFilteredMetroProjects : mapProjects);
-                }
+                metroSetHover(m.projectName, metroState.hoveredOperatingLine);
             });
 
             m.on('mouseout', () => {
@@ -865,11 +820,7 @@ function metroRenderProjectMarkers(mapProjects) {
                 }
                 metroCloseAllTooltips();
                 if (metroState.hoveredProjectName) {
-                    const wasH = metroState.hoveredProjectName;
-                    metroState.hoveredProjectName = null;
-                    if (metroState.selectedProjectName !== wasH) {
-                        metroUpdateMapStyles(typeof currentFilteredMetroProjects !== 'undefined' ? currentFilteredMetroProjects : mapProjects);
-                    }
+                    metroSetHover(null, metroState.hoveredOperatingLine);
                 }
             });
 
@@ -1159,8 +1110,17 @@ function metroUpdateStationsVisibility() {
     }
 }
 
-function metroUpdateMapStyles(filteredProjects) {
-    if (!metroMap) return;
+// Proyectos visibles según los filtros actuales (mismo criterio que los llamadores)
+function metroCurrentProjects() {
+    return (typeof currentFilteredMetroProjects !== 'undefined' && currentFilteredMetroProjects)
+        ? currentFilteredMetroProjects
+        : (window.METRO_DATA ? window.METRO_DATA.data : []);
+}
+
+// ─── Contexto de estilos (selección, hover y filtros activos) ───────────────
+// Lo comparten la actualización completa (metroUpdateMapStyles) y el hover
+// liviano (metroSetHover), para que ambos estilicen exactamente igual.
+function metroBuildStyleContext(filteredProjects) {
     const projs = filteredProjects || (window.METRO_DATA ? window.METRO_DATA.data : []);
     const selectedName = metroState.selectedProjectName;
     const hoveredName = metroState.hoveredProjectName;
@@ -1194,93 +1154,103 @@ function metroUpdateMapStyles(filteredProjects) {
         hovP.shapes.forEach(c => hoveredShapes.add(String(c)));
     }
 
-    // 1. Estilos de líneas de trazado de expansión
-    if (metroExpansionLayer) {
-        metroExpansionLayer.eachLayer(layer => {
-            const props = layer.feature ? layer.feature.properties : {};
-            const cod = (props.shape_id != null && String(props.shape_id).trim() !== '')
-                ? String(props.shape_id).trim()
-                : (props.COD != null ? String(props.COD).trim() : (props['@id'] || ''));
-            const isVisible = visibleCods.has(cod);
-            const isSelected = selectedShapes.has(cod);
-            const isHovered = hoveredShapes.has(cod);
+    return { projs, selectedName, hoveredName, selectedLine, hoveredLine, selectedProjId, visibleCods, selectedShapes, hoveredShapes };
+}
 
-            const projs = metroShapeToProjects[cod] || [];
-            const proj = projs[0] || props;
-            const projColor = (typeof metroGetProjectColor === 'function')
-                ? metroGetProjectColor(proj.line || proj.linea || props.color)
-                : (props.color || '#52525b');
+// Estilo de un trazado de expansión. En el hover liviano no se reordena el SVG
+// (bringHoveredToFront = false): reinsertar el path bajo el cursor dispara
+// mouseout/mouseover falsos y rompía los eventos de puntero y los tooltips.
+function metroStyleExpansionShape(layer, ctx, bringHoveredToFront = true) {
+    const { selectedName, selectedLine, visibleCods, selectedShapes, hoveredShapes } = ctx;
 
-            if (selectedName) {
-                if (isSelected) {
-                    layer.setStyle({
-                        color: projColor,
-                        weight: 5.5,
-                        opacity: 1.0,
-                        dashArray: null
-                    });
-                    if (layer.bringToFront) layer.bringToFront();
-                } else if (isHovered) {
-                    layer.setStyle({
-                        color: projColor,
-                        weight: 4.8,
-                        opacity: 0.95,
-                        dashArray: null
-                    });
-                } else {
-                    // Dimming suave y legible conservando el tono de la línea
-                    layer.setStyle({
-                        color: projColor,
-                        weight: 3.0,
-                        opacity: 0.35,
-                        dashArray: null
-                    });
-                }
-            } else if (selectedLine) {
-                if (isHovered) {
-                    layer.setStyle({
-                        color: projColor,
-                        weight: 5.5,
-                        opacity: 1.0,
-                        dashArray: null
-                    });
-                    if (layer.bringToFront) layer.bringToFront();
-                } else {
-                    // Hay una línea operativa seleccionada -> proyectos atenuados con moderación
-                    layer.setStyle({
-                        color: projColor,
-                        weight: 3.0,
-                        opacity: 0.35,
-                        dashArray: null
-                    });
-                }
-            } else {
-                if (isHovered) {
-                    layer.setStyle({
-                        color: projColor,
-                        weight: 6.5,
-                        opacity: 1.0,
-                        dashArray: null
-                    });
-                    if (layer.bringToFront) layer.bringToFront();
-                } else if (isVisible) {
-                    layer.setStyle({
-                        color: projColor,
-                        weight: 4.0,
-                        opacity: 0.90,
-                        dashArray: null
-                    });
-                } else {
-                    layer.setStyle({
-                        color: '#cbd5e1',
-                        weight: 2.2,
-                        opacity: 0.25,
-                        dashArray: null
-                    });
-                }
-            }
-        });
+    const props = layer.feature ? layer.feature.properties : {};
+    const cod = (props.shape_id != null && String(props.shape_id).trim() !== '')
+        ? String(props.shape_id).trim()
+        : (props.COD != null ? String(props.COD).trim() : (props['@id'] || ''));
+    const isVisible = visibleCods.has(cod);
+    const isSelected = selectedShapes.has(cod);
+    const isHovered = hoveredShapes.has(cod);
+
+    const projs = metroShapeToProjects[cod] || [];
+    const proj = projs[0] || props;
+    const projColor = (typeof metroGetProjectColor === 'function')
+        ? metroGetProjectColor(proj.line || proj.linea || props.color)
+        : (props.color || '#52525b');
+
+    if (selectedName) {
+        if (isSelected) {
+            layer.setStyle({
+                color: projColor,
+                weight: 5.5,
+                opacity: 1.0,
+                dashArray: null
+            });
+            if (layer.bringToFront) layer.bringToFront();
+        } else if (isHovered) {
+            layer.setStyle({
+                color: projColor,
+                weight: 4.8,
+                opacity: 0.95,
+                dashArray: null
+            });
+        } else {
+            // Dimming suave y legible conservando el tono de la línea
+            layer.setStyle({
+                color: projColor,
+                weight: 3.0,
+                opacity: 0.35,
+                dashArray: null
+            });
+        }
+    } else if (selectedLine) {
+        if (isHovered) {
+            layer.setStyle({
+                color: projColor,
+                weight: 5.5,
+                opacity: 1.0,
+                dashArray: null
+            });
+            if (bringHoveredToFront && layer.bringToFront) layer.bringToFront();
+        } else {
+            // Hay una línea operativa seleccionada -> proyectos atenuados con moderación
+            layer.setStyle({
+                color: projColor,
+                weight: 3.0,
+                opacity: 0.35,
+                dashArray: null
+            });
+        }
+    } else {
+        if (isHovered) {
+            layer.setStyle({
+                color: projColor,
+                weight: 6.5,
+                opacity: 1.0,
+                dashArray: null
+            });
+            if (bringHoveredToFront && layer.bringToFront) layer.bringToFront();
+        } else if (isVisible) {
+            layer.setStyle({
+                color: projColor,
+                weight: 4.0,
+                opacity: 0.90,
+                dashArray: null
+            });
+        } else {
+            layer.setStyle({
+                color: '#cbd5e1',
+                weight: 2.2,
+                opacity: 0.25,
+                dashArray: null
+            });
+        }
     }
+}
+
+// Líneas operativas y estaciones (existentes y futuras): dependen de la
+// selección y del hover de líneas operativas, no del hover de proyectos.
+function metroStyleOperatingNetwork(ctx) {
+    const { selectedName, selectedLine, hoveredLine, selectedProjId } = ctx;
 
     // 2. Capa de Red Actual de Metro (Líneas Operativas)
     if (metroExistingLinesLayer) {
@@ -1518,6 +1488,20 @@ function metroUpdateMapStyles(filteredProjects) {
             }
         });
     }
+}
+
+function metroUpdateMapStyles(filteredProjects) {
+    if (!metroMap) return;
+    const ctx = metroBuildStyleContext(filteredProjects);
+    const { projs, selectedName, selectedLine } = ctx;
+
+    // 1. Estilos de líneas de trazado de expansión
+    if (metroExpansionLayer) {
+        metroExpansionLayer.eachLayer(layer => metroStyleExpansionShape(layer, ctx));
+    }
+
+    // 2-3b. Red actual (líneas operativas) y estaciones existentes/futuras
+    metroStyleOperatingNetwork(ctx);
 
     // 4. Capa de Comunas (si está cargada y activa)
     if (typeof metroComunasLayer !== 'undefined' && metroComunasLayer && metroShowComunas) {
@@ -1580,13 +1564,7 @@ function metroUpdateMapStyles(filteredProjects) {
     metroProjectMarkers.forEach(marker => {
         if (!marker || !marker.getElement) return;
         const elem = marker.getElement();
-        if (!elem) return;
-
-        const pulse = elem.querySelector('.centroid-marker-pulse');
-        if (!pulse) return;
-
-        const isSelectedMarker = selectedName && marker.projectName === selectedName;
-        const isHoveredMarker = hoveredName && marker.projectName === hoveredName;
+        if (!elem || !elem.querySelector('.centroid-marker-pulse')) return;
 
         const clusterMembers = marker.clusterMembers || [marker];
         const clusterState = marker.clusterState;
@@ -1634,99 +1612,168 @@ function metroUpdateMapStyles(filteredProjects) {
             }
         }
 
-        const dx = (isClusterActive && marker.clusterDx != null) ? marker.clusterDx : 0;
-        const dy = (isClusterActive && marker.clusterDy != null) ? marker.clusterDy : 0;
-
-        let scaleStr = 'scale(1.0)';
-        const pColor = marker.projectColor || (typeof metroGetProjectColor === 'function' ? metroGetProjectColor(marker.projectName) : '#52525b');
-        let bg = pColor;
-        let opacityVal = '1.0';
-
-        if (selectedName) {
-            if (isSelectedMarker) {
-                pulse.classList.add('active-selected');
-                pulse.classList.remove('is-hovered', 'dimmed');
-                bg = pColor;
-                scaleStr = 'scale(1.35)';
-                opacityVal = '1.0';
-                if (marker.setZIndexOffset) marker.setZIndexOffset(10000);
-            } else if (isHoveredMarker) {
-                pulse.classList.remove('active-selected', 'dimmed');
-                pulse.classList.add('is-hovered');
-                bg = pColor;
-                scaleStr = 'scale(1.25)';
-                opacityVal = '0.95';
-                if (marker.setZIndexOffset) marker.setZIndexOffset(9500);
-            } else {
-                pulse.classList.remove('active-selected', 'is-hovered');
-                pulse.classList.add('dimmed');
-                bg = pColor;
-                scaleStr = 'scale(0.92)';
-                opacityVal = '0.45';
-                if (marker.setZIndexOffset) marker.setZIndexOffset(100);
-            }
-        } else if (selectedLine) {
-            if (isHoveredMarker) {
-                pulse.classList.remove('active-selected', 'dimmed');
-                pulse.classList.add('is-hovered');
-                bg = pColor;
-                scaleStr = 'scale(1.25)';
-                opacityVal = '1.0';
-                if (marker.setZIndexOffset) marker.setZIndexOffset(9500);
-            } else if (isClusterActive) {
-                pulse.classList.remove('active-selected', 'is-hovered', 'dimmed');
-                pulse.classList.add('deployed');
-                bg = pColor;
-                scaleStr = 'scale(1.05)';
-                opacityVal = '1.0';
-                if (marker.setZIndexOffset) marker.setZIndexOffset(9000);
-            } else {
-                // Línea operativa seleccionada -> marcadores atenuados con moderación
-                pulse.classList.remove('active-selected', 'is-hovered');
-                pulse.classList.add('dimmed');
-                bg = pColor;
-                scaleStr = 'scale(0.92)';
-                opacityVal = '0.45';
-                if (marker.setZIndexOffset) marker.setZIndexOffset(100);
-            }
-        } else {
-            if (isHoveredMarker) {
-                pulse.classList.remove('active-selected', 'dimmed');
-                pulse.classList.add('is-hovered');
-                bg = pColor;
-                scaleStr = 'scale(1.30)';
-                opacityVal = '1.0';
-                if (marker.setZIndexOffset) marker.setZIndexOffset(9500);
-            } else if (isClusterActive) {
-                pulse.classList.remove('active-selected', 'is-hovered', 'dimmed');
-                pulse.classList.add('deployed');
-                bg = pColor;
-                scaleStr = 'scale(1.05)';
-                opacityVal = '1.0';
-                if (marker.setZIndexOffset) marker.setZIndexOffset(9000);
-            } else {
-                pulse.classList.remove('active-selected', 'is-hovered', 'dimmed', 'deployed');
-                bg = pColor;
-                scaleStr = 'scale(1.0)';
-                opacityVal = '1.0';
-                if (marker.setZIndexOffset) marker.setZIndexOffset(0);
-            }
-        }
- 
-        const N = clusterMembers.length;
-        if (marker.setTooltipContent) {
-            if (N > 1 && !isClusterActive) {
-                marker.setTooltipContent(`<strong>${N} proyectos en este lugar</strong>`);
-            } else {
-                marker.setTooltipContent(`<strong>${marker.projectName}</strong><br><span style="color:#60a5fa;font-size:0.72rem;font-weight:600;">Etapa: ${marker.projectStage || 'Proyecto de Expansión'}</span><br><span style="color:#94a3b8;font-size:0.68rem;">${marker.projectLine || 'Metro de Santiago'}</span>`);
-            }
-        }
-
-        pulse.style.backgroundColor = bg;
-        pulse.style.opacity = opacityVal;
-        pulse.style.transform = `translate(${dx}px, ${dy}px) ${scaleStr}`;
+        metroApplyMarkerState(marker, ctx);
     });
 }
+
+// Estilo DOM de un ícono de proyecto: escala, color, opacidad, fan-out y tooltip
+function metroApplyMarkerState(marker, ctx) {
+    const { selectedName, hoveredName, selectedLine } = ctx;
+    if (!marker || !marker.getElement) return;
+    const elem = marker.getElement();
+    if (!elem) return;
+
+    const pulse = elem.querySelector('.centroid-marker-pulse');
+    if (!pulse) return;
+
+    const isSelectedMarker = selectedName && marker.projectName === selectedName;
+    const isHoveredMarker = hoveredName && marker.projectName === hoveredName;
+
+    const clusterMembers = marker.clusterMembers || [marker];
+    const isClusterActive = clusterMembers.some(m =>
+        m.clusterState && m.clusterState.isClickedDeployed
+    );
+
+    const dx = (isClusterActive && marker.clusterDx != null) ? marker.clusterDx : 0;
+    const dy = (isClusterActive && marker.clusterDy != null) ? marker.clusterDy : 0;
+
+    let scaleStr = 'scale(1.0)';
+    const pColor = marker.projectColor || (typeof metroGetProjectColor === 'function' ? metroGetProjectColor(marker.projectName) : '#52525b');
+    let bg = pColor;
+    let opacityVal = '1.0';
+
+    if (selectedName) {
+        if (isSelectedMarker) {
+            pulse.classList.add('active-selected');
+            pulse.classList.remove('is-hovered', 'dimmed');
+            bg = pColor;
+            scaleStr = 'scale(1.35)';
+            opacityVal = '1.0';
+            if (marker.setZIndexOffset) marker.setZIndexOffset(10000);
+        } else if (isHoveredMarker) {
+            pulse.classList.remove('active-selected', 'dimmed');
+            pulse.classList.add('is-hovered');
+            bg = pColor;
+            scaleStr = 'scale(1.25)';
+            opacityVal = '0.95';
+            if (marker.setZIndexOffset) marker.setZIndexOffset(9500);
+        } else {
+            pulse.classList.remove('active-selected', 'is-hovered');
+            pulse.classList.add('dimmed');
+            bg = pColor;
+            scaleStr = 'scale(0.92)';
+            opacityVal = '0.45';
+            if (marker.setZIndexOffset) marker.setZIndexOffset(100);
+        }
+    } else if (selectedLine) {
+        if (isHoveredMarker) {
+            pulse.classList.remove('active-selected', 'dimmed');
+            pulse.classList.add('is-hovered');
+            bg = pColor;
+            scaleStr = 'scale(1.25)';
+            opacityVal = '1.0';
+            if (marker.setZIndexOffset) marker.setZIndexOffset(9500);
+        } else if (isClusterActive) {
+            pulse.classList.remove('active-selected', 'is-hovered', 'dimmed');
+            pulse.classList.add('deployed');
+            bg = pColor;
+            scaleStr = 'scale(1.05)';
+            opacityVal = '1.0';
+            if (marker.setZIndexOffset) marker.setZIndexOffset(9000);
+        } else {
+            // Línea operativa seleccionada -> marcadores atenuados con moderación
+            pulse.classList.remove('active-selected', 'is-hovered');
+            pulse.classList.add('dimmed');
+            bg = pColor;
+            scaleStr = 'scale(0.92)';
+            opacityVal = '0.45';
+            if (marker.setZIndexOffset) marker.setZIndexOffset(100);
+        }
+    } else {
+        if (isHoveredMarker) {
+            pulse.classList.remove('active-selected', 'dimmed');
+            pulse.classList.add('is-hovered');
+            bg = pColor;
+            scaleStr = 'scale(1.30)';
+            opacityVal = '1.0';
+            if (marker.setZIndexOffset) marker.setZIndexOffset(9500);
+        } else if (isClusterActive) {
+            pulse.classList.remove('active-selected', 'is-hovered', 'dimmed');
+            pulse.classList.add('deployed');
+            bg = pColor;
+            scaleStr = 'scale(1.05)';
+            opacityVal = '1.0';
+            if (marker.setZIndexOffset) marker.setZIndexOffset(9000);
+        } else {
+            pulse.classList.remove('active-selected', 'is-hovered', 'dimmed', 'deployed');
+            bg = pColor;
+            scaleStr = 'scale(1.0)';
+            opacityVal = '1.0';
+            if (marker.setZIndexOffset) marker.setZIndexOffset(0);
+        }
+    }
+
+    // Solo reescribir el tooltip si su contenido cambió: hacerlo en cada
+    // actualización re-renderiza y reposiciona el tooltip abierto (parpadeo).
+    const N = clusterMembers.length;
+    if (marker.setTooltipContent) {
+        const tipHtml = (N > 1 && !isClusterActive)
+            ? `<strong>${N} proyectos en este lugar</strong>`
+            : `<strong>${marker.projectName}</strong><br><span style="color:#60a5fa;font-size:0.72rem;font-weight:600;">Etapa: ${marker.projectStage || 'Proyecto de Expansión'}</span><br><span style="color:#94a3b8;font-size:0.68rem;">${marker.projectLine || 'Metro de Santiago'}</span>`;
+        if (marker._metroTipHtml !== tipHtml) {
+            marker.setTooltipContent(tipHtml);
+            marker._metroTipHtml = tipHtml;
+        }
+    }
+
+    pulse.style.backgroundColor = bg;
+    pulse.style.opacity = opacityVal;
+    pulse.style.transform = `translate(${dx}px, ${dy}px) ${scaleStr}`;
+}
+
+// ─── Hover liviano (mapa, tabla de proyectos y tabla de líneas) ─────────────
+// Cambia el proyecto/línea en hover y reestiliza solo lo que depende de él: los
+// trazados e íconos del proyecto anterior y del nuevo y, si cambió la línea
+// operativa en hover, la red actual y sus estaciones. No llama a
+// metroUpdateMapStyles(): recalcular todo el mapa, reordenar el SVG y recrear
+// los marcadores de cluster en cada hover causaba parpadeos y tooltips pegados.
+function metroSetHover(projectName, lineName, projectId = null) {
+    const prevName = metroState.hoveredProjectName;
+    const prevId = metroState.hoveredProjectId;
+    const prevLine = metroState.hoveredOperatingLine;
+    if (prevName === projectName && prevId === projectId && prevLine === lineName) return;
+
+    metroState.hoveredProjectName = projectName;
+    metroState.hoveredProjectId = projectId;
+    metroState.hoveredOperatingLine = lineName;
+    if (!metroMap) return;
+
+    const ctx = metroBuildStyleContext(metroCurrentProjects());
+
+    if (prevLine !== lineName) {
+        metroStyleOperatingNetwork(ctx);
+    }
+
+    if (prevName !== projectName || prevId !== projectId) {
+        const allProjects = (window.METRO_DATA && window.METRO_DATA.data) ? window.METRO_DATA.data : [];
+        const findProj = (name, id) => allProjects.find(p => (id && p.id === id) || (name && p.name === name));
+        const affectedShapes = new Set();
+        const affectedNames = new Set();
+        [findProj(prevName, prevId), findProj(projectName, projectId)].forEach(p => {
+            if (!p) return;
+            affectedNames.add(p.name);
+            (p.shapes || []).forEach(cod => affectedShapes.add(String(cod).trim()));
+        });
+
+        affectedShapes.forEach(cod => {
+            (metroShapeGeometries[cod] || []).forEach(layer => metroStyleExpansionShape(layer, ctx, false));
+        });
+        metroProjectMarkers.forEach(marker => {
+            if (affectedNames.has(marker.projectName)) metroApplyMarkerState(marker, ctx);
+        });
+    }
+}
+window.metroSetHover = metroSetHover;
 
 function metroZoomToProject(proj) {
     if (!metroMap || !proj) return;
@@ -1745,10 +1792,12 @@ function metroZoomToProject(proj) {
         if (marker) matchedLayers.push(marker);
     }
 
-    CatlecUtils.zoomToProject(metroMap, matchedLayers, {
+    // Se inicia tras el repintado: metroSelectProject aún debe restilizar el mapa
+    // y refrescar tabla/panel, y ese trabajo no debe comerse los primeros cuadros.
+    CatlecUtils.afterNextPaint(() => CatlecUtils.zoomToProject(metroMap, matchedLayers, {
         duration: 0.9,
         onDefaultView: () => metroApplyDefaultMapView(true)
-    });
+    }));
 }
 window.metroZoomToProject = metroZoomToProject;
 

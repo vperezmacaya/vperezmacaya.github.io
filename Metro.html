@@ -16,73 +16,9 @@
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <!-- CATLEC Global Stylesheet & Metro Addon -->
-    <link rel="stylesheet" href="static/css/styles.css?v=20260920_1">
-    <link rel="stylesheet" href="static/css/efe_addons.css?v=20260920_1">
-    <link rel="stylesheet" href="static/css/metro_addons.css">
-    <style>
-        /* Ajustes de sombras para marcadores dinámicos por línea de Metro */
-        #metro-map .centroid-marker-pulse:hover,
-        #metro-map .centroid-marker-pulse.is-hovered {
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
-        }
-
-        #metro-map .centroid-marker-pulse.active-selected {
-            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.85), 0 6px 18px rgba(0, 0, 0, 0.5);
-        }
-
-        /* Badges y scroll interno para el panel comunal */
-        .metro-badge {
-            font-size: 0.62rem;
-            font-weight: 600;
-            padding: 2px 7px;
-            border-radius: 12px;
-            background: rgba(37, 99, 235, 0.12);
-            color: var(--primary);
-            border: 1px solid rgba(37, 99, 235, 0.25);
-            white-space: nowrap;
-        }
-
-        .metro-comunas-scroll::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .metro-comunas-scroll::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.04);
-            border-radius: 2px;
-        }
-
-        .metro-comunas-scroll::-webkit-scrollbar-thumb {
-            background: rgba(37, 99, 235, 0.35);
-            border-radius: 2px;
-        }
-
-        .metro-comunas-scroll::-webkit-scrollbar-thumb:hover {
-            background: rgba(37, 99, 235, 0.65);
-        }
-
-        .metro-comunas-scroll-x::-webkit-scrollbar {
-            height: 5px;
-        }
-
-        .metro-comunas-scroll-x::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.04);
-            border-radius: 2px;
-        }
-
-        .metro-comunas-scroll-x::-webkit-scrollbar-thumb {
-            background: rgba(37, 99, 235, 0.35);
-            border-radius: 2px;
-        }
-
-        .metro-comunas-scroll-x::-webkit-scrollbar-thumb:hover {
-            background: rgba(37, 99, 235, 0.65);
-        }
-
-        #metroChartPoblacionAxisLeft,
-        #metroChartPoblacionAxisRight {
-            transition: box-shadow 0.2s ease;
-        }
-    </style>
+    <link rel="stylesheet" href="static/css/styles.css?v=20260924_11">
+    <link rel="stylesheet" href="static/css/efe_addons.css?v=20260924_2">
+    <link rel="stylesheet" href="static/css/metro_addons.css?v=20260924_1">
 
     <!-- SheetJS for Client-Side Excel Export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -91,7 +27,6 @@
     <script src="static/data/metro_data.js?v=20260905_1750"></script>
     <script src="static/data/metro_geo.js?v=20260905_1750"></script>
     <script src="static/data/metro_comunas.js?v=20260905_1750"></script>
-    <script src="static/data/regions_data.js?v=20260903_1625"></script>
 </head>
 
 <body class="light-theme">
@@ -100,6 +35,7 @@
         <!-- Top Navigation Banner -->
         <header class="top-navbar">
             <div class="top-navbar-left">
+                <img src="logo/Escudo_udec.gif" alt="Escudo UdeC" class="top-navbar-logo-udec">
                 <img src="logo/cropped-Logo-CATLEC-horizontal-sin-fondo-1.png" alt="Logo CATLEC"
                     class="top-navbar-logo">
                 <span class="top-navbar-title">Visor de datos - Metro de Santiago</span>
@@ -246,7 +182,7 @@
                                 </table>
 
                                 <!-- Empty state representation (hidden by default) -->
-                                <div class="empty-state" id="metro-empty-state" style="display:none;">
+                                <div class="empty-state" id="metro-empty-state" style="display: none; padding: 1.5rem 1rem;">
                                     <i data-lucide="alert-circle" class="empty-icon"></i>
                                     <p class="empty-text">No se encontraron proyectos para los filtros seleccionados.
                                     </p>
@@ -343,10 +279,9 @@
                                     Sin Metro
                                 </button>
                             </div>
-                            <div style="position: relative; width: 135px;">
-                                <input type="text" id="metro-side-comunas-search" placeholder="Filtrar comuna..."
-                                    oninput="metroFilterSideComunasTable()"
-                                    style="width: 100%; font-size: 0.70rem; padding: 0.2rem 0.45rem; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-card); color: var(--text-primary);">
+                            <div class="metro-comunas-search-wrap">
+                                <input type="text" id="metro-side-comunas-search" class="form-input metro-comunas-search"
+                                    placeholder="Filtrar comuna..." oninput="metroFilterSideComunasTable()">
                             </div>
                         </div>
 
@@ -864,8 +799,6 @@
             <span class="app-footer-text">Desarrollado por: Jose Oliveros, Vicente Pérez</span>
         </div>
         <div class="app-footer-right">
-            <img src="logo/Escudo_udec.gif" alt="Escudo UdeC"
-                style="height: 18px; width: auto; margin-right: 0.35rem; vertical-align: middle; display: inline-block;">
             <span class="app-footer-text">Universidad de Concepción &nbsp;·&nbsp; Facultad de Ingeniería</span>
         </div>
     </footer>
@@ -874,29 +807,30 @@
     <div id="metro-timeline-tooltip" class="timeline-tooltip" style="display:none;"></div>
 
     <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
 
     <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@1.48.0/dist/umd/lucide.min.js"></script>
 
     <!-- Metro App Modules -->
     <script src="static/js/common/tooltip.js?v=20260917_1"></script>
-    <script src="static/js/common/utils.js?v=20260920_1"></script>
+    <script src="static/js/common/utils.js?v=20260924_8"></script>
+    <script src="static/js/common/kpi-animate.js?v=20260924_2"></script>
+    <script src="static/js/common/table-fade.js?v=20260924_1"></script>
     <script src="static/js/common/timeline.js?v=20260920_1"></script>
     <script src="static/js/Metro/state.js?v=20260922_0001"></script>
-    <script src="static/js/Metro/timeline.js?v=20260922_0003"></script>
-    <script src="static/js/Metro/comunas.js?v=20260922_0002"></script>
-    <script src="static/js/Metro/demanda.js?v=20260922_0002"></script>
-    <script src="static/js/Metro/map.js?v=20260908_1250"></script>
+    <script src="static/js/Metro/timeline.js?v=20260924_1"></script>
+    <script src="static/js/Metro/comunas.js?v=20260924_1"></script>
+    <script src="static/js/Metro/demanda.js?v=20260924_1"></script>
+    <script src="static/js/Metro/map.js?v=20260924_1"></script>
     <script src="static/js/Metro/filters.js?v=20260905_1750"></script>
-    <script src="static/js/Metro/ui.js?v=20260908_1215"></script>
+    <script src="static/js/Metro/ui.js?v=20260924_3"></script>
 
     <!-- Nav Menu & View Switcher Script -->
-    <script src="static/js/common/nav-menu.js?v=20260917_1"></script>
+    <script src="static/js/common/nav-menu.js?v=20260924_5"></script>
     <script>
         (function () {
             CatlecNav.render();
-            const navDropdown = document.getElementById('nav-menu-dropdown');
 
             // Subheader View Switcher Buttons
             const btnMap = document.getElementById('btn-metro-view-map');
@@ -935,7 +869,7 @@
             if (navSubMap) {
                 navSubMap.addEventListener('click', (e) => {
                     e.preventDefault();
-                    navDropdown.classList.remove('open');
+                    CatlecNav.close();
                     if (typeof hideMetroTimelineView === 'function') hideMetroTimelineView();
                     if (typeof hideMetroComunasView === 'function') hideMetroComunasView();
                     if (typeof hideMetroDemandaView === 'function') hideMetroDemandaView();
@@ -944,21 +878,21 @@
             if (navSubTl) {
                 navSubTl.addEventListener('click', (e) => {
                     e.preventDefault();
-                    navDropdown.classList.remove('open');
+                    CatlecNav.close();
                     if (typeof showMetroTimelineView === 'function') showMetroTimelineView();
                 });
             }
             if (navSubComunas) {
                 navSubComunas.addEventListener('click', (e) => {
                     e.preventDefault();
-                    navDropdown.classList.remove('open');
+                    CatlecNav.close();
                     if (typeof showMetroComunasView === 'function') showMetroComunasView();
                 });
             }
             if (navSubDemanda) {
                 navSubDemanda.addEventListener('click', (e) => {
                     e.preventDefault();
-                    navDropdown.classList.remove('open');
+                    CatlecNav.close();
                     if (typeof showMetroDemandaView === 'function') showMetroDemandaView();
                 });
             }

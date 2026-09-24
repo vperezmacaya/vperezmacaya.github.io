@@ -29,7 +29,6 @@ function renderAllCharts() {
 
     // Gráficos y tablas según la pestaña activa
     if (currentActiveTab === 'resumen') {
-        renderTopTable();
         renderGlobalTable();
     } else if (currentActiveTab === 'inversion') {
         renderRegionBar();
@@ -68,7 +67,7 @@ function renderServicioDonut() {
         charts.servicio.data.labels = labels;
         charts.servicio.data.datasets[0].data = values;
         charts.servicio.data.datasets[0].backgroundColor = colors;
-        charts.servicio.data.datasets[0].borderColor = isDark() ? '#0f1626' : '#ffffff';
+        charts.servicio.data.datasets[0].borderColor = '#ffffff';
         delete charts.servicio.options.onClick;
         charts.servicio.update();
     } else {
@@ -80,7 +79,7 @@ function renderServicioDonut() {
                     data:            values,
                     backgroundColor: colors,
                     borderWidth:     1.5,
-                    borderColor:     isDark() ? '#0f1626' : '#ffffff',
+                    borderColor:     '#ffffff',
                     hoverOffset:     4,
                 }]
             },
@@ -149,7 +148,7 @@ function renderServicioCostDonut() {
         charts.servicioCost.data.labels = labels;
         charts.servicioCost.data.datasets[0].data = values;
         charts.servicioCost.data.datasets[0].backgroundColor = colors;
-        charts.servicioCost.data.datasets[0].borderColor = isDark() ? '#0f1626' : '#ffffff';
+        charts.servicioCost.data.datasets[0].borderColor = '#ffffff';
         delete charts.servicioCost.options.onClick;
         charts.servicioCost.update();
     } else {
@@ -161,7 +160,7 @@ function renderServicioCostDonut() {
                     data:            values,
                     backgroundColor: colors,
                     borderWidth:     1.5,
-                    borderColor:     isDark() ? '#0f1626' : '#ffffff',
+                    borderColor:     '#ffffff',
                     hoverOffset:     4,
                 }]
             },

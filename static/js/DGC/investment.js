@@ -74,8 +74,8 @@ const todayLineChartPlugin = {
 
             ctx.save();
             ctx.beginPath();
-            ctx.setLineDash([4, 3]);
-            ctx.lineWidth = 1.8;
+            ctx.setLineDash([3, 3]);
+            ctx.lineWidth = 1.5;
             ctx.strokeStyle = '#ef4444';
             ctx.moveTo(x, yAxis.top);
             ctx.lineTo(x, yAxis.bottom);
@@ -83,9 +83,9 @@ const todayLineChartPlugin = {
 
             // Etiqueta "Hoy" en la parte superior
             ctx.fillStyle = '#ef4444';
-            ctx.font = '700 8.5px Helvetica Neue, Helvetica, Arial, sans-serif';
+            ctx.font = "700 9px 'Plus Jakarta Sans', sans-serif";
             ctx.textAlign = 'center';
-            ctx.fillText(`Hoy (${currentYear})`, x, Math.max(10, yAxis.top - 3));
+            ctx.fillText('Hoy', x, Math.max(10, yAxis.top - 3));
             ctx.restore();
         }
     }
@@ -97,9 +97,8 @@ const investmentExternalTooltip = CatlecTooltip.create({ domId: 'inv-shared-tool
 function renderInvestmentAnalytics(contractsList) {
     if (!contractsList) return;
 
-    const isDark = document.body.classList.contains('dark-theme');
-    const textColor = isDark ? '#94a3b8' : '#374151';
-    const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+    const textColor = '#374151';
+    const gridColor = 'rgba(0,0,0,0.06)';
 
     if (typeof Chart !== 'undefined') {
         Chart.defaults.devicePixelRatio = Math.max(2.5, window.devicePixelRatio || 1);
@@ -282,7 +281,6 @@ function renderInvestmentAnalytics(contractsList) {
         colors: secColors,
         cutout: '65%',
         borderWidth: 1.5,
-        isDark: isDark,
         externalTooltip: investmentExternalTooltip,
         tooltipLabelCallback: (ctx) => ` ${((ctx.raw / totalSecInv) * 100).toFixed(1)}% (${formatUF(ctx.raw)})`,
         legendContainerId: 'chartInvShareRegionLegend',
@@ -314,7 +312,6 @@ function renderInvestmentAnalytics(contractsList) {
         colors: initColors,
         cutout: '65%',
         borderWidth: 1.5,
-        isDark: isDark,
         externalTooltip: investmentExternalTooltip,
         tooltipLabelCallback: (ctx) => ` ${((ctx.raw / totalInitInv) * 100).toFixed(1)}% (${formatUF(ctx.raw)})`,
         legendContainerId: 'chartInvIniciativaLegend',

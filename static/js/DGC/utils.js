@@ -51,6 +51,26 @@ function formatProgress(val) {
     return `${val}%`;
 }
 
+// Clave normalizada del estado de una concesión (badges de tabla/ficha y puntos de estado)
+function getStatusKey(status) {
+    const s = (status || '').toString();
+    if (s === 'Operación') return 'operacion';
+    if (s === 'Construcción') return 'construccion';
+    if (s === 'Construcción y Operación') return 'constr-op';
+    if (s.toLowerCase().includes('licitaci')) return 'licitacion';
+    return 'neutral';
+}
+
+function getStatusBadgeClass(status) {
+    const map = {
+        'operacion': 'badge-success',
+        'construccion': 'badge-info',
+        'constr-op': 'badge-warning',
+        'licitacion': 'badge-licitacion'
+    };
+    return map[getStatusKey(status)] || 'badge-neutral';
+}
+
 // --- SECTOR-BASED DESIGN SYSTEM & COLOR STRATEGY ---
 function getSectorConfig(sector) {
 
@@ -104,19 +124,6 @@ function getSectorConfig(sector) {
             svg: `<svg viewBox="0 0 24 24" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; display: block;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`
         };
     }
-}
-
-
-function getRegionStyle(feature) {
-    return {
-        color: '#3b82f6',
-        weight: 1,
-        opacity: 0.25,
-        fillColor: '#3b82f6',
-        fillOpacity: 0.03,
-        className: 'efe-region-path',
-        interactive: false
-    };
 }
 
 
@@ -229,7 +236,6 @@ function renderDgcDoughnutChart({
     colors = [],
     cutout = '65%',
     borderWidth = 1.5,
-    isDark = false,
     hoverOffset = 0,
     externalTooltip = null,
     tooltipLabelCallback = null,
@@ -241,7 +247,7 @@ function renderDgcDoughnutChart({
     emptyLegendHtml = null,
     extraLegendHtml = null
 }) {
-    const borderColor = isDark ? '#0f172a' : '#ffffff';
+    const borderColor = '#ffffff';
 
     const config = {
         type: 'doughnut',

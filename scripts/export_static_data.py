@@ -48,7 +48,55 @@ EXCEL_PATH = DGC_EXCEL_PATH
 OUT_DIR = os.path.join(BASE_DIR, 'static', 'data')
 os.makedirs(OUT_DIR, exist_ok=True)
 
+# ── Fotos: originales en Fotos/ (no versionada) → versiones web en static/img/fotos/
+PHOTOS_SRC_DIR = os.path.join(BASE_DIR, 'Fotos')
+PHOTOS_OUT_DIR = os.path.join(BASE_DIR, 'static', 'img', 'fotos')
+PHOTO_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp', '.gif']
+# Ancho de la foto en la ficha: el panel mide 500 px por defecto (ensanchable),
+# así que 1024 px se ve nítido incluso en pantallas de densidad ×2.
+PHOTO_CARD_WIDTH = 1024
+# Ancho de la foto en el visor a pantalla completa (pantalla Full HD).
+PHOTO_FULL_WIDTH = 1920
+# Calidad WebP: sin artefactos visibles en fotografía y ~30 veces más liviano que el JPG original.
+PHOTO_WEBP_QUALITY = 80
+
 # ── Helpers ────────────────────────────────────────────────────────────────────
+
+def optimize_photo(src_path, out_dir, variants):
+    """Genera versiones WebP de una foto, redimensionadas al ancho en que se muestran.
+
+    `variants` es una lista de (nombre_salida, ancho_máximo). Nunca agranda la foto,
+    respeta la orientación EXIF y no vuelve a codificar una variante que ya es más
+    nueva que el original. Devuelve la ruta web relativa de cada variante."""
+    from PIL import Image, ImageOps
+
+    os.makedirs(out_dir, exist_ok=True)
+    src_mtime = os.path.getmtime(src_path)
+    image = None
+    paths = []
+    for out_name, max_width in variants:
+        out_path = os.path.join(out_dir, out_name)
+        if not (os.path.exists(out_path) and os.path.getmtime(out_path) >= src_mtime):
+            if image is None:
+                image = ImageOps.exif_transpose(Image.open(src_path))
+                has_alpha = image.mode in ('RGBA', 'LA') or (image.mode == 'P' and 'transparency' in image.info)
+                image = image.convert('RGBA' if has_alpha else 'RGB')
+            variant = image.copy()
+            variant.thumbnail((max_width, variant.height), Image.LANCZOS)
+            variant.save(out_path, 'WEBP', quality=PHOTO_WEBP_QUALITY, method=6)
+            print(f"     · {out_name}: {variant.width}x{variant.height}, {os.path.getsize(out_path) / 1024:.0f} KB")
+        paths.append(os.path.relpath(out_path, BASE_DIR).replace(os.sep, '/'))
+    return paths
+
+def prune_photo_dir(out_dir, keep_names):
+    """Borra de una carpeta de fotos generadas (gestionada solo por el ETL) los
+    archivos cuya foto original ya no existe."""
+    if not os.path.exists(out_dir):
+        return
+    for f in os.listdir(out_dir):
+        if f not in keep_names:
+            os.remove(os.path.join(out_dir, f))
+            print(f"     · eliminada {f} (sin foto original)")
 
 def _normalize_col(s):
     s = str(s).lower()
@@ -326,6 +374,24 @@ sector_stats  = {str(k): int(v) for k, v in df_contracts['Sector del proyecto'].
 status_stats  = {str(k): int(v) for k, v in df_contracts['ESTADO'].value_counts().to_dict().items()}
 count_total   = len(df_contracts)
 
+# ── Fotos de referencia en Fotos/DGC (nombre de archivo = Código proyecto) ────
+# Por cada foto se generan dos WebP: <código>.webp (ficha) y <código>_full.webp (visor).
+DGC_PHOTOS_DIR = os.path.join(PHOTOS_SRC_DIR, 'DGC')
+DGC_PHOTOS_OUT_DIR = os.path.join(PHOTOS_OUT_DIR, 'DGC')
+DGC_PHOTOS_BY_CODE = {}
+if os.path.exists(DGC_PHOTOS_DIR):
+    for pf in sorted(os.listdir(DGC_PHOTOS_DIR)):
+        base, ext = os.path.splitext(pf)
+        code_key = base.strip().upper()
+        if ext.lower() in PHOTO_EXTENSIONS and code_key not in DGC_PHOTOS_BY_CODE:
+            card, full = optimize_photo(os.path.join(DGC_PHOTOS_DIR, pf), DGC_PHOTOS_OUT_DIR, [
+                (f'{base.strip()}.webp', PHOTO_CARD_WIDTH),
+                (f'{base.strip()}_full.webp', PHOTO_FULL_WIDTH),
+            ])
+            DGC_PHOTOS_BY_CODE[code_key] = {'photo': card, 'photo_full': full}
+    print(f"  -> {len(DGC_PHOTOS_BY_CODE)} fotos detectadas en Fotos/DGC")
+prune_photo_dir(DGC_PHOTOS_OUT_DIR, {os.path.basename(p) for v in DGC_PHOTOS_BY_CODE.values() for p in v.values()})
+
 # ── Serializar datos de contratos ──────────────────────────────────────────────
 print("Serializando contratos...")
 serialized_data = []
@@ -346,6 +412,9 @@ for _, row in df_contracts.iterrows():
     sanitized['group_timeline'] = BASE_GROUPS.get(base_code, [])
     sanitized['shapes']         = parse_shapes_list(get_row_shapes_val(row_dict))
     sanitized['bidders']        = BIDDERS_BY_PROJECT.get(code, [])
+    photo_entry                 = DGC_PHOTOS_BY_CODE.get(code.strip().upper()) or {}
+    sanitized['photo']          = photo_entry.get('photo')
+    sanitized['photo_full']     = photo_entry.get('photo_full')
     sanitized.pop('_search_index', None)
 
     serialized_data.append(sanitized)
@@ -417,11 +486,20 @@ try:
         print(f"  -> {len(df_history)} filas históricas cargadas desde hoja 'EFE'")
 
     # Escaneo de fotos en Fotos/EFE para cruce automático con proyectos
-    efe_photos_dir = os.path.join(BASE_DIR, 'Fotos', 'EFE')
+    # (cada foto se publica como WebP de ficha en static/img/fotos/EFE; EFE no tiene visor)
+    efe_photos_dir = os.path.join(PHOTOS_SRC_DIR, 'EFE')
+    efe_photos_out_dir = os.path.join(PHOTOS_OUT_DIR, 'EFE')
     efe_photo_files = []
+    efe_photo_web_paths = {}
     if os.path.exists(efe_photos_dir):
-        efe_photo_files = [f for f in os.listdir(efe_photos_dir) if os.path.splitext(f)[1].lower() in ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg']]
+        efe_photo_files = [f for f in sorted(os.listdir(efe_photos_dir)) if os.path.splitext(f)[1].lower() in PHOTO_EXTENSIONS]
         print(f"  -> {len(efe_photo_files)} fotos detectadas en Fotos/EFE: {efe_photo_files}")
+        for pf in efe_photo_files:
+            base, _ = os.path.splitext(pf)
+            efe_photo_web_paths[pf] = optimize_photo(os.path.join(efe_photos_dir, pf), efe_photos_out_dir, [
+                (f'{base}.webp', PHOTO_CARD_WIDTH),
+            ])[0]
+    prune_photo_dir(efe_photos_out_dir, {os.path.basename(p) for p in efe_photo_web_paths.values()})
 
     def _normalize_name_for_match(s):
         if not s: return ''
@@ -599,7 +677,7 @@ try:
             base, _ = os.path.splitext(pf)
             f_norm = _normalize_name_for_match(base)
             if (id_norm and f_norm == id_norm) or (f_norm == proj_norm) or (len(f_norm) > 8 and f_norm in proj_norm) or (len(proj_norm) > 8 and proj_norm in f_norm):
-                matched_photos.append(f'Fotos/EFE/{pf}')
+                matched_photos.append(efe_photo_web_paths[pf])
 
         photo = matched_photos[0] if matched_photos else None
 

@@ -146,10 +146,9 @@ function metroRenderPoblacionChart() {
         wrapper.style.width = `${targetWidth}px`;
     }
 
-    const isLight = document.body.classList.contains('light-theme');
-    const textColor = isLight ? '#334155' : '#f8fafc';
-    const textSecColor = isLight ? '#64748b' : '#94a3b8';
-    const gridColor = isLight ? '#e2e8f0' : '#334155';
+    const textColor = '#334155';
+    const textSecColor = '#64748b';
+    const gridColor = '#e2e8f0';
 
     // Rótulos del eje X con spacers al inicio y final para desplazar las barras a la derecha
     // y evitar cualquier colisión o solapamiento del rótulo 'Santiago' con el eje congelado
@@ -455,17 +454,7 @@ window.metroRenderPoblacionChart = metroRenderPoblacionChart;
 // ─── Lógica de Ejes Y Inmovilizados (Freeze Panes sin interferir con categorías) ──
 
 function getOpaqueCardBgColor() {
-    const isLight = document.body.classList.contains('light-theme');
-    if (isLight) return '#ffffff';
-    const card = document.querySelector('.panel-card');
-    if (card) {
-        const bg = window.getComputedStyle(card).backgroundColor;
-        const match = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-        if (match) {
-            return `rgb(${match[1]}, ${match[2]}, ${match[3]})`;
-        }
-    }
-    return '#1e293b';
+    return '#ffffff';
 }
 
 function updatePinnedAxesShadows() {
@@ -474,18 +463,17 @@ function updatePinnedAxesShadows() {
     const rightCanvas = document.getElementById('metroChartPoblacionAxisRight');
     if (!scrollContainer || !leftCanvas || !rightCanvas) return;
 
-    const isLight = document.body.classList.contains('light-theme');
     const scrollLeft = scrollContainer.scrollLeft;
     const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
 
     if (scrollLeft > 4) {
-        leftCanvas.style.boxShadow = isLight ? '4px 0 10px rgba(0, 0, 0, 0.10)' : '4px 0 12px rgba(0, 0, 0, 0.45)';
+        leftCanvas.style.boxShadow = '4px 0 10px rgba(0, 0, 0, 0.10)';
     } else {
         leftCanvas.style.boxShadow = 'none';
     }
 
     if (maxScroll - scrollLeft > 4) {
-        rightCanvas.style.boxShadow = isLight ? '-4px 0 10px rgba(0, 0, 0, 0.10)' : '-4px 0 12px rgba(0, 0, 0, 0.45)';
+        rightCanvas.style.boxShadow = '-4px 0 10px rgba(0, 0, 0, 0.10)';
     } else {
         rightCanvas.style.boxShadow = 'none';
     }
@@ -504,7 +492,6 @@ function syncPinnedYAxes(chart) {
 
     const dpr = chart.currentDevicePixelRatio || window.devicePixelRatio || 1;
     const opaqueBg = getOpaqueCardBgColor();
-    const isLight = document.body.classList.contains('light-theme');
 
     const clientHeight = scrollContainer.clientHeight || mainCanvas.clientHeight || chart.height;
     const leftCssWidth = Math.ceil(chart.chartArea.left);
@@ -541,7 +528,7 @@ function syncPinnedYAxes(chart) {
     );
 
     // Borde delimitador vertical estilo inmovilizar paneles de Excel
-    ctxL.strokeStyle = isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.14)';
+    ctxL.strokeStyle = 'rgba(0, 0, 0, 0.12)';
     ctxL.lineWidth = dpr;
     ctxL.beginPath();
     ctxL.moveTo(leftPxWidth - (dpr / 2), 0);
@@ -573,7 +560,7 @@ function syncPinnedYAxes(chart) {
     );
 
     // Borde delimitador vertical
-    ctxR.strokeStyle = isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.14)';
+    ctxR.strokeStyle = 'rgba(0, 0, 0, 0.12)';
     ctxR.lineWidth = dpr;
     ctxR.beginPath();
     ctxR.moveTo(dpr / 2, 0);

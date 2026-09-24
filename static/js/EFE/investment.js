@@ -135,10 +135,9 @@ function setEfeActiveSubheaderTab(tabName) {
 function renderEfeInvestmentAnalytics(projectsList) {
     if (!projectsList) return;
 
-    const isLight = document.body.classList.contains('light-theme');
-    const textColor = isLight ? '#475569' : '#94a3b8';
-    const gridColor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255,255,255,0.06)';
-    const doughnutBorder = isLight ? '#ffffff' : '#0f172a';
+    const textColor = '#475569';
+    const gridColor = 'rgba(0, 0, 0, 0.06)';
+    const doughnutBorder = '#ffffff';
 
     if (typeof Chart !== 'undefined') {
         Chart.defaults.devicePixelRatio = Math.max(2.5, window.devicePixelRatio || 1);

@@ -13,16 +13,15 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <!-- CSS Custom stylesheet -->
-    <link rel="stylesheet" href="static/css/styles.css?v=20260920_1">
-    <link rel="stylesheet" href="static/css/dgc_addons.css?v=20260920_2">
+    <link rel="stylesheet" href="static/css/styles.css?v=20260924_11">
+    <link rel="stylesheet" href="static/css/dgc_addons.css?v=20260924_5">
     <!-- Chart.js for premium chart renders -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
     <!-- SheetJS for Client-Side Excel Export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Datos estáticos pre-generados -->
-    <script src="static/data/contracts_data.js"></script>
-    <script src="static/data/regions_data.js"></script>
-    <script src="static/data/dgc_data.js"></script>
+    <script src="static/data/contracts_data.js?v=20260924_1"></script>
+    <script src="static/data/dgc_data.js?v=20260924_1"></script>
 </head>
 
 <body class="light-theme">
@@ -30,6 +29,7 @@
         <!-- Top Navigation Banner -->
         <header class="top-navbar">
             <div class="top-navbar-left">
+                <img src="logo/Escudo_udec.gif" alt="Escudo UdeC" class="top-navbar-logo-udec">
                 <img src="logo/cropped-Logo-CATLEC-horizontal-sin-fondo-1.png" alt="Logo CATLEC" class="top-navbar-logo"
                     height="26" style="height:26px;width:auto;max-height:26px;object-fit:contain;">
                 <span class="top-navbar-title">Visor de datos - Concesiones</span>
@@ -74,7 +74,7 @@
 
         <!-- Main Content (Single Screen) -->
         <main class="dashboard-content">
-            <div class="dashboard-grid">
+            <div class="dashboard-grid dgc-resizable-grid">
                 <!-- Left Panel: Search, Filters & Analytics Chart -->
                 <section class="left-panel">
                     <!-- Search & Filter Card -->
@@ -94,7 +94,7 @@
                                 Concesión</label>
                             <div class="search-wrapper">
                                 <i data-lucide="search" class="icon-13"></i>
-                                <input type="text" id="search-input" class="form-input" placeholder="Nombre"
+                                <input type="text" id="search-input" class="form-input" placeholder="   Nombre"
                                     style="padding: 0.3rem 0.55rem 0.3rem 1.8rem; font-size: 0.76rem;">
                             </div>
                         </div>
@@ -110,8 +110,7 @@
                                         class="icon-chevron"></i>
                                 </button>
 
-                                <div class="multiselect-dropdown" id="region-multiselect-dropdown"
-                                    style="display: none;">
+                                <div class="multiselect-dropdown" id="region-multiselect-dropdown">
                                     <div class="multiselect-actions">
                                         <label class="multiselect-option select-all-option"
                                             style="padding: 0.2rem 0; font-weight: 700;">
@@ -137,8 +136,7 @@
                                         class="icon-chevron"></i>
                                 </button>
 
-                                <div class="multiselect-dropdown" id="sector-multiselect-dropdown"
-                                    style="display: none;">
+                                <div class="multiselect-dropdown" id="sector-multiselect-dropdown">
                                     <div class="multiselect-actions">
                                         <label class="multiselect-option select-all-option"
                                             style="padding: 0.2rem 0; font-weight: 700;">
@@ -164,8 +162,7 @@
                                         class="icon-chevron"></i>
                                 </button>
 
-                                <div class="multiselect-dropdown" id="status-multiselect-dropdown"
-                                    style="display: none;">
+                                <div class="multiselect-dropdown" id="status-multiselect-dropdown">
                                     <div class="multiselect-actions">
                                         <label class="multiselect-option select-all-option"
                                             style="padding: 0.2rem 0; font-weight: 700;">
@@ -341,6 +338,11 @@
                         </div>
                     </div>
                 </section>
+
+                <!-- Separador arrastrable mapa ↔ tabla (static/js/DGC/panel-resizer.js) -->
+                <div class="dgc-panel-resizer" id="dgc-panel-resizer" role="separator"
+                    aria-orientation="vertical" aria-label="Redimensionar tabla" tabindex="0"
+                    title="Arrastrar para ajustar el ancho de la tabla · Doble clic para restablecer"></div>
 
                 <!-- Right Panel: Compact KPIs & Search Table List -->
                 <section class="right-panel results-panel">
@@ -1012,43 +1014,43 @@
             <span class="app-footer-text">Desarrollado por: Jose Oliveros, Vicente Pérez</span>
         </div>
         <div class="app-footer-right">
-            <img src="logo/Escudo_udec.gif" alt="Escudo UdeC"
-                style="height: 18px; width: auto; margin-right: 0.35rem; vertical-align: middle; display: inline-block;">
             <span class="app-footer-text">Universidad de Concepción &nbsp;·&nbsp; Facultad de Ingeniería</span>
         </div>
     </footer>
 
     <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@1.48.0/dist/umd/lucide.min.js"></script>
 
     <!-- Client Application Logic -->
     <!-- Módulos JavaScript de la Aplicación -->
     <script src="static/js/common/tooltip.js"></script>
-    <script src="static/js/common/utils.js?v=20260920_1"></script>
+    <script src="static/js/common/utils.js?v=20260924_8"></script>
+    <script src="static/js/common/kpi-animate.js?v=20260924_2"></script>
+    <script src="static/js/common/table-fade.js?v=20260924_1"></script>
     <script src="static/js/common/timeline.js?v=20260920_1"></script>
-    <script src="static/js/DGC/state.js"></script>
-    <script src="static/js/DGC/utils.js"></script>
-    <script src="static/js/DGC/map.js"></script>
-    <script src="static/js/DGC/timeline.js"></script>
-    <script src="static/js/DGC/investment.js"></script>
-    <script src="static/js/DGC/contracts_analysis.js"></script>
-    <script src="static/js/DGC/bidders.js"></script>
-    <script src="static/js/DGC/filters.js"></script>
+    <script src="static/js/DGC/state.js?v=20260924_1"></script>
+    <script src="static/js/DGC/utils.js?v=20260924_1"></script>
+    <script src="static/js/DGC/map.js?v=20260924_1"></script>
+    <script src="static/js/DGC/timeline.js?v=20260924_1"></script>
+    <script src="static/js/DGC/investment.js?v=20260924_1"></script>
+    <script src="static/js/DGC/contracts_analysis.js?v=20260924_1"></script>
+    <script src="static/js/DGC/bidders.js?v=20260924_1"></script>
+    <script src="static/js/DGC/filters.js?v=20260924_1"></script>
     <script src="static/js/DGC/subheader.js"></script>
-    <script src="static/js/DGC/table.js"></script>
-    <script src="static/js/DGC/project-detail.js"></script>
+    <script src="static/js/DGC/table.js?v=20260924_2"></script>
+    <script src="static/js/DGC/project-detail.js?v=20260924_4"></script>
     <script src="static/js/DGC/export.js"></script>
     <script src="static/js/DGC/ui.js"></script>
+    <script src="static/js/DGC/panel-resizer.js?v=20260924_2"></script>
 
     <div id="timeline-tooltip" class="timeline-tooltip" style="display:none;"></div>
 
     <!-- Nav Menu JS -->
-    <script src="static/js/common/nav-menu.js"></script>
+    <script src="static/js/common/nav-menu.js?v=20260924_5"></script>
     <script>
         (function () {
             CatlecNav.render();
 
-            const navDropdown = document.getElementById('nav-menu-dropdown');
 
             // DGC direct link: switch to Map view without reloading
             const dgcMainLink = document.getElementById('nav-dgc-main-link');
@@ -1059,7 +1061,7 @@
                     if (typeof hideInvestmentView === 'function') hideInvestmentView();
                     if (typeof hideBiddersView === 'function') hideBiddersView();
                     if (typeof setActiveSubheaderTab === 'function') setActiveSubheaderTab('map');
-                    if (navDropdown) navDropdown.classList.remove('open');
+                    CatlecNav.close();
                 });
             }
 
@@ -1077,7 +1079,7 @@
                     if (typeof hideContractsView === 'function') hideContractsView();
                     if (typeof hideBiddersView === 'function') hideBiddersView();
                     if (typeof setActiveSubheaderTab === 'function') setActiveSubheaderTab('map');
-                    if (navDropdown) navDropdown.classList.remove('open');
+                    CatlecNav.close();
                 });
             }
             if (subTl) {
@@ -1088,7 +1090,7 @@
                     if (typeof hideBiddersView === 'function') hideBiddersView();
                     if (typeof showTimelineView === 'function') showTimelineView();
                     if (typeof setActiveSubheaderTab === 'function') setActiveSubheaderTab('timeline');
-                    if (navDropdown) navDropdown.classList.remove('open');
+                    CatlecNav.close();
                 });
             }
             if (subInv) {
@@ -1099,7 +1101,7 @@
                     if (typeof hideBiddersView === 'function') hideBiddersView();
                     if (typeof showInvestmentView === 'function') showInvestmentView();
                     if (typeof setActiveSubheaderTab === 'function') setActiveSubheaderTab('investment');
-                    if (navDropdown) navDropdown.classList.remove('open');
+                    CatlecNav.close();
                 });
             }
             if (subCnt) {
@@ -1110,7 +1112,7 @@
                     if (typeof hideBiddersView === 'function') hideBiddersView();
                     if (typeof showContractsView === 'function') showContractsView();
                     if (typeof setActiveSubheaderTab === 'function') setActiveSubheaderTab('contracts');
-                    if (navDropdown) navDropdown.classList.remove('open');
+                    CatlecNav.close();
                 });
             }
             if (subBid) {
@@ -1121,7 +1123,7 @@
                     if (typeof hideContractsView === 'function') hideContractsView();
                     if (typeof showBiddersView === 'function') showBiddersView();
                     if (typeof setActiveSubheaderTab === 'function') setActiveSubheaderTab('bidders');
-                    if (navDropdown) navDropdown.classList.remove('open');
+                    CatlecNav.close();
                 });
             }
 

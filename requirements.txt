@@ -8,3 +8,9 @@ playwright>=1.40.0
 
 # Soporte para Jupyter Notebooks
 ipykernel>=6.29.0
+
+# Geometría (simplificación de capas del mapa)
+shapely>=2.0.0
+
+# Imágenes (optimización de fotos a WebP)
+Pillow>=10.0.0

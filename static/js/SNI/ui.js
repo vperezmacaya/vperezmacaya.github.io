@@ -65,10 +65,7 @@ function setupViewTabs() {
                 if (targetBtn) {
                     e.preventDefault();
                     targetBtn.click();
-                    const dropdown = document.getElementById('nav-menu-dropdown');
-                    if (dropdown) dropdown.classList.remove('open');
-                    const group = document.getElementById('nav-sni-group');
-                    if (group) group.classList.remove('open');
+                    CatlecNav.close();
                     window.location.hash = targetView;
                 }
             }
