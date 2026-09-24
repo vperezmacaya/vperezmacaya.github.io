@@ -10,11 +10,8 @@
     <link rel="icon" type="image/png" href="logo/favicon.png">
     <link rel="shortcut icon" href="logo/favicon.ico">
 
-    <!-- Leaflet mapping library -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- D3.js para el mapa coroplético regional -->
+    <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 
     <!-- CSS Custom stylesheet -->
     <link rel="stylesheet" href="static/css/styles.css?v=20260920_1">
@@ -30,7 +27,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <!-- Datos estáticos pre-generados -->
-    <script src="static/data/regions_data.js"></script>
+    <script src="static/data/sni_regions_data.js"></script>
     <script src="static/data/sni_data.js"></script>
 
     <!-- Módulos de lógica SNI -->
@@ -39,7 +36,7 @@
     <script src="static/js/SNI/state.js"></script>
     <script src="static/js/SNI/filters.js"></script>
     <script src="static/js/SNI/charts.js"></script>
-    <script src="static/js/SNI/map.js"></script>
+    <script src="static/js/SNI/map.js?v=20260922_0004"></script>
     <script src="static/js/SNI/ui.js"></script>
 
 </head>
@@ -228,9 +225,9 @@
                 <!-- Viewport contenedor -->
                 <div class="sni-viewport">
 
-                    <!-- 1. VISTA: MAPA REGIONAL (Layout 2 Columnas: Gráfico Izquierda, Mapa Derecha) -->
+                    <!-- 1. VISTA: MAPA REGIONAL (Layout 2 Columnas: Gráfico Izquierda, Mapa Derecha Angosto) -->
                     <div class="sni-view-container" id="view-map"
-                        style="display: grid; grid-template-columns: 68% 32%; gap: 0.5rem; width: 100%; height: 100%; min-height: 0;">
+                        style="display: grid; grid-template-columns: 78% 22%; gap: 0.5rem; width: 100%; height: 100%; min-height: 0;">
                         <!-- Columna Izquierda: Panel Analítico con Ranking Dinámico -->
                         <div class="sni-card"
                             style="height: 100%; min-height: 0; display: flex; flex-direction: column;">
@@ -263,47 +260,29 @@
                             </div>
                         </div>
 
-                        <!-- Columna Derecha: Mapa Leaflet (Angosto) -->
-                        <div class="sni-card" style="position: relative; padding: 0; height: 100%; min-height: 0;">
-                            <!-- Toolbar de Métricas del Mapa -->
+                        <!-- Columna Derecha: Mapa Coroplético D3 (Angosto) -->
+                        <div class="sni-card"
+                            style="height: 100%; min-height: 0; display: flex; flex-direction: column; position: relative; padding: 0;">
+                            <!-- Header de Vistas del Mapa: 3 botones igualmente espaciados (diseño EFE.html) -->
                             <div class="map-metric-toolbar">
-                                <button class="map-metric-btn active" data-metric="total">Inversión Total</button>
-                                <button class="map-metric-btn" data-metric="per_capita">Inversión per Cápita</button>
-                                <button class="map-metric-btn" data-metric="km2">Inversión por km²</button>
+                                <button class="btn btn-xs map-metric-btn active" data-metric="total">
+                                    <i data-lucide="dollar-sign" style="width: 12px; height: 12px;"></i>
+                                    <span>Total</span>
+                                </button>
+                                <button class="btn btn-xs map-metric-btn" data-metric="per_capita">
+                                    <i data-lucide="users" style="width: 12px; height: 12px;"></i>
+                                    <span>Per Cápita</span>
+                                </button>
+                                <button class="btn btn-xs map-metric-btn" data-metric="km2">
+                                    <i data-lucide="maximize" style="width: 12px; height: 12px;"></i>
+                                    <span>Por km²</span>
+                                </button>
                             </div>
 
-                            <!-- Floating Reset Map Button (idéntico a index.html) -->
-                            <button id="btn-reset-map" class="btn-floating-map"
-                                style="top: 38px; right: 8px; font-size: 10px; padding: 3px 7px;">
-                                <i data-lucide="maximize-2" style="width: 12px; height: 12px;"></i>
-                                Restablecer Mapa
-                            </button>
-
-                            <!-- Mapa Leaflet -->
-                            <div id="sni-map" style="width: 100%; height: 100%; border-radius: 12px;"></div>
-
-                            <!-- Tarjeta Flotante de Detalle Regional -->
-                            <div class="map-region-detail-card" id="map-region-detail-card">
-                                <div
-                                    style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
-                                    <span id="mrd-name"
-                                        style="font-weight: 700; font-size: 13px; color: var(--primary);">Región</span>
-                                    <button id="btn-close-map-detail"
-                                        style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 2px 4px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: color 0.15s ease;"
-                                        title="Cerrar detalle">
-                                        <i data-lucide="x" style="width: 13px; height: 13px;"></i>
-                                    </button>
-                                </div>
-                                <div style="font-size: 11px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                                    <div><span style="color:var(--text-muted);">Total Invertido:</span><br><strong
-                                            id="mrd-total-usd">-</strong></div>
-                                    <div><span style="color:var(--text-muted);">Per Cápita:</span><br><strong
-                                            id="mrd-per-capita">-</strong></div>
-                                    <div><span style="color:var(--text-muted);">Población:</span><br><strong
-                                            id="mrd-poblacion">-</strong></div>
-                                    <div><span style="color:var(--text-muted);">Superficie:</span><br><strong
-                                            id="mrd-superficie">-</strong></div>
-                                </div>
+                            <!-- Canvas / Contenedor limpio del Mapa Coroplético -->
+                            <div class="sni-map-wrapper"
+                                style="flex: 1; position: relative; width: 100%; min-height: 0; overflow: hidden;">
+                                <div id="sni-map" style="width: 100%; height: 100%;"></div>
                             </div>
                         </div>
                     </div>
@@ -319,15 +298,15 @@
                                     Equidad Territorial: Inversión vs Aporte al PIB
                                 </h3>
                                 <div class="sni-card-legend">
-                                    <span class="sni-card-legend-item">
+                                    <span class="sni-card-legend-item" style="color: rgba(245, 158, 11, 0.9);">
                                         <span class="sni-legend-dot" style="background: rgba(245, 158, 11, 0.9);"></span>
                                         % Aporte PIB
                                     </span>
-                                    <span class="sni-card-legend-item">
+                                    <span class="sni-card-legend-item" style="color: rgba(37, 99, 235, 0.9);">
                                         <span class="sni-legend-dot" style="background: rgba(37, 99, 235, 0.9);"></span>
                                         % Inversión
                                     </span>
-                                    <span class="sni-card-legend-item">
+                                    <span class="sni-card-legend-item" style="color: #10b981;">
                                         <span class="sni-legend-line" style="background: #10b981;"></span>
                                         Ratio Inv/PIB (Eje Der)
                                     </span>
@@ -398,10 +377,10 @@
                                     Comparativa por Períodos Presidenciales (2010–2024)
                                 </h3>
                                 <div class="sni-card-legend" style="flex-wrap: wrap; gap: 8px;">
-                                    <span class="sni-card-legend-item"><span class="sni-legend-dot" style="background:#3b82f6;"></span> Piñera I</span>
-                                    <span class="sni-card-legend-item"><span class="sni-legend-dot" style="background:#f43f5e;"></span> Bachelet II</span>
-                                    <span class="sni-card-legend-item"><span class="sni-legend-dot" style="background:#2563eb;"></span> Piñera II</span>
-                                    <span class="sni-card-legend-item"><span class="sni-legend-dot" style="background:#10b981;"></span> Boric</span>
+                                    <span class="sni-card-legend-item" style="color:#3b82f6;"><span class="sni-legend-dot" style="background:#3b82f6;"></span> Piñera I</span>
+                                    <span class="sni-card-legend-item" style="color:#f43f5e;"><span class="sni-legend-dot" style="background:#f43f5e;"></span> Bachelet II</span>
+                                    <span class="sni-card-legend-item" style="color:#2563eb;"><span class="sni-legend-dot" style="background:#2563eb;"></span> Piñera II</span>
+                                    <span class="sni-card-legend-item" style="color:#10b981;"><span class="sni-legend-dot" style="background:#10b981;"></span> Boric</span>
                                 </div>
                             </div>
                             <div class="sni-chart-wrap">
@@ -415,6 +394,10 @@
         </div>
 
     </div>
+
+    <!-- Tooltip flotante del Mapa Coroplético (D3.js) — agregado a <body> para evitar
+         que .sni-card (overflow:hidden) lo recorte cerca de los bordes -->
+    <div id="sni-map-tooltip" class="catlec-map-tooltip"></div>
 
     <!-- Nav Menu JS -->
     <script src="static/js/common/nav-menu.js"></script>

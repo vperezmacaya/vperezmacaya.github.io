@@ -257,7 +257,6 @@ function renderRegionBar() {
                     borderColor:     borderColors,
                     borderWidth:     1,
                     borderRadius:    3,
-                    borderSkipped:   false,
                 }]
             },
             options: {
@@ -290,7 +289,7 @@ function renderRegionBar() {
                         grid:  { color: gridColor() },
                         ticks: {
                             color: labelColor(),
-                            font: { size: 10 },
+                            font: { size: 10, weight: '600' },
                             callback: v => v.toLocaleString('es-CL')
                         }
                     },
@@ -330,7 +329,8 @@ function renderServicioInversionBar() {
     if (charts[id]) {
         charts[id].data.labels = labels;
         charts[id].data.datasets[0].data = values;
-        charts[id].data.datasets[0].backgroundColor = colors;
+        charts[id].data.datasets[0].backgroundColor = colors.map(c => `${c}cc`);
+        charts[id].data.datasets[0].borderColor = colors;
         charts[id].options.scales.x.title.text = 'Inversión (Millones CLP)';
         charts[id].options.scales.x.title.color = titleColor();
         charts[id].options.scales.x.grid.color = gridColor();
@@ -351,10 +351,10 @@ function renderServicioInversionBar() {
                 datasets: [{
                     label:           'Inversión (MM CLP)',
                     data:            values,
-                    backgroundColor: colors,
+                    backgroundColor: colors.map(c => `${c}cc`),
+                    borderColor:     colors,
                     borderWidth:     1,
                     borderRadius:    3,
-                    borderSkipped:   false,
                 }]
             },
             options: {
@@ -393,7 +393,7 @@ function renderServicioInversionBar() {
                         grid:  { color: gridColor() },
                         ticks: {
                             color: labelColor(),
-                            font: { size: 10 },
+                            font: { size: 10, weight: '600' },
                             callback: v => v.toLocaleString('es-CL')
                         }
                     },
@@ -461,7 +461,6 @@ function renderProgramaInversionBar() {
                     borderColor:     borderColor,
                     borderWidth:     1,
                     borderRadius:    3,
-                    borderSkipped:   false,
                 }]
             },
             options: {
@@ -500,7 +499,7 @@ function renderProgramaInversionBar() {
                         grid:  { color: gridColor() },
                         ticks: {
                             color: labelColor(),
-                            font: { size: 10 },
+                            font: { size: 10, weight: '600' },
                             callback: v => v.toLocaleString('es-CL')
                         }
                     },
@@ -508,7 +507,7 @@ function renderProgramaInversionBar() {
                         grid:  { display: false },
                         ticks: {
                             color: labelColor(),
-                            font: { size: 9.5, weight: '600' },
+                            font: { size: 10, weight: '600' },
                             autoSkip: false
                         }
                     }
@@ -546,6 +545,9 @@ function renderRegionCountBar() {
         charts['region-count'].options.scales.x.grid.color = gridColor();
         charts['region-count'].options.scales.x.ticks.color = labelColor();
         charts['region-count'].options.scales.y.ticks.color = labelColor();
+        if (charts['region-count'].options.plugins.horizontalBarDataLabelsPlugin) {
+            charts['region-count'].options.plugins.horizontalBarDataLabelsPlugin.formatter = (v) => `${v} (${((v / (totalProjects || 1)) * 100).toFixed(1)}%)`;
+        }
         charts['region-count'].options.plugins.tooltip.callbacks.label = (ctx) => ` Cantidad: ${ctx.raw} proyecto${ctx.raw !== 1 ? 's' : ''} (${((ctx.raw / (totalProjects || 1)) * 100).toFixed(1)}%)`;
         delete charts['region-count'].options.onClick;
         charts['region-count'].update();
@@ -562,7 +564,6 @@ function renderRegionCountBar() {
                     borderColor:     borderColors,
                     borderWidth:     1,
                     borderRadius:    3,
-                    borderSkipped:   false,
                 }]
             },
             options: {
@@ -573,7 +574,7 @@ function renderRegionCountBar() {
                 plugins: {
                     legend: { display: false },
                     horizontalBarDataLabelsPlugin: {
-                        formatter: (v) => String(v)
+                        formatter: (v) => `${v} (${((v / (totalProjects || 1)) * 100).toFixed(1)}%)`
                     },
                     tooltip: {
                         enabled: false,
@@ -595,7 +596,7 @@ function renderRegionCountBar() {
                         grid:  { color: gridColor() },
                         ticks: {
                             color: labelColor(),
-                            font: { size: 10 },
+                            font: { size: 10, weight: '600' },
                             stepSize: 1
                         }
                     },
@@ -642,18 +643,22 @@ function renderEtapaBar() {
             borderColor:     borderColor,
             borderWidth:     1,
             borderRadius:    3,
-            borderSkipped:   false,
         }];
+        charts[id].options.scales.y.suggestedMax = Math.max(...countValues, 0) * 1.18;
         charts[id].options.scales.y.title.color = titleColor();
         charts[id].options.scales.y.grid.color = gridColor();
         charts[id].options.scales.y.ticks.color = labelColor();
         charts[id].options.scales.x.ticks.color = labelColor();
+        if (charts[id].options.plugins.groupedBarDataLabelsPlugin) {
+            charts[id].options.plugins.groupedBarDataLabelsPlugin.formatter = (v) => `${v} (${((v / (totalProjects || 1)) * 100).toFixed(1)}%)`;
+        }
         charts[id].options.plugins.tooltip.callbacks.label = (ctx) => ` Cantidad: ${ctx.raw} proyecto${ctx.raw !== 1 ? 's' : ''} (${((ctx.raw / (totalProjects || 1)) * 100).toFixed(1)}%)`;
         delete charts[id].options.onClick;
         charts[id].update();
     } else {
         charts[id] = new Chart(canvas, {
             type: 'bar',
+            plugins: [CatlecUtils.groupedBarDataLabelsPlugin],
             data: {
                 labels: labels,
                 datasets: [{
@@ -663,7 +668,6 @@ function renderEtapaBar() {
                     borderColor:     borderColor,
                     borderWidth:     1,
                     borderRadius:    3,
-                    borderSkipped:   false,
                 }]
             },
             options: {
@@ -681,6 +685,11 @@ function renderEtapaBar() {
                             title: items => items.length ? `Etapa: ${items[0].label}` : '',
                             label: ctx => ` Cantidad: ${ctx.raw} proyecto${ctx.raw !== 1 ? 's' : ''} (${((ctx.raw / (totalProjects || 1)) * 100).toFixed(1)}%)`
                         }
+                    },
+                    groupedBarDataLabelsPlugin: {
+                        formatter: (v) => `${v} (${((v / (totalProjects || 1)) * 100).toFixed(1)}%)`,
+                        color: borderColor,
+                        offset: 4
                     }
                 },
                 scales: {
@@ -692,6 +701,7 @@ function renderEtapaBar() {
                         }
                     },
                     y: {
+                        suggestedMax: Math.max(...countValues, 0) * 1.18,
                         title: {
                             display: true,
                             text: 'Nº Proyectos',
@@ -701,7 +711,7 @@ function renderEtapaBar() {
                         grid: { color: gridColor() },
                         ticks: {
                             color: labelColor(),
-                            font: { size: 10 }
+                            font: { size: 10, weight: '600' }
                         }
                     }
                 }
@@ -748,6 +758,7 @@ function renderYearLine() {
     } else {
         charts.year = new Chart(canvas, {
             type: 'bar',
+            plugins: [CatlecUtils.groupedBarDataLabelsPlugin],
             data: {
                 labels: years,
                 datasets: [
@@ -758,7 +769,6 @@ function renderYearLine() {
                         borderColor:     '#2563eb',
                         borderWidth:     1,
                         borderRadius:    3,
-                        borderSkipped:   false,
                         yAxisID:         'y',
                         order:           2,
                     },
@@ -769,11 +779,11 @@ function renderYearLine() {
                         borderColor:     '#f59e0b',
                         backgroundColor: '#f59e0b',
                         borderWidth:     2.2,
-                        pointRadius:     2.5,
-                        pointHoverRadius:4.5,
+                        pointRadius:     3.5,
+                        pointHoverRadius:5.5,
                         pointBackgroundColor: '#f59e0b',
                         fill:            false,
-                        tension:         0,
+                        tension:         0.2,
                         yAxisID:         'y2',
                         order:           1,
                     }
@@ -783,7 +793,7 @@ function renderYearLine() {
                 responsive: true,
                 maintainAspectRatio: false,
                 animation: { duration: 450, easing: 'easeOutQuart' },
-                interaction: { mode: 'nearest', intersect: true },
+                interaction: { mode: 'index', intersect: false },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -796,6 +806,11 @@ function renderYearLine() {
                                 return ` Inversión: $${Number(ctx.raw).toLocaleString('es-CL')} MM CLP`;
                             }
                         }
+                    },
+                    groupedBarDataLabelsPlugin: {
+                        formatter: (v) => String(v),
+                        color: '#2563eb',
+                        offset: 4
                     }
                 },
                 scales: {
@@ -803,12 +818,13 @@ function renderYearLine() {
                         grid: { display: false },
                         ticks: {
                             color: labelColor(),
-                            font: { size: 10 }
+                            font: { size: 10, weight: '600' }
                         }
                     },
                     y: {
                         type: 'linear',
                         position: 'left',
+                        suggestedMax: Math.max(...countValues, 0) * 1.18,
                         title: {
                             display: true,
                             text: 'Nº Proyectos',
@@ -818,7 +834,7 @@ function renderYearLine() {
                         grid: { color: gridColor() },
                         ticks: {
                             color: labelColor(),
-                            font: { size: 10 }
+                            font: { size: 10, weight: '600' }
                         }
                     },
                     y2: {
@@ -833,7 +849,7 @@ function renderYearLine() {
                         grid: { drawOnChartArea: false },
                         ticks: {
                             color: '#f59e0b',
-                            font: { size: 10 },
+                            font: { size: 10, weight: '600' },
                             callback: v => `$${v.toLocaleString('es-CL')}M`
                         }
                     }

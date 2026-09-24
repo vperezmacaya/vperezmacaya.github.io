@@ -325,6 +325,7 @@ function metroUpdateOperatingLinesTableSelection() {
     const selected = metroState.selectedOperatingLine;
     rows.forEach(row => {
         const isSelected = selected && row.getAttribute('data-line') === selected;
+        row.classList.toggle('row-selected', !!isSelected);
         row.style.backgroundColor = isSelected ? 'rgba(10, 59, 117, 0.12)' : '';
         row.style.boxShadow = isSelected ? 'inset 4px 0 0 #0a3b75' : '';
     });
@@ -616,10 +617,12 @@ function metroUpdateSideComunasTableSelection() {
         const cAttr = row.getAttribute('data-comuna') || '';
         const normC = (typeof metroNormalizeText === 'function') ? metroNormalizeText(cAttr) : cAttr.toLowerCase().trim();
         if (normSelected && normC === normSelected) {
+            row.classList.add('row-selected');
             row.style.backgroundColor = 'rgba(16, 185, 129, 0.12)';
             row.style.boxShadow = 'inset 4px 0 0 #059669';
             selectedRow = row;
         } else {
+            row.classList.remove('row-selected');
             row.style.backgroundColor = '';
             row.style.boxShadow = '';
         }

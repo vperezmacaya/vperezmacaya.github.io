@@ -185,6 +185,7 @@ function renderBiddersAnalytics(contractsList) {
 
     chartBiddersHistogramInstance = createOrUpdateChart('chartBiddersHistogram', chartBiddersHistogramInstance, {
         type: 'bar',
+        plugins: [CatlecUtils.groupedBarDataLabelsPlugin],
         data: {
             labels: histLabels,
             datasets: [
@@ -206,9 +207,9 @@ function renderBiddersAnalytics(contractsList) {
                     borderColor: budgetLineColor,
                     backgroundColor: 'rgba(0,0,0,0.05)',
                     borderWidth: 2.2,
-                    tension: 0,
-                    pointRadius: 2.5,
-                    pointHoverRadius: 4.5,
+                    tension: 0.2,
+                    pointRadius: 3.5,
+                    pointHoverRadius: 5.5,
                     pointBackgroundColor: budgetLineColor,
                     fill: false,
                     yAxisID: 'y1',
@@ -219,6 +220,10 @@ function renderBiddersAnalytics(contractsList) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -229,29 +234,37 @@ function renderBiddersAnalytics(contractsList) {
                         label: (ctx) => {
                             const p = ctx.label;
                             const d = byPeriodSnapshot[p];
-                            const avgB = d && d.concessionCount > 0 ? (d.bidderCount / d.concessionCount).toFixed(2) : 0;
+                            if (ctx.datasetIndex === 0) {
+                                const avgB = d && d.concessionCount > 0 ? (d.bidderCount / d.concessionCount).toFixed(2) : 0;
+                                return [
+                                    ` Licitantes promedio: ${avgB} licitantes/concesión`,
+                                    ` Concesiones adjudicadas: ${d ? d.concessionCount : 0}`,
+                                    ` Total licitantes: ${d ? d.bidderCount : 0}`
+                                ];
+                            }
                             const avgBud = d && d.budgetCount > 0 ? Math.round(d.totalBudget / d.budgetCount) : 0;
-                            return [
-                                ` Licitantes promedio: ${avgB} licitantes/concesión`,
-                                ` Presupuesto promedio: ${formatUF(avgBud)} UF`,
-                                ` Concesiones adjudicadas: ${d ? d.concessionCount : 0}`,
-                                ` Total licitantes: ${d ? d.bidderCount : 0}`
-                            ];
+                            return ` Presupuesto promedio: ${formatUF(avgBud)} UF`;
                         }
                     }
+                },
+                groupedBarDataLabelsPlugin: {
+                    formatter: (v) => v.toFixed(1),
+                    color: '#6366f1',
+                    offset: 4
                 }
             },
             scales: {
                 x: {
                     grid: { display: false },
-                    ticks: { color: textColor, font: { size: 10 } }
+                    ticks: { color: textColor, font: { size: 10, weight: '600' } }
                 },
                 y: {
                     type: 'linear',
                     display: true,
                     position: 'left',
+                    suggestedMax: Math.max(...histDataBidders, 0) * 1.18,
                     grid: { color: gridColor },
-                    ticks: { color: textColor, font: { size: 10 }, callback: (v) => v.toFixed(1) },
+                    ticks: { color: textColor, font: { size: 10, weight: '600' }, callback: (v) => v.toFixed(1) },
                     title: { display: true, text: 'Promedio licitantes', color: textColor, font: { size: 9.5, weight: '600' } }
                 },
                 y1: {
@@ -261,7 +274,7 @@ function renderBiddersAnalytics(contractsList) {
                     grid: { display: false },
                     ticks: {
                         color: budgetLineColor,
-                        font: { size: 10 },
+                        font: { size: 10, weight: '600' },
                         callback: (v) => formatUF(v)
                     },
                     title: { display: true, text: 'Presupuesto prom. (UF)', color: budgetLineColor, font: { size: 9.5, weight: '600' } }
@@ -355,6 +368,7 @@ function renderBiddersAnalytics(contractsList) {
 
         chartTopCompaniesInstance = createOrUpdateChart('chartTopCompanies', chartTopCompaniesInstance, {
             type: 'bar',
+            plugins: [CatlecUtils.horizontalBarDataLabelsPlugin],
             data: {
                 labels: barLabels,
                 datasets: [{
@@ -405,6 +419,9 @@ function renderBiddersAnalytics(contractsList) {
                                 ];
                             }
                         }
+                    },
+                    horizontalBarDataLabelsPlugin: {
+                        formatter: (v) => isParticipaciones ? String(v) : v.toFixed(1)
                     }
                 },
                 scales: {
@@ -412,7 +429,7 @@ function renderBiddersAnalytics(contractsList) {
                         grid: { color: gridColor },
                         ticks: {
                             color: textColor,
-                            font: { size: 10 },
+                            font: { size: 10, weight: '600' },
                             callback: (v) => isParticipaciones ? (v % 1 === 0 ? v : '') : (v % 1 === 0 ? v : v.toFixed(1))
                         },
                         title: { display: true, text: xTitle, color: textColor, font: { size: 9.5, weight: '600' } }
@@ -421,7 +438,7 @@ function renderBiddersAnalytics(contractsList) {
                         grid: { display: false },
                         ticks: {
                             color: textColor,
-                            font: { size: 9.5, weight: '500' },
+                            font: { size: 10, weight: '600' },
                             autoSkip: false,
                             callback: function (val, idx) {
                                 const entry = top10rev[idx];

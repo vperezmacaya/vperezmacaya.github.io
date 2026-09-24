@@ -1162,18 +1162,24 @@ body.light-theme .data-table th {
     transition: background-color 0.2s ease, color 0.15s ease, box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.data-table tbody tr.row-main:hover,
-.data-table tbody tr.row-main:hover td {
+.data-table tbody tr.row-main:hover:not(.row-selected),
+.data-table tbody tr.row-main:hover:not(.row-selected) td {
     background-color: rgba(59, 130, 246, 0.14) !important;
 }
 
-body.light-theme .data-table tbody tr.row-main:hover,
-body.light-theme .data-table tbody tr.row-main:hover td {
+body.light-theme .data-table tbody tr.row-main:hover:not(.row-selected),
+body.light-theme .data-table tbody tr.row-main:hover:not(.row-selected) td {
     background-color: rgba(37, 99, 235, 0.08) !important;
 }
 
 .data-table tbody tr.row-main.expanded {
     background-color: rgba(59, 130, 246, 0.04);
+}
+
+/* La selección (click) debe verse instantánea, sin animar background-color/box-shadow —
+   solo el hover normal usa la transición suave heredada de .row-main. */
+.data-table tbody tr.row-main.row-selected {
+    transition: color 0.15s ease;
 }
 
 /* Sort Icons */

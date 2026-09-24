@@ -1,7 +1,7 @@
 /**
  * static/js/SNI/charts.js
  * Gráficos analíticos con Chart.js para la plataforma SNI
- * Homologados con la estética, tipografía ('Plus Jakarta Sans'), tooltips,
+ * Homologados con la estética, tipografía ('Helvetica Neue'), tooltips,
  * formato de ejes y animaciones de transición fluidas (sin destrucción) de index.html
  *
  * Patrón de actualización reactiva (idéntico a investment.js / contracts_analysis.js):
@@ -21,9 +21,9 @@ let sniChartInstances = {
     prePostGov: null
 };
 
-// Configurar defaults globales de Chart.js idénticos a index.html (investment.js L215-216)
+// Configurar defaults globales de Chart.js (estándar tipográfico CATLEC)
 if (typeof Chart !== 'undefined') {
-    Chart.defaults.font.family = "'Inter', system-ui, -apple-system, sans-serif";
+    Chart.defaults.font.family = "'Helvetica Neue', Helvetica, Arial, sans-serif";
     Chart.defaults.font.size = 10;
     Chart.defaults.devicePixelRatio = Math.max(2.5, window.devicePixelRatio || 1);
 }
@@ -64,14 +64,14 @@ function getChartThemeOptions() {
             x: {
                 ticks: {
                     color: textMuted,
-                    font: { family: "'Inter', sans-serif", size: 10 }
+                    font: { size: 10, weight: '600' }
                 },
                 grid: { color: gridColor, drawBorder: false }
             },
             y: {
                 ticks: {
                     color: textMuted,
-                    font: { family: "'Inter', sans-serif", size: 10 }
+                    font: { size: 10, weight: '600' }
                 },
                 grid: { color: gridColor, drawBorder: false }
             }
@@ -110,6 +110,8 @@ function updateMapMetricRankingChart() {
     let unitLabel = '';
     let barColor = '#2563eb';
     let valFormatter = (v) => v;
+    let xAxisTitle = '';
+    let dataLabelFormatter = (v) => v;
 
     switch (metric) {
         case 'per_capita':
@@ -118,6 +120,8 @@ function updateMapMetricRankingChart() {
             unitLabel = '$ CLP / hab';
             barColor = '#059669';
             valFormatter = (v) => `$${Math.round(v).toLocaleString('es-CL')} CLP`;
+            xAxisTitle = 'Inversión Per Cápita (CLP / hab)';
+            dataLabelFormatter = (v) => Math.round(v).toLocaleString('es-CL');
             break;
         case 'km2':
             sorted = [...valid].sort((a, b) => b.per_km2_clp - a.per_km2_clp);
@@ -125,6 +129,8 @@ function updateMapMetricRankingChart() {
             unitLabel = '$ CLP / km²';
             barColor = '#8b5cf6';
             valFormatter = (v) => `$${Math.round(v).toLocaleString('es-CL')} / km²`;
+            xAxisTitle = 'Inversión por Superficie (CLP / km²)';
+            dataLabelFormatter = (v) => Math.round(v).toLocaleString('es-CL');
             break;
         case 'pib_ratio':
             sorted = [...valid].sort((a, b) => b.pib_ratio - a.pib_ratio);
@@ -132,6 +138,8 @@ function updateMapMetricRankingChart() {
             unitLabel = 'Ratio Inv/PIB';
             barColor = '#f59e0b';
             valFormatter = (v) => `${v.toFixed(2)}x`;
+            xAxisTitle = 'Ratio Inversión / PIB';
+            dataLabelFormatter = (v) => `${v.toFixed(2)}x`;
             break;
         case 'total':
         default:
@@ -140,6 +148,8 @@ function updateMapMetricRankingChart() {
             unitLabel = 'MM USD';
             barColor = '#2563eb';
             valFormatter = (v) => `US$ ${v.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} MM`;
+            xAxisTitle = 'Inversión (MM USD 2024)';
+            dataLabelFormatter = (v) => v.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
             break;
     }
 
@@ -196,13 +206,24 @@ function updateMapMetricRankingChart() {
         dataValues = sorted.map(r => r.total_usd);
     }
 
+    const nonNoReg = sorted.filter(r => !r.region.includes('No Regionalizada') && !r.region.includes('Exterior'));
+    const nonNoRegVals = nonNoReg.map(r => {
+        if (metric === 'per_capita') return r.per_capita_clp;
+        if (metric === 'km2') return r.per_km2_clp;
+        if (metric === 'pib_ratio') return r.pib_ratio;
+        return r.total_usd;
+    }).filter(v => typeof v === 'number' && v > 0);
+
+    const maxVal = nonNoRegVals.length > 0 ? Math.max(...nonNoRegVals) : 0;
+    const minVal = nonNoRegVals.length > 0 ? Math.min(...nonNoRegVals) : 0;
+
     const backgroundColors = sorted.map(r => {
         if (r.region.includes('No Regionalizada')) return '#64748b';
         let val = r.total_usd;
         if (metric === 'per_capita') val = r.per_capita_clp;
         else if (metric === 'km2') val = r.per_km2_clp;
         else if (metric === 'pib_ratio') val = r.pib_ratio;
-        return typeof getChoroplethColor === 'function' ? getChoroplethColor(val) : barColor;
+        return typeof getChoroplethColor === 'function' ? getChoroplethColor(val, maxVal, minVal) : barColor;
     });
 
     const baseOpts = getChartThemeOptions();
@@ -256,13 +277,14 @@ function updateMapMetricRankingChart() {
                         callbacks: { label: makeTooltipCallback() }
                     },
                     horizontalBarDataLabelsPlugin: {
-                        formatter: (val) => valFormatter(val)
+                        formatter: (val) => dataLabelFormatter(val)
                     }
                 },
                 scales: {
                     x: {
                         ...baseOpts.scales.x,
-                        ticks: { ...baseOpts.scales.x.ticks, callback: makeTickCallback() }
+                        ticks: { ...baseOpts.scales.x.ticks, callback: makeTickCallback() },
+                        title: { display: true, text: xAxisTitle, color: baseOpts.scales.x.ticks.color, font: { size: 9.5, weight: '600' } }
                     },
                     y: {
                         ...baseOpts.scales.y,
@@ -291,6 +313,8 @@ function updateMapMetricRankingChart() {
         // Actualizar callbacks dinámicos
         chart.options.scales.x.ticks.callback = makeTickCallback();
         chart.options.plugins.tooltip.callbacks.label = makeTooltipCallback();
+        chart.options.plugins.horizontalBarDataLabelsPlugin.formatter = (val) => dataLabelFormatter(val);
+        chart.options.scales.x.title = { display: true, text: xAxisTitle, color: baseOpts.scales.x.ticks.color, font: { size: 9.5, weight: '600' } };
         // Actualizar colores del tema
         chart.options.scales.x.ticks.color = baseOpts.scales.x.ticks.color;
         chart.options.scales.x.grid.color = baseOpts.scales.x.grid.color;
@@ -330,7 +354,9 @@ function updateRegionRankingChart() {
                 datasets: [{
                     label: 'Inversión (MM USD 2024)',
                     data: data,
-                    backgroundColor: '#2563eb',
+                    backgroundColor: 'rgba(37,99,235,0.8)',
+                    borderColor: '#2563eb',
+                    borderWidth: 1,
                     borderRadius: 4,
                     barPercentage: 0.8
                 }]
@@ -419,6 +445,7 @@ function updatePibBalanceChart() {
     if (!sniChartInstances.pibBalance) {
         sniChartInstances.pibBalance = new Chart(ctx, {
             type: 'bar',
+            plugins: [CatlecUtils.groupedBarDataLabelsPlugin],
             data: {
                 labels: labels,
                 datasets: [
@@ -454,12 +481,10 @@ function updatePibBalanceChart() {
                         backgroundColor: '#10b981',
                         borderWidth: 2.2,
                         pointBackgroundColor: '#10b981',
-                        pointBorderColor: '#10b981',
-                        pointBorderWidth: 0,
                         yAxisID: 'y1',
-                        pointRadius: 2.5,
-                        pointHoverRadius: 4.5,
-                        tension: 0,
+                        pointRadius: 3.5,
+                        pointHoverRadius: 5.5,
+                        tension: 0.2,
                         order: 1
                     }
                 ]
@@ -467,8 +492,8 @@ function updatePibBalanceChart() {
             options: {
                 ...baseOpts,
                 interaction: {
-                    mode: 'nearest',
-                    intersect: true
+                    mode: 'index',
+                    intersect: false
                 },
                 plugins: {
                     ...baseOpts.plugins,
@@ -484,6 +509,12 @@ function updatePibBalanceChart() {
                                 return ` ${c.dataset.label}: ${c.raw.toFixed(1)}%`;
                             }
                         }
+                    },
+                    groupedBarDataLabelsPlugin: {
+                        formatter: (v) => `${v.toFixed(1)}%`,
+                        color: (dIdx) => dIdx === 0 ? 'rgba(245, 158, 11, 1)' : 'rgba(37, 99, 235, 1)',
+                        font: '700 9.5px Helvetica Neue, Helvetica, Arial, sans-serif',
+                        offset: 3
                     }
                 },
                 scales: {
@@ -491,7 +522,7 @@ function updatePibBalanceChart() {
                         ...baseOpts.scales.x,
                         ticks: {
                             ...baseOpts.scales.x.ticks,
-                            font: { family: "'Inter', sans-serif", size: 9.5, weight: '500' },
+                            font: { size: 10, weight: '600' },
                             maxRotation: 0,
                             minRotation: 0,
                             autoSkip: false,
@@ -500,9 +531,10 @@ function updatePibBalanceChart() {
                     },
                     y: {
                         ...baseOpts.scales.y,
+                        suggestedMax: Math.max(...pibData, ...invData, 0) * 1.18,
                         ticks: {
                             ...baseOpts.scales.y.ticks,
-                            font: { family: "'Inter', sans-serif", size: 10 },
+                            font: { size: 10, weight: '600' },
                             callback: (v) => `${v}%`
                         },
                         title: { display: true, text: '% Participación', color: baseOpts.scales.y.ticks.color, font: { size: 9.5, weight: '600' } }
@@ -512,7 +544,7 @@ function updatePibBalanceChart() {
                         grid: { drawOnChartArea: false },
                         ticks: {
                             color: '#10b981',
-                            font: { family: "'Inter', sans-serif", size: 10, weight: '600' },
+                            font: { size: 10, weight: '600' },
                             callback: (v) => `${v}x`
                         },
                         title: { display: true, text: 'Ratio Inversión / PIB', color: '#10b981', font: { size: 9.5, weight: '600' } }
@@ -529,12 +561,13 @@ function updatePibBalanceChart() {
         chart.data.datasets[1].order = 2;
         chart.data.datasets[2].data = ratioData;
         chart.data.datasets[2].order = 1;
+        chart.options.scales.y.suggestedMax = Math.max(...pibData, ...invData, 0) * 1.18;
         chart.options.plugins.legend = { display: false };
         chart.options.plugins.tooltip.callbacks.title = titleCb;
         chart.options.scales.x.ticks.maxRotation = 0;
         chart.options.scales.x.ticks.minRotation = 0;
         chart.options.scales.x.ticks.autoSkip = false;
-        chart.options.scales.x.ticks.font = { family: "'Inter', sans-serif", size: 9.5, weight: '500' };
+        chart.options.scales.x.ticks.font = { size: 10, weight: '600' };
         chart.options.scales.x.ticks.color = baseOpts.scales.x.ticks.color;
         chart.options.scales.x.grid.color = baseOpts.scales.x.grid.color;
         chart.options.scales.y.ticks.color = baseOpts.scales.y.ticks.color;
@@ -583,10 +616,10 @@ function updateMinistryShareChart() {
                 datasets: [{
                     label: 'Inversión por Ministerio (MM USD)',
                     data: data,
-                    backgroundColor: colors,
+                    backgroundColor: colors.map(c => `${c}cc`),
                     borderRadius: 3,
                     borderWidth: 1,
-                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderColor: colors,
                     barPercentage: 0.75
                 }]
             },
@@ -612,7 +645,7 @@ function updateMinistryShareChart() {
                         ...baseOpts.scales.x,
                         ticks: {
                             ...baseOpts.scales.x.ticks,
-                            font: { family: "'Inter', sans-serif", size: 10 },
+                            font: { size: 10, weight: '600' },
                             callback: (v) => v.toLocaleString('es-CL')
                         },
                         title: { display: true, text: 'Inversión (MM USD 2024)', color: baseOpts.scales.x.ticks.color, font: { size: 9.5, weight: '600' } }
@@ -620,7 +653,7 @@ function updateMinistryShareChart() {
                     y: {
                         ...baseOpts.scales.y,
                         grid: { display: false },
-                        ticks: { ...baseOpts.scales.y.ticks, font: { family: "'Inter', sans-serif", size: 10, weight: '600' }, autoSkip: false }
+                        ticks: { ...baseOpts.scales.y.ticks, font: { size: 10, weight: '600' }, autoSkip: false }
                     }
                 }
             }
@@ -629,7 +662,8 @@ function updateMinistryShareChart() {
         const chart = sniChartInstances.ministryShare;
         chart.data.labels = labels;
         chart.data.datasets[0].data = data;
-        chart.data.datasets[0].backgroundColor = colors;
+        chart.data.datasets[0].backgroundColor = colors.map(c => `${c}cc`);
+        chart.data.datasets[0].borderColor = colors;
         chart.options.plugins.tooltip.callbacks.label = tooltipCb;
         chart.options.scales.x.ticks.callback = (v) => v.toLocaleString('es-CL');
         if (chart.options.plugins.horizontalBarDataLabelsPlugin) {
@@ -743,7 +777,7 @@ function updateMopServicesChart() {
                 datasets: [{
                     label: 'Inversión MOP (MM USD)',
                     data: data,
-                    backgroundColor: '#3b82f6',
+                    backgroundColor: 'rgba(59,130,246,0.8)',
                     borderColor: '#2563eb',
                     borderWidth: 1,
                     borderRadius: 3,
@@ -775,7 +809,7 @@ function updateMopServicesChart() {
                         ...baseOpts.scales.x,
                         ticks: {
                             ...baseOpts.scales.x.ticks,
-                            font: { family: "'Inter', sans-serif", size: 10 },
+                            font: { size: 10, weight: '600' },
                             callback: (v) => v.toLocaleString('es-CL')
                         },
                         title: { display: true, text: 'Inversión MOP (MM USD)', color: baseOpts.scales.x.ticks.color, font: { size: 9.5, weight: '600' } }
@@ -783,7 +817,7 @@ function updateMopServicesChart() {
                     y: {
                         ...baseOpts.scales.y,
                         grid: { display: false },
-                        ticks: { ...baseOpts.scales.y.ticks, font: { family: "'Inter', sans-serif", size: 9.5, weight: '600' }, autoSkip: false }
+                        ticks: { ...baseOpts.scales.y.ticks, font: { size: 10, weight: '600' }, autoSkip: false }
                     }
                 }
             }
@@ -837,10 +871,10 @@ function updateTemporalEvolutionChart() {
         return {
             label: min,
             data: data,
-            backgroundColor: color,
+            backgroundColor: `${color}cc`,
             borderRadius: 2,
             borderWidth: 1,
-            borderColor: 'rgba(255, 255, 255, 0.2)',
+            borderColor: color,
             stack: 'total'
         };
     });
@@ -857,10 +891,10 @@ function updateTemporalEvolutionChart() {
         datasets.push({
             label: 'Otros Ministerios',
             data: otrosData,
-            backgroundColor: '#94a3b8',
+            backgroundColor: 'rgba(148,163,184,0.8)',
             borderRadius: 2,
             borderWidth: 1,
-            borderColor: 'rgba(255, 255, 255, 0.2)',
+            borderColor: '#94a3b8',
             stack: 'total'
         });
     }
@@ -869,8 +903,8 @@ function updateTemporalEvolutionChart() {
     const legendEl = document.getElementById('temporal-evolution-legend');
     if (legendEl) {
         legendEl.innerHTML = datasets.map(ds => `
-            <span class="sni-card-legend-item">
-                <span class="sni-legend-dot" style="background:${ds.backgroundColor};"></span>
+            <span class="sni-card-legend-item" style="color:${ds.borderColor};">
+                <span class="sni-legend-dot" style="background:${ds.borderColor};"></span>
                 ${ds.label}
             </span>
         `).join('');
@@ -887,6 +921,10 @@ function updateTemporalEvolutionChart() {
             },
             options: {
                 ...baseOpts,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
                 plugins: {
                     ...baseOpts.plugins,
                     legend: { display: false },
@@ -904,7 +942,7 @@ function updateTemporalEvolutionChart() {
                         grid: { display: false },
                         ticks: {
                             ...baseOpts.scales.x.ticks,
-                            font: { family: "'Inter', sans-serif", size: 10 }
+                            font: { size: 10, weight: '600' }
                         }
                     },
                     y: {
@@ -912,7 +950,7 @@ function updateTemporalEvolutionChart() {
                         stacked: true,
                         ticks: {
                             ...baseOpts.scales.y.ticks,
-                            font: { family: "'Inter', sans-serif", size: 10 },
+                            font: { size: 10, weight: '600' },
                             callback: (v) => `US$ ${v}M`
                         },
                         title: { display: true, text: 'Inversión Anual (MM USD 2024)', color: baseOpts.scales.y.ticks.color, font: { size: 9.5, weight: '600' } }
@@ -963,12 +1001,13 @@ function updatePrePostGovChart() {
     if (!sniChartInstances.prePostGov) {
         sniChartInstances.prePostGov = new Chart(ctx, {
             type: 'bar',
+            plugins: [CatlecUtils.groupedBarDataLabelsPlugin],
             data: {
                 labels: labels,
                 datasets: [{
                     label: 'Promedio Anual (MM USD 2024)',
                     data: avgData,
-                    backgroundColor: colors,
+                    backgroundColor: colors.map(c => `${c}cc`),
                     borderColor: colors,
                     borderWidth: 1,
                     borderRadius: 3,
@@ -985,6 +1024,11 @@ function updatePrePostGovChart() {
                         callbacks: {
                             label: (c) => ` Promedio Anual: US$ ${c.raw.toLocaleString('es-CL', { minimumFractionDigits: 1 })} MM`
                         }
+                    },
+                    groupedBarDataLabelsPlugin: {
+                        formatter: (v) => v.toLocaleString('es-CL', { minimumFractionDigits: 1 }),
+                        color: (dIdx) => colors[dIdx],
+                        offset: 4
                     }
                 },
                 scales: {
@@ -993,14 +1037,15 @@ function updatePrePostGovChart() {
                         grid: { display: false },
                         ticks: {
                             ...baseOpts.scales.x.ticks,
-                            font: { family: "'Inter', sans-serif", size: 10, weight: '600' }
+                            font: { size: 10, weight: '600' }
                         }
                     },
                     y: {
                         ...baseOpts.scales.y,
+                        suggestedMax: Math.max(...avgData, 0) * 1.18,
                         ticks: {
                             ...baseOpts.scales.y.ticks,
-                            font: { family: "'Inter', sans-serif", size: 10 },
+                            font: { size: 10, weight: '600' },
                             callback: (v) => `US$ ${v}M`
                         },
                         title: { display: true, text: 'Promedio Anual (MM USD 2024)', color: baseOpts.scales.y.ticks.color, font: { size: 9.5, weight: '600' } }
@@ -1012,7 +1057,8 @@ function updatePrePostGovChart() {
         const chart = sniChartInstances.prePostGov;
         chart.data.labels = labels;
         chart.data.datasets[0].data = avgData;
-        chart.data.datasets[0].backgroundColor = colors;
+        chart.data.datasets[0].backgroundColor = colors.map(c => `${c}cc`);
+        chart.data.datasets[0].borderColor = colors;
         chart.options.plugins.legend = { display: false };
         chart.options.scales.x.ticks.color = baseOpts.scales.x.ticks.color;
         chart.options.scales.x.grid.color = baseOpts.scales.x.grid.color;

@@ -22,7 +22,7 @@ function initSNIPlatform() {
     // 3. Inicializar Filtros
     initSNIFilters();
 
-    // 4. Inicializar Mapa Leaflet
+    // 4. Inicializar Mapa Coroplético (D3.js)
     initSNIMap();
 
     // 5. Inicializar Gráficos Chart.js
@@ -121,9 +121,9 @@ function switchViewContainer(viewName) {
     }
 
     if (viewName === 'map') {
-        if (sniLeafletMap) {
+        if (typeof drawOrResizeSNIMap === 'function') {
             setTimeout(() => {
-                sniLeafletMap.invalidateSize();
+                drawOrResizeSNIMap();
             }, 100);
         }
         if (typeof updateMapMetricRankingChart === 'function') {

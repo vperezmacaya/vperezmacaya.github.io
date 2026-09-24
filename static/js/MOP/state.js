@@ -22,9 +22,9 @@ const PALETTE_ORANGE = [
     '#a855f7','#0ea5e9','#22d3ee','#84cc16','#14b8a6',
 ];
 
-// ── Chart.js defaults (exactos a index.html) ───────────────────────────────
-Chart.defaults.font.family = "'Inter', system-ui, -apple-system, sans-serif";
-Chart.defaults.font.size   = 10.5;
+// ── Chart.js defaults (estándar tipográfico CATLEC) ────────────────────────
+Chart.defaults.font.family = "'Helvetica Neue', Helvetica, Arial, sans-serif";
+Chart.defaults.font.size   = 10;
 Chart.defaults.devicePixelRatio = Math.max(2.5, window.devicePixelRatio || 1);
 Chart.defaults.plugins.legend.labels.boxWidth = 10;
 Chart.defaults.plugins.legend.labels.padding  = 10;

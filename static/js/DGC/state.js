@@ -1,4 +1,8 @@
-
+// Chart.js defaults (estándar tipográfico CATLEC)
+if (typeof Chart !== 'undefined' && Chart.defaults) {
+    Chart.defaults.font.family = "'Helvetica Neue', Helvetica, Arial, sans-serif";
+    Chart.defaults.font.size = 10;
+}
 
 // State variables
 let appState = {

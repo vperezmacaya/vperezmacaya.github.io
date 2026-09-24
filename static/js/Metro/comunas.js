@@ -160,15 +160,15 @@ function metroRenderPoblacionChart() {
 
     // Eje Y primario (Barras Apiladas): Nuevas Estaciones Futuras (Expansión)
     const dataEstacionesFuturas = [null, ...list.map(c => (c.stations_future || 0)), null];
-    const futureBarBgColor = 'rgba(2, 132, 199, 0.75)';
-    const futureBarBorderColor = '#0284c7';
+    const futureBarBgColor = 'rgba(0, 81, 167, 0.75)';
+    const futureBarBorderColor = '#0051a7';
 
     // Colores semánticos de barras según cobertura de Metro
     const bgColors = [
         'transparent',
         ...list.map(c => {
-            if (c.has_metro) return 'rgba(37, 99, 235, 0.85)';
-            if (c.metro_status === 'En Expansión' || (c.stations_future || 0) > 0) return 'rgba(2, 132, 199, 0.75)';
+            if (c.has_metro) return 'rgba(204, 21, 39, 0.85)';
+            if (c.metro_status === 'En Expansión' || (c.stations_future || 0) > 0) return 'rgba(0, 81, 167, 0.75)';
             return 'rgba(148, 163, 184, 0.45)';
         }),
         'transparent'
@@ -176,15 +176,15 @@ function metroRenderPoblacionChart() {
     const borderColors = [
         'transparent',
         ...list.map(c => {
-            if (c.has_metro) return '#2563eb';
-            if (c.metro_status === 'En Expansión' || (c.stations_future || 0) > 0) return '#0284c7';
+            if (c.has_metro) return '#cc1527';
+            if (c.metro_status === 'En Expansión' || (c.stations_future || 0) > 0) return '#0051a7';
             return '#94a3b8';
         }),
         'transparent'
     ];
 
-    // Métrica alternable para la línea en eje Y derecho: Hab/Estación (#10b981) o Estaciones/km² (#f59e0b)
-    const activeColor = isHabEst ? '#10b981' : '#f59e0b';
+    // Métrica alternable para la línea en eje Y derecho: Hab/Estación (#6a041c) o Estaciones/km² (#34394d)
+    const activeColor = isHabEst ? '#6a041c' : '#34394d';
     const y1TitleText = isHabEst ? 'Hab. por Estación' : 'Estaciones / km²';
     const y1TickCallback = isHabEst
         ? (v) => `${(v / 1000).toFixed(0)}k/est`
@@ -234,12 +234,12 @@ function metroRenderPoblacionChart() {
                     borderWidth: 2.6,
                     borderDash: metroShowFutureStations ? [5, 4] : [],
                     yAxisID: 'y1',
-                    order: 0,
+                    order: 1,
                     z: 25,
                     pointRadius: 3.5,
-                    pointHoverRadius: 6,
+                    pointHoverRadius: 5.5,
                     pointHitRadius: 10,
-                    tension: 0.25,
+                    tension: 0.2,
                     spanGaps: true
                 }
             ]
@@ -247,6 +247,10 @@ function metroRenderPoblacionChart() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: {
+                duration: 450,
+                easing: 'easeOutQuart'
+            },
             layout: {
                 padding: {
                     left: 10,
@@ -255,7 +259,7 @@ function metroRenderPoblacionChart() {
             },
             interaction: {
                 mode: 'index',
-                intersect: true
+                intersect: false
             },
             onHover: (event, elements) => {
                 const canvas = event?.native?.target || ctx;
@@ -293,7 +297,7 @@ function metroRenderPoblacionChart() {
                     },
                     ticks: {
                         color: textColor,
-                        font: { size: 9.5, weight: '600' },
+                        font: { size: 10, weight: '600' },
                         maxRotation: 45,
                         minRotation: 45,
                         autoSkip: false,
@@ -311,14 +315,14 @@ function metroRenderPoblacionChart() {
                     grid: { color: gridColor },
                     ticks: {
                         color: textSecColor,
-                        font: { size: 9 },
+                        font: { size: 10, weight: '600' },
                         stepSize: 4,
                         callback: (v) => `${v} est`
                     },
                     title: {
                         display: true,
                         text: 'Cantidad de Estaciones',
-                        font: { size: 9, weight: '600' },
+                        font: { size: 9.5, weight: '600' },
                         color: textSecColor
                     }
                 },
@@ -329,13 +333,13 @@ function metroRenderPoblacionChart() {
                     grid: { drawOnChartArea: false },
                     ticks: {
                         color: activeColor,
-                        font: { size: 9, weight: '600' },
+                        font: { size: 10, weight: '600' },
                         callback: y1TickCallback
                     },
                     title: {
                         display: true,
                         text: y1TitleText,
-                        font: { size: 9, weight: '600' },
+                        font: { size: 9.5, weight: '600' },
                         color: activeColor
                     }
                 }
@@ -418,10 +422,14 @@ function metroRenderPoblacionChart() {
                             return lines;
                         }
                     }
+                },
+                stackedBarDataLabelsPlugin: {
+                    formatter: (v) => Math.round(v).toLocaleString('es-CL')
                 }
             }
         },
         plugins: [
+            CatlecUtils.stackedBarDataLabelsPlugin,
             {
                 id: 'metroPinnedYAxesPlugin',
                 afterDraw: (chart) => {
@@ -732,7 +740,7 @@ function setMetroPoblacionLineMode(mode) {
     metroPoblacionLineMode = mode;
 
     const isHabEst = (mode === 'hab_est');
-    const activeColor = isHabEst ? '#10b981' : '#f59e0b';
+    const activeColor = isHabEst ? '#6a041c' : '#34394d';
 
     const btnHab = document.getElementById('btn-metro-pob-hab-est');
     const btnKm2 = document.getElementById('btn-metro-pob-est-km2');
@@ -746,28 +754,35 @@ function setMetroPoblacionLineMode(mode) {
             btnHab.style.color = '#fff';
             btnKm2.style.background = 'transparent';
             btnKm2.style.color = 'var(--text-muted)';
-            if (legendLabel) legendLabel.textContent = 'Hab/Estación (Eje Der)';
-            if (legendIndicator) legendIndicator.style.background = '#10b981';
+            if (legendLabel) {
+                legendLabel.textContent = 'Hab/Estación (Eje Der)';
+                legendLabel.style.color = '#6a041c';
+            }
+            if (legendIndicator) legendIndicator.style.background = '#6a041c';
             if (descEl) descEl.textContent = '41 comunas del Gran Santiago — Cantidad de estaciones y presión demográfica (hab/estación)';
         } else {
             btnKm2.style.background = 'var(--primary, #2563eb)';
             btnKm2.style.color = '#fff';
             btnHab.style.background = 'transparent';
             btnHab.style.color = 'var(--text-muted)';
-            if (legendLabel) legendLabel.textContent = 'Est/km² (Eje Der)';
-            if (legendIndicator) legendIndicator.style.background = '#f59e0b';
+            if (legendLabel) {
+                legendLabel.textContent = 'Est/km² (Eje Der)';
+                legendLabel.style.color = '#34394d';
+            }
+            if (legendIndicator) legendIndicator.style.background = '#34394d';
             if (descEl) descEl.textContent = '41 comunas del Gran Santiago — Cantidad de estaciones y densidad territorial (estaciones/km²)';
         }
     }
 
     const legendFutureIndicator = document.getElementById('metro-pob-legend-future-line-indicator');
     if (legendFutureIndicator) {
-        legendFutureIndicator.style.borderTopColor = activeColor;
+        legendFutureIndicator.style.borderColor = activeColor;
     }
 
     const legendLineLabel = document.getElementById('metro-pob-legend-future-line-label');
     if (legendLineLabel) {
         legendLineLabel.textContent = isHabEst ? 'Hab/Est Proyectado (Eje Der)' : 'Est/km² Proyectado (Eje Der)';
+        legendLineLabel.style.color = activeColor;
     }
 
     // Actualización reactiva fluida: anima la transición de la línea
@@ -820,24 +835,25 @@ function updateMetroFutureStationsUI() {
     const legendLineLabel = document.getElementById('metro-pob-legend-future-line-label');
 
     const isHab = (metroPoblacionLineMode === 'hab_est');
-    const activeColor = isHab ? '#10b981' : '#f59e0b';
+    const activeColor = isHab ? '#6a041c' : '#34394d';
 
     if (metroShowFutureStations) {
         if (btn) {
-            btn.style.background = 'rgba(2, 132, 199, 0.16)';
-            btn.style.borderColor = '#0284c7';
-            btn.style.color = '#0284c7';
+            btn.style.background = 'rgba(0, 81, 167, 0.16)';
+            btn.style.borderColor = '#0051a7';
+            btn.style.color = '#0051a7';
         }
         if (text) text.textContent = 'Ocultar Futuras Estaciones';
         if (legendSolid) legendSolid.style.display = 'none';
         if (legendLine) {
             legendLine.style.display = 'inline-flex';
             const futureInd = document.getElementById('metro-pob-legend-future-line-indicator');
-            if (futureInd) futureInd.style.borderTopColor = activeColor;
+            if (futureInd) futureInd.style.borderColor = activeColor;
             if (legendLineLabel) {
                 legendLineLabel.textContent = isHab
                     ? 'Hab/Est Proyectado (Eje Der)'
                     : 'Est/km² Proyectado (Eje Der)';
+                legendLineLabel.style.color = activeColor;
             }
         }
     } else {

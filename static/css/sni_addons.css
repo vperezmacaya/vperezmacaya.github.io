@@ -410,10 +410,8 @@
 .sni-card-legend {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.6rem;
-    color: var(--text-secondary);
-    font-weight: 500;
+    gap: 0.6rem;
+    font-size: 0.63rem;
     flex-shrink: 0;
 }
 
@@ -422,21 +420,22 @@
     align-items: center;
     gap: 0.25rem;
     white-space: nowrap;
+    font-weight: 600;
 }
 
 .sni-legend-dot {
     display: inline-block;
-    width: 7px;
-    height: 7px;
-    border-radius: 1.5px;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
     flex-shrink: 0;
 }
 
 .sni-legend-line {
     display: inline-block;
-    width: 9px;
-    height: 2px;
-    border-radius: 1px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
     flex-shrink: 0;
 }
 
@@ -447,41 +446,46 @@
     width: 100%;
 }
 
+/* Header de vistas del mapa: replica el layout y diseño de .efe-table-mode-switch (EFE.html) */
 .map-metric-toolbar {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 1000;
-    background: var(--bg-card);
-    backdrop-filter: blur(8px);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 3px;
     display: flex;
-    gap: 3px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-card);
+    flex-shrink: 0;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .map-metric-btn {
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 10.5px;
+    flex: 1;
+    justify-content: center;
+    font-size: 0.7rem;
+    padding: 0.26rem 0.35rem;
+    border-radius: 4px;
     font-weight: 600;
-    padding: 4px 8px;
-    border-radius: 5px;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
     transition: all 0.15s ease;
+    white-space: nowrap;
 }
 
 .map-metric-btn:hover {
     color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--text-muted);
 }
 
 .map-metric-btn.active {
     background: var(--primary);
     color: #ffffff;
+    border: 1px solid var(--primary);
 }
 
 .map-region-detail-card {
@@ -497,6 +501,39 @@
     width: 250px;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
     display: none;
+}
+
+/* ── Mapa Coroplético D3 (SNI) ─────────────────────────────────────────── */
+
+/* Control de zoom +/- flotante (reemplaza el zoomControl nativo de Leaflet) */
+/* SVG del mapa estático */
+.sni-map-svg {
+    cursor: default;
+    user-select: none;
+}
+
+/* Path de región: recoloreo instantáneo para máxima fluidez a 60 FPS;
+   stroke/fill-opacity de hover permanecen instantáneos */
+.sni-region-path {
+    cursor: pointer;
+    stroke: #ffffff;
+    stroke-width: 1.5px;
+    transition: none;
+}
+
+/* Tooltip flotante: agregado a <body> (no anidado en .sni-card, que tiene
+   overflow:hidden y lo recortaría). Reutiliza .catlec-map-tooltip solo para
+   tipografía/colores; el posicionamiento es propio (position:fixed + JS) */
+#sni-map-tooltip {
+    position: fixed;
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.1s ease;
+}
+
+#sni-map-tooltip.visible {
+    opacity: 1;
 }
 
 .map-metric-mini-kpis {

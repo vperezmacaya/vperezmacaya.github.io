@@ -459,7 +459,7 @@ function renderEfeChartDemandaPax(linesData) {
             type: 'bar',
             label: fName,
             data: fData,
-            backgroundColor: fColor,
+            backgroundColor: `${fColor}cc`,
             borderColor: fColor,
             borderWidth: 1,
             borderRadius: 2,
@@ -545,7 +545,7 @@ function renderEfeChartDemandaPax(linesData) {
                     grid: { display: false },
                     ticks: {
                         color: '#475569',
-                        font: { size: 9.5, weight: '600' }
+                        font: { size: 10, weight: '600' }
                     }
                 },
                 y: {
@@ -554,14 +554,14 @@ function renderEfeChartDemandaPax(linesData) {
                     grid: { color: 'rgba(0,0,0,0.06)' },
                     ticks: {
                         color: '#64748b',
-                        font: { size: 9 },
+                        font: { size: 10, weight: '600' },
                         callback: (v) => v + ' MM'
                     },
                     title: {
                         display: true,
                         text: 'Demanda Anual Consolidada (MM pasajeros)',
                         color: '#475569',
-                        font: { size: 9, weight: '600' }
+                        font: { size: 9.5, weight: '600' }
                     }
                 }
             }
@@ -589,6 +589,7 @@ function renderEfeChartLongitudEstaciones(lines) {
         efeChartLongitudEstacionesInstance.data.datasets[1].data = dataStations;
         efeChartLongitudEstacionesInstance.data.datasets[1].borderColor = '#d92534';
         efeChartLongitudEstacionesInstance.data.datasets[1].backgroundColor = '#d92534';
+        efeChartLongitudEstacionesInstance.options.scales.y.suggestedMax = Math.max(...dataKm, 0) * 1.18;
         efeChartLongitudEstacionesInstance.options.plugins.tooltip.callbacks = {
             title: (items) => (sorted[items[0].dataIndex] ? sorted[items[0].dataIndex].service : ''),
             label: (c) => {
@@ -624,8 +625,8 @@ function renderEfeChartLongitudEstaciones(lines) {
                     data: dataStations,
                     borderColor: '#d92534',
                     backgroundColor: '#d92534',
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
+                    pointRadius: 3.5,
+                    pointHoverRadius: 5.5,
                     borderWidth: 2,
                     tension: 0.2,
                     yAxisID: 'y1',
@@ -633,6 +634,7 @@ function renderEfeChartLongitudEstaciones(lines) {
                 }
             ]
         },
+        plugins: [CatlecUtils.groupedBarDataLabelsPlugin],
         options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -659,6 +661,11 @@ function renderEfeChartLongitudEstaciones(lines) {
                             }
                         }
                     }
+                },
+                groupedBarDataLabelsPlugin: {
+                    formatter: (v) => Number(v).toFixed(1),
+                    color: '#0f3b6c',
+                    offset: 4
                 }
             },
             scales: {
@@ -666,7 +673,7 @@ function renderEfeChartLongitudEstaciones(lines) {
                     grid: { display: false },
                     ticks: {
                         color: '#334155',
-                        font: { size: 9, weight: '500' },
+                        font: { size: 10, weight: '600' },
                         maxRotation: 35,
                         minRotation: 20
                     }
@@ -675,16 +682,17 @@ function renderEfeChartLongitudEstaciones(lines) {
                     type: 'linear',
                     display: true,
                     position: 'left',
+                    suggestedMax: Math.max(...dataKm, 0) * 1.18,
                     grid: { color: 'rgba(0,0,0,0.06)' },
                     ticks: {
                         color: '#0f3b6c',
-                        font: { size: 9 }
+                        font: { size: 10, weight: '600' }
                     },
                     title: {
                         display: true,
                         text: 'Longitud (km)',
                         color: '#0f3b6c',
-                        font: { size: 9, weight: '600' }
+                        font: { size: 9.5, weight: '600' }
                     }
                 },
                 y1: {
@@ -694,13 +702,13 @@ function renderEfeChartLongitudEstaciones(lines) {
                     grid: { drawOnChartArea: false },
                     ticks: {
                         color: '#d92534',
-                        font: { size: 9 }
+                        font: { size: 10, weight: '600' }
                     },
                     title: {
                         display: true,
                         text: 'N° Estaciones',
                         color: '#d92534',
-                        font: { size: 9, weight: '600' }
+                        font: { size: 9.5, weight: '600' }
                     }
                 }
             }
@@ -910,7 +918,7 @@ function renderEfeChartSatisfaccion(linesData) {
                         grid: { color: 'rgba(0,0,0,0.04)' },
                         ticks: {
                             color: '#475569',
-                            font: { size: 9.5, weight: '600' }
+                            font: { size: 10, weight: '600' }
                         }
                     },
                     y: {
@@ -920,14 +928,14 @@ function renderEfeChartSatisfaccion(linesData) {
                         ticks: {
                             stepSize: 10,
                             color: '#64748b',
-                            font: { size: 9 },
+                            font: { size: 10, weight: '600' },
                             callback: (v) => v + '%'
                         },
                         title: {
                             display: true,
                             text: 'Satisfacción (%)',
                             color: '#475569',
-                            font: { size: 9, weight: '600' }
+                            font: { size: 9.5, weight: '600' }
                         }
                     }
                 }
@@ -957,20 +965,20 @@ function renderEfeChartSatisfaccion(linesData) {
             return '#d92534'; // Rojo EFE
         });
 
-        // Microleyenda de umbrales
+        // Microleyenda de umbrales (Estándar CATLEC: viñeta cuadrada, color de texto = color propio, negrita 600)
         if (legendEl) {
             legendEl.innerHTML = `
-                <span style="display:inline-flex;align-items:center;gap:0.2rem;color:var(--text-secondary);font-size:0.6rem;">
-                    <span style="width:6.5px;height:6.5px;border-radius:50%;background:#1e9952;"></span> ≥90%
+                <span style="display:inline-flex;align-items:center;gap:0.25rem;color:#1e9952;font-weight:600;font-size:0.63rem;">
+                    <span style="width:8px;height:8px;border-radius:2px;background:#1e9952;display:inline-block;"></span>≥90%
                 </span>
-                <span style="display:inline-flex;align-items:center;gap:0.2rem;color:var(--text-secondary);font-size:0.6rem;">
-                    <span style="width:6.5px;height:6.5px;border-radius:50%;background:#2b5ec9;"></span> 80-89%
+                <span style="display:inline-flex;align-items:center;gap:0.25rem;color:#2b5ec9;font-weight:600;font-size:0.63rem;">
+                    <span style="width:8px;height:8px;border-radius:2px;background:#2b5ec9;display:inline-block;"></span>80-89%
                 </span>
-                <span style="display:inline-flex;align-items:center;gap:0.2rem;color:var(--text-secondary);font-size:0.6rem;">
-                    <span style="width:6.5px;height:6.5px;border-radius:50%;background:#e69500;"></span> 70-79%
+                <span style="display:inline-flex;align-items:center;gap:0.25rem;color:#e69500;font-weight:600;font-size:0.63rem;">
+                    <span style="width:8px;height:8px;border-radius:2px;background:#e69500;display:inline-block;"></span>70-79%
                 </span>
-                <span style="display:inline-flex;align-items:center;gap:0.2rem;color:var(--text-secondary);font-size:0.6rem;">
-                    <span style="width:6.5px;height:6.5px;border-radius:50%;background:#d92534;"></span> &lt;70%
+                <span style="display:inline-flex;align-items:center;gap:0.25rem;color:#d92534;font-weight:600;font-size:0.63rem;">
+                    <span style="width:8px;height:8px;border-radius:2px;background:#d92534;display:inline-block;"></span>&lt;70%
                 </span>
             `;
         }
@@ -978,7 +986,8 @@ function renderEfeChartSatisfaccion(linesData) {
         if (efeChartSatisfaccionInstance) {
             efeChartSatisfaccionInstance.data.labels = labels;
             efeChartSatisfaccionInstance.data.datasets[0].data = dataVals;
-            efeChartSatisfaccionInstance.data.datasets[0].backgroundColor = bgColors;
+            efeChartSatisfaccionInstance.data.datasets[0].backgroundColor = bgColors.map(c => `${c}cc`);
+            efeChartSatisfaccionInstance.data.datasets[0].borderColor = bgColors;
             efeChartSatisfaccionInstance.options.plugins.tooltip.callbacks = {
                 title: (items) => (filtered[items[0].dataIndex] ? filtered[items[0].dataIndex].service : ''),
                 label: (c) => [
@@ -992,12 +1001,15 @@ function renderEfeChartSatisfaccion(linesData) {
 
         efeChartSatisfaccionInstance = new Chart(ctx, {
             type: 'bar',
+            plugins: [CatlecUtils.groupedBarDataLabelsPlugin],
             data: {
                 labels: labels,
                 datasets: [{
                     label: `Satisfacción ${rankingYear} (%)`,
                     data: dataVals,
-                    backgroundColor: bgColors,
+                    backgroundColor: bgColors.map(c => `${c}cc`),
+                    borderColor: bgColors,
+                    borderWidth: 1,
                     borderRadius: 4
                 }]
             },
@@ -1005,7 +1017,7 @@ function renderEfeChartSatisfaccion(linesData) {
                 responsive: true,
                 maintainAspectRatio: false,
                 animation: {
-                    duration: 400,
+                    duration: 450,
                     easing: 'easeOutQuart'
                 },
                 plugins: {
@@ -1020,6 +1032,10 @@ function renderEfeChartSatisfaccion(linesData) {
                                 ` Satisfacción ${rankingYear}: ` + Math.round(Number(c.raw)) + '%'
                             ]
                         }
+                    },
+                    groupedBarDataLabelsPlugin: {
+                        formatter: (v) => `${Math.round(v)}%`,
+                        offset: 4
                     }
                 },
                 scales: {
@@ -1027,7 +1043,7 @@ function renderEfeChartSatisfaccion(linesData) {
                         grid: { display: false },
                         ticks: {
                             color: '#334155',
-                            font: { size: 8.8, weight: '500' },
+                            font: { size: 10, weight: '600' },
                             maxRotation: 30,
                             minRotation: 15
                         }
@@ -1038,14 +1054,14 @@ function renderEfeChartSatisfaccion(linesData) {
                         grid: { color: 'rgba(0,0,0,0.06)' },
                         ticks: {
                             color: '#64748b',
-                            font: { size: 9 },
+                            font: { size: 10, weight: '600' },
                             callback: (v) => v + '%'
                         },
                         title: {
                             display: true,
                             text: `Satisfacción ${rankingYear} (%)`,
                             color: '#475569',
-                            font: { size: 9, weight: '600' }
+                            font: { size: 9.5, weight: '600' }
                         }
                     }
                 }

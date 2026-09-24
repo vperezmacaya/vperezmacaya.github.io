@@ -1,3 +1,10 @@
+// Chart.js defaults (estándar tipográfico CATLEC)
+if (typeof Chart !== 'undefined' && Chart.defaults) {
+    Chart.defaults.font.family = "'Helvetica Neue', Helvetica, Arial, sans-serif";
+    Chart.defaults.font.size = 10;
+    Chart.defaults.devicePixelRatio = Math.max(2.5, window.devicePixelRatio || 1);
+}
+
 // ─── Estado global EFE ───────────────────────────────────────────────────────
 var efeState = {
     search: '',

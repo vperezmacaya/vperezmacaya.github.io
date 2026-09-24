@@ -17,6 +17,7 @@ function renderVistaContenedores() {
 
         chartInstances['chart-teus-evolucion'] = new Chart(c1.getContext('2d'), {
             type: 'bar',
+            plugins: [CatlecUtils.groupedBarDataLabelsPlugin],
             data: {
                 labels: years,
                 datasets: [
@@ -38,9 +39,9 @@ function renderVistaContenedores() {
                         borderColor: COLORS.emerald,
                         backgroundColor: COLORS.emerald,
                         borderWidth: 2.2,
-                        tension: 0,
-                        pointRadius: 2.5,
-                        pointHoverRadius: 4.5,
+                        tension: 0.2,
+                        pointRadius: 3.5,
+                        pointHoverRadius: 5.5,
                         pointBackgroundColor: COLORS.emerald,
                         fill: false,
                         yAxisID: 'y1',
@@ -51,7 +52,8 @@ function renderVistaContenedores() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: { mode: 'nearest', intersect: true },
+                animation: { duration: 450, easing: 'easeOutQuart' },
+                interaction: { mode: 'index', intersect: false },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -66,18 +68,24 @@ function renderVistaContenedores() {
                                 return ` TEUs: ${formatNumber(ctx.raw * 1000)} TEUs`;
                             }
                         }
+                    },
+                    groupedBarDataLabelsPlugin: {
+                        formatter: (v) => Number(v).toFixed(1),
+                        color: COLORS.primary,
+                        offset: 4
                     }
                 },
                 scales: {
                     x: {
                         grid: { display: false },
-                        ticks: { color: COLORS.textPrimary, font: { size: 10 } }
+                        ticks: { color: COLORS.textPrimary, font: { size: 10, weight: '600' } }
                     },
                     y: {
                         type: 'linear',
                         position: 'left',
+                        suggestedMax: Math.max(...teusK, 0) * 1.18,
                         grid: { color: COLORS.grid },
-                        ticks: { color: COLORS.textPrimary, font: { size: 10 } },
+                        ticks: { color: COLORS.textPrimary, font: { size: 10, weight: '600' } },
                         title: { display: true, text: 'Miles de TEUs (kTEU)', color: COLORS.textPrimary, font: { size: 9.5, weight: '600' } }
                     },
                     y1: {
@@ -86,7 +94,7 @@ function renderVistaContenedores() {
                         grid: { drawOnChartArea: false },
                         ticks: {
                             color: COLORS.emerald,
-                            font: { size: 10 },
+                            font: { size: 10, weight: '600' },
                             callback: (v) => `${v}%`
                         },
                         title: { display: true, text: 'Var. Interanual (%)', color: COLORS.emerald, font: { size: 9.5, weight: '600' } }
@@ -100,14 +108,17 @@ function renderVistaContenedores() {
     const c2 = document.getElementById('chart-contenedores-comparativa');
     if (c2) {
         destroyChart('chart-contenedores-comparativa');
+        const data40 = agg.map(d => roundNumber(d.contenedores_40_unidades / 1e3, 1));
+        const data20 = agg.map(d => roundNumber(d.contenedores_20_unidades / 1e3, 1));
         chartInstances['chart-contenedores-comparativa'] = new Chart(c2.getContext('2d'), {
             type: 'bar',
+            plugins: [CatlecUtils.groupedBarDataLabelsPlugin],
             data: {
                 labels: years,
                 datasets: [
                     {
                         label: 'Contenedores 40 pies',
-                        data: agg.map(d => roundNumber(d.contenedores_40_unidades / 1e3, 1)),
+                        data: data40,
                         backgroundColor: COLORS.skyAlpha,
                         borderColor: COLORS.sky,
                         borderWidth: 1,
@@ -115,7 +126,7 @@ function renderVistaContenedores() {
                     },
                     {
                         label: 'Contenedores 20 pies',
-                        data: agg.map(d => roundNumber(d.contenedores_20_unidades / 1e3, 1)),
+                        data: data20,
                         backgroundColor: COLORS.amberAlpha,
                         borderColor: COLORS.amber,
                         borderWidth: 1,
@@ -126,7 +137,8 @@ function renderVistaContenedores() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: { mode: 'nearest', intersect: true },
+                animation: { duration: 450, easing: 'easeOutQuart' },
+                interaction: { mode: 'index', intersect: false },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -136,16 +148,22 @@ function renderVistaContenedores() {
                             title: (items) => `Año ${items[0].label}`,
                             label: (ctx) => ` ${ctx.dataset.label}: ${formatNumber(ctx.raw * 1000)} Unidades`
                         }
+                    },
+                    groupedBarDataLabelsPlugin: {
+                        formatter: (v) => Number(v).toFixed(1),
+                        color: (dIdx) => dIdx === 0 ? COLORS.sky : COLORS.amber,
+                        offset: 4
                     }
                 },
                 scales: {
                     x: {
                         grid: { display: false },
-                        ticks: { color: COLORS.textPrimary, font: { size: 10 } }
+                        ticks: { color: COLORS.textPrimary, font: { size: 10, weight: '600' } }
                     },
                     y: {
+                        suggestedMax: Math.max(...data40, ...data20, 0) * 1.18,
                         grid: { color: COLORS.grid },
-                        ticks: { color: COLORS.textPrimary, font: { size: 10 } },
+                        ticks: { color: COLORS.textPrimary, font: { size: 10, weight: '600' } },
                         title: { display: true, text: 'Miles de Unidades', color: COLORS.textPrimary, font: { size: 9.5, weight: '600' } }
                     }
                 }
@@ -159,6 +177,7 @@ function renderVistaContenedores() {
         destroyChart('chart-contenedores-manejo');
         chartInstances['chart-contenedores-manejo'] = new Chart(c3.getContext('2d'), {
             type: 'bar',
+            plugins: [CatlecUtils.stackedBarDataLabelsPlugin],
             data: {
                 labels: years,
                 datasets: [
@@ -199,7 +218,8 @@ function renderVistaContenedores() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: { mode: 'nearest', intersect: true },
+                animation: { duration: 450, easing: 'easeOutQuart' },
+                interaction: { mode: 'index', intersect: false },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -209,18 +229,21 @@ function renderVistaContenedores() {
                             title: (items) => `Año ${items[0].label}`,
                             label: (ctx) => ` ${ctx.dataset.label}: ${formatNumber(ctx.raw * 1000)} Unid.`
                         }
+                    },
+                    stackedBarDataLabelsPlugin: {
+                        formatter: (v) => Number(v).toFixed(1)
                     }
                 },
                 scales: {
                     x: {
                         stacked: true,
                         grid: { display: false },
-                        ticks: { color: COLORS.textPrimary, font: { size: 10 } }
+                        ticks: { color: COLORS.textPrimary, font: { size: 10, weight: '600' } }
                     },
                     y: {
                         stacked: true,
                         grid: { color: COLORS.grid },
-                        ticks: { color: COLORS.textPrimary, font: { size: 10 } },
+                        ticks: { color: COLORS.textPrimary, font: { size: 10, weight: '600' } },
                         title: { display: true, text: 'Miles de Contenedores', color: COLORS.textPrimary, font: { size: 9.5, weight: '600' } }
                     }
                 }

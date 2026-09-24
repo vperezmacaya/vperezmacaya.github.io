@@ -4,6 +4,35 @@
 // que existían antes, una por módulo, dejando solo las diferencias de estilo y
 // comportamiento como opciones explícitas por instancia.
 window.CatlecTooltip = (function () {
+    const TAIL_STYLE_ID = 'catlec-tooltip-tail-styles';
+
+    function ensureTailStyles() {
+        if (document.getElementById(TAIL_STYLE_ID)) return;
+        const style = document.createElement('style');
+        style.id = TAIL_STYLE_ID;
+        style.textContent = `
+            .catlec-tooltip-tail {
+                position: absolute;
+                width: 0;
+                height: 0;
+                top: 0;
+                transform: translateY(-50%);
+                border-top: 6px solid transparent;
+                border-bottom: 6px solid transparent;
+                pointer-events: none;
+            }
+            .catlec-tooltip-tail--left {
+                left: -6px;
+                border-right: 6px solid var(--tail-color, rgba(15, 23, 42, 0.94));
+            }
+            .catlec-tooltip-tail--right {
+                right: -6px;
+                border-left: 6px solid var(--tail-color, rgba(15, 23, 42, 0.94));
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
     function buildStyle(o) {
         const parts = [
             'position:fixed',
@@ -45,6 +74,7 @@ window.CatlecTooltip = (function () {
             supportAfterBody: true,   // soporte de notas al pie
             hideWhenEmpty: true,      // ocultar si no hay contenido
             textColors: { title: '#f8fafc', body: '#e2e8f0', afterBody: '#94a3b8' },
+            showTail: true,           // cola tipo globo de diálogo apuntando al punto de datos
         }, opts);
 
         if (!o.domId) throw new Error('CatlecTooltip.create requiere opts.domId');
@@ -60,6 +90,14 @@ window.CatlecTooltip = (function () {
                 el = document.createElement('div');
                 el.id = o.domId;
                 el.style.cssText = buildStyle(o);
+                if (o.showTail) {
+                    ensureTailStyles();
+                    const tail = document.createElement('div');
+                    tail.className = 'catlec-tooltip-tail catlec-tooltip-tail--left';
+                    tail.style.setProperty('--tail-color', o.background);
+                    el.appendChild(tail);
+                    el._tailEl = tail;
+                }
                 document.body.appendChild(el);
             }
 
@@ -96,13 +134,17 @@ window.CatlecTooltip = (function () {
                 ].join('');
             }
 
+            if (el._tailEl) el.appendChild(el._tailEl);
+
             const canvasRect = chart.canvas.getBoundingClientRect();
             let left = canvasRect.left + tooltip.caretX + 10;
             let top = canvasRect.top + tooltip.caretY - 10;
 
             const rect = el.getBoundingClientRect();
+            let tailSide = 'left';
             if (rect.width > 0 && left + rect.width > window.innerWidth - 8) {
                 left = canvasRect.left + tooltip.caretX - rect.width - 10;
+                tailSide = 'right';
             }
             if (o.clampVertical) {
                 if (rect.height > 0 && top + rect.height > window.innerHeight - 8) {
@@ -110,6 +152,15 @@ window.CatlecTooltip = (function () {
                 }
                 if (top < 10) top = 10;
                 if (left < 10) left = 10;
+            }
+
+            if (el._tailEl) {
+                el._tailEl.className = `catlec-tooltip-tail catlec-tooltip-tail--${tailSide}`;
+                let tailTop = (canvasRect.top + tooltip.caretY) - top;
+                if (rect.height > 0) {
+                    tailTop = Math.min(Math.max(tailTop, 10), rect.height - 10);
+                }
+                el._tailEl.style.top = tailTop + 'px';
             }
 
             if (wasVisible) {

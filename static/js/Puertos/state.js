@@ -3,7 +3,8 @@
 // ── Configuración HiDPI / Retina ──────────────────────────────────────────
 if (typeof Chart !== 'undefined' && Chart.defaults) {
     Chart.defaults.devicePixelRatio = Math.max(2.5, window.devicePixelRatio || 1);
-    Chart.defaults.font.family = "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    Chart.defaults.font.family = "'Helvetica Neue', Helvetica, Arial, sans-serif";
+    Chart.defaults.font.size = 10;
 }
 
 // Instancias de Gráficos

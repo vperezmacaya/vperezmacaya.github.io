@@ -7,6 +7,10 @@ const METRO_TL_LABEL_W = 240;    // px for label column
 const METRO_TL_BAR_H = 14;       // height of individual project bar
 const METRO_TL_MILESTONE_R = 6.5;// radius of milestone icons
 
+// ── Color Único para la franja de Línea del Timeline (Rojo Corporativo Metro) ──
+// Unificado para todas las líneas/proyectos (ya no varía por Línea de Metro).
+const METRO_TL_LINE_COLOR = '#cc1527';
+
 function showMetroTimelineView() {
     if (metroState.comunasOpen && typeof hideMetroComunasView === 'function') {
         hideMetroComunasView();
@@ -169,47 +173,27 @@ function parseMetroMilestone(val) {
 }
 
 
-// ── Paleta y Detección Dinámica de Etapas (Uniques de la columna "Etapa") ──────
-const METRO_DEFAULT_STAGE_COLORS = {
-    'ejecución': '#2563eb',    // Azul Real
-    'ejecucion': '#2563eb',
-    'diseño': '#ea580c',       // Naranja Intenso
-    'diseno': '#ea580c',
-    'factibilidad': '#0891b2', // Turquesa / Cian profundo
-    'operación': '#10b981',    // Verde Esmeralda
-    'operacion': '#10b981',
-    'licitación': '#8b5cf6',   // Violeta
-    'licitacion': '#8b5cf6',
-    'estudio': '#6366f1'       // Índigo
-};
-
-const METRO_STAGE_PALETTE = [
-    '#2563eb', '#ea580c', '#0891b2', '#8b5cf6', '#10b981', '#d97706', '#ec4899', '#6366f1'
-];
+// ── Color Único para las Barras del Timeline (Navy Corporativo) ────────────────
+// Unificado para todas las etapas (ya no varía por Etapa de Proyecto).
+const METRO_TL_BAR_COLOR = '#34394d';
 
 /**
- * Identifica todos los valores únicos presentes en la propiedad stage (columna "Etapa" de Excel)
- * y asigna a cada etapa un color armónico y distintivo.
+ * Identifica los valores unicos presentes en la propiedad stage (columna "Etapa" de Excel),
+ * solo para fines de rotulo de texto sobre la barra -- el color de la barra es unico (METRO_TL_BAR_COLOR).
  */
 function getMetroStagesMap(projects) {
     const stageMap = {};
-    let colorIdx = 0;
 
     (projects || []).forEach(p => {
         const rawStage = (p.stage && String(p.stage).trim()) ? String(p.stage).trim() : 'Sin Etapa';
         if (!stageMap[rawStage]) {
             const normKey = rawStage.toLowerCase()
-                .normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // sin tildes
-            
-            let color = METRO_DEFAULT_STAGE_COLORS[rawStage.toLowerCase()] 
-                     || METRO_DEFAULT_STAGE_COLORS[normKey] 
-                     || METRO_STAGE_PALETTE[colorIdx % METRO_STAGE_PALETTE.length];
-            
-            colorIdx++;
+                .normalize('NFD').replace(/[̀-ͯ]/g, ''); // sin tildes
+
             stageMap[rawStage] = {
                 key: normKey,
                 label: rawStage,
-                color: color
+                color: METRO_TL_BAR_COLOR
             };
         }
     });
@@ -222,37 +206,25 @@ function getMetroStageInfo(p, stageMap = null) {
     if (stageMap && stageMap[rawStage]) {
         return stageMap[rawStage];
     }
-    const normKey = rawStage.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const color = METRO_DEFAULT_STAGE_COLORS[rawStage.toLowerCase()] 
-               || METRO_DEFAULT_STAGE_COLORS[normKey] 
-               || '#2563eb';
     return {
-        key: normKey,
+        key: rawStage.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''),
         label: rawStage,
-        color: color
+        color: METRO_TL_BAR_COLOR
     };
 }
 
-/**
- * Actualiza dinámicamente la leyenda de la cabecera según los valores únicos de etapa encontrados.
- */
 function updateMetroTimelineLegend(stageMap) {
     const legendEl = document.getElementById('metro-timeline-header-legend');
     if (!legendEl) return;
 
     let html = `
         <span class="timeline-legend-item">
-            <span class="tl-legend-dot" style="background:#7c3aed; width:8px; height:8px; transform:rotate(45deg); border-radius:1px;"></span>Puesta en Servicio
+            <span class="tl-legend-dot" style="background:${METRO_TL_BAR_COLOR}; width:11px; height:7px; border-radius:2px;"></span>Etapa de Proyecto
+        </span>
+        <span class="timeline-legend-item">
+            <span class="tl-legend-dot" style="background:#10b981; width:8px; height:8px; transform:rotate(45deg); border-radius:1px;"></span>Puesta en Servicio
         </span>
     `;
-
-    Object.values(stageMap || {}).forEach(st => {
-        html += `
-            <span class="timeline-legend-item">
-                <span class="tl-legend-dot" style="background:${st.color}; width:12px; height:6px; border-radius:2px;"></span>${st.label}
-            </span>
-        `;
-    });
 
     html += `
         <span class="timeline-legend-item">
@@ -415,8 +387,6 @@ function renderMetroTimeline(projects, highlightId = null) {
         const isHighlighted = highlightId && (p.id === highlightId || p.name === highlightId);
         if (isHighlighted) highlightedRowIdx = i;
 
-        const lineColor = (window.METRO_LINE_COLORS && window.METRO_LINE_COLORS[p.line]) ? window.METRO_LINE_COLORS[p.line] : '#0284c7';
-
         // Background row
         const rowBg = isHighlighted
             ? (isLight ? 'rgba(37, 99, 235, 0.18)' : 'rgba(37, 99, 235, 0.30)')
@@ -426,9 +396,9 @@ function renderMetroTimeline(projects, highlightId = null) {
             x: 0, y: rowY, width: METRO_TL_LABEL_W, height: rowH, fill: rowBg
         }));
 
-        // Borde izquierdo con el color oficial de la línea
+        // Borde izquierdo unificado (color corporativo, ya no varía por línea)
         labelSvg.appendChild(metroSvgEl('rect', {
-            x: 0, y: rowY, width: 4.5, height: rowH, fill: lineColor
+            x: 0, y: rowY, width: 4.5, height: rowH, fill: METRO_TL_LINE_COLOR
         }));
 
         // Línea separadora inferior
@@ -540,13 +510,13 @@ function renderMetroTimeline(projects, highlightId = null) {
     const defs = metroSvgEl('defs');
     defs.innerHTML = `
         <linearGradient id="metro-grad-open-range" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.88"/>
-            <stop offset="50%" stop-color="#8b5cf6" stop-opacity="0.45"/>
-            <stop offset="100%" stop-color="#7c3aed" stop-opacity="0.06"/>
+            <stop offset="0%" stop-color="#10b981" stop-opacity="0.88"/>
+            <stop offset="50%" stop-color="#34d399" stop-opacity="0.45"/>
+            <stop offset="100%" stop-color="#10b981" stop-opacity="0.06"/>
         </linearGradient>
         <linearGradient id="metro-milestone-range-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.95"/>
-            <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.95"/>
+            <stop offset="0%" stop-color="#10b981" stop-opacity="0.95"/>
+            <stop offset="100%" stop-color="#34d399" stop-opacity="0.95"/>
         </linearGradient>
     `;
     barsSvg.appendChild(defs);
@@ -557,8 +527,6 @@ function renderMetroTimeline(projects, highlightId = null) {
         const rowY = rowYOffsets[i];
         const rowH = rowMetrics[i].height;
         const isHighlighted = highlightId && (p.id === highlightId || p.name === highlightId);
-
-        const lineColor = (window.METRO_LINE_COLORS && window.METRO_LINE_COLORS[p.line]) ? window.METRO_LINE_COLORS[p.line] : '#0284c7';
 
         // Background row
         const rowBg = isHighlighted
@@ -654,24 +622,24 @@ function renderMetroTimeline(projects, highlightId = null) {
         const ms = sch.milestone;
         if (ms) {
             if (ms.type === 'point') {
-                // Caso 1: Año solo (ej. 2028, 2032, 2033) -> Hito puntual (rombo púrpura)
+                // Caso 1: Año solo (ej. 2028, 2032, 2033) -> Hito puntual (rombo verde esmeralda)
                 const mx = toPx(ms.year + 0.5);
                 const my = by + bh / 2;
                 const d = METRO_TL_MILESTONE_R;
                 const polyEnd = metroSvgEl('polygon', {
                     points: `${mx},${my - d} ${mx + d},${my} ${mx},${my + d} ${mx - d},${my}`,
-                    fill: '#7c3aed', stroke: '#ffffff', 'stroke-width': 1.8,
-                    style: 'cursor: pointer; filter: drop-shadow(0 2px 4px rgba(124, 58, 237, 0.45));'
+                    fill: '#10b981', stroke: '#ffffff', 'stroke-width': 1.8,
+                    style: 'cursor: pointer; filter: drop-shadow(0 2px 4px rgba(16, 185, 129, 0.45));'
                 });
                 polyEnd.addEventListener('mouseenter', (e) => {
                     polyEnd.setAttribute('stroke-width', '2.5');
-                    polyEnd.setAttribute('fill', '#8b5cf6');
-                    showMetroMilestoneTooltip(e, p.name, 'Puesta en Servicio Estimada', `${ms.year}`, '#7c3aed');
+                    polyEnd.setAttribute('fill', '#34d399');
+                    showMetroMilestoneTooltip(e, p.name, 'Puesta en Servicio Estimada', `${ms.year}`, '#10b981');
                 });
                 polyEnd.addEventListener('mousemove', (e) => moveMetroTimelineTooltip(e));
                 polyEnd.addEventListener('mouseleave', () => {
                     polyEnd.setAttribute('stroke-width', '1.8');
-                    polyEnd.setAttribute('fill', '#7c3aed');
+                    polyEnd.setAttribute('fill', '#10b981');
                     hideMetroTimelineTooltip();
                 });
                 polyEnd.addEventListener('click', (e) => {
@@ -694,9 +662,9 @@ function renderMetroTimeline(projects, highlightId = null) {
                     x: mx1, y: by, width: mw, height: bh,
                     rx: 4, ry: 4,
                     fill: 'url(#metro-milestone-range-grad)',
-                    stroke: '#a78bfa', 'stroke-width': 1.2,
+                    stroke: '#6ee7b7', 'stroke-width': 1.2,
                     opacity: 0.95,
-                    style: 'filter: drop-shadow(0 2px 6px rgba(124, 58, 237, 0.35));'
+                    style: 'filter: drop-shadow(0 2px 6px rgba(16, 185, 129, 0.35));'
                 });
                 rangeG.appendChild(rangeRect);
 
@@ -728,12 +696,12 @@ function renderMetroTimeline(projects, highlightId = null) {
                 rangeG.addEventListener('mouseenter', (e) => {
                     rangeRect.setAttribute('opacity', '1');
                     rangeRect.setAttribute('stroke', '#ffffff');
-                    showMetroMilestoneTooltip(e, p.name, 'Puesta en Servicio Estimada', ms.raw || `${ms.start} - ${ms.end}`, '#7c3aed');
+                    showMetroMilestoneTooltip(e, p.name, 'Puesta en Servicio Estimada', ms.raw || `${ms.start} - ${ms.end}`, '#10b981');
                 });
                 rangeG.addEventListener('mousemove', (e) => moveMetroTimelineTooltip(e));
                 rangeG.addEventListener('mouseleave', () => {
                     rangeRect.setAttribute('opacity', '0.95');
-                    rangeRect.setAttribute('stroke', '#a78bfa');
+                    rangeRect.setAttribute('stroke', '#6ee7b7');
                     hideMetroTimelineTooltip();
                 });
                 rangeG.addEventListener('click', (e) => {
@@ -752,7 +720,7 @@ function renderMetroTimeline(projects, highlightId = null) {
 
                 const openG = metroSvgEl('g', { style: 'cursor: pointer;' });
 
-                // 1. Relleno degradado púrpura hacia la derecha (desvanecimiento al infinito)
+                // 1. Relleno degradado verde esmeralda hacia la derecha (desvanecimiento al infinito)
                 const openRect = metroSvgEl('rect', {
                     x: mx1, y: by, width: mw, height: bh,
                     fill: 'url(#metro-grad-open-range)'
@@ -762,11 +730,11 @@ function renderMetroTimeline(projects, highlightId = null) {
                 // 2. Líneas superior e inferior punteadas para indicar continuidad indefinida
                 const topLine = metroSvgEl('line', {
                     x1: mx1, y1: by, x2: mx2, y2: by,
-                    stroke: '#c4b5fd', 'stroke-width': 1.2, 'stroke-dasharray': '4,3'
+                    stroke: '#6ee7b7', 'stroke-width': 1.2, 'stroke-dasharray': '4,3'
                 });
                 const botLine = metroSvgEl('line', {
                     x1: mx1, y1: by + bh, x2: mx2, y2: by + bh,
-                    stroke: '#c4b5fd', 'stroke-width': 1.2, 'stroke-dasharray': '4,3'
+                    stroke: '#6ee7b7', 'stroke-width': 1.2, 'stroke-dasharray': '4,3'
                 });
                 openG.appendChild(topLine);
                 openG.appendChild(botLine);
@@ -783,7 +751,7 @@ function renderMetroTimeline(projects, highlightId = null) {
                 // En notación matemática [a, b[, el corchete mirando hacia afuera representa que NO tiene fin cerrado
                 const bracketRight = metroSvgEl('path', {
                     d: `M ${mx2} ${by} L ${mx2 - 6} ${by} M ${mx2 - 6} ${by} L ${mx2 - 6} ${by + bh} M ${mx2 - 6} ${by + bh} L ${mx2} ${by + bh}`,
-                    stroke: '#c4b5fd', 'stroke-width': 2.4, fill: 'none', 'stroke-linecap': 'square'
+                    stroke: '#6ee7b7', 'stroke-width': 2.4, fill: 'none', 'stroke-linecap': 'square'
                 });
                 openG.appendChild(bracketRight);
 
@@ -805,7 +773,7 @@ function renderMetroTimeline(projects, highlightId = null) {
                     openRect.setAttribute('opacity', '1');
                     bracketLeft.setAttribute('stroke-width', '3');
                     bracketRight.setAttribute('stroke-width', '3');
-                    showMetroMilestoneTooltip(e, p.name, 'Puesta en Servicio Estimada', ms.raw || `${ms.start}+`, '#7c3aed');
+                    showMetroMilestoneTooltip(e, p.name, 'Puesta en Servicio Estimada', ms.raw || `${ms.start}+`, '#10b981');
                 });
                 openG.addEventListener('mousemove', (e) => moveMetroTimelineTooltip(e));
                 openG.addEventListener('mouseleave', () => {

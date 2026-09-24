@@ -17,6 +17,7 @@ function renderVistaResumen() {
 
         chartInstances['chart-carga-evolucion'] = new Chart(c1.getContext('2d'), {
             type: 'bar',
+            plugins: [CatlecUtils.groupedBarDataLabelsPlugin],
             data: {
                 labels: years,
                 datasets: [
@@ -38,9 +39,9 @@ function renderVistaResumen() {
                         borderColor: COLORS.amber,
                         backgroundColor: COLORS.amber,
                         borderWidth: 2.2,
-                        tension: 0,
-                        pointRadius: 2.5,
-                        pointHoverRadius: 4.5,
+                        tension: 0.2,
+                        pointRadius: 3.5,
+                        pointHoverRadius: 5.5,
                         pointBackgroundColor: COLORS.amber,
                         fill: false,
                         yAxisID: 'y1',
@@ -51,7 +52,8 @@ function renderVistaResumen() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: { mode: 'nearest', intersect: true },
+                animation: { duration: 450, easing: 'easeOutQuart' },
+                interaction: { mode: 'index', intersect: false },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -66,18 +68,24 @@ function renderVistaResumen() {
                                 return ` Carga Total: ${formatNumber(ctx.raw, 2)} MM Ton`;
                             }
                         }
+                    },
+                    groupedBarDataLabelsPlugin: {
+                        formatter: (v) => Number(v).toFixed(2),
+                        color: COLORS.sky,
+                        offset: 4
                     }
                 },
                 scales: {
                     x: {
                         grid: { display: false },
-                        ticks: { color: COLORS.textPrimary, font: { size: 10 } }
+                        ticks: { color: COLORS.textPrimary, font: { size: 10, weight: '600' } }
                     },
                     y: {
                         type: 'linear',
                         position: 'left',
+                        suggestedMax: Math.max(...tonsMM, 0) * 1.18,
                         grid: { color: COLORS.grid },
-                        ticks: { color: COLORS.textPrimary, font: { size: 10 } },
+                        ticks: { color: COLORS.textPrimary, font: { size: 10, weight: '600' } },
                         title: { display: true, text: 'Millones de Toneladas (MM Ton)', color: COLORS.textPrimary, font: { size: 9.5, weight: '600' } }
                     },
                     y1: {
@@ -86,7 +94,7 @@ function renderVistaResumen() {
                         grid: { drawOnChartArea: false },
                         ticks: {
                             color: COLORS.amber,
-                            font: { size: 10 },
+                            font: { size: 10, weight: '600' },
                             callback: (v) => `${v}%`
                         },
                         title: { display: true, text: 'Var. Interanual (%)', color: COLORS.amber, font: { size: 9.5, weight: '600' } }
@@ -102,6 +110,7 @@ function renderVistaResumen() {
         destroyChart('chart-carga-flujos');
         chartInstances['chart-carga-flujos'] = new Chart(c2.getContext('2d'), {
             type: 'bar',
+            plugins: [CatlecUtils.stackedBarDataLabelsPlugin],
             data: {
                 labels: years,
                 datasets: [
@@ -150,7 +159,8 @@ function renderVistaResumen() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: { mode: 'nearest', intersect: true },
+                animation: { duration: 450, easing: 'easeOutQuart' },
+                interaction: { mode: 'index', intersect: false },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -160,18 +170,21 @@ function renderVistaResumen() {
                             title: (items) => `Año ${items[0].label}`,
                             label: (ctx) => ` ${ctx.dataset.label}: ${formatNumber(ctx.raw, 2)} MM Ton`
                         }
+                    },
+                    stackedBarDataLabelsPlugin: {
+                        formatter: (v) => Number(v).toFixed(2)
                     }
                 },
                 scales: {
                     x: {
                         stacked: true,
                         grid: { display: false },
-                        ticks: { color: COLORS.textPrimary, font: { size: 10 } }
+                        ticks: { color: COLORS.textPrimary, font: { size: 10, weight: '600' } }
                     },
                     y: {
                         stacked: true,
                         grid: { color: COLORS.grid },
-                        ticks: { color: COLORS.textPrimary, font: { size: 10 } },
+                        ticks: { color: COLORS.textPrimary, font: { size: 10, weight: '600' } },
                         title: { display: true, text: 'MM Toneladas', color: COLORS.textPrimary, font: { size: 9.5, weight: '600' } }
                     }
                 }
@@ -199,6 +212,7 @@ function renderVistaResumen() {
 
         chartInstances['chart-carga-estacionalidad'] = new Chart(c4.getContext('2d'), {
             type: 'bar',
+            plugins: [CatlecUtils.groupedBarDataLabelsPlugin],
             data: {
                 labels: mLabels,
                 datasets: [{
@@ -213,6 +227,7 @@ function renderVistaResumen() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: { duration: 450, easing: 'easeOutQuart' },
                 interaction: { mode: 'nearest', intersect: true },
                 plugins: {
                     legend: { display: false },
@@ -223,16 +238,22 @@ function renderVistaResumen() {
                             title: (items) => `Mes: ${items[0].label}`,
                             label: (ctx) => ` Promedio: ${formatNumber(ctx.raw, 2)} MM Ton`
                         }
+                    },
+                    groupedBarDataLabelsPlugin: {
+                        formatter: (v) => Number(v).toFixed(2),
+                        color: COLORS.cyan,
+                        offset: 4
                     }
                 },
                 scales: {
                     x: {
                         grid: { display: false },
-                        ticks: { color: COLORS.textPrimary, font: { size: 10 } }
+                        ticks: { color: COLORS.textPrimary, font: { size: 10, weight: '600' } }
                     },
                     y: {
+                        suggestedMax: Math.max(...mData, 0) * 1.18,
                         grid: { color: COLORS.grid },
-                        ticks: { color: COLORS.textPrimary, font: { size: 10 } },
+                        ticks: { color: COLORS.textPrimary, font: { size: 10, weight: '600' } },
                         title: { display: true, text: 'MM Toneladas / Mes', color: COLORS.textPrimary, font: { size: 9.5, weight: '600' } }
                     }
                 }

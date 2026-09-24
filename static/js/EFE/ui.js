@@ -171,6 +171,7 @@ function efeUpdateOperatingLinesTableSelection() {
     const selected = efeState.selectedOperatingLine;
     rows.forEach(row => {
         const isSelected = selected && row.getAttribute('data-service') === selected;
+        row.classList.toggle('row-selected', !!isSelected);
         row.style.backgroundColor = isSelected ? 'rgba(15, 59, 108, 0.12)' : '';
         row.style.boxShadow = isSelected ? 'inset 4px 0 0 #0f3b6c' : '';
     });
@@ -205,6 +206,7 @@ function efeRenderOperatingLinesTable(linesToRender) {
         tr.style.borderBottom = '1px solid var(--border-color)';
         tr.style.transition = 'background 0.15s ease, box-shadow 0.15s ease';
         if (isSelected) {
+            tr.classList.add('row-selected');
             tr.style.backgroundColor = 'rgba(15, 59, 108, 0.12)';
             tr.style.boxShadow = 'inset 4px 0 0 #0f3b6c';
         }

@@ -177,7 +177,9 @@ function renderContractsAnalytics(contractsList) {
             datasets: [{
                 label: 'Contratos (Proporcional)',
                 data: cntValues,
-                backgroundColor: '#059669',
+                backgroundColor: 'rgba(5,150,105,0.8)',
+                borderColor: '#059669',
+                borderWidth: 1,
                 borderRadius: 3,
             }]
         },
@@ -207,14 +209,14 @@ function renderContractsAnalytics(contractsList) {
                         display: true,
                         text: 'Número de contratos atribuibles',
                         color: textColor,
-                        font: { size: 10, weight: '600' }
+                        font: { size: 9.5, weight: '600' }
                     },
                     grid: { color: gridColor },
-                    ticks: { color: textColor, font: { size: 10 } }
+                    ticks: { color: textColor, font: { size: 10, weight: '600' } }
                 },
                 y: {
                     grid: { display: false },
-                    ticks: { color: textColor, font: { size: 10.5, weight: '500' }, autoSkip: false }
+                    ticks: { color: textColor, font: { size: 10, weight: '600' }, autoSkip: false }
                 }
             }
         }
@@ -326,7 +328,9 @@ function renderContractsAnalytics(contractsList) {
             datasets: [{
                 label: 'Contratos Vigentes',
                 data: activeCntData,
-                backgroundColor: '#3b82f6',
+                backgroundColor: 'rgba(59,130,246,0.8)',
+                borderColor: '#3b82f6',
+                borderWidth: 1,
                 borderRadius: 2,
                 barThickness: 7,
             }]
@@ -334,6 +338,10 @@ function renderContractsAnalytics(contractsList) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -345,8 +353,8 @@ function renderContractsAnalytics(contractsList) {
                 }
             },
             scales: {
-                x: { grid: { display: false }, ticks: { color: textColor, font: { size: 9.5 } } },
-                y: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 9.5 } } }
+                x: { grid: { display: false }, ticks: { color: textColor, font: { size: 10, weight: '600' } } },
+                y: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 10, weight: '600' } } }
             }
         }
     });

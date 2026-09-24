@@ -1,3 +1,10 @@
+// Chart.js defaults (estándar tipográfico CATLEC)
+if (typeof Chart !== 'undefined' && Chart.defaults) {
+    Chart.defaults.font.family = "'Helvetica Neue', Helvetica, Arial, sans-serif";
+    Chart.defaults.font.size = 10;
+    Chart.defaults.devicePixelRatio = Math.max(2.5, window.devicePixelRatio || 1);
+}
+
 // ─── Estado global Metro de Santiago ──────────────────────────────────────────
 var metroState = {
     search: '',
@@ -24,15 +31,15 @@ if (typeof window !== 'undefined') window.metroState = metroState;
 
 // Colores oficiales por Línea de Metro (dinámicos desde Excel METRO_DATA.line_colors)
 var METRO_LINE_COLORS = {
-    'Línea 1': '#d7141a',
-    'Línea 2': '#ffc72c',
-    'Línea 3': '#6d3b14',
-    'Línea 4': '#0047ba',
-    'Línea 4A': '#00a3e0',
-    'Línea 5': '#00843d',
-    'Línea 6': '#7b1fa2', // Morado
-    'Extensión Línea 6 Oriente': '#7b1fa2', // Morado
-    'Extensión Línea 6 Poniente': '#7b1fa2', // Morado
+    'Línea 1': '#d70f27',
+    'Línea 2': '#fab60b',
+    'Línea 3': '#6b2b15',
+    'Línea 4': '#2e2b72',
+    'Línea 4A': '#0371b9',
+    'Línea 5': '#9b3488',
+    'Línea 6': '#009858', // Verde
+    'Extensión Línea 6 Oriente': '#009858', // Verde
+    'Extensión Línea 6 Poniente': '#009858', // Verde
     'Línea 7': '#52525b', // Gris
     'Línea 8': '#ea580c', // Naranjo
     'Línea 9': '#db2777', // Rosado

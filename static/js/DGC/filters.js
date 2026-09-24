@@ -320,9 +320,9 @@ function renderChart(statsData, currentThemeMode) {
             datasets: [{
                 label: 'Contratos',
                 data: statusCounts,
-                backgroundColor: uniformBarColor,
-                borderColor: 'transparent',
-                borderWidth: 0,
+                backgroundColor: 'rgba(37,99,235,0.8)',
+                borderColor: uniformBarColor,
+                borderWidth: 1,
                 borderRadius: 4
             }]
         },
@@ -344,14 +344,14 @@ function renderChart(statsData, currentThemeMode) {
                     grid: { display: false },
                     ticks: {
                         color: themeConfig.text,
-                        font: { size: 7.5 }
+                        font: { size: 8, weight: '600' }
                     }
                 },
                 y: {
                     grid: { color: themeConfig.grid },
                     ticks: {
                         color: themeConfig.text,
-                        font: { size: 8 },
+                        font: { size: 8, weight: '600' },
                         precision: 0
                     }
                 }

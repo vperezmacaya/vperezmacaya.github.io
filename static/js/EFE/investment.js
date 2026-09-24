@@ -228,7 +228,9 @@ function renderEfeInvestmentAnalytics(projectsList) {
                     datasets: [{
                         label: 'Inversión (MM USD)',
                         data: tipoValues,
-                        backgroundColor: '#0f3b6c',
+                        backgroundColor: 'rgba(15,59,108,0.8)',
+                        borderColor: '#0f3b6c',
+                        borderWidth: 1,
                         borderRadius: 4
                     }]
                 },
@@ -265,7 +267,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
                             grid: { color: gridColor },
                             ticks: {
                                 color: textColor,
-                                font: { size: 10 },
+                                font: { size: 10, weight: '600' },
                                 callback: (val) => val.toLocaleString('es-CL')
                             },
                             title: {
@@ -279,7 +281,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
                             grid: { display: false },
                             ticks: {
                                 color: textColor,
-                                font: { size: 10.5, weight: '600' },
+                                font: { size: 10, weight: '600' },
                                 autoSkip: false
                             }
                         }
@@ -292,7 +294,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
             efeChartInvByTipoInstance.data.datasets[0].backgroundColor = '#0f3b6c';
             efeChartInvByTipoInstance.options.scales.x.grid.color = gridColor;
             efeChartInvByTipoInstance.options.scales.x.ticks.color = textColor;
-            efeChartInvByTipoInstance.options.scales.x.ticks.font = { size: 10 };
+            efeChartInvByTipoInstance.options.scales.x.ticks.font = { size: 10, weight: '600' };
             efeChartInvByTipoInstance.options.scales.x.ticks.callback = (val) => val.toLocaleString('es-CL');
             efeChartInvByTipoInstance.options.scales.x.title = {
                 display: true,
@@ -301,7 +303,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
                 font: { size: 9.5, weight: '600' }
             };
             efeChartInvByTipoInstance.options.scales.y.ticks.color = textColor;
-            efeChartInvByTipoInstance.options.scales.y.ticks.font = { size: 10.5, weight: '600' };
+            efeChartInvByTipoInstance.options.scales.y.ticks.font = { size: 10, weight: '600' };
             efeChartInvByTipoInstance.options.plugins.tooltip.callbacks.label = (ctx) => {
                 const val = ctx.raw || 0;
                 const tName = ctx.label;
@@ -413,7 +415,9 @@ function renderEfeInvestmentAnalytics(projectsList) {
                     datasets: [{
                         label: 'Inversión (USD)',
                         data: projValues,
-                        backgroundColor: '#d92534',
+                        backgroundColor: 'rgba(217,37,52,0.8)',
+                        borderColor: '#d92534',
+                        borderWidth: 1,
                         borderRadius: 4
                     }]
                 },
@@ -452,7 +456,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
                             grid: { color: gridColor },
                             ticks: {
                                 color: textColor,
-                                font: { size: 10 },
+                                font: { size: 10, weight: '600' },
                                 callback: (val) => val.toLocaleString('es-CL')
                             },
                             title: {
@@ -466,7 +470,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
                             grid: { display: false },
                             ticks: {
                                 color: textColor,
-                                font: { size: 9.5, weight: '500' },
+                                font: { size: 10, weight: '600' },
                                 autoSkip: false,
                                 callback: function (val, idx) {
                                     const entry = topProjRev[idx];
@@ -484,7 +488,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
             efeChartTopProjectsInstance.data.datasets[0].backgroundColor = '#d92534';
             efeChartTopProjectsInstance.options.scales.x.grid.color = gridColor;
             efeChartTopProjectsInstance.options.scales.x.ticks.color = textColor;
-            efeChartTopProjectsInstance.options.scales.x.ticks.font = { size: 10 };
+            efeChartTopProjectsInstance.options.scales.x.ticks.font = { size: 10, weight: '600' };
             efeChartTopProjectsInstance.options.scales.x.ticks.callback = (val) => val.toLocaleString('es-CL');
             efeChartTopProjectsInstance.options.scales.x.title = {
                 display: true,
@@ -493,7 +497,7 @@ function renderEfeInvestmentAnalytics(projectsList) {
                 font: { size: 9.5, weight: '600' }
             };
             efeChartTopProjectsInstance.options.scales.y.ticks.color = textColor;
-            efeChartTopProjectsInstance.options.scales.y.ticks.font = { size: 9.5, weight: '500' };
+            efeChartTopProjectsInstance.options.scales.y.ticks.font = { size: 10, weight: '600' };
             efeChartTopProjectsInstance.options.scales.y.ticks.callback = function (val, idx) {
                 const entry = topProjRev[idx];
                 if (!entry) return this.getLabelForValue(val);

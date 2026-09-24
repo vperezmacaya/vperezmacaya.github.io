@@ -1,87 +1,206 @@
 /**
  * static/js/SNI/map.js
- * Mapa Coroplético Regional Interactivo (Leaflet) para SNI
+ * Mapa Coroplético Regional Interactivo (D3.js) para SNI
  */
 
-let sniLeafletMap = null;
-let sniTileLayer = null;
-let sniGeoLayer = null;
-let sniChoroplethLegend = null;
+let sniSvg = null;
+let sniZoomGroup = null;
+let sniProjection = null;
+let sniPathGen = null;
+let sniResizeObserver = null;
+let sniTooltipEl = null;
+let sniPathsInitialized = false;
 
 // Límites territoriales exactos de Chile Continental (Arica a Magallanes / Cabo de Hornos)
-// Excluye la distorsión del extremo oceánico insular (Isla de Pascua en long -109°) para encuadre inicial perfecto
-const CHILE_CONTINENTAL_BOUNDS = [
-    [-55.98, -76.20], // Suroeste (Magallanes / Cabo de Hornos)
-    [-17.50, -66.40]  // Noreste (Arica y Parinacota)
-];
+// como Polygon GeoJSON (lon, lat). Excluye la distorsión del extremo oceánico insular
+// (Isla de Pascua, dentro del MultiPolygon de la Región de Valparaíso, a ~lon -109°) para
+// un encuadre inicial perfecto — usar SIEMPRE este rectángulo sintético para fitExtent,
+// nunca el bounding box real de window.REGIONS_DATA.
+// IMPORTANTE: el anillo debe quedar en sentido horario (SW→NW→NE→SE→SW) para que
+// d3-geo lo interprete como el interior pequeño del rectángulo. Un anillo antihorario
+// aquí hace que d3 lo trate como "todo el globo salvo este recorte", arruinando
+// fitExtent (el "interior" quedaría siendo la mayor parte del planeta).
+const CHILE_CONTINENTAL_BOUNDS_GEOJSON = {
+    type: 'Feature',
+    geometry: {
+        type: 'Polygon',
+        coordinates: [[
+            [-76.20, -55.98],
+            [-76.20, -17.50],
+            [-66.40, -17.50],
+            [-66.40, -55.98],
+            [-76.20, -55.98]
+        ]]
+    }
+};
 
 function initSNIMap() {
     const mapContainer = document.getElementById('sni-map');
-    if (!mapContainer || sniLeafletMap) return;
+    if (!mapContainer || sniSvg) return;
 
-    // Mapa interactivo con zoom y scroll habilitados
-    sniLeafletMap = L.map('sni-map', {
-        zoomControl: true,
-        dragging: true,
-        touchZoom: true,
-        doubleClickZoom: true,
-        scrollWheelZoom: true,
-        boxZoom: true,
-        keyboard: true,
-        attributionControl: false,
-        zoomSnap: 0.1,
-        minZoom: 3,
-        maxZoom: 14
-    });
+    sniTooltipEl = document.getElementById('sni-map-tooltip');
 
-    updateMapTileTheme();
-    loadSNIGeoJSON();
+    sniSvg = d3.select(mapContainer)
+        .append('svg')
+        .attr('class', 'sni-map-svg')
+        .style('width', '100%')
+        .style('height', '100%')
+        .style('display', 'block');
+
+    sniZoomGroup = sniSvg.append('g').attr('class', 'sni-map-regions');
+
     setupMapMetricSelectors();
-    setupMapDetailCardClose();
-    setupMapResetButton();
-}
 
-function setupMapResetButton() {
-    const btnResetMap = document.getElementById('btn-reset-map');
-    if (btnResetMap) {
-        btnResetMap.addEventListener('click', () => {
-            fitSNIMapBounds();
-            const card = document.getElementById('map-region-detail-card');
-            if (card) card.style.display = 'none';
-            if (sniLeafletMap) sniLeafletMap.closePopup();
-        });
+    // Primer dibujo síncrono: no depender únicamente del primer disparo de
+    // ResizeObserver (en algunos entornos/pestañas en segundo plano puede no
+    // llegar de inmediato). drawOrResizeSNIMap() es seguro de invocar dos
+    // veces gracias al guard sniPathsInitialized.
+    drawOrResizeSNIMap();
+
+    // ResizeObserver cubre los redibujados posteriores (cambio de vista,
+    // resize de ventana, colapso de sidebar).
+    if (typeof ResizeObserver !== 'undefined') {
+        sniResizeObserver = new ResizeObserver(() => drawOrResizeSNIMap());
+        sniResizeObserver.observe(mapContainer);
+    } else {
+        window.addEventListener('resize', () => drawOrResizeSNIMap());
     }
 }
 
-function fitSNIMapBounds() {
-    if (!sniLeafletMap) return;
-    try {
-        sniLeafletMap.fitBounds(CHILE_CONTINENTAL_BOUNDS, {
-            paddingTopLeft: [6, 6],
-            paddingBottomRight: [6, 6],
-            animate: false
-        });
-    } catch (e) {
-        sniLeafletMap.setView([-37.0, -71.5], 4.2);
+function drawOrResizeSNIMap() {
+    const mapContainer = document.getElementById('sni-map');
+    if (!mapContainer || !sniSvg) return;
+
+    const width = mapContainer.clientWidth || 400;
+    const height = mapContainer.clientHeight || 400;
+    if (width <= 0 || height <= 0) return;
+
+    const padding = 14;
+    sniProjection = d3.geoMercator().fitExtent(
+        [[padding, padding], [width - padding, height - padding]],
+        CHILE_CONTINENTAL_BOUNDS_GEOJSON
+    );
+    sniPathGen = d3.geoPath().projection(sniProjection);
+
+    if (!sniPathsInitialized) {
+        drawRegionPaths();
+        sniPathsInitialized = true;
+    } else {
+        sniZoomGroup.selectAll('path.sni-region-path').attr('d', sniPathGen);
     }
 }
 
-function updateMapTileTheme() {
-    if (!sniLeafletMap) return;
-    const isDark = !document.body.classList.contains('light-theme');
-    const tileUrl = isDark
-        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=cb1_2j8c_1_dacb4df364cf092be679e47d'
-        : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=cb1_2j8c_1_dacb4df364cf092be679e47d';
+// Los anillos de window.REGIONS_DATA no vienen exactamente cerrados (el último
+// punto es una versión redondeada del primero, no un duplicado exacto — un
+// GeoJSON inválido según la especificación). Leaflet lo tolera (cierra el path
+// SVG visualmente sin más), pero el recorte esférico de d3-geo es sensible a
+// esto: un anillo "casi cerrado" puede hacer que d3 interprete el polígono
+// como si cruzara un polo/antimeridiano, generando un complemento gigante en
+// vez del polígono real. Se cierra explícitamente reemplazando el último punto
+// por una copia exacta del primero.
+function closeRing(ring) {
+    const first = ring[0], last = ring[ring.length - 1];
+    if (first[0] === last[0] && first[1] === last[1]) return ring;
+    return ring.slice(0, -1).concat([[first[0], first[1]]]);
+}
 
-    if (sniTileLayer) {
-        sniLeafletMap.removeLayer(sniTileLayer);
+// Área firmada de un anillo (fórmula del cordón de zapato/shoelace). Con esta
+// fórmula, un anillo en sentido HORARIO (en el plano lon/lat, x=lon, y=lat)
+// da un valor positivo.
+function ringSignedArea(ring) {
+    let sum = 0;
+    for (let i = 0; i < ring.length - 1; i++) {
+        const p1 = ring[i], p2 = ring[i + 1];
+        sum += (p2[0] - p1[0]) * (p2[1] + p1[1]);
     }
+    return sum;
+}
 
-    sniTileLayer = L.tileLayer(tileUrl, {
-        attribution: '',
-        subdomains: 'abcd',
-        maxZoom: 19
-    }).addTo(sniLeafletMap);
+// Devuelve el anillo con el sentido de giro correcto para d3-geo (que procesa
+// la geometría sobre la esfera y es sensible al winding order, a diferencia
+// de Leaflet). Un anillo exterior con el sentido "equivocado" hace que d3-geo
+// lo interprete como el COMPLEMENTO (todo el globo salvo ese recorte) en vez
+// del polígono pequeño esperado — nunca muta el anillo original.
+function rewoundRing(ring, wantClockwise) {
+    const isClockwise = ringSignedArea(ring) > 0;
+    return isClockwise === wantClockwise ? ring : ring.slice().reverse();
+}
+
+function rewoundPolygonCoords(coordinates) {
+    // Anillo 0 = exterior (horario); anillos siguientes = huecos (antihorario)
+    return coordinates.map((ring, i) => rewoundRing(closeRing(ring), i === 0));
+}
+
+function getD3SafeRegionFeatures() {
+    if (window.SNI_REGIONS_DATA && window.SNI_REGIONS_DATA.features) {
+        return window.SNI_REGIONS_DATA.features.filter(f => f && f.geometry);
+    }
+    const raw = (window.REGIONS_DATA && window.REGIONS_DATA.features) || [];
+    return raw.filter(f => f && f.geometry).map(f => {
+        const geom = f.geometry;
+        let coordinates = geom.coordinates;
+        if (geom.type === 'Polygon') {
+            coordinates = rewoundPolygonCoords(geom.coordinates);
+        } else if (geom.type === 'MultiPolygon') {
+            coordinates = geom.coordinates.map(rewoundPolygonCoords);
+        }
+        return { type: 'Feature', properties: f.properties, geometry: { type: geom.type, coordinates } };
+    });
+}
+
+function drawRegionPaths() {
+    if ((!window.SNI_REGIONS_DATA && !window.REGIONS_DATA) || !sniZoomGroup) return;
+
+    const features = getD3SafeRegionFeatures();
+
+    sniZoomGroup.selectAll('path.sni-region-path')
+        .data(features)
+        .enter()
+        .append('path')
+        .attr('class', 'sni-region-path')
+        .attr('vector-effect', 'non-scaling-stroke')
+        .attr('d', sniPathGen)
+        .attr('fill-opacity', 0.7)
+        .on('mouseenter', onRegionMouseEnter)
+        .on('mousemove', onRegionMouseMove)
+        .on('mouseleave', onRegionMouseLeave);
+
+    updateSNIMapChoropleth();
+}
+
+function getRegionKeyForFeature(feature) {
+    if (feature && feature._sniRegionKey) {
+        return { rawName: feature._sniRawName, regionKey: feature._sniRegionKey };
+    }
+    const rawName = feature && feature.properties ? (feature.properties.Region || feature.properties.nom_reg) : '';
+    const regionKey = normalizeGeoJSONRegionName(rawName);
+    if (feature) {
+        feature._sniRawName = rawName;
+        feature._sniRegionKey = regionKey;
+    }
+    return { rawName, regionKey };
+}
+
+function onRegionMouseEnter(event, feature) {
+    const { rawName, regionKey } = getRegionKeyForFeature(feature);
+    d3.select(this)
+        .attr('stroke', '#3b82f6')
+        .attr('stroke-width', 3)
+        .attr('fill-opacity', 0.9)
+        .raise();
+    showRegionTooltip(event, regionKey, rawName);
+}
+
+function onRegionMouseMove(event) {
+    positionSNIMapTooltip(event);
+}
+
+function onRegionMouseLeave() {
+    d3.select(this)
+        .attr('stroke', '#ffffff')
+        .attr('stroke-width', 1.5)
+        .attr('fill-opacity', 0.7);
+    hideRegionTooltip();
 }
 
 function setupMapMetricSelectors() {
@@ -92,27 +211,8 @@ function setupMapMetricSelectors() {
             btn.classList.add('active');
             sniState.selectedMapMetric = btn.dataset.metric;
             updateSNIMapChoropleth();
-            if (typeof updateMapMetricRankingChart === 'function') {
-                updateMapMetricRankingChart();
-            }
         });
     });
-}
-
-function loadSNIGeoJSON() {
-    if (!window.REGIONS_DATA || !sniLeafletMap) return;
-
-    if (sniGeoLayer) {
-        sniLeafletMap.removeLayer(sniGeoLayer);
-    }
-
-    sniGeoLayer = L.geoJSON(window.REGIONS_DATA, {
-        style: getRegionFeatureStyle,
-        onEachFeature: onEachRegionFeature
-    }).addTo(sniLeafletMap);
-
-    fitSNIMapBounds();
-    updateSNIMapChoropleth();
 }
 
 function normalizeGeoJSONRegionName(geoName) {
@@ -125,31 +225,31 @@ function normalizeGeoJSONRegionName(geoName) {
         .trim();
 
     const cleanGeo = norm(geoName);
-    const { regions } = getRegionalAggregates();
+    const regions = (window.SNI_DATA && window.SNI_DATA.filters && window.SNI_DATA.filters.regions) || [];
 
     // Reglas directas prioritarias por palabras clave representativas
-    if (cleanGeo.includes('higgins')) return (regions.find(r => norm(r.region).includes('higgins')) || {}).region || '';
-    if (cleanGeo.includes('bio') || cleanGeo.includes('biobio')) return (regions.find(r => norm(r.region).includes('bio')) || {}).region || '';
-    if (cleanGeo.includes('metropolitana') || cleanGeo.includes('santiago')) return (regions.find(r => norm(r.region).includes('metropolitana')) || {}).region || '';
-    if (cleanGeo.includes('araucania')) return (regions.find(r => norm(r.region).includes('araucan')) || {}).region || '';
-    if (cleanGeo.includes('aysen') || cleanGeo.includes('ibanez')) return (regions.find(r => norm(r.region).includes('ays')) || {}).region || '';
-    if (cleanGeo.includes('magallanes')) return (regions.find(r => norm(r.region).includes('magallanes')) || {}).region || '';
-    if (cleanGeo.includes('los rios')) return (regions.find(r => norm(r.region).includes('los rios')) || {}).region || '';
-    if (cleanGeo.includes('los lagos')) return (regions.find(r => norm(r.region).includes('los lagos')) || {}).region || '';
-    if (cleanGeo.includes('arica')) return (regions.find(r => norm(r.region).includes('arica')) || {}).region || '';
-    if (cleanGeo.includes('tarapaca')) return (regions.find(r => norm(r.region).includes('tarapaca')) || {}).region || '';
-    if (cleanGeo.includes('antofagasta')) return (regions.find(r => norm(r.region).includes('antofagasta')) || {}).region || '';
-    if (cleanGeo.includes('atacama')) return (regions.find(r => norm(r.region).includes('atacama')) || {}).region || '';
-    if (cleanGeo.includes('coquimbo')) return (regions.find(r => norm(r.region).includes('coquimbo')) || {}).region || '';
-    if (cleanGeo.includes('valparaiso')) return (regions.find(r => norm(r.region).includes('valparaiso')) || {}).region || '';
-    if (cleanGeo.includes('maule')) return (regions.find(r => norm(r.region).includes('maule')) || {}).region || '';
-    if (cleanGeo.includes('nuble')) return (regions.find(r => norm(r.region).includes('nuble')) || {}).region || '';
+    if (cleanGeo.includes('higgins')) return regions.find(r => norm(r).includes('higgins')) || '';
+    if (cleanGeo.includes('bio') || cleanGeo.includes('biobio')) return regions.find(r => norm(r).includes('bio')) || '';
+    if (cleanGeo.includes('metropolitana') || cleanGeo.includes('santiago')) return regions.find(r => norm(r).includes('metropolitana')) || '';
+    if (cleanGeo.includes('araucania')) return regions.find(r => norm(r).includes('araucan')) || '';
+    if (cleanGeo.includes('aysen') || cleanGeo.includes('ibanez')) return regions.find(r => norm(r).includes('ays')) || '';
+    if (cleanGeo.includes('magallanes')) return regions.find(r => norm(r).includes('magallanes')) || '';
+    if (cleanGeo.includes('los rios')) return regions.find(r => norm(r).includes('los rios')) || '';
+    if (cleanGeo.includes('los lagos')) return regions.find(r => norm(r).includes('los lagos')) || '';
+    if (cleanGeo.includes('arica')) return regions.find(r => norm(r).includes('arica')) || '';
+    if (cleanGeo.includes('tarapaca')) return regions.find(r => norm(r).includes('tarapaca')) || '';
+    if (cleanGeo.includes('antofagasta')) return regions.find(r => norm(r).includes('antofagasta')) || '';
+    if (cleanGeo.includes('atacama')) return regions.find(r => norm(r).includes('atacama')) || '';
+    if (cleanGeo.includes('coquimbo')) return regions.find(r => norm(r).includes('coquimbo')) || '';
+    if (cleanGeo.includes('valparaiso')) return regions.find(r => norm(r).includes('valparaiso')) || '';
+    if (cleanGeo.includes('maule')) return regions.find(r => norm(r).includes('maule')) || '';
+    if (cleanGeo.includes('nuble')) return regions.find(r => norm(r).includes('nuble')) || '';
 
     // Búsqueda general por inclusión
     for (const r of regions) {
-        const cleanR = norm(r.region.replace(/^\d+_/, ''));
+        const cleanR = norm(r.replace(/^\d+_/, ''));
         if (cleanGeo.includes(cleanR) || cleanR.includes(cleanGeo)) {
-            return r.region;
+            return r;
         }
     }
     return '';
@@ -173,82 +273,61 @@ function getRegionMetricValue(regionKey) {
     }
 }
 
-function getChoroplethColor(value) {
-    const metric = sniState.selectedMapMetric;
-
-    if (metric === 'pib_ratio') {
-        return value > 3.0 ? '#1e3a8a' :
-            value > 2.0 ? '#2563eb' :
-                value > 1.0 ? '#3b82f6' :
-                    value > 0.7 ? '#60a5fa' :
-                        value > 0 ? '#93c5fd' : '#cbd5e1';
+function getChoroplethColor(value, maxVal, minVal) {
+    if (value === null || value === undefined || isNaN(value) || value <= 0) {
+        return '#cbd5e1';
     }
 
+    const metric = (typeof sniState !== 'undefined' && sniState.selectedMapMetric) ? sniState.selectedMapMetric : 'total';
+
+    if (maxVal === undefined || minVal === undefined) {
+        if (typeof getRegionalAggregates === 'function') {
+            const { regions } = getRegionalAggregates();
+            const valid = regions.filter(r => !r.region.includes('No Regionalizada') && !r.region.includes('Exterior'));
+            const vals = valid.map(r => {
+                if (metric === 'per_capita') return r.per_capita_clp;
+                if (metric === 'km2') return r.per_km2_clp;
+                if (metric === 'pib_ratio') return r.pib_ratio;
+                return r.total_usd;
+            }).filter(v => typeof v === 'number' && v > 0);
+            maxVal = vals.length > 0 ? Math.max(...vals) : 0;
+            minVal = vals.length > 0 ? Math.min(...vals) : 0;
+        } else {
+            maxVal = 0;
+            minVal = 0;
+        }
+    }
+
+    if (maxVal <= 0) return '#cbd5e1';
+
+    const norm = maxVal > minVal ? (value - minVal) / (maxVal - minVal) : 1;
+
     if (metric === 'per_capita') {
-        return value > 1200000 ? '#047857' :
-            value > 700000 ? '#059669' :
-                value > 450000 ? '#10b981' :
-                    value > 250000 ? '#34d399' :
-                        value > 0 ? '#6ee7b7' : '#cbd5e1';
+        return norm >= 0.80 ? '#047857' :
+            norm >= 0.60 ? '#059669' :
+                norm >= 0.40 ? '#10b981' :
+                    norm >= 0.20 ? '#34d399' : '#6ee7b7';
     }
 
     if (metric === 'km2') {
-        return value > 50000000 ? '#7c2d12' :
-            value > 20000000 ? '#c2410c' :
-                value > 10000000 ? '#ea580c' :
-                    value > 3000000 ? '#f97316' :
-                        value > 0 ? '#fdba74' : '#cbd5e1';
+        return norm >= 0.80 ? '#7c2d12' :
+            norm >= 0.60 ? '#c2410c' :
+                norm >= 0.40 ? '#ea580c' :
+                    norm >= 0.20 ? '#f97316' : '#fdba74';
     }
 
-    // Default: Total USD MM
-    return value > 15000 ? '#1e3a8a' :
-        value > 8000 ? '#1d4ed8' :
-            value > 5000 ? '#2563eb' :
-                value > 3000 ? '#3b82f6' :
-                    value > 1500 ? '#60a5fa' :
-                        value > 0 ? '#93c5fd' : '#cbd5e1';
+    // Default: Total USD MM & pib_ratio
+    return norm >= 0.85 ? '#1e3a8a' :
+        norm >= 0.68 ? '#1d4ed8' :
+            norm >= 0.50 ? '#2563eb' :
+                norm >= 0.32 ? '#3b82f6' :
+                    norm >= 0.15 ? '#60a5fa' : '#93c5fd';
 }
+window.getChoroplethColor = getChoroplethColor;
 
-function getRegionFeatureStyle(feature) {
-    const rawName = feature.properties ? (feature.properties.Region || feature.properties.nom_reg) : '';
-    const regionKey = normalizeGeoJSONRegionName(rawName);
-    const value = getRegionMetricValue(regionKey);
+function showRegionTooltip(event, regionKey, rawName) {
+    if (!sniTooltipEl) return;
 
-    return {
-        fillColor: getChoroplethColor(value),
-        weight: 1.5,
-        opacity: 1,
-        color: '#ffffff',
-        fillOpacity: 0.7
-    };
-}
-
-function onEachRegionFeature(feature, layer) {
-    const rawName = feature.properties ? (feature.properties.Region || feature.properties.nom_reg) : '';
-    const regionKey = normalizeGeoJSONRegionName(rawName);
-
-    layer.on({
-        mouseover: (e) => {
-            const l = e.target;
-            l.setStyle({
-                weight: 3,
-                color: '#3b82f6',
-                fillOpacity: 0.9
-            });
-            l.bringToFront();
-            showRegionTooltip(e, regionKey, rawName);
-        },
-        mouseout: (e) => {
-            if (sniGeoLayer) sniGeoLayer.resetStyle(e.target);
-            hideRegionTooltip();
-        },
-        click: () => {
-            selectRegionFromMap(regionKey);
-        }
-    });
-}
-
-function showRegionTooltip(e, regionKey, rawName) {
     const { regions } = getRegionalAggregates();
     const reg = regions.find(r => r.region === regionKey);
     const val = getRegionMetricValue(regionKey);
@@ -256,95 +335,76 @@ function showRegionTooltip(e, regionKey, rawName) {
     let metricText = '';
     switch (sniState.selectedMapMetric) {
         case 'per_capita':
-            metricText = `<strong>Inversión Per Cápita:</strong> $${(val || 0).toLocaleString()} CLP / hab`;
+            metricText = `Inversión Per Cápita: $${(val || 0).toLocaleString('es-CL')} CLP / hab`;
             break;
         case 'km2':
-            metricText = `<strong>Inversión por km²:</strong> $${(val || 0).toLocaleString()} CLP / km²`;
+            metricText = `Inversión por km²: $${(val || 0).toLocaleString('es-CL')} CLP / km²`;
             break;
         case 'pib_ratio':
-            metricText = `<strong>Ratio Inversión/PIB:</strong> ${(val || 0).toFixed(2)}x`;
+            metricText = `Ratio Inversión/PIB: ${(val || 0).toFixed(2)}x`;
             break;
         case 'total':
         default:
-            metricText = `<strong>Inversión Total:</strong> US$ ${(val || 0).toLocaleString()} MM`;
+            metricText = `Inversión Total: US$ ${(val || 0).toLocaleString('es-CL')} MM`;
             break;
     }
 
-    const popupContent = `
-        <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; line-height: 1.4;">
-            <div style="font-weight: 700; font-size: 13px; color: #2563eb; margin-bottom: 4px;">${rawName || regionKey}</div>
-            <div>${metricText}</div>
-            <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
-                Población: ${reg && reg.poblacion ? reg.poblacion.toLocaleString('es-CL') : 'N/A'} hab | 
-                Superficie: ${reg && reg.superficie_km2 ? reg.superficie_km2.toLocaleString('es-CL') + ' km²' : 'N/A'}
-            </div>
-            <div style="font-size: 10px; color: #f59e0b; margin-top: 4px;"><em>Haz clic para ver detalles</em></div>
-        </div>
+    sniTooltipEl.innerHTML = `
+        <strong>${rawName || regionKey}</strong>
+        <span style="color:#60a5fa;font-weight:600;">${metricText}</span>
+        <span style="color:#94a3b8;">Población: ${reg && reg.poblacion ? reg.poblacion.toLocaleString('es-CL') : 'N/A'} hab · Superficie: ${reg && reg.superficie_km2 ? reg.superficie_km2.toLocaleString('es-CL') + ' km²' : 'N/A'}</span>
     `;
+    sniTooltipEl.classList.add('visible');
+    positionSNIMapTooltip(event);
+}
 
-    L.popup({
-        offset: L.point(0, -10),
-        closeButton: false,
-        autoPan: false
-    })
-        .setLatLng(e.latlng)
-        .setContent(popupContent)
-        .openOn(sniLeafletMap);
+function positionSNIMapTooltip(event) {
+    if (!sniTooltipEl) return;
+    const offset = 14;
+    let x = event.clientX + offset;
+    let y = event.clientY + offset;
+
+    const rect = sniTooltipEl.getBoundingClientRect();
+    const maxX = window.innerWidth - rect.width - 8;
+    const maxY = window.innerHeight - rect.height - 8;
+    if (x > maxX) x = event.clientX - rect.width - offset;
+    if (y > maxY) y = event.clientY - rect.height - offset;
+
+    sniTooltipEl.style.left = `${Math.max(x, 4)}px`;
+    sniTooltipEl.style.top = `${Math.max(y, 4)}px`;
 }
 
 function hideRegionTooltip() {
-    if (sniLeafletMap) sniLeafletMap.closePopup();
-}
-
-function selectRegionFromMap(regionKey) {
-    if (!regionKey) return;
-    showRegionDetailCard(regionKey);
-}
-
-function showRegionDetailCard(regionKey) {
-    const card = document.getElementById('map-region-detail-card');
-    if (!card) return;
-
-    const { regions } = getRegionalAggregates();
-    const reg = regions.find(r => r.region === regionKey);
-    if (!reg) return;
-
-    const nameEl = document.getElementById('mrd-name');
-    const totalEl = document.getElementById('mrd-total-usd');
-    const perCapitaEl = document.getElementById('mrd-per-capita');
-    const pobEl = document.getElementById('mrd-poblacion');
-    const supEl = document.getElementById('mrd-superficie');
-
-    if (nameEl) nameEl.innerText = reg.region.replace(/^\d+_/, '');
-    if (totalEl) totalEl.innerText = `US$ ${reg.total_usd.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} MM`;
-    if (perCapitaEl) perCapitaEl.innerText = `$${Math.round(reg.per_capita_clp).toLocaleString('es-CL')} CLP / hab`;
-    if (pobEl) pobEl.innerText = `${reg.poblacion.toLocaleString('es-CL')} hab`;
-    if (supEl) supEl.innerText = `${reg.superficie_km2.toLocaleString('es-CL')} km²`;
-
-    card.style.display = 'block';
-    if (window.lucide) lucide.createIcons();
-}
-
-function setupMapDetailCardClose() {
-    const btnClose = document.getElementById('btn-close-map-detail');
-    const card = document.getElementById('map-region-detail-card');
-    if (btnClose && card) {
-        btnClose.addEventListener('click', (e) => {
-            e.stopPropagation();
-            card.style.display = 'none';
-        });
-    }
+    if (sniTooltipEl) sniTooltipEl.classList.remove('visible');
 }
 
 function updateSNIMapChoropleth() {
-    if (!sniGeoLayer) return;
-    sniGeoLayer.eachLayer(layer => {
-        if (layer.feature) {
-            layer.setStyle(getRegionFeatureStyle(layer.feature));
-        }
+    if (!sniZoomGroup) return;
+
+    const { regions } = getRegionalAggregates();
+    const metric = (typeof sniState !== 'undefined' && sniState.selectedMapMetric) ? sniState.selectedMapMetric : 'total';
+
+    const valueMap = {};
+    const validRegions = regions.filter(r => !r.region.includes('No Regionalizada') && !r.region.includes('Exterior'));
+    validRegions.forEach(r => {
+        if (metric === 'per_capita') valueMap[r.region] = r.per_capita_clp;
+        else if (metric === 'km2') valueMap[r.region] = r.per_km2_clp;
+        else if (metric === 'pib_ratio') valueMap[r.region] = r.pib_ratio;
+        else valueMap[r.region] = r.total_usd;
     });
+
+    const activeVals = Object.values(valueMap).filter(v => typeof v === 'number' && v > 0);
+    const maxVal = activeVals.length > 0 ? Math.max(...activeVals) : 0;
+    const minVal = activeVals.length > 0 ? Math.min(...activeVals) : 0;
+
+    sniZoomGroup.selectAll('path.sni-region-path')
+        .attr('fill', (d) => {
+            const { regionKey } = getRegionKeyForFeature(d);
+            const val = valueMap[regionKey] || 0;
+            return getChoroplethColor(val, maxVal, minVal);
+        });
+
     if (typeof updateMapMetricRankingChart === 'function') {
         updateMapMetricRankingChart();
     }
 }
-

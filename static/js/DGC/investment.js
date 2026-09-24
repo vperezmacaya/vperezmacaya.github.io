@@ -83,7 +83,7 @@ const todayLineChartPlugin = {
 
             // Etiqueta "Hoy" en la parte superior
             ctx.fillStyle = '#ef4444';
-            ctx.font = 'bold 8.5px sans-serif';
+            ctx.font = '700 8.5px Helvetica Neue, Helvetica, Arial, sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText(`Hoy (${currentYear})`, x, Math.max(10, yAxis.top - 3));
             ctx.restore();
@@ -189,7 +189,9 @@ function renderInvestmentAnalytics(contractsList) {
             datasets: [{
                 label: 'Inversión (UF)',
                 data: invValues,
-                backgroundColor: '#2563eb',
+                backgroundColor: 'rgba(37,99,235,0.8)',
+                borderColor: '#2563eb',
+                borderWidth: 1,
                 borderRadius: 3,
             }]
         },
@@ -203,7 +205,7 @@ function renderInvestmentAnalytics(contractsList) {
             plugins: {
                 legend: { display: false },
                 horizontalBarDataLabelsPlugin: {
-                    formatter: (val) => formatUF(val)
+                    formatter: (val) => formatUF(val).replace(' UF', '')
                 },
                 tooltip: {
                     enabled: false,
@@ -219,12 +221,12 @@ function renderInvestmentAnalytics(contractsList) {
                         display: true,
                         text: 'Inversión (UF)',
                         color: textColor,
-                        font: { size: 10, weight: '600' }
+                        font: { size: 9.5, weight: '600' }
                     },
                     grid: { color: gridColor },
                     ticks: {
                         color: textColor,
-                        font: { size: 10 },
+                        font: { size: 10, weight: '600' },
                         callback: (val) => {
                             if (val === 0) return '0';
                             if (val >= 1000000) return `${(val / 1000000).toFixed(1).replace(/\.0$/, '')}M`;
@@ -237,7 +239,7 @@ function renderInvestmentAnalytics(contractsList) {
                     grid: { display: false },
                     ticks: {
                         color: textColor,
-                        font: { size: 10.5, weight: '500' },
+                        font: { size: 10, weight: '600' },
                         autoSkip: false
                     }
                 }
@@ -359,7 +361,9 @@ function renderInvestmentAnalytics(contractsList) {
             datasets: [{
                 label: 'Inversión Activa (UF)',
                 data: activeInvData,
-                backgroundColor: '#8b5cf6',
+                backgroundColor: 'rgba(139,92,246,0.8)',
+                borderColor: '#8b5cf6',
+                borderWidth: 1,
                 borderRadius: 2,
                 barThickness: 7,
             }]
@@ -367,6 +371,10 @@ function renderInvestmentAnalytics(contractsList) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -378,12 +386,12 @@ function renderInvestmentAnalytics(contractsList) {
                 }
             },
             scales: {
-                x: { grid: { display: false }, ticks: { color: textColor, font: { size: 9.5 } } },
+                x: { grid: { display: false }, ticks: { color: textColor, font: { size: 10, weight: '600' } } },
                 y: {
                     grid: { color: gridColor },
                     ticks: {
                         color: textColor,
-                        font: { size: 9.5 },
+                        font: { size: 10, weight: '600' },
                         callback: (val) => formatUF(val)
                     }
                 }

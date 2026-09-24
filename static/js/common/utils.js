@@ -170,9 +170,10 @@ window.CatlecUtils = {
             const outsideColor = '#334155';
             const insideColor = '#ffffff';
             const formatter = (pluginOptions && pluginOptions.formatter) || ((v) => String(v));
+            const font = (pluginOptions && pluginOptions.font) || '700 9.5px Helvetica Neue, Helvetica, Arial, sans-serif';
 
             ctx.save();
-            ctx.font = '600 9px Inter, system-ui, -apple-system, sans-serif';
+            ctx.font = font;
             ctx.textBaseline = 'middle';
 
             meta.data.forEach((bar, index) => {
@@ -206,7 +207,7 @@ window.CatlecUtils = {
             const ctx = chart.ctx;
             const formatter = (pluginOptions && pluginOptions.formatter) || ((v) => (typeof v === 'number' ? v.toFixed(1) : String(v)));
             const minHeight = (pluginOptions && pluginOptions.minHeight) !== undefined ? pluginOptions.minHeight : 10;
-            const font = (pluginOptions && pluginOptions.font) || '700 8.5px Inter, system-ui, -apple-system, sans-serif';
+            const font = (pluginOptions && pluginOptions.font) || '700 9.5px Helvetica Neue, Helvetica, Arial, sans-serif';
             const color = (pluginOptions && pluginOptions.color) || '#ffffff';
 
             ctx.save();
@@ -216,6 +217,7 @@ window.CatlecUtils = {
             ctx.fillStyle = color;
 
             chart.data.datasets.forEach((dataset, dIdx) => {
+                if (dataset.type === 'line') return;
                 const meta = chart.getDatasetMeta(dIdx);
                 if (!meta || meta.hidden || !meta.data) return;
 
@@ -235,6 +237,82 @@ window.CatlecUtils = {
                     const y = (bar.y + bar.base) / 2;
 
                     ctx.fillText(text, x, y);
+                });
+            });
+
+            ctx.restore();
+        }
+    },
+
+    // Plugin de Chart.js: dibuja el valor sobre el extremo superior de cada barra
+    // vertical (agrupadas o simples, NO apiladas), ignorando datasets tipo 'line'
+    // en gráficos combo (uso: rankings/combos de barras verticales con etiquetas).
+    groupedBarDataLabelsPlugin: {
+        id: 'groupedBarDataLabelsPlugin',
+        afterDatasetsDraw: (chart, args, pluginOptions) => {
+            const ctx = chart.ctx;
+            const formatter = (pluginOptions && pluginOptions.formatter) || ((v) => (typeof v === 'number' ? v.toFixed(1) : String(v)));
+            const font = (pluginOptions && pluginOptions.font) || '700 9.5px Helvetica Neue, Helvetica, Arial, sans-serif';
+            const colorOpt = (pluginOptions && pluginOptions.color) || '#334155';
+            const offset = (pluginOptions && pluginOptions.offset) !== undefined ? pluginOptions.offset : 4;
+
+            ctx.save();
+            ctx.font = font;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+
+            chart.data.datasets.forEach((dataset, dIdx) => {
+                if (dataset.type === 'line') return;
+                const meta = chart.getDatasetMeta(dIdx);
+                if (!meta || meta.hidden || !meta.data) return;
+
+                ctx.fillStyle = typeof colorOpt === 'function' ? colorOpt(dIdx, dataset) : colorOpt;
+
+                meta.data.forEach((bar, index) => {
+                    const rawVal = dataset.data[index];
+                    if (rawVal === undefined || rawVal === null || Number(rawVal) === 0) return;
+
+                    const text = formatter(rawVal, dIdx, index);
+                    ctx.fillText(text, bar.x, bar.y - offset);
+                });
+            });
+
+            ctx.restore();
+        }
+    },
+
+    // Plugin de Chart.js: dibuja el valor junto a cada punto de datasets tipo
+    // 'line' (gráficos combo o 100% de líneas), con desplazamiento vertical
+    // configurable por dataset para evitar solaparse entre series cercanas.
+    lineDataLabelsPlugin: {
+        id: 'lineDataLabelsPlugin',
+        afterDatasetsDraw: (chart, args, pluginOptions) => {
+            const ctx = chart.ctx;
+            const formatter = (pluginOptions && pluginOptions.formatter) || ((v) => (typeof v === 'number' ? v.toFixed(1) : String(v)));
+            const font = (pluginOptions && pluginOptions.font) || '700 9.5px Helvetica Neue, Helvetica, Arial, sans-serif';
+            const colorOpt = (pluginOptions && pluginOptions.color) || '#334155';
+            const offsetOpt = (pluginOptions && pluginOptions.offset) !== undefined ? pluginOptions.offset : 8;
+
+            ctx.save();
+            ctx.font = font;
+            ctx.textAlign = 'center';
+
+            chart.data.datasets.forEach((dataset, dIdx) => {
+                const dsType = dataset.type || chart.config.type;
+                if (dsType !== 'line') return;
+                const meta = chart.getDatasetMeta(dIdx);
+                if (!meta || meta.hidden || !meta.data) return;
+
+                const offsetVal = typeof offsetOpt === 'function' ? offsetOpt(dIdx, dataset) : offsetOpt;
+                ctx.fillStyle = typeof colorOpt === 'function' ? colorOpt(dIdx, dataset) : colorOpt;
+                ctx.textBaseline = offsetVal < 0 ? 'top' : 'bottom';
+
+                meta.data.forEach((point, index) => {
+                    const rawVal = dataset.data[index];
+                    if (rawVal === undefined || rawVal === null) return;
+
+                    const text = formatter(rawVal, dIdx, index);
+                    ctx.fillText(text, point.x, point.y - offsetVal);
                 });
             });
 

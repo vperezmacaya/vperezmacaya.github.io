@@ -14,6 +14,7 @@ function renderVistaTipologia() {
         destroyChart('chart-tipologia-embarcada');
         chartInstances['chart-tipologia-embarcada'] = new Chart(c1.getContext('2d'), {
             type: 'bar',
+            plugins: [CatlecUtils.stackedBarDataLabelsPlugin],
             data: {
                 labels: years,
                 datasets: [
@@ -54,7 +55,8 @@ function renderVistaTipologia() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: { mode: 'nearest', intersect: true },
+                animation: { duration: 450, easing: 'easeOutQuart' },
+                interaction: { mode: 'index', intersect: false },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -64,18 +66,21 @@ function renderVistaTipologia() {
                             title: (items) => `Año ${items[0].label}`,
                             label: (ctx) => ` ${ctx.dataset.label}: ${formatNumber(ctx.raw, 2)} MM Ton`
                         }
+                    },
+                    stackedBarDataLabelsPlugin: {
+                        formatter: (v) => Number(v).toFixed(2)
                     }
                 },
                 scales: {
                     x: {
                         stacked: true,
                         grid: { display: false },
-                        ticks: { color: COLORS.textPrimary, font: { size: 10 } }
+                        ticks: { color: COLORS.textPrimary, font: { size: 10, weight: '600' } }
                     },
                     y: {
                         stacked: true,
                         grid: { color: COLORS.grid },
-                        ticks: { color: COLORS.textPrimary, font: { size: 10 } },
+                        ticks: { color: COLORS.textPrimary, font: { size: 10, weight: '600' } },
                         title: { display: true, text: 'MM Ton Embarcadas', color: COLORS.textPrimary, font: { size: 9.5, weight: '600' } }
                     }
                 }
@@ -89,6 +94,7 @@ function renderVistaTipologia() {
         destroyChart('chart-tipologia-desembarcada');
         chartInstances['chart-tipologia-desembarcada'] = new Chart(c2.getContext('2d'), {
             type: 'bar',
+            plugins: [CatlecUtils.stackedBarDataLabelsPlugin],
             data: {
                 labels: years,
                 datasets: [
@@ -129,7 +135,8 @@ function renderVistaTipologia() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: { mode: 'nearest', intersect: true },
+                animation: { duration: 450, easing: 'easeOutQuart' },
+                interaction: { mode: 'index', intersect: false },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -139,18 +146,21 @@ function renderVistaTipologia() {
                             title: (items) => `Año ${items[0].label}`,
                             label: (ctx) => ` ${ctx.dataset.label}: ${formatNumber(ctx.raw, 2)} MM Ton`
                         }
+                    },
+                    stackedBarDataLabelsPlugin: {
+                        formatter: (v) => Number(v).toFixed(2)
                     }
                 },
                 scales: {
                     x: {
                         stacked: true,
                         grid: { display: false },
-                        ticks: { color: COLORS.textPrimary, font: { size: 10 } }
+                        ticks: { color: COLORS.textPrimary, font: { size: 10, weight: '600' } }
                     },
                     y: {
                         stacked: true,
                         grid: { color: COLORS.grid },
-                        ticks: { color: COLORS.textPrimary, font: { size: 10 } },
+                        ticks: { color: COLORS.textPrimary, font: { size: 10, weight: '600' } },
                         title: { display: true, text: 'MM Ton Desembarcadas', color: COLORS.textPrimary, font: { size: 9.5, weight: '600' } }
                     }
                 }
