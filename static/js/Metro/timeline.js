@@ -63,7 +63,7 @@ function hideMetroTimelineView() {
     const btnMap = document.getElementById('btn-metro-view-map');
     const btnTl = document.getElementById('btn-metro-view-timeline');
 
-    if (grid) grid.style.gridTemplateColumns = '1fr 520px';
+    if (grid) grid.style.gridTemplateColumns = '';
     if (centerPanel) centerPanel.style.display = 'flex';
     if (rightPanel) rightPanel.style.display = 'flex';
     if (tlPanel) tlPanel.style.display = 'none';
@@ -79,7 +79,7 @@ function hideMetroTimelineView() {
 
     if (typeof metroMap !== 'undefined' && metroMap) {
         setTimeout(() => {
-            metroMap.invalidateSize({ animate: false });
+            metroMap.resize();
         }, 50);
     }
 }

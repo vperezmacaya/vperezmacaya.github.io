@@ -55,7 +55,7 @@ function hideMetroDemandaView() {
     const btnMap = document.getElementById('btn-metro-view-map');
     const btnDemanda = document.getElementById('btn-metro-view-demanda');
 
-    if (grid) grid.style.gridTemplateColumns = '1fr 520px';
+    if (grid) grid.style.gridTemplateColumns = '';
     if (centerPanel) centerPanel.style.display = 'flex';
     if (rightPanel) rightPanel.style.display = 'flex';
     if (demandaPanel) demandaPanel.style.display = 'none';
@@ -71,7 +71,7 @@ function hideMetroDemandaView() {
 
     if (typeof metroMap !== 'undefined' && metroMap) {
         setTimeout(() => {
-            metroMap.invalidateSize({ animate: false });
+            metroMap.resize();
         }, 50);
     }
 }

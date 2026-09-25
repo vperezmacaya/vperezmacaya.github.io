@@ -4,12 +4,20 @@ document.addEventListener('DOMContentLoaded', () => {
     initDOMReferences();
     initSubheaderViewSwitcher();
 
+    // Separador mapa ↔ tabla. 500px: ancho mínimo en que se ven las 4 columnas
+    // (anchos fijos 180 + 95 + 120 + 85 = 480px en styles.css + gutter y bordes)
+    CatlecPanelResizer.init({
+        resizer: '#dgc-panel-resizer',
+        minWidth: 500,
+        storageKey: 'catlec.dgc.tableWidth',
+        getMap: () => leafletMap
+    });
+
     if (btnBackToList) {
         btnBackToList.addEventListener('click', () => {
             showTableListView();
             appState.selectedProjectCode = null;
             updateMapStyles();
-            if (leafletMap) leafletMap.closePopup();
         });
     }
 
@@ -75,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnResetMap.addEventListener('click', () => {
         if (leafletMap) {
-            leafletMap.setView([-37.6751, -71.5430], 4.0);
+            leafletMap.easeTo({ center: DGC_DEFAULT_CENTER, zoom: DGC_DEFAULT_ZOOM, duration: 450 });
         }
         appState.selectedProjectCode = null;
         showTableListView();

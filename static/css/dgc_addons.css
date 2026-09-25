@@ -3,69 +3,25 @@
    Reglas usadas únicamente por index.html / static/js/DGC/*.js, extraídas del
    design system global (static/css/styles.css) para mantenerlo liviano. */
 
-/* ─── Separador redimensionable mapa ↔ tabla (panel-resizer.js) ─────────────
-   El ancho de la columna derecha vive en --dgc-table-width (inline en la
-   grilla), así sobrevive al reset de gridTemplateColumns que hacen las otras
-   visualizaciones al volver a la vista Mapa. El separador es absoluto y ocupa
-   exactamente el gap entre el mapa y la tabla: no agrega columnas a la grilla. */
-.dashboard-grid.dgc-resizable-grid {
-    position: relative;
-    grid-template-columns: 240px minmax(0, 1fr) var(--dgc-table-width, 500px);
+/* ─── Separador mapa ↔ tabla (common/panel-resizer.js) ──────────────────────
+   Estilos del separador en styles.css; aquí solo la grilla de DGC, con el
+   ancho de la tabla en --catlec-table-width. 500px: mínimo en que se ven las
+   4 columnas de la tabla (también en pantallas < 1200px). */
+.dashboard-grid.catlec-resizable-grid {
+    grid-template-columns: 240px minmax(0, 1fr) var(--catlec-table-width, 500px);
 }
 
 @media (max-width: 1200px) {
-    .dashboard-grid.dgc-resizable-grid {
-        /* 500px: mínimo en que se ven las 4 columnas de la tabla (panel-resizer.js) */
-        grid-template-columns: 220px minmax(0, 1fr) var(--dgc-table-width, 500px);
+    .dashboard-grid.catlec-resizable-grid {
+        grid-template-columns: 220px minmax(0, 1fr) var(--catlec-table-width, 500px);
     }
 }
 
-.dgc-panel-resizer {
-    position: absolute;
-    grid-column: 3;
-    grid-row: 1;
-    top: 0;
-    bottom: 0;
-    left: -0.5rem;
-    width: 0.5rem;
-    cursor: col-resize;
-    z-index: 5;
-    touch-action: none;
-    outline: none;
-}
-
-.dgc-panel-resizer::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 3px;
-    height: 36px;
-    border-radius: 3px;
-    transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.14);
-    transition: background-color var(--transition-fast), height var(--transition-fast);
-}
-
-.dgc-panel-resizer:hover::after,
-.dgc-panel-resizer:focus-visible::after,
-.dgc-panel-resizer.dragging::after {
-    background: var(--primary);
-    height: 56px;
-}
-
-.dgc-panel-resizer[hidden] {
-    display: none;
-}
-
-body.dgc-resizing {
-    cursor: col-resize;
-    user-select: none;
-}
-
-body.dgc-resizing .map-panel,
-body.dgc-resizing .right-panel {
-    pointer-events: none;
+/* ─── Íconos de proyecto en el mapa MapLibre ────────────────────────────────
+   DGC usa íconos de 24 px (EFE y Metro: 26 px, en .catlec-gl-marker de styles.css) */
+.catlec-gl-marker {
+    width: 24px;
+    height: 24px;
 }
 
 /* ─── Company Participations Modal (Bidders View) ─────────────────────────── */

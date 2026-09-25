@@ -1,35 +1,42 @@
+// ─── static/js/DGC/map.js ──────────────────────────────────────────────────────
+// Mapa de DGC con MapLibre GL (WebGL). Las utilidades comunes (mapa base,
+// vuelos, geometría) vienen de CatlecMapGL (common/map-gl.js).
+//
+// - Líneas y polígonos de concesiones en una fuente GeoJSON; los polígonos se
+//   dibujan como relleno + borde. El estilo de cada shape vive en feature-state
+//   (por COD) y se calcula con getFeatureStyle. Lo seleccionado o en hover se
+//   dibuja en capas superiores filtradas.
+// - Los puntos no se dibujan: solo ubican íconos y definen encuadres.
+// - Íconos de proyecto = marcadores HTML de MapLibre (.polygon-centroid-marker).
+// - DGC no tiene tooltips en el mapa.
+
+// Vista inicial (zoom Leaflet 4 → MapLibre 3; ver CatlecMapGL.ZOOM_OFFSET)
+const DGC_DEFAULT_CENTER = [-71.5430, -37.6751];
+const DGC_DEFAULT_ZOOM = 4 - CatlecMapGL.ZOOM_OFFSET;
+
+// Capas invisibles usadas para detectar hover/click sobre las shapes
+const DGC_HIT_LAYERS = ['dgc-lines-hit', 'dgc-fill-hit'];
+
+let dgcMapReady = false;
+let dgcShapeCods = new Set();       // CODs con líneas o polígonos en la fuente 'dgc-shapes'
+let dgcIsDragClick = () => false;   // click que el navegador dispara al soltar un arrastre
+let dgcMapHoverCode = null;         // proyecto en hover desde una shape del mapa
+
+// (Nombre heredado de Leaflet: lo llama DGC/ui.js)
 function initLeafletMap() {
-    // Center map on Chile's geographical center
-    const base = CatlecUtils.createBaseMap('leaflet-map', {
-        center: [-37.6751, -71.5430],
-        zoom: 4.0,
-        options: { minZoom: 3, maxZoom: 18, zoomSnap: 0.5 }
+    leafletMap = CatlecMapGL.createMap('leaflet-map', {
+        center: DGC_DEFAULT_CENTER,
+        zoom: DGC_DEFAULT_ZOOM,
+        minZoom: 3 - CatlecMapGL.ZOOM_OFFSET,
+        maxZoom: 18 - CatlecMapGL.ZOOM_OFFSET
     });
-    leafletMap = base.map;
-    tileLayer = base.tileLayer;
+    dgcIsDragClick = CatlecMapGL.trackDragClick(leafletMap);
 
-    // Desvanece las shapes en zooms grandes y evita tooltips pegados
-    CatlecUtils.enableSmoothZoom(leafletMap);
-
-    // Load map layers asynchronously
-    loadMapLayers();
-
-    // Clear selected project selection when clicking on the map background
-    leafletMap.on('click', () => {
-        appState.selectedProjectCode = null;
-        collapseSpiderLegs();
-        updateMapStyles();
-        showTableListView();
-    });
-
-    // Collapse spider legs when zoom changes
-    leafletMap.on('zoomstart', () => {
-        collapseSpiderLegs();
-    });
+    leafletMap.on('mousemove', dgcOnMapMouseMove);
+    leafletMap.getCanvas().addEventListener('mouseleave', () => dgcSetMapHover(null));
+    leafletMap.on('click', dgcOnMapClick);
+    leafletMap.on('load', loadMapLayers);
 }
-
-
-
 
 function getFeatureStyle(feature, sector) {
     const code = feature.properties && feature.properties.COD ? feature.properties.COD.toString().trim() : '';
@@ -103,59 +110,37 @@ function getFeatureStyle(feature, sector) {
     };
 }
 
-function onEachProjectFeature(feature, layer, sector) {
-    const code = feature.properties && feature.properties.COD ? feature.properties.COD.toString().trim() : '';
+// ─── Utilidades de shapes ────────────────────────────────────────────────────
+function dgcFeatureCod(feature) {
+    return feature && feature.properties && feature.properties.COD ? feature.properties.COD.toString().trim() : '';
+}
 
-    // Index feature geometry by shape COD
-    if (code) {
-        if (!shapeGeometries[code]) {
-            shapeGeometries[code] = [];
-        }
-        shapeGeometries[code].push(layer);
-    }
+function dgcGeomType(feature) {
+    return String((feature && feature.geometry && feature.geometry.type) || '').toLowerCase();
+}
 
-    // Vector geometry click handler
-    layer.on('click', (e) => {
-        L.DomEvent.stopPropagation(e);
-        const projSet = shapeToProjectCodes[code];
-        if (!projSet || projSet.size === 0) return;
+function dgcFeaturesOfShapes(shapes) {
+    const out = [];
+    (shapes || []).forEach(shapeId => (shapeGeometries[shapeId.toString().trim()] || []).forEach(f => out.push(f)));
+    return out;
+}
 
-        const activeCodesList = Array.from(projSet).filter(pc => activeMapCodes.has(pc));
-        if (activeCodesList.length === 0) return;
+// Proyecto activo (según filtros) que representa a una shape: el de licitación
+// más reciente, como en el estilo y en los íconos
+function dgcActiveProjectForShape(code) {
+    const projSet = shapeToProjectCodes[code];
+    if (!projSet || projSet.size === 0) return null;
+    const activeCodesList = Array.from(projSet).filter(pc => activeMapCodes.has(pc));
+    if (activeCodesList.length === 0) return null;
 
-        // Sort candidate project codes by tender_date descending (most recent first)
-        activeCodesList.sort((a, b) => {
-            const dateA = (projectMetadata[a] && projectMetadata[a].tender_date) || '';
-            const dateB = (projectMetadata[b] && projectMetadata[b].tender_date) || '';
-            if (dateA && !dateB) return -1;
-            if (!dateA && dateB) return 1;
-            return dateB.localeCompare(dateA);
-        });
-
-        zoomToProjectCode(activeCodesList[0]);
+    activeCodesList.sort((a, b) => {
+        const dateA = (projectMetadata[a] && projectMetadata[a].tender_date) || '';
+        const dateB = (projectMetadata[b] && projectMetadata[b].tender_date) || '';
+        if (dateA && !dateB) return -1;
+        if (!dateA && dateB) return 1;
+        return dateB.localeCompare(dateA);
     });
-
-    // Vector geometry hover highlight
-    layer.on('mouseover', (e) => {
-        const projSet = shapeToProjectCodes[code];
-        if (!projSet || projSet.size === 0) return;
-        const activeCodesList = Array.from(projSet).filter(pc => activeMapCodes.has(pc));
-        if (activeCodesList.length === 0) return;
-
-        activeCodesList.sort((a, b) => {
-            const dateA = (projectMetadata[a] && projectMetadata[a].tender_date) || '';
-            const dateB = (projectMetadata[b] && projectMetadata[b].tender_date) || '';
-            if (dateA && !dateB) return -1;
-            if (!dateA && dateB) return 1;
-            return dateB.localeCompare(dateA);
-        });
-
-        setHoveredProject(activeCodesList[0]);
-    });
-
-    layer.on('mouseout', (e) => {
-        setHoveredProject(null);
-    });
+    return activeCodesList[0];
 }
 
 // Custom Principal Shapes mapping for multi-point concessions
@@ -163,35 +148,104 @@ const PRINCIPAL_SHAPES = {
     '050_ETTT1': '71' // Alameda - Exposición (Santiago/Estación Central)
 };
 
-async function loadMapLayers() {
-    try {
-        shapeGeometries = {};
+function loadMapLayers() {
+    shapeGeometries = {};
+    dgcShapeCods = new Set();
 
-        // Consolidated DGC Layers (VERSIÓN ESTÁTICA)
-        const dataDGC = window.DGC_DATA || { type: 'FeatureCollection', features: [] };
-        layers.dgc = L.geoJSON(dataDGC, {
-            style: (f) => getFeatureStyle(f, f.properties.Sector_DGC),
-            pointToLayer: (feature, latlng) => {
-                const invisibleIcon = L.divIcon({
-                    className: 'dgc-hidden-point-marker',
-                    html: '',
-                    iconSize: [0, 0]
-                });
-                return L.marker(latlng, { icon: invisibleIcon, opacity: 0, interactive: false });
-            },
-            onEachFeature: (f, l) => onEachProjectFeature(f, l, f.properties.Sector_DGC)
-        }).addTo(leafletMap);
+    // Índice COD → features (todas) y fuente solo con líneas y polígonos.
+    // promoteId 'cod': todas las features de un mismo COD comparten feature-state.
+    const dataDGC = window.DGC_DATA || { type: 'FeatureCollection', features: [] };
+    const sourceFeatures = [];
+    dataDGC.features.forEach(feature => {
+        const cod = dgcFeatureCod(feature);
+        if (!cod || !feature.geometry) return;
+        if (!shapeGeometries[cod]) shapeGeometries[cod] = [];
+        shapeGeometries[cod].push(feature);
 
-        updateMapStyles();
-        if (appState.lastMapProjects && appState.lastMapProjects.length > 0) {
-            renderProjectMarkersOnMap(appState.lastMapProjects);
-        }
+        const type = dgcGeomType(feature);
+        if (type.includes('point')) return;
+        sourceFeatures.push({
+            type: 'Feature',
+            geometry: feature.geometry,
+            properties: { cod, kind: type.includes('line') ? 'line' : 'poly' }
+        });
+        dgcShapeCods.add(cod);
+    });
 
-    } catch (err) {
-        console.error("Error al cargar capas del mapa:", err);
+    const before = CatlecMapGL.labelsBeforeId(leafletMap);
+    const state = (key, fallback) => ['coalesce', ['feature-state', key], fallback];
+    const isPoly = ['==', ['get', 'kind'], 'poly'];
+    const isLine = ['==', ['get', 'kind'], 'line'];
+    const roundLine = { 'line-cap': 'round', 'line-join': 'round' };
+    const fillPaint = { 'fill-color': state('color', '#000000'), 'fill-opacity': state('fillOpacity', 0) };
+    const outlinePaint = { 'line-color': state('color', '#000000'), 'line-width': state('polyWidth', 0), 'line-opacity': state('opacity', 0) };
+    const linePaint = { 'line-color': state('color', '#000000'), 'line-width': state('lineWidth', 0), 'line-opacity': state('opacity', 0) };
+    const noCods = CatlecMapGL.inFilter('cod', []);
+
+    leafletMap.addSource('dgc-shapes', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: sourceFeatures },
+        promoteId: 'cod'
+    });
+
+    // Base: polígonos (relleno + borde) debajo de las líneas
+    leafletMap.addLayer({ id: 'dgc-fill', type: 'fill', source: 'dgc-shapes', filter: isPoly, paint: fillPaint }, before);
+    leafletMap.addLayer({ id: 'dgc-outline', type: 'line', source: 'dgc-shapes', filter: isPoly, layout: roundLine, paint: outlinePaint }, before);
+    leafletMap.addLayer({ id: 'dgc-lines', type: 'line', source: 'dgc-shapes', filter: isLine, layout: roundLine, paint: linePaint }, before);
+
+    // Superiores: lo seleccionado o en hover encima del resto (reemplaza a bringToFront)
+    leafletMap.addLayer({ id: 'dgc-fill-top', type: 'fill', source: 'dgc-shapes', filter: ['all', isPoly, noCods], paint: fillPaint }, before);
+    leafletMap.addLayer({ id: 'dgc-outline-top', type: 'line', source: 'dgc-shapes', filter: ['all', isPoly, noCods], layout: roundLine, paint: outlinePaint }, before);
+    leafletMap.addLayer({ id: 'dgc-lines-top', type: 'line', source: 'dgc-shapes', filter: ['all', isLine, noCods], layout: roundLine, paint: linePaint }, before);
+
+    // Detección invisible: relleno de polígonos y líneas anchas
+    leafletMap.addLayer({ id: 'dgc-fill-hit', type: 'fill', source: 'dgc-shapes', filter: isPoly, paint: { 'fill-color': '#000000', 'fill-opacity': 0 } }, before);
+    leafletMap.addLayer({ id: 'dgc-lines-hit', type: 'line', source: 'dgc-shapes', filter: isLine, paint: { 'line-width': 12, 'line-opacity': 0 } }, before);
+
+    dgcMapReady = true;
+
+    const legendEl = document.getElementById('map-legend');
+    if (legendEl) {
+        CatlecMapGL.addLegendControl(leafletMap, { element: legendEl, storageKey: 'catlec.dgc.legendCollapsed' });
+    }
+
+    updateMapStyles();
+    if (appState.lastMapProjects && appState.lastMapProjects.length > 0) {
+        renderProjectMarkersOnMap(appState.lastMapProjects);
     }
 }
 
+// ─── Estilos ─────────────────────────────────────────────────────────────────
+// Estado de un COD: estilo de sus líneas y de sus polígonos (pueden coexistir)
+function dgcApplyShapeState(code) {
+    if (!dgcShapeCods.has(code)) return;
+    const feats = shapeGeometries[code] || [];
+    const lineFeat = feats.find(f => dgcGeomType(f).includes('line'));
+    const polyFeat = feats.find(f => dgcGeomType(f).includes('polygon'));
+    const lineStyle = lineFeat ? getFeatureStyle(lineFeat, lineFeat.properties.Sector_DGC) : null;
+    const polyStyle = polyFeat ? getFeatureStyle(polyFeat, polyFeat.properties.Sector_DGC) : null;
+    const base = lineStyle || polyStyle;
+    leafletMap.setFeatureState({ source: 'dgc-shapes', id: code }, {
+        color: base.color,
+        opacity: base.opacity,
+        lineWidth: lineStyle ? lineStyle.weight : 0,
+        polyWidth: polyStyle ? polyStyle.weight : 0,
+        fillOpacity: polyStyle ? polyStyle.fillOpacity : 0
+    });
+}
+
+// Capas superiores: shapes del proyecto seleccionado y del proyecto en hover
+function dgcUpdateTopLayers() {
+    const top = new Set();
+    [appState.selectedProjectCode, appState.hoveredProjectCode].forEach(pc => {
+        const proj = pc ? projectMetadata[pc] : null;
+        (proj && proj.shapes ? proj.shapes : []).forEach(s => top.add(s.toString().trim()));
+    });
+    const inTop = CatlecMapGL.inFilter('cod', top);
+    leafletMap.setFilter('dgc-fill-top', ['all', ['==', ['get', 'kind'], 'poly'], inTop]);
+    leafletMap.setFilter('dgc-outline-top', ['all', ['==', ['get', 'kind'], 'poly'], inTop]);
+    leafletMap.setFilter('dgc-lines-top', ['all', ['==', ['get', 'kind'], 'line'], inTop]);
+}
 
 function getProjectCentroid(proj) {
     if (!proj || !proj.shapes || !Array.isArray(proj.shapes) || proj.shapes.length === 0) {
@@ -201,96 +255,47 @@ function getProjectCentroid(proj) {
     let totalLng = 0;
     let count = 0;
 
-    proj.shapes.forEach(shapeId => {
-        const sid = shapeId.toString().trim();
-        const matchedLayers = shapeGeometries[sid];
-        if (matchedLayers && matchedLayers.length > 0) {
-            matchedLayers.forEach(l => {
-                if (l.getBounds) {
-                    const center = l.getBounds().getCenter();
-                    totalLat += center.lat;
-                    totalLng += center.lng;
-                    count++;
-                } else if (l.getLatLng) {
-                    const center = l.getLatLng();
-                    totalLat += center.lat;
-                    totalLng += center.lng;
-                    count++;
-                }
-            });
+    dgcFeaturesOfShapes(proj.shapes).forEach(f => {
+        const center = dgcGeomType(f) === 'point' ? f.geometry.coordinates : CatlecMapGL.boundsCenter(f);
+        if (center) {
+            totalLng += center[0];
+            totalLat += center[1];
+            count++;
         }
     });
 
-    if (count > 0) {
-        return L.latLng(totalLat / count, totalLng / count);
-    }
-    return null;
+    return count > 0 ? [totalLng / count, totalLat / count] : null;
 }
 
 function clearAllProjectMarkers() {
-    Object.values(projectMarkersMap).forEach(markersArr => {
-        if (Array.isArray(markersArr)) {
-            markersArr.forEach(m => {
-                if (m && leafletMap) leafletMap.removeLayer(m);
-            });
-        } else if (markersArr && leafletMap) {
-            leafletMap.removeLayer(markersArr);
-        }
-    });
+    const unique = new Set();
+    Object.values(projectMarkersMap).forEach(arr => [].concat(arr).forEach(m => m && unique.add(m)));
+    unique.forEach(m => m.remove());
     projectMarkersMap = {};
-
-    activeClusterMarkers.forEach(m => {
-        if (m && leafletMap) leafletMap.removeLayer(m);
-    });
-    activeClusterMarkers = [];
-
-    collapseSpiderLegs();
 }
 
-function collapseSpiderLegs() {
-    activeSpiderLegs.forEach(obj => {
-        if (obj && leafletMap) leafletMap.removeLayer(obj);
-    });
-    activeSpiderLegs = [];
-    spiderfiedClusterGroupKey = null;
-}
-
-function createSingleProjectMarker(proj, latLng, isSpiderfied = false, isMiniDot = false) {
+function createSingleProjectMarker(proj, lngLat, isMiniDot = false) {
     const secCfg = getSectorConfig(proj.sector);
     const isSelected = proj.code === appState.selectedProjectCode;
 
-    let iconHtml = '';
-    if (isMiniDot) {
-        iconHtml = `<div class="centroid-marker-pulse mini-dot-marker ${isSelected ? 'active-selected' : ''}" style="background-color: ${secCfg.color}; width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid #ffffff; box-shadow: 0 0 4px rgba(0,0,0,0.4); margin: 7px;"></div>`;
-    } else {
-        iconHtml = `<div class="centroid-marker-pulse ${isSelected ? 'active-selected' : ''}" style="background-color: ${secCfg.color};">${secCfg.svg}</div>`;
-    }
+    const el = document.createElement('div');
+    el.className = 'polygon-centroid-marker catlec-gl-marker';
+    el.innerHTML = isMiniDot
+        ? `<div class="centroid-marker-pulse mini-dot-marker ${isSelected ? 'active-selected' : ''}" style="background-color: ${secCfg.color}; width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid #ffffff; box-shadow: 0 0 4px rgba(0,0,0,0.4); margin: 7px;"></div>`
+        : `<div class="centroid-marker-pulse ${isSelected ? 'active-selected' : ''}" style="background-color: ${secCfg.color};">${secCfg.svg}</div>`;
 
-    const customIcon = L.divIcon({
-        className: 'polygon-centroid-marker',
-        html: iconHtml,
-        iconSize: [24, 24],
-        iconAnchor: [12, 12]
-    });
-
-    const marker = L.marker(latLng, { icon: customIcon });
+    const marker = new maplibregl.Marker({ element: el, anchor: 'center', subpixelPositioning: true }).setLngLat(lngLat);
     marker.projectCode = proj.code;
     marker.projectSector = proj.sector;
-    marker.isSpiderfied = isSpiderfied;
     marker.isMiniDot = isMiniDot;
 
-    marker.on('click', (e) => {
-        L.DomEvent.stopPropagation(e);
+    el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (dgcIsDragClick()) return;
         zoomToProjectCode(proj.code);
     });
-
-    marker.on('mouseover', () => {
-        setHoveredProject(proj.code);
-    });
-
-    marker.on('mouseout', () => {
-        setHoveredProject(null);
-    });
+    el.addEventListener('mouseenter', () => setHoveredProject(proj.code));
+    el.addEventListener('mouseleave', () => setHoveredProject(null));
 
     return marker;
 }
@@ -300,83 +305,52 @@ function renderProjectMarkersOnMap(mapProjects) {
 
     clearAllProjectMarkers();
 
-    if (!mapProjects || mapProjects.length === 0) return;
+    if (!dgcMapReady || !mapProjects || mapProjects.length === 0) return;
 
     let candidateEntries = [];
 
     mapProjects.forEach(proj => {
         if (!proj.shapes || !Array.isArray(proj.shapes) || proj.shapes.length === 0) return;
 
-        let matchedLayers = [];
-        proj.shapes.forEach(shapeId => {
-            const sid = shapeId.toString().trim();
-            const layersForShape = shapeGeometries[sid];
-            if (layersForShape) {
-                matchedLayers.push(...layersForShape);
-            }
-        });
-
-        if (matchedLayers.length === 0) return;
+        const matched = dgcFeaturesOfShapes(proj.shapes);
+        if (matched.length === 0) return;
 
         // Check if concession is LINE type
-        const isLine = matchedLayers.some(l => {
-            if (l.feature && l.feature.geometry && l.feature.geometry.type) {
-                return l.feature.geometry.type.toLowerCase().includes('line');
-            }
-            return (l instanceof L.Polyline) && !(l instanceof L.Polygon);
-        });
+        const isLine = matched.some(f => dgcGeomType(f).includes('line'));
 
         if (isLine) {
             // Condition 1: Single icon on the midpoint of the line
-            const midpoint = CatlecUtils.getLineMidpoint(matchedLayers);
+            const midpoint = CatlecMapGL.lineMidpoint(matched.filter(f => !dgcGeomType(f).includes('point')));
             if (midpoint) {
-                candidateEntries.push({
-                    latLng: midpoint,
-                    proj: proj,
-                    shapeId: 'line',
-                    isMiniDot: false
-                });
+                candidateEntries.push({ lngLat: midpoint, proj: proj, shapeId: 'line', isMiniDot: false });
             }
         } else {
             // Condition 2: Point / Polygon -> 1 icon per EACH shape/polygon/point
             const isManyPoints = proj.shapes.length > 5;
             const principalShape = PRINCIPAL_SHAPES[proj.code] || (proj.shapes[0] ? proj.shapes[0].toString().trim() : '');
 
-            proj.shapes.forEach((shapeId, idx) => {
+            proj.shapes.forEach(shapeId => {
                 const sid = shapeId.toString().trim();
-                const layersForShape = shapeGeometries[sid];
-                if (layersForShape && layersForShape.length > 0) {
-                    layersForShape.forEach(l => {
-                        let center = null;
-                        if (l.getBounds) {
-                            center = l.getBounds().getCenter();
-                        } else if (l.getLatLng) {
-                            center = l.getLatLng();
-                        }
-                        if (center) {
-                            const isMini = isManyPoints && (sid !== principalShape);
-                            candidateEntries.push({
-                                latLng: center,
-                                proj: proj,
-                                shapeId: sid,
-                                isMiniDot: isMini
-                            });
-                        }
-                    });
-                }
+                (shapeGeometries[sid] || []).forEach(f => {
+                    const center = dgcGeomType(f) === 'point' ? f.geometry.coordinates : CatlecMapGL.boundsCenter(f);
+                    if (center) {
+                        candidateEntries.push({
+                            lngLat: center,
+                            proj: proj,
+                            shapeId: sid,
+                            isMiniDot: isManyPoints && (sid !== principalShape)
+                        });
+                    }
+                });
             });
         }
     });
 
-    // Group candidate entries by location key
-    // Condition 4 & Request: No spiderfy legs/clusters. Pick ONLY the entry with most recent tender_date.
+    // Group candidate entries by location key. Pick ONLY the entry with most recent tender_date.
     const locationMap = {};
-
     candidateEntries.forEach(entry => {
-        const key = `${entry.latLng.lat.toFixed(4)},${entry.latLng.lng.toFixed(4)}`;
-        if (!locationMap[key]) {
-            locationMap[key] = [];
-        }
+        const key = `${entry.lngLat[1].toFixed(4)},${entry.lngLat[0].toFixed(4)}`;
+        if (!locationMap[key]) locationMap[key] = [];
         locationMap[key].push(entry);
     });
 
@@ -394,124 +368,24 @@ function renderProjectMarkersOnMap(mapProjects) {
 
         // Render ONLY the most recent concession marker, but associate with all shared project codes
         const bestEntry = group[0];
-        const proj = bestEntry.proj;
-        const marker = createSingleProjectMarker(proj, bestEntry.latLng, false, bestEntry.isMiniDot);
+        const marker = createSingleProjectMarker(bestEntry.proj, bestEntry.lngLat, bestEntry.isMiniDot);
+        marker.addTo(leafletMap);
+        marker.associatedProjectCodes = group.map(g => g.proj.code);
 
-        if (marker) {
-            marker.addTo(leafletMap);
-            marker.associatedProjectCodes = group.map(g => g.proj.code);
-
-            group.forEach(entry => {
-                const code = entry.proj.code;
-                if (!projectMarkersMap[code]) {
-                    projectMarkersMap[code] = [];
-                }
-                if (!projectMarkersMap[code].includes(marker)) {
-                    projectMarkersMap[code].push(marker);
-                }
-            });
-        }
+        group.forEach(entry => {
+            const code = entry.proj.code;
+            if (!projectMarkersMap[code]) projectMarkersMap[code] = [];
+            if (!projectMarkersMap[code].includes(marker)) projectMarkersMap[code].push(marker);
+        });
     });
 
     updateMapStyles();
 }
 
 function updateMapStyles() {
-    if (layers.dgc) {
-        layers.dgc.setStyle((f) => getFeatureStyle(f, f.properties.Sector_DGC));
-
-        layers.dgc.eachLayer(l => {
-            if (l.feature) {
-                const code = l.feature.properties && l.feature.properties.COD ? l.feature.properties.COD.toString().trim() : '';
-                const projSet = shapeToProjectCodes[code];
-                if (projSet) {
-                    const activeCodesList = Array.from(projSet).filter(pc => activeMapCodes.has(pc));
-                    if (activeCodesList.length > 0) {
-                        const isHovered = activeCodesList.includes(appState.hoveredProjectCode);
-                        const isSelected = activeCodesList.includes(appState.selectedProjectCode);
-                        if ((isHovered || isSelected) && l.bringToFront && !(l instanceof L.Marker)) {
-                            l.bringToFront();
-                        }
-                    }
-                }
-            }
-
-            if (l instanceof L.Marker && l.feature) {
-                const code = l.feature.properties && l.feature.properties.COD ? l.feature.properties.COD.toString().trim() : '';
-                const projSet = shapeToProjectCodes[code];
-                let isActive = false;
-                let activeProj = null;
-                if (projSet) {
-                    for (let pc of projSet) {
-                        if (activeMapCodes.has(pc)) {
-                            isActive = true;
-                            activeProj = projectMetadata[pc];
-                            break;
-                        }
-                    }
-                }
-                const selectedCode = appState.selectedProjectCode;
-                const isSelected = activeProj && activeProj.code === selectedCode;
-                const isHovered = activeProj && activeProj.code === appState.hoveredProjectCode;
-
-                if (!isActive) {
-                    l.setOpacity(0);
-                    l.setZIndexOffset(-1000);
-                    if (l.getElement()) {
-                        l.getElement().style.pointerEvents = 'none';
-                    }
-                } else {
-                    if (l.getElement()) {
-                        l.getElement().style.pointerEvents = 'auto';
-                    }
-                    if (selectedCode) {
-                        const isTarget = isSelected || isHovered;
-                        l.setOpacity(isTarget ? 1.0 : 0.35);
-                        l.setZIndexOffset(isTarget ? 1000 : 0);
-                    } else {
-                        l.setOpacity(1.0);
-                        l.setZIndexOffset(100);
-                    }
-
-                    const sector = (activeProj && activeProj.sector) || l.feature.properties.Sector_DGC;
-                    const secCfg = getSectorConfig(sector);
-
-                    if (l.getElement()) {
-                        const el = l.getElement().querySelector('.centroid-marker-pulse');
-                        if (el) {
-                            el.style.backgroundColor = secCfg.color;
-                            if (isSelected) {
-                                el.classList.add('active-selected');
-                                el.style.transform = 'scale(1.35)';
-                            } else if (isHovered) {
-                                el.classList.remove('active-selected');
-                                el.style.transform = 'scale(1.25)';
-                            } else {
-                                el.classList.remove('active-selected');
-                                el.style.transform = '';
-                            }
-                        }
-                    }
-                }
-            } else if (l.feature && !(l instanceof L.Marker)) {
-                const code = l.feature.properties && l.feature.properties.COD ? l.feature.properties.COD.toString().trim() : '';
-                const projSet = shapeToProjectCodes[code];
-                let isActive = false;
-                if (projSet) {
-                    for (let pc of projSet) {
-                        if (activeMapCodes.has(pc)) {
-                            isActive = true;
-                            break;
-                        }
-                    }
-                }
-                const isLayerActive = isActive;
-
-                if (l.getElement()) {
-                    l.getElement().style.pointerEvents = isLayerActive ? 'auto' : 'none';
-                }
-            }
-        });
+    if (dgcMapReady) {
+        dgcShapeCods.forEach(dgcApplyShapeState);
+        dgcUpdateTopLayers();
     }
 
     // Collect all unique marker instances
@@ -533,6 +407,7 @@ function updateMapStyles() {
 // Estilo de un ícono de proyecto según filtro, selección y hover actuales
 function applyProjectMarkerState(marker) {
     if (!marker || !marker.getElement()) return;
+    const elem = marker.getElement();
 
     const selectedCode = appState.selectedProjectCode;
     const hoveredCode = appState.hoveredProjectCode;
@@ -541,25 +416,27 @@ function applyProjectMarkerState(marker) {
     const isSelected = codes.includes(selectedCode);
     const isHovered = codes.includes(hoveredCode);
 
+    // Opacidad con marker.setOpacity: MapLibre reescribe style.opacity del
+    // elemento en cada movimiento del mapa, así que un valor inline se perdería.
     if (!isActiveInFilter) {
-        marker.setOpacity(0);
-        marker.setZIndexOffset(-1000);
-        marker.getElement().style.pointerEvents = 'none';
+        marker.setOpacity('0');
+        elem.style.zIndex = '0';
+        elem.style.pointerEvents = 'none';
         return;
     }
 
-    marker.getElement().style.pointerEvents = 'auto';
+    elem.style.pointerEvents = 'auto';
 
     if (selectedCode) {
         const isTarget = isSelected || isHovered;
-        marker.setOpacity(isTarget ? 1.0 : 0.35);
-        marker.setZIndexOffset(isTarget ? 1000 : 100);
+        marker.setOpacity(isTarget ? '1' : '0.35');
+        elem.style.zIndex = isTarget ? '1000' : '100';
     } else {
-        marker.setOpacity(1.0);
-        marker.setZIndexOffset(100);
+        marker.setOpacity('1');
+        elem.style.zIndex = '100';
     }
 
-    const el = marker.getElement().querySelector('.centroid-marker-pulse');
+    const el = elem.querySelector('.centroid-marker-pulse');
 
     if (el) {
         const secCfg = getSectorConfig(marker.projectSector);
@@ -581,9 +458,7 @@ function applyProjectMarkerState(marker) {
 
 // ─── Hover liviano (mapa y tabla) ────────────────────────────────────────────
 // Cambia el proyecto en hover y reestiliza SOLO las shapes e íconos del hover
-// anterior y del nuevo. No llama a updateMapStyles(): recalcular todo el mapa
-// y reordenar el SVG (bringToFront) bajo el cursor en cada hover disparaba
-// mouseout/mouseover falsos y parpadeos.
+// anterior y del nuevo (no recalcula todo el mapa).
 function setHoveredProject(code) {
     const prev = appState.hoveredProjectCode;
     if (prev === code) return;
@@ -593,15 +468,52 @@ function setHoveredProject(code) {
     const affectedCodes = [prev, code].filter(Boolean);
     affectedCodes.forEach(pc => {
         const proj = projectMetadata[pc];
-        (proj && proj.shapes ? proj.shapes : []).forEach(shapeId => {
-            (shapeGeometries[shapeId.toString().trim()] || []).forEach(l => {
-                if (l.feature && l.setStyle) l.setStyle(getFeatureStyle(l.feature, l.feature.properties.Sector_DGC));
-            });
-        });
+        if (dgcMapReady) (proj && proj.shapes ? proj.shapes : []).forEach(s => dgcApplyShapeState(s.toString().trim()));
         (projectMarkersMap[pc] || []).forEach(applyProjectMarkerState);
     });
+    if (dgcMapReady) dgcUpdateTopLayers();
 }
 window.setHoveredProject = setHoveredProject;
+
+// ─── Eventos del mapa (shapes) ───────────────────────────────────────────────
+// Proyecto activo bajo el cursor (las shapes filtradas siguen en las capas de
+// detección, así que se descartan aquí)
+function dgcPickProjectAt(point) {
+    if (!dgcMapReady) return null;
+    const feats = leafletMap.queryRenderedFeatures(point, { layers: DGC_HIT_LAYERS });
+    for (const f of feats) {
+        const code = dgcActiveProjectForShape(f.properties.cod);
+        if (code) return code;
+    }
+    return null;
+}
+
+function dgcOnMapMouseMove(e) {
+    if (CatlecMapGL.isMarkerEvent(e)) return;
+    dgcSetMapHover(dgcPickProjectAt(e.point));
+}
+
+function dgcSetMapHover(code) {
+    if (code === dgcMapHoverCode) return;
+    const prev = dgcMapHoverCode;
+    dgcMapHoverCode = code;
+    if (code) setHoveredProject(code);
+    else if (prev && appState.hoveredProjectCode === prev) setHoveredProject(null);
+    leafletMap.getCanvas().style.cursor = code ? 'pointer' : '';
+}
+
+function dgcOnMapClick(e) {
+    if (CatlecMapGL.isMarkerEvent(e)) return;
+    const code = dgcPickProjectAt(e.point);
+    if (code) {
+        zoomToProjectCode(code);
+        return;
+    }
+    // Clear selected project selection when clicking on the map background
+    appState.selectedProjectCode = null;
+    updateMapStyles();
+    showTableListView();
+}
 
 function zoomToProjectCode(code) {
     if (!leafletMap || !code) return;
@@ -614,35 +526,24 @@ function zoomToProjectCode(code) {
     updateMapStyles();
     showProjectDetailView(cleanCode);
 
-    let targetMarkers = projectMarkersMap[cleanCode];
-    let targetMarker = (Array.isArray(targetMarkers) && targetMarkers.length > 0) ? targetMarkers[0] : (targetMarkers && !Array.isArray(targetMarkers) ? targetMarkers : null);
-    let targetLatLng = targetMarker ? targetMarker.getLatLng() : getProjectCentroid(proj);
-
-    let matchedLayers = [];
-    let foundSector = proj.sector;
-
-    if (layers.dgc && proj.shapes) {
-        proj.shapes.forEach(shapeId => {
-            const sid = shapeId.toString().trim();
-            const layersForShape = shapeGeometries[sid];
-            if (layersForShape) {
-                matchedLayers.push(...layersForShape);
-            }
-        });
+    // Encuadre: las shapes del proyecto o, si no tiene, su ícono o centroide
+    let features = dgcFeaturesOfShapes(proj.shapes);
+    if (features.length === 0) {
+        const targetMarker = (projectMarkersMap[cleanCode] || [])[0];
+        const lngLat = targetMarker ? targetMarker.getLngLat().toArray() : getProjectCentroid(proj);
+        if (lngLat) features = [{ type: 'Feature', geometry: { type: 'Point', coordinates: lngLat } }];
     }
+    const bounds = CatlecMapGL.boundsOfFeatures(features);
+    if (!bounds) return;
 
+    // Zoom hardcodeado para "Estaciones de Transbordo para Transantiago": sus
+    // estaciones se dispersan por 22 comunas de Santiago, lo que hace que el
+    // zoom adaptativo por defecto quede demasiado alejado (valor en zoom Leaflet).
+    const zoomOptions = { duration: 1.2 };
+    if (cleanCode === '050_ETTT1') {
+        zoomOptions.maxZoomOverride = 12.5;
+    }
     // El vuelo se inicia tras el repintado, para que el render del panel de
     // detalle no se coma los primeros cuadros de la animación.
-    const zoomTarget = matchedLayers.length > 0 ? matchedLayers : targetLatLng;
-    if (zoomTarget) {
-        // Zoom hardcodeado para "Estaciones de Transbordo para Transantiago": sus
-        // estaciones se dispersan por 22 comunas de Santiago, lo que hace que el
-        // zoom adaptativo por defecto quede demasiado alejado.
-        const zoomOptions = { duration: 1.2 };
-        if (cleanCode === '050_ETTT1') {
-            zoomOptions.maxZoomOverride = 12.5;
-        }
-        CatlecUtils.afterNextPaint(() => CatlecUtils.zoomToProject(leafletMap, zoomTarget, zoomOptions));
-        leafletMap.closePopup();
-    }
+    CatlecUtils.afterNextPaint(() => CatlecMapGL.flyToBounds(leafletMap, bounds, zoomOptions));
 }

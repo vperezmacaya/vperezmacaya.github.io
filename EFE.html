@@ -9,21 +9,19 @@
     <link rel="icon" type="image/png" href="logo/favicon.png">
     <link rel="shortcut icon" href="logo/favicon.ico">
 
-    <!-- Leaflet -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- MapLibre GL (mapa WebGL; utilidades comunes en static/js/common/map-gl.js) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css">
+    <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 
     <!-- CATLEC Global Stylesheet & EFE Addon -->
-    <link rel="stylesheet" href="static/css/styles.css?v=20260924_11">
-    <link rel="stylesheet" href="static/css/efe_addons.css?v=20260924_2">
+    <link rel="stylesheet" href="static/css/styles.css?v=20260924_gl3">
+    <link rel="stylesheet" href="static/css/efe_addons.css?v=20260924_gl4">
 
     <!-- SheetJS for Client-Side Excel Export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <!-- Static Data -->
-    <script src="static/data/efe_data.js?v=20260924_1"></script>
+    <script src="static/data/efe_data.js?v=20260924_2"></script>
     <script src="static/data/efe_geo.js?v=20260919_2325"></script>
 </head>
 
@@ -75,7 +73,7 @@
 
         <!-- Main Content -->
         <main class="dashboard-content">
-            <div class="efe-dashboard-grid">
+            <div class="efe-dashboard-grid catlec-resizable-grid">
 
                 <!-- Left Panel: Search & Filters + Analytics Charts -->
                 <section class="left-panel">
@@ -261,6 +259,11 @@
                     </button>
                 </section>
 
+                <!-- Separador arrastrable mapa ↔ tabla (CatlecPanelResizer) -->
+                <div class="catlec-panel-resizer" id="efe-panel-resizer" role="separator"
+                    aria-orientation="vertical" aria-label="Redimensionar tabla" tabindex="0"
+                    title="Arrastrar para ajustar el ancho de la tabla · Doble clic para restablecer"></div>
+
                 <!-- Right Panel: KPIs & Projects Table / Details -->
                 <section class="right-panel results-panel">
                     <!-- Top View Mode Switcher: Proyectos vs Servicios Actuales (Arriba de los KPI) -->
@@ -366,10 +369,10 @@
                                 <table class="data-table" style="table-layout: fixed; width: 100%;">
                                     <thead>
                                         <tr>
-                                            <th style="width: 38%;">Servicio</th>
-                                            <th style="width: 36%;">Cabeceras / Trazado</th>
-                                            <th style="width: 14%; text-align: right;">Longitud</th>
-                                            <th style="width: 12%; text-align: center;">Estaciones</th>
+                                            <th style="width: 37%;">Servicio</th>
+                                            <th style="width: 32%;">Cabeceras / Trazado</th>
+                                            <th style="width: 15%; text-align: right;">Longitud</th>
+                                            <th style="width: 16%; text-align: center;">Estaciones</th>
                                         </tr>
                                     </thead>
                                 </table>
@@ -750,18 +753,20 @@
 
     <!-- EFE App Logic -->
     <script src="static/js/common/tooltip.js?v=20260919_2325"></script>
-    <script src="static/js/common/utils.js?v=20260924_8"></script>
+    <script src="static/js/common/utils.js?v=20260924_gl1"></script>
+    <script src="static/js/common/map-gl.js?v=20260924_4"></script>
     <script src="static/js/common/kpi-animate.js?v=20260924_2"></script>
     <script src="static/js/common/table-fade.js?v=20260924_1"></script>
+    <script src="static/js/common/panel-resizer.js?v=20260924_gl2"></script>
     <script src="static/js/common/timeline.js?v=20260920_1"></script>
     <script src="static/js/EFE/state.js?v=20260919_2325"></script>
     <script src="static/js/EFE/charts.js?v=20260924_1"></script>
-    <script src="static/js/EFE/investment.js?v=20260924_1"></script>
-    <script src="static/js/EFE/timeline.js?v=20260924_1"></script>
-    <script src="static/js/EFE/operacion.js?v=20260919_2325"></script>
-    <script src="static/js/EFE/map.js?v=20260924_1"></script>
+    <script src="static/js/EFE/investment.js?v=20260924_gl1"></script>
+    <script src="static/js/EFE/timeline.js?v=20260924_gl1"></script>
+    <script src="static/js/EFE/operacion.js?v=20260924_gl1"></script>
+    <script src="static/js/EFE/map.js?v=20260924_gl2"></script>
     <script src="static/js/EFE/filters.js?v=20260924_1"></script>
-    <script src="static/js/EFE/ui.js?v=20260924_2"></script>
+    <script src="static/js/EFE/ui.js?v=20260924_3"></script>
 
     <!-- Nav Menu & View Switcher Logic -->
     <script src="static/js/common/nav-menu.js?v=20260924_5"></script>

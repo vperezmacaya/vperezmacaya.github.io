@@ -608,6 +608,64 @@ h6 {
     overflow: hidden;
 }
 
+/* ─── Separador arrastrable mapa ↔ tabla (CatlecPanelResizer) ──────────────
+   Compartido por DGC, EFE y Metro (static/js/common/panel-resizer.js).
+   Cada módulo define su grid-template-columns en su addon con la última
+   columna = var(--catlec-table-width, <ancho por defecto>). El separador es
+   absoluto sobre el área de la última columna y ocupa exactamente el gap entre
+   el mapa y la tabla: no agrega columnas a la grilla. */
+.catlec-resizable-grid {
+    position: relative;
+}
+
+.catlec-panel-resizer {
+    position: absolute;
+    grid-column: -2 / -1;
+    grid-row: 1;
+    top: 0;
+    bottom: 0;
+    left: -0.5rem;
+    width: 0.5rem;
+    cursor: col-resize;
+    z-index: 5;
+    touch-action: none;
+    outline: none;
+}
+
+.catlec-panel-resizer::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 3px;
+    height: 36px;
+    border-radius: 3px;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.14);
+    transition: background-color var(--transition-fast), height var(--transition-fast);
+}
+
+.catlec-panel-resizer:hover::after,
+.catlec-panel-resizer:focus-visible::after,
+.catlec-panel-resizer.dragging::after {
+    background: var(--primary);
+    height: 56px;
+}
+
+.catlec-panel-resizer[hidden] {
+    display: none;
+}
+
+body.catlec-resizing {
+    cursor: col-resize;
+    user-select: none;
+}
+
+body.catlec-resizing .map-panel,
+body.catlec-resizing .right-panel {
+    pointer-events: none;
+}
+
 /* KPI Compact 2x2 Grid */
 .kpi-grid {
     display: grid;
@@ -1083,6 +1141,131 @@ h6 {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 
+/* ─── Leyenda de mapas MapLibre (DGC, EFE, Metro) ───────────────────────────
+   Control de CatlecMapGL.addLegendControl (abajo a la izquierda). La cabecera
+   es un botón que repliega el cuerpo: el recuadro anima su ancho y alto
+   (.is-animating, tamaños fijados por JS) y el cuerpo se desvanece. */
+.catlec-map-legend {
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: var(--radius-sm);
+    padding: 0.45rem 0.65rem;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    color: #1e293b;
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    /* Anula el margen por defecto de .maplibregl-ctrl-bottom-left .maplibregl-ctrl */
+    margin: 0 0 0.8rem 0.8rem !important;
+    pointer-events: auto;
+}
+
+.catlec-map-legend.is-animating {
+    overflow: hidden;
+    transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1), height 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.catlec-map-legend-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
+    margin: 0 0 0.1rem;
+    padding: 0 0 0.2rem;
+    border: none;
+    border-bottom: 1px solid #e2e8f0;
+    background: none;
+    font: inherit;
+    color: #64748b;
+    cursor: pointer;
+    text-align: left;
+    /* Sin transición de padding/margin: el JS mide el tamaño final al instante */
+    transition: color var(--transition-fast), border-color 0.28s ease;
+}
+
+.catlec-map-legend-header:hover {
+    color: var(--primary);
+}
+
+.catlec-map-legend-header:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: 3px;
+}
+
+.catlec-map-legend-title {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+}
+
+.catlec-map-legend-chevron {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.catlec-map-legend-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+/* Replegada: solo la cabecera, sin separador */
+.catlec-map-legend.collapsed .catlec-map-legend-header {
+    border-bottom-color: transparent;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+.catlec-map-legend.collapsed .catlec-map-legend-chevron {
+    transform: rotate(180deg);
+}
+
+.catlec-map-legend.collapsed .catlec-map-legend-body {
+    display: none;
+}
+
+/* Durante la animación el cuerpo sigue visible (lo recorta el recuadro) */
+.catlec-map-legend.is-animating .catlec-map-legend-body {
+    display: flex;
+    animation: catlec-legend-body-in 0.24s ease 0.04s both;
+}
+
+.catlec-map-legend.is-animating.collapsed .catlec-map-legend-body {
+    animation: catlec-legend-body-out 0.18s ease both;
+}
+
+@keyframes catlec-legend-body-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes catlec-legend-body-out {
+    from { opacity: 1; transform: none; }
+    to { opacity: 0; transform: translateY(4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .catlec-map-legend.is-animating,
+    .catlec-map-legend-header,
+    .catlec-map-legend-chevron {
+        transition: none;
+    }
+    .catlec-map-legend.is-animating .catlec-map-legend-body {
+        animation: none;
+    }
+}
+
 /* Custom UI Buttons */
 .btn-reset {
     background-color: var(--bg-card);
@@ -1322,6 +1505,7 @@ h6 {
     color: var(--text-secondary);
     font-size: 0.85rem;
     line-height: 1.6;
+    text-align: justify;
 }
 
 /* Foto del proyecto en la vista de detalle (compartida por EFE y DGC) */
@@ -1872,7 +2056,8 @@ footer {
 
 /* Créditos del mapa contraíbles tras un botón "i" (CatlecUtils.enableCollapsibleAttribution).
    El recorte anima su max-width entre el ancho medido del texto (--catlec-attr-w) y 0. */
-.leaflet-container .leaflet-control-attribution.catlec-attribution {
+.leaflet-container .leaflet-control-attribution.catlec-attribution,
+.maplibregl-map .maplibregl-ctrl.catlec-attribution {
     display: flex;
     align-items: center;
     margin: 0 8px 8px 0;
@@ -1911,8 +2096,20 @@ footer {
     transition-delay: 0s;
 }
 
-.leaflet-container .catlec-attribution a {
+.leaflet-container .catlec-attribution a,
+.maplibregl-map .catlec-attribution a {
     color: var(--primary);
+}
+
+/* Enlaces de créditos en MapLibre: igual que el estilo base de Leaflet
+   (sin subrayado, subrayado al pasar el mouse) */
+.maplibregl-map .catlec-attribution a {
+    text-decoration: none;
+}
+
+.maplibregl-map .catlec-attribution a:hover,
+.maplibregl-map .catlec-attribution a:focus {
+    text-decoration: underline;
 }
 
 .catlec-attribution-toggle {
@@ -1947,16 +2144,6 @@ footer {
 .catlec-attribution-toggle:focus-visible {
     outline: 2px solid var(--border-color-focus);
     outline-offset: 1px;
-}
-
-/* Desvanecido de vectores durante zooms grandes (CatlecUtils.enableSmoothZoom) */
-.catlec-zoom-fade {
-    transition: opacity 0.18s ease;
-}
-
-.catlec-map-zooming .catlec-zoom-fade {
-    opacity: 0;
-    transition-duration: 0.12s;
 }
 
 .leaflet-bar a,
@@ -2019,6 +2206,44 @@ footer {
 
 .leaflet-bar a {
     background-color: #ffffff !important;
+}
+
+/* ─── Mapas MapLibre GL (CatlecMapGL, static/js/common/map-gl.js) ─────────── */
+.maplibregl-map {
+    background: var(--bg-sidebar);
+    font-family: var(--font-sans);
+}
+
+/* Los íconos HTML (z-index hasta 10000) quedan contenidos en el lienzo y nunca
+   tapan la leyenda, el zoom ni los créditos */
+.maplibregl-canvas-container {
+    isolation: isolate;
+}
+
+/* Control de zoom con el mismo aspecto que tenía el de Leaflet */
+.maplibregl-ctrl-group {
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-main) !important;
+}
+
+.maplibregl-ctrl-group button + button {
+    border-top: 1px solid var(--border-color);
+}
+
+/* Tooltip flotante del mapa: CatlecMapGL lo posiciona; el aspecto lo da
+   .catlec-map-tooltip (u otra clase de tooltip del módulo) */
+.catlec-gl-tooltip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 11000;
+    display: none;
+}
+
+/* Ícono de proyecto como marcador HTML de MapLibre (EFE y Metro: 26 px) */
+.catlec-gl-marker {
+    width: 26px;
+    height: 26px;
 }
 
 /* Centroid marker styling for small polygons and project icons */

@@ -49,9 +49,9 @@ function hideTimelineView(skipRestoreCenter) {
     if (typeof setActiveSubheaderTab === 'function' && !appState.investmentOpen && !appState.contractsOpen && !appState.biddersOpen) setActiveSubheaderTab('map');
 
     if (typeof leafletMap !== 'undefined' && leafletMap) {
-        leafletMap.invalidateSize({ animate: false });
+        leafletMap.resize();
         if (!skipRestoreCenter && appState.savedMapCenter) {
-            leafletMap.setView(appState.savedMapCenter, appState.savedMapZoom || 6, { animate: false });
+            leafletMap.jumpTo({ center: appState.savedMapCenter, zoom: appState.savedMapZoom || 5 });
         }
     }
 }

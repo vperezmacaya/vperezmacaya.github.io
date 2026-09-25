@@ -215,21 +215,21 @@ function efeRenderOperatingLinesTable(linesToRender) {
         }
 
         tr.innerHTML = `
-            <td style="width: 38%; padding: 0.48rem 0.45rem;">
+            <td style="width: 37%; padding: 0.48rem 0.45rem;">
                 <div style="display: flex; align-items: center; gap: 0.4rem;">
                     <span style="display:inline-flex; width: 8px; height: 8px; border-radius: 50%; background: ${lineColor}; flex-shrink: 0; box-shadow: 0 0 0 2px rgba(0,0,0,0.08);"></span>
                     <div style="font-weight: 600; font-size: 0.76rem; color: var(--text-primary); line-height: 1.2;">${l.service}</div>
                 </div>
                 <div style="font-size: 0.65rem; color: var(--text-secondary); margin-top: 2px; padding-left: 0.9rem;">${l.filial}</div>
             </td>
-            <td style="width: 36%; padding: 0.48rem 0.45rem;">
+            <td style="width: 32%; padding: 0.48rem 0.45rem;">
                 <div style="font-weight: 600; font-size: 0.74rem; color: var(--text-primary);">${l.terminals || '—'}</div>
                 <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 2px;">${l.operational_classification || '—'}</div>
             </td>
-            <td style="width: 14%; text-align: right; padding: 0.48rem 0.45rem;">
+            <td style="width: 15%; text-align: right; padding: 0.48rem 0.45rem;">
                 <span style="font-weight: 700; font-size: 0.78rem; color: var(--primary); font-variant-numeric: tabular-nums;">${l.length_km ? l.length_km.toFixed(1) : '—'} km</span>
             </td>
-            <td style="width: 12%; text-align: center; padding: 0.48rem 0.45rem;">
+            <td style="width: 16%; text-align: center; padding: 0.48rem 0.45rem;">
                 <span style="font-weight: 700; font-size: 0.76rem; color: var(--text-primary); font-variant-numeric: tabular-nums;">${l.stations || 0}</span>
                 <span style="font-size: 0.66rem; color: var(--text-muted); margin-left: 2px;">est.</span>
             </td>
@@ -489,6 +489,15 @@ function efeUpdatePagination(page, totalPages, totalFiltered) {
 // ─── DOMContentLoaded ────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     efeInitDOMReferences();
+
+    // Separador mapa ↔ tabla. 520px: ancho mínimo en que se ven completos todos
+    // los encabezados de Proyectos y de Servicios Actuales (medido)
+    CatlecPanelResizer.init({
+        resizer: '#efe-panel-resizer',
+        minWidth: 520,
+        storageKey: 'catlec.efe.tableWidth',
+        getMap: () => efeMap
+    });
     if (typeof efeLoadFilters === 'function') efeLoadFilters();
     if (typeof efeInitLinesFilters === 'function') efeInitLinesFilters();
     if (typeof efeInitLeafletMap === 'function') efeInitLeafletMap();

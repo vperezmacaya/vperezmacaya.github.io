@@ -53,14 +53,14 @@ function hideContractsView() {
     }
 
     if (typeof leafletMap !== 'undefined' && leafletMap) {
-        leafletMap.invalidateSize({ animate: false });
+        leafletMap.resize();
         if (appState.savedMapCenter) {
-            leafletMap.setView(appState.savedMapCenter, appState.savedMapZoom || 6, { animate: false });
+            leafletMap.jumpTo({ center: appState.savedMapCenter, zoom: appState.savedMapZoom || 5 });
         }
         setTimeout(() => {
-            leafletMap.invalidateSize({ animate: false });
+            leafletMap.resize();
             if (appState.savedMapCenter) {
-                leafletMap.setView(appState.savedMapCenter, appState.savedMapZoom || 6, { animate: false });
+                leafletMap.jumpTo({ center: appState.savedMapCenter, zoom: appState.savedMapZoom || 5 });
             }
         }, 0);
     }

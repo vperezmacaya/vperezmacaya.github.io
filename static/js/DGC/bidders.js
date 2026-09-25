@@ -48,9 +48,9 @@ function hideBiddersView(skipRestoreCenter) {
     }
 
     if (typeof leafletMap !== 'undefined' && leafletMap) {
-        leafletMap.invalidateSize({ animate: false });
+        leafletMap.resize();
         if (!skipRestoreCenter && appState.savedMapCenter) {
-            leafletMap.setView(appState.savedMapCenter, appState.savedMapZoom || 6, { animate: false });
+            leafletMap.jumpTo({ center: appState.savedMapCenter, zoom: appState.savedMapZoom || 5 });
         }
     }
 }
@@ -741,7 +741,7 @@ function viewConcessionFromModal(code) {
     closeCompanyDetailsModal();
     hideBiddersView(true);
     if (typeof leafletMap !== 'undefined' && leafletMap) {
-        leafletMap.invalidateSize({ animate: false });
+        leafletMap.resize();
     }
     if (typeof zoomToProjectCode === 'function') {
         zoomToProjectCode(code);

@@ -72,7 +72,7 @@ function hideMetroComunasView() {
     const btnMap = document.getElementById('btn-metro-view-map');
     const btnComunas = document.getElementById('btn-metro-view-comunas');
 
-    if (grid) grid.style.gridTemplateColumns = '1fr 640px';
+    if (grid) grid.style.gridTemplateColumns = '';
     if (centerPanel) centerPanel.style.display = 'flex';
     if (rightPanel) rightPanel.style.display = 'flex';
     if (comunasPanel) comunasPanel.style.display = 'none';
@@ -85,7 +85,7 @@ function hideMetroComunasView() {
     }
 
     if (metroMap) {
-        setTimeout(() => metroMap.invalidateSize(), 50);
+        setTimeout(() => metroMap.resize(), 50);
     }
 }
 
@@ -891,9 +891,7 @@ function metroZoomToComuna(comunaName) {
     }
 
     if (!metroMap) return;
-    if (typeof metroMap.invalidateSize === 'function') {
-        metroMap.invalidateSize({ animate: false });
-    }
+    metroMap.resize();
 
     if (!metroComunasLayer) return;
 
@@ -926,7 +924,7 @@ function metroZoomToComuna(comunaName) {
     });
 
     if (targetLayer) {
-        CatlecUtils.zoomToProject(metroMap, targetLayer, {
+        CatlecMapGL.flyToBounds(metroMap, targetLayer.getBounds(), {
             duration: 0.8
         });
         // Resaltar la comuna seleccionada

@@ -93,17 +93,16 @@ if (typeof window !== 'undefined') window.METRO_PROJECT_COLOR = METRO_PROJECT_CO
 var METRO_SUBWAY_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/><path d="M4 10h16"/><path d="M10 4v16"/><path d="m8 20-2 2"/><path d="m16 20 2 2"/><circle cx="8" cy="15" r="0.8" fill="#ffffff"/><circle cx="16" cy="15" r="0.8" fill="#ffffff"/></svg>`;
 if (typeof window !== 'undefined') window.METRO_SUBWAY_SVG = METRO_SUBWAY_SVG;
 
-// Variables globales de capas Leaflet
+// Variables globales del mapa (MapLibre GL). Las capas temáticas son "grupos
+// de estilo" (metroCreateStyleGroup en Metro/map.js)
 var metroMap = null;
-var metroTileLayer = null;
 var metroExistingLinesLayer = null;
 var metroExistingStationsLayer = null;
 var metroFuturoStationsLayer = null;
 var metroExpansionLayer = null;
-var metroShapeGeometries = {};   // cod (string) -> array de capas Leaflet
+var metroShapeGeometries = {};   // cod (string) -> array de features del grupo de trazados
 var metroProjectMarkers = [];
 var metroClusterOriginMarkers = [];
-var metroClusterLegLayers = [];
 var metroShapeToProjects = {};   // cod -> [proj, ...]
 var metroShowProjects = true;
 var metroShowExistingLines = true;

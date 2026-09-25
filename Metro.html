@@ -9,16 +9,14 @@
     <link rel="icon" type="image/png" href="logo/favicon.png">
     <link rel="shortcut icon" href="logo/favicon.ico">
 
-    <!-- Leaflet -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- MapLibre GL (mapa WebGL; utilidades comunes en static/js/common/map-gl.js) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css">
+    <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 
     <!-- CATLEC Global Stylesheet & Metro Addon -->
-    <link rel="stylesheet" href="static/css/styles.css?v=20260924_11">
-    <link rel="stylesheet" href="static/css/efe_addons.css?v=20260924_2">
-    <link rel="stylesheet" href="static/css/metro_addons.css?v=20260924_1">
+    <link rel="stylesheet" href="static/css/styles.css?v=20260924_gl3">
+    <link rel="stylesheet" href="static/css/efe_addons.css?v=20260924_gl4">
+    <link rel="stylesheet" href="static/css/metro_addons.css?v=20260924_gl2">
 
     <!-- SheetJS for Client-Side Excel Export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -76,7 +74,7 @@
 
         <!-- Main Content -->
         <main class="dashboard-content">
-            <div class="efe-dashboard-grid" id="metro-dashboard-grid" style="grid-template-columns: 1fr 640px;">
+            <div class="efe-dashboard-grid catlec-resizable-grid" id="metro-dashboard-grid">
 
                 <!-- Center Panel: Map -->
                 <section class="center-panel map-panel" style="position: relative;">
@@ -89,6 +87,11 @@
                         Restablecer Mapa
                     </button>
                 </section>
+
+                <!-- Separador arrastrable mapa ↔ tabla (CatlecPanelResizer) -->
+                <div class="catlec-panel-resizer" id="metro-panel-resizer" role="separator"
+                    aria-orientation="vertical" aria-label="Redimensionar tabla" tabindex="0"
+                    title="Arrastrar para ajustar el ancho de la tabla · Doble clic para restablecer"></div>
 
                 <!-- Right Panel: KPIs & Projects Table / Details -->
                 <section class="right-panel results-panel">
@@ -814,17 +817,19 @@
 
     <!-- Metro App Modules -->
     <script src="static/js/common/tooltip.js?v=20260917_1"></script>
-    <script src="static/js/common/utils.js?v=20260924_8"></script>
+    <script src="static/js/common/utils.js?v=20260924_gl1"></script>
+    <script src="static/js/common/map-gl.js?v=20260924_4"></script>
     <script src="static/js/common/kpi-animate.js?v=20260924_2"></script>
     <script src="static/js/common/table-fade.js?v=20260924_1"></script>
+    <script src="static/js/common/panel-resizer.js?v=20260924_gl2"></script>
     <script src="static/js/common/timeline.js?v=20260920_1"></script>
-    <script src="static/js/Metro/state.js?v=20260922_0001"></script>
-    <script src="static/js/Metro/timeline.js?v=20260924_1"></script>
-    <script src="static/js/Metro/comunas.js?v=20260924_1"></script>
-    <script src="static/js/Metro/demanda.js?v=20260924_1"></script>
-    <script src="static/js/Metro/map.js?v=20260924_1"></script>
+    <script src="static/js/Metro/state.js?v=20260924_gl1"></script>
+    <script src="static/js/Metro/timeline.js?v=20260924_gl1"></script>
+    <script src="static/js/Metro/comunas.js?v=20260924_gl1"></script>
+    <script src="static/js/Metro/demanda.js?v=20260924_gl1"></script>
+    <script src="static/js/Metro/map.js?v=20260924_gl1"></script>
     <script src="static/js/Metro/filters.js?v=20260905_1750"></script>
-    <script src="static/js/Metro/ui.js?v=20260924_3"></script>
+    <script src="static/js/Metro/ui.js?v=20260924_gl1"></script>
 
     <!-- Nav Menu & View Switcher Script -->
     <script src="static/js/common/nav-menu.js?v=20260924_5"></script>

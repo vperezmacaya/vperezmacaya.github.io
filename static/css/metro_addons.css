@@ -4,6 +4,14 @@
    mantiene solo lo verdaderamente compartido entre EFE y Metro, más lo
    exclusivo de EFE). */
 
+/* ─── Dashboard Layout ────────────────────────────────────────────────────── */
+/* Metro no tiene panel izquierdo: mapa + tabla. La tabla es ajustable con el
+   separador (common/panel-resizer.js → --catlec-table-width). El ID gana a la
+   grilla de 3 columnas de .efe-dashboard-grid, también bajo 1200px. */
+#metro-dashboard-grid {
+    grid-template-columns: minmax(0, 1fr) var(--catlec-table-width, 640px);
+}
+
 /* ─── Metro Comuna Name Tooltip & Click Popup ────────────────────────────── */
 .metro-comuna-name-tooltip {
     background: #1e293b !important;
@@ -18,16 +26,10 @@
     pointer-events: none !important;
 }
 
-.metro-comuna-popup .leaflet-popup-content-wrapper {
-    background: #ffffff !important;
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 8px !important;
-    padding: 0.2rem !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
-}
-.metro-comuna-popup .leaflet-popup-content {
-    margin: 8px 10px !important;
-    line-height: 1.4 !important;
+/* Tooltip de comunas en el mapa MapLibre: una sola línea, ancho del nombre */
+.catlec-gl-tooltip.metro-comuna-name-tooltip {
+    white-space: nowrap;
+    width: max-content;
 }
 
 /* ─── Metro Map Markers ──────────────────────────────────────────────────── */

@@ -112,6 +112,7 @@ window.CatlecUtils = {
 
     // Calcula el punto ubicado al 50% de la distancia recorrida a lo largo de
     // una o varias polilíneas Leaflet (acepta una sola capa o un arreglo).
+    // Solo mapas Leaflet (SECTRA); en MapLibre usar CatlecMapGL.lineMidpoint.
     getLineMidpoint(layerOrLayers) {
         const layers = Array.isArray(layerOrLayers) ? layerOrLayers : [layerOrLayers];
         if (!layers.length || !layers[0]) return null;
@@ -646,7 +647,8 @@ window.CatlecUtils = {
     },
 
     // Función global y estandarizada para hacer zoom fluido y adaptativo a un
-    // proyecto, línea, comuna o conjunto de geometrías en cualquier mapa Leaflet de CATLEC.
+    // proyecto, línea, comuna o conjunto de geometrías en un mapa Leaflet (SECTRA).
+    // En los mapas MapLibre usar CatlecMapGL.flyToBounds (mismos umbrales).
     zoomToProject(map, target, options = {}) {
         if (!map) return false;
 
@@ -734,51 +736,6 @@ window.CatlecUtils = {
         return false;
     },
 
-    // Crea un control de leyenda flotante de Leaflet (bottomleft) a partir de un
-    // bloque de HTML ya armado por el módulo llamante. Encapsula la plomería común
-    // a EFE y Metro: creación del control, inserción del div, bloqueo de
-    // propagación de clicks/scroll hacia el mapa, y devuelve el div ya montado
-    // para que el módulo enganche sus propios checkboxes vía `onMount`.
-    createLegendControl(map, { className = 'efe-map-legend', html, onMount } = {}) {
-        if (!map || !html) return null;
-
-        const legend = L.control({ position: 'bottomleft' });
-
-        legend.onAdd = function () {
-            const div = L.DomUtil.create('div', className);
-            div.innerHTML = html;
-
-            L.DomEvent.disableClickPropagation(div);
-            L.DomEvent.disableScrollPropagation(div);
-
-            if (typeof onMount === 'function') onMount(div);
-
-            return div;
-        };
-
-        legend.addTo(map);
-        return legend;
-    },
-
-    // Inicializa un mapa Leaflet con la capa base CartoDB Light que usan todos
-    // los dashboards CATLEC (misma URL, API key y atribución). `options` son las
-    // opciones propias de L.map de cada módulo (minZoom, zoomDelta, etc.); si se
-    // pasa `center`, se aplica un setView inicial. Devuelve { map, tileLayer }.
-    createBaseMap(elId, { center, zoom, options = {} } = {}) {
-        const map = L.map(elId, Object.assign({ zoomControl: true, zoomSnap: 0.5 }, options));
-        if (center) map.setView(center, zoom);
-
-        const tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=cb1_2j8c_1_dacb4df364cf092be679e47d', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            subdomains: 'abcd',
-            maxZoom: 20
-        }).addTo(map);
-
-        this.enableCollapsibleAttribution(map);
-
-        return { map, tileLayer };
-    },
-
     // Alterna entre dos vistas contenedoras (tabla ↔ ficha de detalle) con un
     // fundido cruzado + desplazamiento horizontal (ver .catlec-view-* en
     // styles.css). `direction: 'forward'` (ir al detalle) hace que `hideEl`
@@ -841,129 +798,10 @@ window.CatlecUtils = {
 
     // Ejecuta `fn` después del próximo repintado (doble requestAnimationFrame).
     // Útil para iniciar un flyTo recién cuando el navegador terminó de pintar el
-    // trabajo pesado previo (tablas, paneles), ya que la animación de Leaflet se
+    // trabajo pesado previo (tablas, paneles), ya que la animación del mapa se
     // mide por tiempo y "salta" si sus primeros cuadros quedan bloqueados.
     afterNextPaint(fn) {
         requestAnimationFrame(() => requestAnimationFrame(fn));
-    },
-
-    // Cierra todos los tooltips abiertos de un mapa Leaflet usando su API (los
-    // tooltips abiertos son capas del mapa). No vaciar el tooltipPane a mano:
-    // Leaflet seguiría creyéndolos abiertos y no volvería a mostrarlos.
-    closeAllMapTooltips(map) {
-        if (!map) return;
-        const pane = map.getPane('tooltipPane');
-        if (pane && pane.childElementCount === 0) return;
-        const open = [];
-        map.eachLayer(l => { if (l instanceof L.Tooltip) open.push(l); });
-        open.forEach(t => map.closeTooltip(t));
-    },
-
-    // Suaviza las transiciones de zoom de un mapa Leaflet (opt-in por mapa):
-    // 1. Durante la animación Leaflet no redibuja los vectores: escala con CSS
-    //    la capa SVG completa, por lo que en un flyTo de varios niveles las
-    //    shapes crecen hasta cubrir el mapa. Si el zoom cambia más de
-    //    `threshold` niveles, los panes `fadePanes` se desvanecen y reaparecen
-    //    ya redibujados al terminar (clases .catlec-zoom-fade /
-    //    .catlec-map-zooming en styles.css). Zooms cortos de rueda no parpadean.
-    // 2. Ningún tooltip se muestra mientras el mapa se mueve por un arrastre
-    //    (incluida la inercia), aunque el arrastre empiece sobre un ícono o
-    //    shape. Al terminar, el tooltip solo reaparece con el siguiente
-    //    movimiento del mouse y si el cursor sigue sobre su capa. Esto también
-    //    evita el tooltip "pegado" de Leaflet, que abre al soltar el tooltip de
-    //    una capa sobrevolada durante el arrastre aunque el cursor ya no esté
-    //    encima (y como nunca llega un mouseout, queda fijo en pantalla).
-    //    El tooltip abierto también se cierra al iniciar un zoom.
-    enableSmoothZoom(map, { threshold = 1, fadePanes = ['overlayPane'] } = {}) {
-        if (!map) return;
-        const container = map.getContainer();
-        fadePanes.forEach(name => {
-            const pane = map.getPane(name);
-            if (pane) pane.classList.add('catlec-zoom-fade');
-        });
-
-        let startZoom = null;
-        const fadeIfFar = (zoom) => {
-            if (startZoom !== null && Math.abs(zoom - startZoom) > threshold) {
-                container.classList.add('catlec-map-zooming');
-            }
-        };
-
-        let openTooltip = null;
-        const closeOpenTooltip = () => {
-            if (openTooltip) map.closeTooltip(openTooltip);
-        };
-
-        map.on('zoomstart', () => {
-            startZoom = map.getZoom();
-            closeOpenTooltip();
-        });
-        map.on('zoomanim', (e) => fadeIfFar(e.zoom));
-        map.on('zoom', () => fadeIfFar(map.getZoom()));
-        map.on('zoomend', () => {
-            startZoom = null;
-            container.classList.remove('catlec-map-zooming');
-        });
-
-        // Bloqueo de tooltips desde 'dragstart' hasta el 'moveend' que cierra el
-        // arrastre (tras la inercia). Leaflet abre sus tooltips diferidos dentro
-        // de ese 'moveend', por eso el bloqueo se libera en el tick siguiente.
-        // `pendingSource` recuerda la capa cuyo tooltip se bloqueó, para
-        // reabrirlo en el próximo mousemove si el cursor sigue sobre ella.
-        let dragBlocking = false;
-        let dragEnded = false;
-        let releaseTimer = null;
-        let pendingSource = null;
-        const isHovered = (layer) => {
-            const el = layer && typeof layer.getElement === 'function' ? layer.getElement() : null;
-            return !!(el && el.matches(':hover'));
-        };
-        const releaseDragBlock = () => {
-            clearTimeout(releaseTimer);
-            dragBlocking = false;
-            dragEnded = false;
-        };
-
-        map.on('dragstart', () => {
-            clearTimeout(releaseTimer);
-            dragBlocking = true;
-            dragEnded = false;
-            if (openTooltip) {
-                pendingSource = openTooltip._source || null;
-                map.closeTooltip(openTooltip);
-            }
-        });
-        map.on('dragend', () => {
-            dragEnded = true;
-            // Respaldo por si el 'moveend' final no llegara: nunca dejar los
-            // tooltips bloqueados indefinidamente.
-            releaseTimer = setTimeout(releaseDragBlock, 2000);
-        });
-        map.on('moveend', () => {
-            if (dragBlocking && dragEnded) setTimeout(releaseDragBlock, 0);
-        });
-        map.on('mousemove', (e) => {
-            if (dragBlocking || !pendingSource) return;
-            const source = pendingSource;
-            pendingSource = null;
-            if (isHovered(source) && typeof source.openTooltip === 'function') {
-                source.openTooltip(e.latlng);
-            }
-        });
-
-        map.on('tooltipopen', (e) => {
-            if (dragBlocking) {
-                // Se cierra en una microtarea (antes del repintado, así que
-                // nunca llega a verse) para no interrumpir el onAdd de Leaflet.
-                pendingSource = e.tooltip._source || null;
-                queueMicrotask(() => map.closeTooltip(e.tooltip));
-                return;
-            }
-            openTooltip = e.tooltip;
-        });
-        map.on('tooltipclose', (e) => {
-            if (openTooltip === e.tooltip) openTooltip = null;
-        });
     },
 
     // Convierte el control de atribución de Leaflet en un botón "i" que
@@ -974,7 +812,8 @@ window.CatlecUtils = {
     // `autoCollapseMs` de estar visible en pantalla. El conteo empieza recién
     // cuando el mapa es visible (IntersectionObserver), porque varios mapas se
     // crean dentro de pestañas ocultas. Después, solo el botón los abre/cierra.
-    // createBaseMap lo aplica automáticamente.
+    // Lo usa SECTRA (Leaflet); los mapas MapLibre usan el equivalente
+    // CatlecMapGL.addCollapsibleAttribution, con el mismo marcado y estilos.
     enableCollapsibleAttribution(map, { autoCollapseMs = 6000 } = {}) {
         const ctrl = map && map.attributionControl;
         const container = ctrl && ctrl.getContainer();

@@ -20,7 +20,9 @@
 /* ─── Dashboard Layout ────────────────────────────────────────────────────── */
 .efe-dashboard-grid {
     display: grid;
-    grid-template-columns: 280px 1fr 520px;
+    /* Última columna = ancho de la tabla, ajustable con el separador
+       (common/panel-resizer.js → --catlec-table-width) */
+    grid-template-columns: 280px minmax(0, 1fr) var(--catlec-table-width, 520px);
     gap: 0.5rem;
     flex: 1;
     min-height: 0;
@@ -30,7 +32,8 @@
 }
 @media (max-width: 1200px) {
     .efe-dashboard-grid {
-        grid-template-columns: 260px 1fr 440px;
+        /* 520px: mínimo en que se ven todas las columnas de la tabla */
+        grid-template-columns: 260px minmax(0, 1fr) var(--catlec-table-width, 520px);
     }
 }
 
@@ -49,18 +52,7 @@
     z-index: 1;
 }
 
-/* Map Legend Overlay */
-.efe-legend-title {
-    font-size: 0.68rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #64748b;
-    border-bottom: 1px solid #e2e8f0;
-    padding-bottom: 0.2rem;
-    margin-bottom: 0.1rem;
-}
-
+/* Map Legend Overlay (contenedor, título y repliegue: .catlec-map-legend en styles.css) */
 .efe-legend-item {
     display: flex;
     align-items: center;
@@ -122,24 +114,6 @@
     flex-shrink: 0;
 }
 
-/* ─── Map Legend (Bottom-Left) ────────────────────────────────────────────── */
-.efe-map-legend {
-    background: rgba(255, 255, 255, 0.95) !important;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(0, 0, 0, 0.1) !important;
-    border-radius: var(--radius-sm) !important;
-    padding: 0.45rem 0.65rem !important;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08) !important;
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-    color: #1e293b !important;
-    font-family: var(--font-sans);
-    margin-bottom: 0.8rem !important;
-    margin-left: 0.8rem !important;
-    pointer-events: auto;
-}
 
 /* ─── Leaflet Map Tooltips (Estándar Oficial EFE / CATLEC) ─────────────────── */
 .catlec-map-tooltip,
@@ -191,28 +165,6 @@
     overflow-wrap: break-word !important;
     line-height: 1.25 !important;
     margin: 0 !important;
-}
-
-/* Sincronización de flechas indicadoras de Leaflet */
-.leaflet-tooltip-top.catlec-map-tooltip::before,
-.leaflet-tooltip-top.efe-map-tooltip::before,
-.leaflet-tooltip-top.efe-tooltip::before {
-    border-top-color: #1e293b !important;
-}
-.leaflet-tooltip-bottom.catlec-map-tooltip::before,
-.leaflet-tooltip-bottom.efe-map-tooltip::before,
-.leaflet-tooltip-bottom.efe-tooltip::before {
-    border-bottom-color: #1e293b !important;
-}
-.leaflet-tooltip-left.catlec-map-tooltip::before,
-.leaflet-tooltip-left.efe-map-tooltip::before,
-.leaflet-tooltip-left.efe-tooltip::before {
-    border-left-color: #1e293b !important;
-}
-.leaflet-tooltip-right.catlec-map-tooltip::before,
-.leaflet-tooltip-right.efe-map-tooltip::before,
-.leaflet-tooltip-right.efe-tooltip::before {
-    border-right-color: #1e293b !important;
 }
 
 /* Nota: .metro-comuna-name-tooltip / .metro-comuna-popup (exclusivos de Metro)
@@ -312,27 +264,30 @@
     z-index: 9000 !important;
 }
 
-/* ─── Remove default browser focus outline box on Leaflet SVG shapes ──────── */
-.leaflet-container path,
-.leaflet-container svg,
-.leaflet-interactive,
-path.leaflet-interactive {
-    outline: none !important;
-    -webkit-tap-highlight-color: transparent !important;
-}
-.leaflet-container path:focus,
-.leaflet-container path:focus-visible,
-.leaflet-container path:active,
-.leaflet-interactive:focus,
-.leaflet-interactive:focus-visible,
-.leaflet-interactive:active {
-    outline: none !important;
-    box-shadow: none !important;
-}
-
 /* =============================================================
    TIMELINE PANEL — overrides removidos a modo de prueba (2026): EFE usa ahora
    los valores "globales" de styles.css para el panel/eje/tooltip del timeline.
    Los parámetros de .timeline-tooltip de EFE (padding, max-width, line-height)
    se portaron a la clase global en styles.css.
    ============================================================= */
+
+/* ─── Clusters desplegados en MapLibre (EFE y Metro) ─────────────────────── */
+/* Punto de origen de un cluster desplegado; las patas se dibujan en un SVG
+   centrado en el punto, en píxeles, así que no dependen del zoom */
+.catlec-gl-cluster-origin {
+    position: relative;
+    width: 8px;
+    height: 8px;
+}
+
+.catlec-gl-cluster-origin svg {
+    position: absolute;
+    left: 4px;
+    top: 4px;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.catlec-gl-cluster-origin .cluster-origin-dot {
+    position: relative;
+}

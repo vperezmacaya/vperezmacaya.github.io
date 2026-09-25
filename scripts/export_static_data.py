@@ -708,7 +708,10 @@ try:
     efe_lines = []
     service_master = {}
     try:
-        df_lines = read_excel_flexible_header(EFE_EXCEL_PATH, 'Líneas Operativas', ['servicio'], header_candidates=(2, 1, 0, 3))
+        # Keywords que solo aparecen en la fila de encabezados: 'servicio' a secas
+        # también aparece en los datos (ej. "Servicio urbano" en Clasificación
+        # Operacional) y hacía tomar una fila de datos como encabezado.
+        df_lines = read_excel_flexible_header(EFE_EXCEL_PATH, 'Líneas Operativas', ['id servicio', 'longitud'], header_candidates=(2, 1, 0, 3))
         col_srv_id = next((c for c in df_lines.columns if 'id' in str(c).lower() and 'serv' in str(c).lower()), None)
         if not col_srv_id:
             col_srv_id = next((c for c in df_lines.columns if 'id' in str(c).lower()), 'ID Servicio')

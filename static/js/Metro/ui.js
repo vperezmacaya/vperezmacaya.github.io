@@ -364,9 +364,10 @@ function metroOnClickOperatingLine(lineName) {
         if (metroMap && typeof metroFindOperatingLayers === 'function') {
             const layers = metroFindOperatingLayers(lineName);
             if (layers && layers.length > 0) {
-                const group = L.featureGroup(layers);
-                if (group.getBounds && group.getBounds().isValid()) {
-                    metroMap.fitBounds(group.getBounds(), { padding: [50, 50], maxZoom: 13.5, animate: true });
+                // maxZoom 13.5 (zoom Leaflet) → MapLibre, ver CatlecMapGL.ZOOM_OFFSET
+                const bounds = CatlecMapGL.boundsOfFeatures(layers.map(l => l.feature));
+                if (bounds) {
+                    metroMap.fitBounds(bounds, { padding: 50, maxZoom: 13.5 - CatlecMapGL.ZOOM_OFFSET, duration: 450 });
                 }
             }
         }
@@ -1047,6 +1048,15 @@ function metroInitDOMReferences() {
 // ─── Inicialización al cargar el DOM ──────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     metroInitDOMReferences();
+
+    // Separador mapa ↔ tabla. 590px: ancho mínimo en que se ven completos todos
+    // los encabezados de Proyectos, Líneas Actuales y Comunas (medido)
+    CatlecPanelResizer.init({
+        resizer: '#metro-panel-resizer',
+        minWidth: 590,
+        storageKey: 'catlec.metro.tableWidth',
+        getMap: () => metroMap
+    });
     metroUpdateDynamicLabels();
     if (typeof metroInitTableSorting === 'function') metroInitTableSorting();
 

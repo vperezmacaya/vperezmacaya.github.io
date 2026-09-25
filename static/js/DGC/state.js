@@ -55,20 +55,13 @@ let availableSectorsList = [
 ];
 let availableStatusesList = ['Construcción', 'Construcción y Operación', 'En Licitación', 'Finalizado', 'Operación'];
 
-// Leaflet Map state and layers
+// Map state (MapLibre GL; `leafletMap` conserva su nombre heredado)
 let leafletMap = null;
-let tileLayer = null;
 let activeMapCodes = new Set();
 let projectMetadata = {};
 let shapeToProjectCodes = {};    // shape COD -> Set of project codes
-let shapeGeometries = {};        // shape COD -> array of GeoJSON layer objects
-let projectMarkersMap = {};      // project code -> Leaflet marker instance
-let activeClusterMarkers = [];   // array of active cluster markers
-let activeSpiderLegs = [];       // array of spider leg connector lines
-let spiderfiedClusterGroupKey = null; // key of currently expanded cluster group
-let layers = {
-    dgc: null
-};
+let shapeGeometries = {};        // shape COD -> array of GeoJSON features
+let projectMarkersMap = {};      // project code -> array of MapLibre markers
 
 
 // Colors configurations for premium aesthetic

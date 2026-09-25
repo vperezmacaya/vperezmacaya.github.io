@@ -100,15 +100,15 @@ function hideEfeInvestmentView(skipRestoreCenter) {
     }
 
     if (typeof efeMap !== 'undefined' && efeMap) {
-        efeMap.invalidateSize({ animate: false });
+        efeMap.resize();
         if (!skipRestoreCenter && efeState.savedMapCenter) {
-            efeMap.setView(efeState.savedMapCenter, efeState.savedMapZoom || 5, { animate: false });
+            efeMap.jumpTo({ center: efeState.savedMapCenter, zoom: efeState.savedMapZoom || 4 });
         }
         setTimeout(() => {
             if (typeof efeMap !== 'undefined' && efeMap) {
-                efeMap.invalidateSize({ animate: false });
+                efeMap.resize();
                 if (!skipRestoreCenter && efeState.savedMapCenter) {
-                    efeMap.setView(efeState.savedMapCenter, efeState.savedMapZoom || 5, { animate: false });
+                    efeMap.jumpTo({ center: efeState.savedMapCenter, zoom: efeState.savedMapZoom || 4 });
                 }
             }
         }, 50);
