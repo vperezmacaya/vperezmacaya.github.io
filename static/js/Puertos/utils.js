@@ -23,6 +23,78 @@ function roundNumber(num, decimals = 2) {
     return Math.round(num * Math.pow(10, decimals)) / Math.pow(10, decimals);
 }
 
+const MESES_CORTOS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+// ── Ejes estándar (catlec-bar-chart) ──────────────────────────────────────
+const AXIS_TICKS = { color: COLORS.textPrimary, font: { size: 10, weight: '600' } };
+
+function axisTitle(text, color = COLORS.textPrimary) {
+    return { display: true, text, color, font: { size: 9.5, weight: '600' } };
+}
+
+// ── Helpers de datos ──────────────────────────────────────────────────────
+function getUltimoRegistro() {
+    const agg = window.PUERTOS_DATA && window.PUERTOS_DATA.annual_aggregates;
+    return agg && agg.length ? agg[agg.length - 1] : null;
+}
+
+// Devuelve { anio: [12 valores | null] } a partir de una serie mensual
+function groupSeriesByYear(serie, campo) {
+    const out = {};
+    (serie || []).forEach(r => {
+        if (!out[r.anio]) out[r.anio] = new Array(12).fill(null);
+        out[r.anio][r.mes - 1] = r[campo];
+    });
+    return out;
+}
+
+function movingAverage(values, n) {
+    return values.map((_, i) => {
+        if (i < n - 1) return null;
+        let sum = 0;
+        for (let j = i - n + 1; j <= i; j++) sum += values[j];
+        return sum / n;
+    });
+}
+
+// Suma los meses 1..hastaMes de un año en una serie mensual
+function sumSerieHastaMes(serie, anio, hastaMes, campo) {
+    return (serie || [])
+        .filter(r => r.anio === anio && r.mes <= hastaMes)
+        .reduce((s, r) => s + (Number(r[campo]) || 0), 0);
+}
+
+function hexToRgba(hex, alpha) {
+    const h = hex.replace('#', '');
+    const r = parseInt(h.substring(0, 2), 16);
+    const g = parseInt(h.substring(2, 4), 16);
+    const b = parseInt(h.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function lerpColor(hexA, hexB, t) {
+    const a = hexA.replace('#', '');
+    const b = hexB.replace('#', '');
+    const ch = (i) => Math.round(parseInt(a.substring(i, i + 2), 16) + (parseInt(b.substring(i, i + 2), 16) - parseInt(a.substring(i, i + 2), 16)) * t);
+    return `rgb(${ch(0)}, ${ch(2)}, ${ch(4)})`;
+}
+
+// Escala del mapa de calor: espuma → océano → azul marino
+function heatColor(t) {
+    return t < 0.55
+        ? lerpColor(COLORS.foam, COLORS.ocean, t / 0.55)
+        : lerpColor(COLORS.ocean, COLORS.navy, (t - 0.55) / 0.45);
+}
+
+// Rellena los textos dinámicos de año de las cabeceras ([data-ultimo-anio], etc.)
+function fillYearTags() {
+    const ult = getUltimoRegistro();
+    if (!ult) return;
+    const parcial = ult.meses_registrados < 12 ? ` · ${MESES_CORTOS[0]}–${MESES_CORTOS[ult.meses_registrados - 1]}` : '';
+    document.querySelectorAll('[data-ultimo-anio]').forEach(el => { el.textContent = `${ult.anio}${parcial}`; });
+    document.querySelectorAll('[data-anio-anterior]').forEach(el => { el.textContent = ult.anio - 1; });
+}
+
 // ── Destrucción segura de gráficos ────────────────────────────────────────
 function destroyChart(key) {
     if (chartInstances[key]) {

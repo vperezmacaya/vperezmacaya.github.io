@@ -10,33 +10,36 @@ if (typeof Chart !== 'undefined' && Chart.defaults) {
 // Instancias de Gráficos
 const chartInstances = {};
 
-// Paleta oficial CATLEC
+// Paleta marina/naval propia de Puertos (sus valores se repiten en .puertos-c-* de puertos_addons.css)
 const COLORS = {
-    primary: '#6366f1',
-    primaryAlpha: 'rgba(99, 102, 241, 0.82)',
-    sky: '#0284c7',
-    skyAlpha: 'rgba(2, 132, 199, 0.82)',
-    amber: '#f59e0b',
-    amberAlpha: 'rgba(245, 158, 11, 0.85)',
-    emerald: '#10b981',
-    emeraldAlpha: 'rgba(16, 185, 129, 0.85)',
-    purple: '#8b5cf6',
-    purpleAlpha: 'rgba(139, 92, 246, 0.82)',
-    rose: '#f43f5e',
-    roseAlpha: 'rgba(244, 63, 94, 0.82)',
-    slate: '#64748b',
-    slateAlpha: 'rgba(100, 116, 139, 0.82)',
-    cyan: '#06b6d4',
-    cyanAlpha: 'rgba(6, 182, 212, 0.82)',
+    navy: '#1d3557',
+    navyAlpha: 'rgba(29, 53, 87, 0.85)',
+    ocean: '#3a7ca5',
+    oceanAlpha: 'rgba(58, 124, 165, 0.82)',
+    teal: '#2a9d8f',
+    tealAlpha: 'rgba(42, 157, 143, 0.85)',
+    sand: '#d9a23d',
+    sandAlpha: 'rgba(217, 162, 61, 0.85)',
+    coral: '#e76f51',
+    coralAlpha: 'rgba(231, 111, 81, 0.85)',
+    buoy: '#c1121f',
+    buoyAlpha: 'rgba(193, 18, 31, 0.8)',
+    steel: '#5c7185',
+    steelAlpha: 'rgba(92, 113, 133, 0.82)',
+    lagoon: '#4ea8c7',
+    lagoonAlpha: 'rgba(78, 168, 199, 0.82)',
+    foam: '#e8f1f7',
     grid: '#e2e8f0',
     textPrimary: '#1e293b',
     textSecondary: '#64748b'
 };
 
 // ── Tooltip externo negro compartido para todos los gráficos de Puertos ───
-// (réplica exacta del estándar investmentExternalTooltip de index.html)
+// (réplica exacta del estándar investmentExternalTooltip de DGC.html)
 const puertosExternalTooltip = CatlecTooltip.create({ domId: 'puertos-shared-tooltip' });
 
 window.puertosCloseAllTooltips = function () {
     CatlecTooltip.hide('puertos-shared-tooltip');
+    const heatTip = document.getElementById('puertos-heatmap-tooltip');
+    if (heatTip) heatTip.style.display = 'none';
 };

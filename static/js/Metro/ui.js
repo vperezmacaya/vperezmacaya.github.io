@@ -804,7 +804,7 @@ function metroShowProjectDetailView(proj) {
         : (proj.benefited_population || '—');
 
     detailBody.innerHTML = `
-        <!-- Cabecera del Proyecto (Estilo index.html) -->
+        <!-- Cabecera del Proyecto (Estilo DGC.html) -->
         <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.1rem;">
             <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem;">
                 <h3 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--text-primary); line-height: 1.35; font-family: var(--font-heading); flex: 1; min-width: 0;">${proj.name}</h3>

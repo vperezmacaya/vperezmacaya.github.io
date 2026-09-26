@@ -10,8 +10,8 @@
     <link rel="shortcut icon" href="logo/favicon.ico">
 
     <!-- CATLEC Global Stylesheet -->
-    <link rel="stylesheet" href="static/css/styles.css?v=20260924_11">
-    <link rel="stylesheet" href="static/css/puertos_addons.css">
+    <link rel="stylesheet" href="static/css/styles.css?v=20260925_land1">
+    <link rel="stylesheet" href="static/css/puertos_addons.css?v=20260925_2">
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
@@ -32,7 +32,9 @@
         <!-- ═══════════════════════════════ HEADER ═══════════════════════════════ -->
         <header class="top-navbar">
             <div class="top-navbar-left">
-                <img src="logo/cropped-Logo-CATLEC-horizontal-sin-fondo-1.png" alt="Logo CATLEC" class="top-navbar-logo">
+                <a href="index.html" class="top-navbar-home" title="Volver al inicio del Observatorio CATLEC">
+                    <img src="logo/cropped-Logo-CATLEC-horizontal-sin-fondo-1.png" alt="Logo CATLEC" class="top-navbar-logo">
+                </a>
                 <span class="top-navbar-title">Visor de datos - Puertos (Región del Biobío)</span>
                 <span class="top-navbar-divider"></span>
                 <span class="top-navbar-proto">Prototipo en desarrollo</span>
@@ -84,9 +86,8 @@
                     <div class="card-kpi">
                         <div class="kpi-icon"><i data-lucide="boxes"></i></div>
                         <div class="kpi-val-container">
-                            <span class="kpi-label">Carga Total Histórica</span>
+                            <span class="kpi-label" id="kpi-total-carga-label">Carga Total Último Año</span>
                             <span class="kpi-value" id="kpi-total-carga" style="font-size: 0.95rem;">-</span>
-                            <span class="kpi-subtext">Total movilizado (2019-2026)</span>
                         </div>
                     </div>
                     <div class="card-kpi">
@@ -100,7 +101,7 @@
                     <div class="card-kpi">
                         <div class="kpi-icon"><i data-lucide="arrow-up-right"></i></div>
                         <div class="kpi-val-container">
-                            <span class="kpi-label">Embarque Exterior</span>
+                            <span class="kpi-label" id="kpi-embarque-exterior-label">Embarque Exterior</span>
                             <span class="kpi-value" id="kpi-embarque-exterior" style="font-size: 0.95rem;">-</span>
                             <span class="kpi-subtext">Carga exportada</span>
                         </div>
@@ -108,7 +109,7 @@
                     <div class="card-kpi">
                         <div class="kpi-icon"><i data-lucide="arrow-down-left"></i></div>
                         <div class="kpi-val-container">
-                            <span class="kpi-label">Desembarque Exterior</span>
+                            <span class="kpi-label" id="kpi-desembarque-exterior-label">Desembarque Exterior</span>
                             <span class="kpi-value" id="kpi-desembarque-exterior" style="font-size: 0.95rem;">-</span>
                             <span class="kpi-subtext">Carga importada</span>
                         </div>
@@ -116,62 +117,46 @@
                     <div class="card-kpi">
                         <div class="kpi-icon"><i data-lucide="shuffle"></i></div>
                         <div class="kpi-val-container">
-                            <span class="kpi-label">Cabotaje y Tránsito</span>
+                            <span class="kpi-label" id="kpi-cabotaje-transito-label">Cabotaje y Tránsito</span>
                             <span class="kpi-value" id="kpi-cabotaje-transito" style="font-size: 0.95rem;">-</span>
                             <span class="kpi-subtext">Fletes reg./internacionales</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Grilla 2x2 -->
-                <div class="puertos-charts-grid">
-                    <!-- Gráfico 1: Combo Carga vs Variación -->
-                    <div class="puertos-chart-card">
+                <!-- Layout "Tendencia": serie mensual ancha + 2 columnas -->
+                <div class="puertos-charts-grid puertos-layout-resumen">
+                    <!-- A: Área mensual con promedio móvil -->
+                    <div class="puertos-chart-card puertos-span-full">
                         <div class="puertos-chart-header">
                             <h3 class="puertos-chart-title">
-                                <i data-lucide="bar-chart-2" style="width: 13px; height: 13px; color: #0284c7;"></i>
-                                Carga Total Movilizada vs Variación Interanual
+                                <i data-lucide="trending-up" class="puertos-title-icon puertos-c-ocean"></i>
+                                Carga Total Mensual Movilizada
                             </h3>
-                            <div style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.63rem; flex-shrink: 0;">
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #0284c7; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #0284c7; display: inline-block;"></span>
-                                    Carga (MM Ton)
-                                </span>
+                            <div class="puertos-legend">
+                                <span class="puertos-legend-item puertos-c-ocean"><span class="puertos-legend-dot"></span>Carga mensual (MM Ton)</span>
+                                <span class="puertos-legend-item puertos-c-sand"><span class="puertos-legend-dot puertos-legend-dot--dashed"></span>Promedio móvil 12 meses</span>
+                                <span class="puertos-chart-badge" id="puertos-carga-periodo"></span>
                             </div>
                         </div>
                         <div class="puertos-chart-body">
-                            <canvas id="chart-carga-evolucion"></canvas>
+                            <canvas id="chart-carga-mensual"></canvas>
                         </div>
                     </div>
 
-                    <!-- Gráfico 2: Flujos Apilados -->
+                    <!-- B: Barras apiladas por flujo -->
                     <div class="puertos-chart-card">
                         <div class="puertos-chart-header">
                             <h3 class="puertos-chart-title">
-                                <i data-lucide="layers" style="width: 13px; height: 13px; color: #6366f1;"></i>
-                                Distribución Anual por Tipo de Flujo Portuario
+                                <i data-lucide="layers" class="puertos-title-icon puertos-c-navy"></i>
+                                Carga Anual por Tipo de Flujo Portuario
                             </h3>
-                            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.63rem; flex-shrink: 0;">
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #0284c7; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #0284c7; display: inline-block;"></span>
-                                    Embarcada
-                                </span>
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #6366f1; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #6366f1; display: inline-block;"></span>
-                                    Desembarcada
-                                </span>
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #10b981; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #10b981; display: inline-block;"></span>
-                                    Cabotaje
-                                </span>
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #f59e0b; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #f59e0b; display: inline-block;"></span>
-                                    Re-estibas
-                                </span>
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #8b5cf6; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #8b5cf6; display: inline-block;"></span>
-                                    Tránsito
-                                </span>
+                            <div class="puertos-legend">
+                                <span class="puertos-legend-item puertos-c-ocean"><span class="puertos-legend-dot"></span>Embarcada</span>
+                                <span class="puertos-legend-item puertos-c-navy"><span class="puertos-legend-dot"></span>Desembarcada</span>
+                                <span class="puertos-legend-item puertos-c-teal"><span class="puertos-legend-dot"></span>Cabotaje</span>
+                                <span class="puertos-legend-item puertos-c-sand"><span class="puertos-legend-dot"></span>Re-estibas</span>
+                                <span class="puertos-legend-item puertos-c-coral"><span class="puertos-legend-dot"></span>Tránsito</span>
                             </div>
                         </div>
                         <div class="puertos-chart-body">
@@ -179,31 +164,17 @@
                         </div>
                     </div>
 
-                    <!-- Gráfico 3: Doughnut Operación -->
+                    <!-- C: Perfil estacional último año vs promedio -->
                     <div class="puertos-chart-card">
                         <div class="puertos-chart-header">
                             <h3 class="puertos-chart-title">
-                                <i data-lucide="pie-chart" style="width: 13px; height: 13px; color: #8b5cf6;"></i>
-                                Participación por Tipo de Operación Portuaria (%)
+                                <i data-lucide="activity" class="puertos-title-icon puertos-c-lagoon"></i>
+                                Perfil Estacional de Carga
                             </h3>
-                            <span style="font-size: 0.62rem; color: var(--text-secondary);">Consolidado Histórico</span>
-                        </div>
-                        <div class="puertos-pie-container">
-                            <div class="puertos-pie-canvas-wrap">
-                                <canvas id="chart-carga-operacion-pie"></canvas>
+                            <div class="puertos-legend">
+                                <span class="puertos-legend-item puertos-c-ocean"><span class="puertos-legend-dot puertos-legend-dot--line"></span><span id="leg-estac-ultimo"></span></span>
+                                <span class="puertos-legend-item puertos-c-steel"><span class="puertos-legend-dot puertos-legend-dot--dashed"></span><span id="leg-estac-prom"></span></span>
                             </div>
-                            <div class="puertos-pie-legend" id="chart-carga-operacion-pieLegend"></div>
-                        </div>
-                    </div>
-
-                    <!-- Gráfico 4: Estacionalidad Mensual -->
-                    <div class="puertos-chart-card">
-                        <div class="puertos-chart-header">
-                            <h3 class="puertos-chart-title">
-                                <i data-lucide="activity" style="width: 13px; height: 13px; color: #06b6d4;"></i>
-                                Ciclo y Estacionalidad Mensual Promedio
-                            </h3>
-                            <span style="font-size: 0.62rem; color: var(--text-secondary);">Promedio 2019 - 2025</span>
                         </div>
                         <div class="puertos-chart-body">
                             <canvas id="chart-carga-estacionalidad"></canvas>
@@ -219,9 +190,8 @@
                     <div class="card-kpi">
                         <div class="kpi-icon"><i data-lucide="package"></i></div>
                         <div class="kpi-val-container">
-                            <span class="kpi-label">Total TEUs Históricos</span>
+                            <span class="kpi-label" id="kpi-total-teus-label">Total TEUs</span>
                             <span class="kpi-value" id="kpi-total-teus" style="font-size: 0.95rem;">-</span>
-                            <span class="kpi-subtext">Total movilizado (2019-2026)</span>
                         </div>
                     </div>
                     <div class="card-kpi">
@@ -235,17 +205,15 @@
                     <div class="card-kpi">
                         <div class="kpi-icon"><i data-lucide="box"></i></div>
                         <div class="kpi-val-container">
-                            <span class="kpi-label">Contenedores 40 pies</span>
+                            <span class="kpi-label" id="kpi-c40-unidades-label">Contenedores 40 pies</span>
                             <span class="kpi-value" id="kpi-c40-unidades" style="font-size: 0.95rem;">-</span>
-                            <span class="kpi-subtext">Unidades físicas acumuladas</span>
                         </div>
                     </div>
                     <div class="card-kpi">
                         <div class="kpi-icon"><i data-lucide="box"></i></div>
                         <div class="kpi-val-container">
-                            <span class="kpi-label">Contenedores 20 pies</span>
+                            <span class="kpi-label" id="kpi-c20-unidades-label">Contenedores 20 pies</span>
                             <span class="kpi-value" id="kpi-c20-unidades" style="font-size: 0.95rem;">-</span>
-                            <span class="kpi-subtext">Unidades físicas acumuladas</span>
                         </div>
                     </div>
                     <div class="card-kpi">
@@ -258,99 +226,72 @@
                     </div>
                 </div>
 
-                <!-- Grilla 2x2 -->
-                <div class="puertos-charts-grid">
-                    <!-- Gráfico 1: Combo TEUs vs Variación -->
+                <!-- Layout 42/58: columna alta + columna apilada -->
+                <div class="puertos-charts-grid puertos-layout-contenedores">
+                    <!-- A: TEUs anuales -->
                     <div class="puertos-chart-card">
                         <div class="puertos-chart-header">
                             <h3 class="puertos-chart-title">
-                                <i data-lucide="bar-chart-2" style="width: 13px; height: 13px; color: #6366f1;"></i>
-                                Evolución Anual de TEUs Movilizados vs Variación (%)
+                                <i data-lucide="bar-chart-2" class="puertos-title-icon puertos-c-navy"></i>
+                                Evolución Anual de TEUs Movilizados
                             </h3>
-                            <div style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.63rem; flex-shrink: 0;">
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #6366f1; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #6366f1; display: inline-block;"></span>
-                                    TEUs (Miles)
-                                </span>
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #10b981; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
-                                    Variación (%)
-                                </span>
-                            </div>
                         </div>
                         <div class="puertos-chart-body">
                             <canvas id="chart-teus-evolucion"></canvas>
                         </div>
                     </div>
 
-                    <!-- Gráfico 2: Unidades 20ft vs 40ft -->
-                    <div class="puertos-chart-card">
-                        <div class="puertos-chart-header">
-                            <h3 class="puertos-chart-title">
-                                <i data-lucide="columns" style="width: 13px; height: 13px; color: #0284c7;"></i>
-                                Comparativa Unidades: Contenedores 40 pies vs 20 pies
-                            </h3>
-                            <div style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.63rem; flex-shrink: 0;">
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #0284c7; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #0284c7; display: inline-block;"></span>
-                                    40 pies
-                                </span>
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #f59e0b; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #f59e0b; display: inline-block;"></span>
-                                    20 pies
-                                </span>
+                    <div class="puertos-stack">
+                        <!-- B: Fila compacta de donuts del último año -->
+                        <div class="puertos-pie-row puertos-stack-compact">
+                            <div class="puertos-chart-card">
+                                <div class="puertos-chart-header">
+                                    <h3 class="puertos-chart-title">
+                                        <i data-lucide="pie-chart" class="puertos-title-icon puertos-c-teal"></i>
+                                        Estado de Manejo
+                                    </h3>
+                                    <span class="puertos-chart-badge" data-ultimo-anio></span>
+                                </div>
+                                <div class="puertos-pie-container">
+                                    <div class="puertos-pie-canvas-wrap">
+                                        <canvas id="chart-contenedores-pie"></canvas>
+                                    </div>
+                                    <div class="puertos-pie-legend" id="chart-contenedores-pieLegend"></div>
+                                </div>
+                            </div>
+                            <div class="puertos-chart-card">
+                                <div class="puertos-chart-header">
+                                    <h3 class="puertos-chart-title">
+                                        <i data-lucide="box" class="puertos-title-icon puertos-c-ocean"></i>
+                                        Formato: 40 vs 20 pies
+                                    </h3>
+                                    <span class="puertos-chart-badge" data-ultimo-anio></span>
+                                </div>
+                                <div class="puertos-pie-container">
+                                    <div class="puertos-pie-canvas-wrap">
+                                        <canvas id="chart-contenedores-formato-pie"></canvas>
+                                    </div>
+                                    <div class="puertos-pie-legend" id="chart-contenedores-formato-pieLegend"></div>
+                                </div>
                             </div>
                         </div>
-                        <div class="puertos-chart-body">
-                            <canvas id="chart-contenedores-comparativa"></canvas>
-                        </div>
-                    </div>
 
-                    <!-- Gráfico 3: Estado de Manejo Apilado -->
-                    <div class="puertos-chart-card">
-                        <div class="puertos-chart-header">
-                            <h3 class="puertos-chart-title">
-                                <i data-lucide="layers" style="width: 13px; height: 13px; color: #f59e0b;"></i>
-                                Estado de Manejo de Contenedores por Año
-                            </h3>
-                            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.63rem; flex-shrink: 0;">
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #6366f1; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #6366f1; display: inline-block;"></span>
-                                    Embarcados
-                                </span>
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #0284c7; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #0284c7; display: inline-block;"></span>
-                                    Desembarcados
-                                </span>
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #10b981; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #10b981; display: inline-block;"></span>
-                                    Cabotaje
-                                </span>
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #f59e0b; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #f59e0b; display: inline-block;"></span>
-                                    Re-estibas
-                                </span>
+                        <!-- C: Comparación interanual mensual -->
+                        <div class="puertos-chart-card">
+                            <div class="puertos-chart-header">
+                                <h3 class="puertos-chart-title">
+                                    <i data-lucide="git-compare" class="puertos-title-icon puertos-c-navy"></i>
+                                    TEUs por Mes: Comparación Interanual
+                                </h3>
+                                <div class="puertos-legend">
+                                    <span class="puertos-legend-item puertos-c-navy"><span class="puertos-legend-dot puertos-legend-dot--line"></span><span id="leg-teus-ultimo"></span></span>
+                                    <span class="puertos-legend-item puertos-c-ocean"><span class="puertos-legend-dot puertos-legend-dot--line"></span><span data-anio-anterior></span></span>
+                                    <span class="puertos-legend-item puertos-c-steel"><span class="puertos-legend-dot puertos-legend-dot--line puertos-legend-dot--soft"></span>Años previos</span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="puertos-chart-body">
-                            <canvas id="chart-contenedores-manejo"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Gráfico 4: Doughnut Manejo -->
-                    <div class="puertos-chart-card">
-                        <div class="puertos-chart-header">
-                            <h3 class="puertos-chart-title">
-                                <i data-lucide="pie-chart" style="width: 13px; height: 13px; color: #10b981;"></i>
-                                Participación por Estado de Manejo (%)
-                            </h3>
-                            <span style="font-size: 0.62rem; color: var(--text-secondary);">Total Unidades</span>
-                        </div>
-                        <div class="puertos-pie-container">
-                            <div class="puertos-pie-canvas-wrap">
-                                <canvas id="chart-contenedores-pie"></canvas>
+                            <div class="puertos-chart-body">
+                                <canvas id="chart-teus-interanual"></canvas>
                             </div>
-                            <div class="puertos-pie-legend" id="chart-contenedores-pieLegend"></div>
                         </div>
                     </div>
                 </div>
@@ -359,144 +300,93 @@
             <!-- ── VISTA 3: TIPOLOGÍA DE CARGA ─────────────────────────────────── -->
             <div class="vis-container puertos-view-wrapper" id="vis-container-tipologia" style="display: none;">
                 <!-- Fila de KPIs -->
-                <div class="puertos-kpi-row">
+                <div class="puertos-kpi-row puertos-kpi-row-4">
                     <div class="card-kpi">
                         <div class="kpi-icon"><i data-lucide="package"></i></div>
                         <div class="kpi-val-container">
-                            <span class="kpi-label">Carga en Contenedores</span>
+                            <span class="kpi-label" id="kpi-carga-contenedores-label">Carga en Contenedores</span>
                             <span class="kpi-value" id="kpi-carga-contenedores" style="font-size: 0.95rem;">-</span>
-                            <span class="kpi-subtext">Total embarque + desembarque</span>
                         </div>
                     </div>
                     <div class="card-kpi">
                         <div class="kpi-icon"><i data-lucide="droplet"></i></div>
                         <div class="kpi-val-container">
-                            <span class="kpi-label">Granel Líquido/Gaseoso</span>
+                            <span class="kpi-label" id="kpi-granel-liquido-label">Granel Líquido/Gaseoso</span>
                             <span class="kpi-value" id="kpi-granel-liquido" style="font-size: 0.95rem;">-</span>
-                            <span class="kpi-subtext">Total embarque + desembarque</span>
                         </div>
                     </div>
                     <div class="card-kpi">
                         <div class="kpi-icon"><i data-lucide="mountain"></i></div>
                         <div class="kpi-val-container">
-                            <span class="kpi-label">Granel Sólido</span>
+                            <span class="kpi-label" id="kpi-granel-solido-label">Granel Sólido</span>
                             <span class="kpi-value" id="kpi-granel-solido" style="font-size: 0.95rem;">-</span>
-                            <span class="kpi-subtext">Total embarque + desembarque</span>
                         </div>
                     </div>
                     <div class="card-kpi">
                         <div class="kpi-icon"><i data-lucide="package-open"></i></div>
                         <div class="kpi-val-container">
-                            <span class="kpi-label">Carga Suelta / General</span>
+                            <span class="kpi-label" id="kpi-carga-suelta-label">Carga Suelta / General</span>
                             <span class="kpi-value" id="kpi-carga-suelta" style="font-size: 0.95rem;">-</span>
-                            <span class="kpi-subtext">Total embarque + desembarque</span>
-                        </div>
-                    </div>
-                    <div class="card-kpi">
-                        <div class="kpi-icon"><i data-lucide="clock"></i></div>
-                        <div class="kpi-val-container">
-                            <span class="kpi-label">Período de Datos</span>
-                            <span class="kpi-value" style="font-size: 0.95rem;">2019 - 2026</span>
-                            <span class="kpi-subtext">91 meses registrados</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Grilla 2x2 -->
-                <div class="puertos-charts-grid">
-                    <!-- Gráfico 1: Embarcada por Tipo -->
+                <!-- Layout "Comparativa": 2 arriba + ancho completo abajo -->
+                <div class="puertos-charts-grid puertos-layout-tipologia">
+                    <!-- A: Butterfly embarque vs desembarque -->
                     <div class="puertos-chart-card">
                         <div class="puertos-chart-header">
                             <h3 class="puertos-chart-title">
-                                <i data-lucide="arrow-up-right" style="width: 13px; height: 13px; color: #0284c7;"></i>
-                                Composición de Carga Embarcada al Exterior por Año
+                                <i data-lucide="arrow-left-right" class="puertos-title-icon puertos-c-ocean"></i>
+                                Embarque vs Desembarque por Tipología
                             </h3>
-                            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.63rem; flex-shrink: 0;">
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #6366f1; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #6366f1; display: inline-block;"></span>
-                                    Contenedor
-                                </span>
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #0284c7; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #0284c7; display: inline-block;"></span>
-                                    Suelta
-                                </span>
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #f59e0b; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #f59e0b; display: inline-block;"></span>
-                                    Granel Sólido
-                                </span>
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #10b981; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #10b981; display: inline-block;"></span>
-                                    Granel Líquido
-                                </span>
+                            <div class="puertos-legend">
+                                <span class="puertos-legend-item puertos-c-ocean"><span class="puertos-legend-dot"></span>Embarque exterior</span>
+                                <span class="puertos-legend-item puertos-c-teal"><span class="puertos-legend-dot"></span>Desembarque exterior</span>
+                                <span class="puertos-chart-badge" data-ultimo-anio></span>
                             </div>
                         </div>
                         <div class="puertos-chart-body">
-                            <canvas id="chart-tipologia-embarcada"></canvas>
+                            <canvas id="chart-tipologia-butterfly"></canvas>
                         </div>
                     </div>
 
-                    <!-- Gráfico 2: Desembarcada por Tipo -->
+                    <!-- B: Variación vs año anterior (divergente) -->
                     <div class="puertos-chart-card">
                         <div class="puertos-chart-header">
                             <h3 class="puertos-chart-title">
-                                <i data-lucide="arrow-down-left" style="width: 13px; height: 13px; color: #10b981;"></i>
-                                Composición de Carga Desembarcada del Exterior por Año
+                                <i data-lucide="arrow-up-down" class="puertos-title-icon puertos-c-teal"></i>
+                                Variación vs Año Anterior (%)
                             </h3>
-                            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.63rem; flex-shrink: 0;">
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #10b981; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #10b981; display: inline-block;"></span>
-                                    Granel Líquido
-                                </span>
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #f59e0b; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #f59e0b; display: inline-block;"></span>
-                                    Granel Sólido
-                                </span>
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #6366f1; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #6366f1; display: inline-block;"></span>
-                                    Contenedor
-                                </span>
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #0284c7; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #0284c7; display: inline-block;"></span>
-                                    Suelta
-                                </span>
+                            <div class="puertos-legend">
+                                <span class="puertos-legend-item puertos-c-teal"><span class="puertos-legend-dot"></span>Alza</span>
+                                <span class="puertos-legend-item puertos-c-buoy"><span class="puertos-legend-dot"></span>Baja</span>
+                                <span class="puertos-chart-badge" id="puertos-tipologia-var-periodo"></span>
                             </div>
                         </div>
                         <div class="puertos-chart-body">
-                            <canvas id="chart-tipologia-desembarcada"></canvas>
+                            <canvas id="chart-tipologia-variacion"></canvas>
                         </div>
                     </div>
 
-                    <!-- Gráfico 3: Doughnut Embarcada -->
-                    <div class="puertos-chart-card">
+                    <!-- C: Apiladas agrupadas embarque / desembarque por año -->
+                    <div class="puertos-chart-card puertos-span-full">
                         <div class="puertos-chart-header">
                             <h3 class="puertos-chart-title">
-                                <i data-lucide="pie-chart" style="width: 13px; height: 13px; color: #0284c7;"></i>
-                                Distribución Carga Embarcada al Exterior (%)
+                                <i data-lucide="columns" class="puertos-title-icon puertos-c-navy"></i>
+                                Evolución Anual por Tipología: Embarque y Desembarque
                             </h3>
-                            <span style="font-size: 0.62rem; color: var(--text-secondary);">Consolidado</span>
-                        </div>
-                        <div class="puertos-pie-container">
-                            <div class="puertos-pie-canvas-wrap">
-                                <canvas id="chart-pie-embarcada"></canvas>
+                            <div class="puertos-legend">
+                                <span class="puertos-legend-item puertos-c-navy"><span class="puertos-legend-dot"></span>Contenedores</span>
+                                <span class="puertos-legend-item puertos-c-ocean"><span class="puertos-legend-dot"></span>Suelta</span>
+                                <span class="puertos-legend-item puertos-c-sand"><span class="puertos-legend-dot"></span>Granel sólido</span>
+                                <span class="puertos-legend-item puertos-c-teal"><span class="puertos-legend-dot"></span>Granel líquido</span>
+                                <span class="puertos-legend-item puertos-c-steel"><span class="puertos-legend-dot"></span>Embarque (izq.)</span>
+                                <span class="puertos-legend-item puertos-c-steel"><span class="puertos-legend-dot puertos-legend-dot--soft"></span>Desembarque (der.)</span>
                             </div>
-                            <div class="puertos-pie-legend" id="chart-pie-embarcadaLegend"></div>
                         </div>
-                    </div>
-
-                    <!-- Gráfico 4: Doughnut Desembarcada -->
-                    <div class="puertos-chart-card">
-                        <div class="puertos-chart-header">
-                            <h3 class="puertos-chart-title">
-                                <i data-lucide="pie-chart" style="width: 13px; height: 13px; color: #10b981;"></i>
-                                Distribución Carga Desembarcada del Exterior (%)
-                            </h3>
-                            <span style="font-size: 0.62rem; color: var(--text-secondary);">Consolidado</span>
-                        </div>
-                        <div class="puertos-pie-container">
-                            <div class="puertos-pie-canvas-wrap">
-                                <canvas id="chart-pie-desembarcada"></canvas>
-                            </div>
-                            <div class="puertos-pie-legend" id="chart-pie-desembarcadaLegend"></div>
+                        <div class="puertos-chart-body">
+                            <canvas id="chart-tipologia-evolucion"></canvas>
                         </div>
                     </div>
                 </div>
@@ -509,121 +399,91 @@
                     <div class="card-kpi">
                         <div class="kpi-icon"><i data-lucide="truck"></i></div>
                         <div class="kpi-val-container">
-                            <span class="kpi-label">Pasadas de Camiones</span>
+                            <span class="kpi-label" id="kpi-total-pasadas-peaje-label">Pasadas de Camiones</span>
                             <span class="kpi-value" id="kpi-total-pasadas-peaje" style="font-size: 0.95rem;">-</span>
-                            <span class="kpi-subtext">Total en plazas de peaje</span>
                         </div>
                     </div>
                     <div class="card-kpi">
                         <div class="kpi-icon"><i data-lucide="truck"></i></div>
                         <div class="kpi-val-container">
-                            <span class="kpi-label">Camiones 3 y más ejes</span>
+                            <span class="kpi-label" id="kpi-camiones-3mas-ejes-label">Camiones 3 y más ejes</span>
                             <span class="kpi-value" id="kpi-camiones-3mas-ejes" style="font-size: 0.95rem;">-</span>
-                            <span class="kpi-subtext">Flota de alto tonelaje</span>
                         </div>
                     </div>
                     <div class="card-kpi">
                         <div class="kpi-icon"><i data-lucide="truck"></i></div>
                         <div class="kpi-val-container">
-                            <span class="kpi-label">Camiones de 2 ejes</span>
+                            <span class="kpi-label" id="kpi-camiones-2ejes-label">Camiones de 2 ejes</span>
                             <span class="kpi-value" id="kpi-camiones-2ejes" style="font-size: 0.95rem;">-</span>
-                            <span class="kpi-subtext">Carga liviana / mediana</span>
                         </div>
                     </div>
                     <div class="card-kpi">
                         <div class="kpi-icon"><i data-lucide="refresh-cw"></i></div>
                         <div class="kpi-val-container">
-                            <span class="kpi-label">Re-estibas y Transbordos</span>
+                            <span class="kpi-label" id="kpi-reestibas-transbordos-label">Re-estibas y Transbordos</span>
                             <span class="kpi-value" id="kpi-reestibas-transbordos" style="font-size: 0.95rem;">-</span>
-                            <span class="kpi-subtext">Manipulación en recinto</span>
                         </div>
                     </div>
                     <div class="card-kpi">
                         <div class="kpi-icon"><i data-lucide="globe"></i></div>
                         <div class="kpi-val-container">
-                            <span class="kpi-label">Tránsito Internacional</span>
+                            <span class="kpi-label" id="kpi-transito-internacional-label">Tránsito Internacional</span>
                             <span class="kpi-value" id="kpi-transito-internacional" style="font-size: 0.95rem;">-</span>
-                            <span class="kpi-subtext">Desde/hacia terceros países</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Grilla 2x2 -->
-                <div class="puertos-charts-grid">
-                    <!-- Gráfico 1: Pasadas de Camiones por Peajes -->
+                <!-- Layout "Mapa de calor": heatmap protagonista + columna apilada -->
+                <div class="puertos-charts-grid puertos-layout-terrestre">
+                    <!-- A: Heatmap año × mes -->
                     <div class="puertos-chart-card">
                         <div class="puertos-chart-header">
                             <h3 class="puertos-chart-title">
-                                <i data-lucide="truck" style="width: 13px; height: 13px; color: #6366f1;"></i>
-                                Flujo de Camiones de Carga por Plazas de Peaje
+                                <i data-lucide="grid-3x3" class="puertos-title-icon puertos-c-navy"></i>
+                                Pasadas de Camiones por Año y Mes (miles)
                             </h3>
-                            <div style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.63rem; flex-shrink: 0;">
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #6366f1; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #6366f1; display: inline-block;"></span>
-                                    3 y más ejes
-                                </span>
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #f59e0b; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #f59e0b; display: inline-block;"></span>
-                                    2 ejes
-                                </span>
+                            <div class="puertos-heatmap-scale">
+                                <span id="puertos-heatmap-min"></span>
+                                <span class="puertos-heatmap-scale-bar"></span>
+                                <span id="puertos-heatmap-max"></span>
                             </div>
                         </div>
-                        <div class="puertos-chart-body">
-                            <canvas id="chart-peajes-evolucion"></canvas>
-                        </div>
+                        <div class="puertos-heatmap" id="puertos-heatmap-peajes"></div>
                     </div>
 
-                    <!-- Gráfico 2: Re-estibas vs Transbordos -->
-                    <div class="puertos-chart-card">
-                        <div class="puertos-chart-header">
-                            <h3 class="puertos-chart-title">
-                                <i data-lucide="repeat" style="width: 13px; height: 13px; color: #0284c7;"></i>
-                                Carga por Re-estibas vs Transbordos (Toneladas)
-                            </h3>
-                            <div style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.63rem; flex-shrink: 0;">
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #0284c7; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #0284c7; display: inline-block;"></span>
-                                    Re-estibas
-                                </span>
-                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #8b5cf6; font-weight: 600;">
-                                    <span style="width: 8px; height: 8px; border-radius: 2px; background: #8b5cf6; display: inline-block;"></span>
-                                    Transbordos
-                                </span>
+                    <div class="puertos-stack">
+                        <!-- B: Donut compacto flota por ejes -->
+                        <div class="puertos-chart-card puertos-stack-compact">
+                            <div class="puertos-chart-header">
+                                <h3 class="puertos-chart-title">
+                                    <i data-lucide="pie-chart" class="puertos-title-icon puertos-c-sand"></i>
+                                    Flota de Carga por Ejes
+                                </h3>
+                                <span class="puertos-chart-badge" data-ultimo-anio></span>
+                            </div>
+                            <div class="puertos-pie-container">
+                                <div class="puertos-pie-canvas-wrap">
+                                    <canvas id="chart-peajes-pie"></canvas>
+                                </div>
+                                <div class="puertos-pie-legend" id="chart-peajes-pieLegend"></div>
                             </div>
                         </div>
-                        <div class="puertos-chart-body">
-                            <canvas id="chart-reestibas-transbordos"></canvas>
-                        </div>
-                    </div>
 
-                    <!-- Gráfico 3: Doughnut Peajes -->
-                    <div class="puertos-chart-card">
-                        <div class="puertos-chart-header">
-                            <h3 class="puertos-chart-title">
-                                <i data-lucide="pie-chart" style="width: 13px; height: 13px; color: #f59e0b;"></i>
-                                Distribución de Flota de Carga por Ejes (%)
-                            </h3>
-                            <span style="font-size: 0.62rem; color: var(--text-secondary);">Total Pasadas</span>
-                        </div>
-                        <div class="puertos-pie-container">
-                            <div class="puertos-pie-canvas-wrap">
-                                <canvas id="chart-peajes-pie"></canvas>
+                        <!-- C: Líneas re-estibas vs transbordos -->
+                        <div class="puertos-chart-card">
+                            <div class="puertos-chart-header">
+                                <h3 class="puertos-chart-title">
+                                    <i data-lucide="repeat" class="puertos-title-icon puertos-c-ocean"></i>
+                                    Re-estibas vs Transbordos (miles de Ton)
+                                </h3>
+                                <div class="puertos-legend">
+                                    <span class="puertos-legend-item puertos-c-ocean"><span class="puertos-legend-dot puertos-legend-dot--line"></span>Re-estibas</span>
+                                    <span class="puertos-legend-item puertos-c-coral"><span class="puertos-legend-dot puertos-legend-dot--line"></span>Transbordos</span>
+                                </div>
                             </div>
-                            <div class="puertos-pie-legend" id="chart-peajes-pieLegend"></div>
-                        </div>
-                    </div>
-
-                    <!-- Gráfico 4: Estacionalidad Peajes -->
-                    <div class="puertos-chart-card">
-                        <div class="puertos-chart-header">
-                            <h3 class="puertos-chart-title">
-                                <i data-lucide="activity" style="width: 13px; height: 13px; color: #10b981;"></i>
-                                Estacionalidad Mensual del Transporte de Carga Terrestre
-                            </h3>
-                            <span style="font-size: 0.62rem; color: var(--text-secondary);">Promedio Pasadas / Mes</span>
-                        </div>
-                        <div class="puertos-chart-body">
-                            <canvas id="chart-peajes-estacionalidad"></canvas>
+                            <div class="puertos-chart-body">
+                                <canvas id="chart-reestibas-transbordos"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -662,7 +522,7 @@
                                         <i data-lucide="user-check" style="width: 13px; height: 13px; color: #2563eb;"></i>
                                         Vicente Pérez
                                     </div>
-                                    <span class="about-author-role">Facultad de Ingeniería, Universidad de Concepción</span>
+                                    <span class="about-author-role">Departamento de Ingeniería Industrial, Facultad de Ingeniería, Universidad de Concepción</span>
                                     <div class="about-author-contacts">
                                         <a href="mailto:vicperez2021@udec.cl" class="about-author-contact-item" title="Enviar correo a Vicente Pérez">
                                             <i data-lucide="mail" style="width: 12px; height: 12px; color: #64748b;"></i>
@@ -685,7 +545,7 @@
                                         <i data-lucide="user-check" style="width: 13px; height: 13px; color: #2563eb;"></i>
                                         José Oliveros
                                     </div>
-                                    <span class="about-author-role">Facultad de Ingeniería, Universidad de Concepción</span>
+                                    <span class="about-author-role">Departamento de Ingeniería Industrial, Facultad de Ingeniería, Universidad de Concepción</span>
                                     <div class="about-author-contacts">
                                         <a href="mailto:joseoliveros@udec.cl" class="about-author-contact-item" title="Enviar correo a José Oliveros">
                                             <i data-lucide="mail" style="width: 12px; height: 12px; color: #64748b;"></i>
@@ -718,19 +578,23 @@
 
     </div>
 
+    <!-- Tooltip del mapa de calor (CatlecTimeline.createCursorTooltip) -->
+    <div id="puertos-heatmap-tooltip" class="timeline-tooltip" style="display:none;"></div>
+
     <!-- Scripts -->
     <script src="static/js/common/tooltip.js"></script>
-    <script src="static/js/common/utils.js?v=20260924_8"></script>
+    <script src="static/js/common/utils.js?v=20260925_2"></script>
     <script src="static/js/common/kpi-animate.js?v=20260924_2"></script>
-    <script src="static/js/common/nav-menu.js?v=20260924_5"></script>
+    <script src="static/js/common/nav-menu.js?v=20260925_land1"></script>
+    <script src="static/js/common/timeline.js"></script>
     <script>CatlecNav.render();</script>
-    <script src="static/js/Puertos/state.js"></script>
-    <script src="static/js/Puertos/utils.js"></script>
-    <script src="static/js/Puertos/kpis.js"></script>
-    <script src="static/js/Puertos/resumen.js?v=20260922_0001"></script>
-    <script src="static/js/Puertos/contenedores.js?v=20260922_0001"></script>
-    <script src="static/js/Puertos/tipologia.js"></script>
-    <script src="static/js/Puertos/terrestre.js"></script>
+    <script src="static/js/Puertos/state.js?v=20260925_2"></script>
+    <script src="static/js/Puertos/utils.js?v=20260925_2"></script>
+    <script src="static/js/Puertos/kpis.js?v=20260925_2"></script>
+    <script src="static/js/Puertos/resumen.js?v=20260925_2"></script>
+    <script src="static/js/Puertos/contenedores.js?v=20260925_2"></script>
+    <script src="static/js/Puertos/tipologia.js?v=20260925_2"></script>
+    <script src="static/js/Puertos/terrestre.js?v=20260925_2"></script>
     <script src="static/js/Puertos/export.js"></script>
     <script src="static/js/Puertos/ui.js"></script>
     <!-- Script Controlador del Modal Acerca de -->

@@ -22,11 +22,17 @@ function formatMM(val) {
     return `$${Number(val).toLocaleString('es-CL')}M`;
 }
 
+const MOP_ETAPA_LABELS = { EJECUCION: 'Ejecución', DISEÑO: 'Diseño', PERFIL: 'Perfil', PREFACTIBILIDAD: 'Prefactibilidad', FACTIBILIDAD: 'Factibilidad' };
+
+function mopEtapaLabel(etapa) {
+    return MOP_ETAPA_LABELS[etapa] || etapa || 'Sin etapa';
+}
+
 function shortRegion(name) {
     return CatlecUtils.shortenRegionName(name);
 }
 
-// ── Colores de gráficos idénticos a index.html ─────────────────────────────
+// ── Colores de gráficos idénticos a DGC.html ─────────────────────────────
 function gridColor() { return 'rgba(0,0,0,0.06)'; }
 function labelColor() { return '#374151'; }
 function titleColor() { return '#334155'; }

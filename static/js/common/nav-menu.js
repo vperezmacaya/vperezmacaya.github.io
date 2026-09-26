@@ -14,7 +14,7 @@ window.CatlecNav = (function () {
     const NAV_MODULES = [
         {
             id: 'dgc',
-            file: 'index.html',
+            file: 'DGC.html',
             label: 'Dirección General de Concesiones (DGC)',
             logo: { type: 'img', src: 'logo/Gob_chile_logo.svg' },
             submenu: [
@@ -56,6 +56,7 @@ window.CatlecNav = (function () {
             logo: { type: 'img', src: 'logo/Gob_chile_logo.svg' },
             submenu: [
                 { key: 'resumen', icon: 'layout-dashboard', label: 'Tabla de proyectos', hrefSuffix: '' },
+                { key: 'mapa', icon: 'map', label: 'Mapa regional', hrefSuffix: '#mapa' },
                 { key: 'inversion', icon: 'bar-chart-2', label: 'Análisis de inversión', hrefSuffix: '#inversion' },
                 { key: 'programas', icon: 'layers', label: 'Programas y Etapas', hrefSuffix: '#programas' },
             ],
@@ -97,8 +98,11 @@ window.CatlecNav = (function () {
         },
     ];
 
+    // index.html (y la raíz del sitio) es el landing del Observatorio: no es un
+    // módulo, así que ningún ítem del menú se marca como activo.
     const FILE_TO_ID = {
-        'index.html': 'dgc', '': 'dgc',
+        'index.html': 'landing', '': 'landing',
+        'dgc.html': 'dgc',
         'efe.html': 'efe',
         'metro.html': 'metro',
         'mop.html': 'mop',
@@ -110,7 +114,7 @@ window.CatlecNav = (function () {
     function detectCurrentModuleId() {
         const path = window.location.pathname.toLowerCase();
         const file = path.substring(path.lastIndexOf('/') + 1);
-        return FILE_TO_ID[file] || 'dgc';
+        return FILE_TO_ID[file] || null;
     }
 
     function logoHtml(logo, alt) {
@@ -121,7 +125,10 @@ window.CatlecNav = (function () {
     }
 
     function buildMenuHtml(currentId) {
-        const current = NAV_MODULES.find(m => m.id === currentId) || NAV_MODULES[0];
+        const current = NAV_MODULES.find(m => m.id === currentId) || null;
+        const buttonIcon = current
+            ? logoHtml(current.logo, current.label)
+            : logoHtml({ type: 'lucide', name: 'database' }, 'Bases de datos');
 
         // SECTRA es un módulo independiente y aislado (ver CLAUDE.md): no debe
         // vincularse ni ser accesible desde el menú de ningún otro dashboard,
@@ -157,7 +164,7 @@ window.CatlecNav = (function () {
         }).join('\n');
 
         return `<button class="nav-menu-btn" id="nav-menu-btn" aria-haspopup="true" aria-expanded="false">
-                ${logoHtml(current.logo, current.label)}
+                ${buttonIcon}
                 Seleccionar Base de Datos
                 <i data-lucide="chevron-down" class="nav-menu-chevron" style="width:12px;height:12px;"></i>
             </button>

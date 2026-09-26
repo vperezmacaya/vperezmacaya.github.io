@@ -144,6 +144,9 @@ function metroRenderPoblacionChart() {
     if (wrapper) {
         const targetWidth = Math.max(2250, (list.length + 2) * 52);
         wrapper.style.width = `${targetWidth}px`;
+        // Ancho provisorio del recorte hasta que syncPinnedYAxes() conozca el ancho de los ejes
+        const clip = document.getElementById('metroChartComunasPoblacionClip');
+        if (clip && !clip.style.width) clip.style.width = `${targetWidth}px`;
     }
 
     const textColor = '#334155';
@@ -479,6 +482,26 @@ function updatePinnedAxesShadows() {
     }
 }
 
+// Ubica el contenedor scrollable entre los ejes inmovilizados para que su scrollbar abarque solo
+// el área de trazado. El recorte mide el área de trazado y el canvas se corre bajo él el ancho del
+// eje izquierdo, así sus propios ejes Y quedan ocultos (se ven en los canvas inmovilizados).
+// Solo escribe estilos cuando cambian: se llama en cada afterDraw.
+function layoutPinnedScrollArea(chart, leftCssWidth, rightCssWidth) {
+    const scrollContainer = document.getElementById('metroComunasScrollContainer');
+    const clip = document.getElementById('metroChartComunasPoblacionClip');
+    const wrapper = document.getElementById('metroChartComunasPoblacionWrapper');
+    if (!scrollContainer || !clip || !wrapper) return;
+
+    const setStyle = (el, prop, value) => {
+        if (el.style[prop] !== value) el.style[prop] = value;
+    };
+    const plotWidth = Math.max(0, chart.width - leftCssWidth - rightCssWidth);
+    setStyle(scrollContainer, 'marginLeft', `${leftCssWidth}px`);
+    setStyle(scrollContainer, 'marginRight', `${rightCssWidth}px`);
+    setStyle(clip, 'width', `${plotWidth}px`);
+    setStyle(wrapper, 'left', `${-leftCssWidth}px`);
+}
+
 function syncPinnedYAxes(chart) {
     if (!chart || !chart.ctx || !chart.chartArea) return;
     if (!chart.chartArea.left || chart.chartArea.left <= 0) return;
@@ -498,6 +521,8 @@ function syncPinnedYAxes(chart) {
     const rightCssWidth = Math.ceil(chart.width - chart.chartArea.right);
 
     if (leftCssWidth <= 0 || rightCssWidth <= 0 || clientHeight <= 0) return;
+
+    layoutPinnedScrollArea(chart, leftCssWidth, rightCssWidth);
 
     const plotBottomCss = Math.ceil(chart.chartArea.bottom);
     // El texto del valor 0 ("0 est" y "0.00 est/km²") está verticalmente centrado en chartArea.bottom,
@@ -577,8 +602,47 @@ function attachPinnedAxesWheelHandlers() {
     const rightCanvas = document.getElementById('metroChartPoblacionAxisRight');
     if (!scrollContainer) return;
 
+    // Desplazamiento animado hacia un objetivo acumulado: los pasos seguidos de la rueda
+    // se suman al mismo objetivo en vez de saltar de golpe.
+    let targetLeft = 0;
+    let animFrame = null;
+    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    const animateScroll = () => {
+        const current = scrollContainer.scrollLeft;
+        const diff = targetLeft - current;
+        if (Math.abs(diff) < 0.5) {
+            scrollContainer.scrollLeft = targetLeft;
+            animFrame = null;
+            return;
+        }
+        scrollContainer.scrollLeft = current + diff * 0.2;
+        animFrame = requestAnimationFrame(animateScroll);
+    };
+
+    const smoothScrollBy = (delta) => {
+        const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+        if (animFrame === null) targetLeft = scrollContainer.scrollLeft;
+        targetLeft = Math.max(0, Math.min(maxScroll, targetLeft + delta));
+        if (reduceMotion && reduceMotion.matches) {
+            scrollContainer.scrollLeft = targetLeft;
+            return;
+        }
+        if (animFrame === null) animFrame = requestAnimationFrame(animateScroll);
+    };
+
     const onWheel = (e) => {
-        let delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+        const isHorizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY);
+        // Scroll horizontal nativo (touchpad, Shift+rueda) sobre el contenedor: lo resuelve el navegador
+        if (isHorizontal && e.currentTarget === scrollContainer) {
+            if (animFrame !== null) {
+                cancelAnimationFrame(animFrame);
+                animFrame = null;
+            }
+            return;
+        }
+
+        let delta = isHorizontal ? e.deltaX : e.deltaY;
         if (e.deltaMode === 1) {
             delta *= 33; // Normalización para eventos por línea (Firefox en Windows)
         } else if (e.deltaMode === 2) {
@@ -586,11 +650,9 @@ function attachPinnedAxesWheelHandlers() {
         }
 
         if (delta !== 0) {
-            scrollContainer.scrollLeft += delta;
-            updatePinnedAxesShadows();
-            const tip = document.getElementById('metro-chart-external-tooltip');
-            if (tip) tip.style.opacity = '0';
             e.preventDefault();
+            // Sombras y ocultado del tooltip los maneja el listener 'scroll'
+            smoothScrollBy(delta);
         }
     };
 

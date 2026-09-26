@@ -1,6 +1,6 @@
 // ─── static/js/Metro/timeline.js ──────────────────────────────────────────────
 // Visualización de Líneas de Tiempo (Gantt) para proyectos del Metro de Santiago.
-// Diseño y estructura interactiva idéntica a la línea de tiempo de Concesiones (index.html).
+// Diseño y estructura interactiva idéntica a la línea de tiempo de Concesiones (DGC.html).
 
 const METRO_TL_AXIS_H = 36;      // px for year axis
 const METRO_TL_LABEL_W = 240;    // px for label column
@@ -806,7 +806,7 @@ function renderMetroTimeline(projects, highlightId = null) {
     }
 }
 
-// ── Tooltip interactivo flotante idéntico a index.html ───────────────────────
+// ── Tooltip interactivo flotante idéntico a DGC.html ───────────────────────
 function showMetroTimelineTooltip(e, p, sch, stageInfo) {
     const info = stageInfo || getMetroStageInfo(p);
     const color = info.color;

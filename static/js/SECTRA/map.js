@@ -54,7 +54,7 @@ function initSectraMap() {
         zoomSnap: 0.5
     });
     
-    // Tile layer CartoDB Light Positron (Exactamente igual a index.html)
+    // Tile layer CartoDB Light Positron (Exactamente igual a DGC.html)
     sectraTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=cb1_2j8c_1_dacb4df364cf092be679e47d', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
         subdomains: 'abcd',
@@ -187,7 +187,7 @@ function loadSectraVectorLayers() {
     }
 }
 
-// ─── Generador de Ícono de Proyecto (Lógica index.html) ───────────────────────
+// ─── Generador de Ícono de Proyecto (Lógica DGC.html) ───────────────────────
 function createSectraProjectMarker(p, latlng, linkedLineLayer, feature) {
     const projId = p.project_id || p.matched_project_id;
     const status = p.status || 'En Estudio';

@@ -131,6 +131,19 @@ h6 {
     gap: 0.75rem;
 }
 
+/* Logos del navbar como enlace de vuelta al landing (index.html) */
+.top-navbar-home {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    transition: opacity var(--transition-fast);
+}
+
+.top-navbar-home:hover {
+    opacity: 0.8;
+}
+
 .top-navbar-logo {
     height: 26px;
     width: auto;
@@ -573,13 +586,22 @@ h6 {
     z-index: 10;
 }
 
+/* DGC, EFE y MOP: en pantallas bajas la columna hace scroll en vez de aplastar los gráficos de Análisis */
+.left-panel-scroll {
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
 .panel-card-filters {
+    flex-shrink: 0;
     position: relative;
     z-index: 1000;
     overflow: visible !important;
 }
 
+/* Base auto: nunca más baja que sus gráficos + leyendas; crece con el espacio sobrante */
 .panel-card-analytics {
+    flex: 1 0 auto;
     position: relative;
     z-index: 1;
 }
@@ -3155,4 +3177,111 @@ footer {
     color: #1e3a8a;
     margin: 0;
     line-height: 1.45;
+}
+
+/* ── Barra de métrica y mini-KPIs de mapas coropléticos (SNI y MOP) ──────────
+   Replica el layout y diseño de .efe-table-mode-switch (EFE.html). */
+.map-metric-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-card);
+    flex-shrink: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.map-metric-btn {
+    flex: 1;
+    justify-content: center;
+    font-size: 0.7rem;
+    padding: 0.26rem 0.35rem;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.map-metric-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--text-muted);
+}
+
+.map-metric-btn.active {
+    background: var(--primary);
+    color: #ffffff;
+    border: 1px solid var(--primary);
+}
+
+.map-metric-mini-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.35rem;
+    padding-top: 0.35rem;
+    border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.map-metric-mini-kpi {
+    background: var(--bg-sidebar);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 4px 6px;
+    text-align: center;
+}
+
+.map-metric-mini-kpi-label {
+    font-size: 0.58rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.map-metric-mini-kpi-val {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── Mapa coroplético D3 de regiones (SNI, MOP; static/js/common/choropleth.js) ── */
+.catlec-choropleth-svg {
+    cursor: default;
+    user-select: none;
+}
+
+/* Región: recoloreo instantáneo; el borde y la opacidad de hover los pone el JS */
+.catlec-region-path {
+    cursor: pointer;
+    stroke: #ffffff;
+    stroke-width: 1.5px;
+    transition: none;
+}
+
+/* Tooltip de mapas coropléticos SVG (SNI, MOP): va directo en <body> para que
+   el overflow:hidden de las tarjetas no lo recorte; se posiciona por JS
+   (position:fixed) y reutiliza .catlec-map-tooltip para tipografía y colores. */
+.catlec-map-tooltip--fixed {
+    position: fixed;
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.1s ease;
+}
+
+.catlec-map-tooltip--fixed.visible {
+    opacity: 1;
 }

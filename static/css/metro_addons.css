@@ -49,25 +49,20 @@
     border: 1px solid rgba(37, 99, 235, 0.25);
     white-space: nowrap;
 }
-.metro-comunas-scroll::-webkit-scrollbar {
-    width: 4px;
+/* El scroll horizontal del gráfico usa la scrollbar global de styles.css (igual que tablas y timelines).
+   El recorte mide solo el área de trazado; el canvas completo (con sus ejes) se desplaza a la izquierda
+   bajo el recorte. Anchos y desplazamiento los fija syncPinnedYAxes() en comunas.js. */
+#metroChartComunasPoblacionClip {
+    position: relative;
+    height: 100%;
+    overflow: hidden;
 }
-.metro-comunas-scroll-x::-webkit-scrollbar {
-    height: 5px;
-}
-.metro-comunas-scroll::-webkit-scrollbar-track,
-.metro-comunas-scroll-x::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.04);
-    border-radius: 2px;
-}
-.metro-comunas-scroll::-webkit-scrollbar-thumb,
-.metro-comunas-scroll-x::-webkit-scrollbar-thumb {
-    background: rgba(37, 99, 235, 0.35);
-    border-radius: 2px;
-}
-.metro-comunas-scroll::-webkit-scrollbar-thumb:hover,
-.metro-comunas-scroll-x::-webkit-scrollbar-thumb:hover {
-    background: rgba(37, 99, 235, 0.65);
+#metroChartComunasPoblacionWrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    min-width: 2250px;
 }
 #metroChartPoblacionAxisLeft,
 #metroChartPoblacionAxisRight {

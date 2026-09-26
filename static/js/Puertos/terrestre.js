@@ -1,108 +1,115 @@
 /**
- * Visualización: Conectividad Terrestre y Peajes (Vista 4)
+ * Visualización: Conectividad Terrestre y Peajes (Vista 4) — layout "Mapa de calor"
  */
+const puertosHeatmapTooltip = CatlecTimeline.createCursorTooltip({ domId: 'puertos-heatmap-tooltip' });
+
+function renderHeatmapPeajes(serie) {
+    const container = document.getElementById('puertos-heatmap-peajes');
+    if (!container || !serie || !serie.length) return;
+
+    const registros = {};
+    serie.forEach(r => { registros[`${r.anio}-${r.mes}`] = r; });
+    const anios = [...new Set(serie.map(r => r.anio))].sort((a, b) => a - b);
+    const totales = serie.map(r => r.total);
+    const min = Math.min(...totales);
+    const max = Math.max(...totales);
+
+    const minEl = document.getElementById('puertos-heatmap-min');
+    if (minEl) minEl.textContent = formatNumber(min / 1e3, 0);
+    const maxEl = document.getElementById('puertos-heatmap-max');
+    if (maxEl) maxEl.textContent = formatNumber(max / 1e3, 0);
+
+    let html = '<div></div>';
+    html += MESES_CORTOS.map(m => `<div class="puertos-heatmap-head">${m}</div>`).join('');
+    html += '<div class="puertos-heatmap-head">Total</div>';
+
+    anios.forEach(anio => {
+        html += `<div class="puertos-heatmap-year">${anio}</div>`;
+        let totalAnio = 0;
+        let meses = 0;
+        for (let mes = 1; mes <= 12; mes++) {
+            const r = registros[`${anio}-${mes}`];
+            if (!r) {
+                html += '<div class="puertos-heatmap-cell puertos-heatmap-cell--empty"></div>';
+                continue;
+            }
+            totalAnio += r.total;
+            meses++;
+            const t = max > min ? (r.total - min) / (max - min) : 0;
+            const dark = t > 0.4 ? ' puertos-heatmap-cell--dark' : '';
+            html += `<div class="puertos-heatmap-cell${dark}" data-key="${anio}-${mes}" style="background:${heatColor(t)};">${formatNumber(r.total / 1e3, 0)}</div>`;
+        }
+        const parcial = meses < 12 ? ` title="Año parcial: ${meses} meses"` : '';
+        html += `<div class="puertos-heatmap-total"${parcial}>${formatMillion(totalAnio, '').trim()}${meses < 12 ? '*' : ''}</div>`;
+    });
+
+    container.innerHTML = html;
+
+    const tooltipHtml = (r) => {
+        const v = r.var_12m;
+        const colorVar = v >= 0 ? `color:${COLORS.teal};` : `color:${COLORS.buoy};`;
+        return CatlecTimeline.tooltipName(`${MESES_CORTOS[r.mes - 1]} ${r.anio}`, COLORS.navy)
+            + CatlecTimeline.tooltipRow('Total pasadas', formatNumber(r.total))
+            + CatlecTimeline.tooltipRow('3 y más ejes', formatNumber(r.camiones_3_mas_ejes))
+            + CatlecTimeline.tooltipRow('2 ejes', formatNumber(r.camiones_2_ejes))
+            + CatlecTimeline.tooltipRow('Var. 12 meses', `${v > 0 ? '+' : ''}${formatNumber(v, 1)}%`, colorVar);
+    };
+
+    container.onmouseover = (e) => {
+        const cell = e.target.closest('[data-key]');
+        if (!cell) { puertosHeatmapTooltip.hide(); return; }
+        puertosHeatmapTooltip.show(e, tooltipHtml(registros[cell.dataset.key]));
+    };
+    container.onmousemove = (e) => puertosHeatmapTooltip.move(e);
+    container.onmouseleave = () => puertosHeatmapTooltip.hide();
+}
+
 function renderVistaTerrestre() {
     const data = window.PUERTOS_DATA;
     if (!data || !data.annual_aggregates) return;
 
     const agg = data.annual_aggregates;
     const years = agg.map(d => d.anio.toString());
+    const ult = getUltimoRegistro();
 
-    // 1. Pasadas de Camiones por Peajes
-    const c1 = document.getElementById('chart-peajes-evolucion');
-    if (c1) {
-        destroyChart('chart-peajes-evolucion');
-        const data3ejes = agg.map(d => roundNumber(d.peaje_camiones_3mas_ejes / 1e6, 2));
-        const data2ejes = agg.map(d => roundNumber(d.peaje_camiones_2ejes / 1e6, 2));
-        chartInstances['chart-peajes-evolucion'] = new Chart(c1.getContext('2d'), {
-            type: 'bar',
-            plugins: [CatlecUtils.groupedBarDataLabelsPlugin],
-            data: {
-                labels: years,
-                datasets: [
-                    {
-                        label: 'Camiones 3 y más ejes',
-                        data: data3ejes,
-                        backgroundColor: COLORS.primaryAlpha,
-                        borderColor: COLORS.primary,
-                        borderWidth: 1,
-                        borderRadius: 3
-                    },
-                    {
-                        label: 'Camiones 2 ejes',
-                        data: data2ejes,
-                        backgroundColor: COLORS.amberAlpha,
-                        borderColor: COLORS.amber,
-                        borderWidth: 1,
-                        borderRadius: 3
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: { duration: 450, easing: 'easeOutQuart' },
-                interaction: { mode: 'index', intersect: false },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        enabled: false,
-                        external: puertosExternalTooltip,
-                        callbacks: {
-                            title: (items) => `Año ${items[0].label}`,
-                            label: (ctx) => ` ${ctx.dataset.label}: ${formatNumber(ctx.raw, 2)} MM Pasadas`
-                        }
-                    },
-                    groupedBarDataLabelsPlugin: {
-                        formatter: (v) => Number(v).toFixed(1),
-                        color: (dIdx) => dIdx === 0 ? COLORS.primary : COLORS.amber,
-                        offset: 4
-                    }
-                },
-                scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: { color: COLORS.textPrimary, font: { size: 10, weight: '600' } }
-                    },
-                    y: {
-                        suggestedMax: Math.max(...data3ejes, ...data2ejes, 0) * 1.18,
-                        grid: { color: COLORS.grid },
-                        ticks: { color: COLORS.textPrimary, font: { size: 10, weight: '600' } },
-                        title: { display: true, text: 'Millones de Pasadas (MM)', color: COLORS.textPrimary, font: { size: 9.5, weight: '600' } }
-                    }
-                }
-            }
-        });
+    // A. Mapa de calor año × mes de pasadas de camiones
+    renderHeatmapPeajes(data.series && data.series.plaza_peaje);
+
+    // B. Donut compacto de la flota por ejes del último año
+    if (ult) {
+        renderPieWithLegend('chart-peajes-pie', 'chart-peajes-pieLegend', [
+            { label: 'Camiones de 3 y más ejes', value: ult.peaje_camiones_3mas_ejes, color: COLORS.navy },
+            { label: 'Camiones de 2 ejes', value: ult.peaje_camiones_2ejes, color: COLORS.sand }
+        ], (v) => formatMillion(v, 'Pasadas'));
     }
 
-    // 2. Re-estibas vs Transbordos (Toneladas)
-    const c2 = document.getElementById('chart-reestibas-transbordos');
-    if (c2) {
+    // C. Re-estibas vs Transbordos (líneas anuales)
+    const c3 = document.getElementById('chart-reestibas-transbordos');
+    if (c3) {
         destroyChart('chart-reestibas-transbordos');
         const dataReestibas = agg.map(d => roundNumber(d.reestibas_ton / 1e3, 1));
         const dataTransbordos = agg.map(d => roundNumber(d.transbordos_ton / 1e3, 1));
-        chartInstances['chart-reestibas-transbordos'] = new Chart(c2.getContext('2d'), {
-            type: 'bar',
-            plugins: [CatlecUtils.groupedBarDataLabelsPlugin],
+        const linea = (label, valores, color) => ({
+            label,
+            data: valores,
+            borderColor: color,
+            backgroundColor: color,
+            borderWidth: 2.2,
+            tension: 0.2,
+            pointRadius: 3.5,
+            pointHoverRadius: 5.5,
+            pointBackgroundColor: color,
+            fill: false
+        });
+
+        chartInstances['chart-reestibas-transbordos'] = new Chart(c3.getContext('2d'), {
+            type: 'line',
+            plugins: [CatlecUtils.lineDataLabelsPlugin],
             data: {
                 labels: years,
                 datasets: [
-                    {
-                        label: 'Re-estibas (Ton)',
-                        data: dataReestibas,
-                        backgroundColor: COLORS.skyAlpha,
-                        borderColor: COLORS.sky,
-                        borderWidth: 1,
-                        borderRadius: 3
-                    },
-                    {
-                        label: 'Transbordos (Ton)',
-                        data: dataTransbordos,
-                        backgroundColor: COLORS.purpleAlpha,
-                        borderColor: COLORS.purple,
-                        borderWidth: 1,
-                        borderRadius: 3
-                    }
+                    linea('Re-estibas', dataReestibas, COLORS.ocean),
+                    linea('Transbordos', dataTransbordos, COLORS.coral)
                 ]
             },
             options: {
@@ -120,88 +127,19 @@ function renderVistaTerrestre() {
                             label: (ctx) => ` ${ctx.dataset.label}: ${formatNumber(ctx.raw * 1000)} Ton`
                         }
                     },
-                    groupedBarDataLabelsPlugin: {
-                        formatter: (v) => Number(v).toFixed(1),
-                        color: (dIdx) => dIdx === 0 ? COLORS.sky : COLORS.purple,
-                        offset: 4
+                    lineDataLabelsPlugin: {
+                        formatter: (v) => Number(v).toFixed(0),
+                        color: (dIdx) => (dIdx === 0 ? COLORS.ocean : COLORS.coral)
                     }
                 },
                 scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: { color: COLORS.textPrimary, font: { size: 10, weight: '600' } }
-                    },
+                    x: { grid: { display: false }, ticks: AXIS_TICKS },
                     y: {
+                        beginAtZero: true,
                         suggestedMax: Math.max(...dataReestibas, ...dataTransbordos, 0) * 1.18,
                         grid: { color: COLORS.grid },
-                        ticks: { color: COLORS.textPrimary, font: { size: 10, weight: '600' } },
-                        title: { display: true, text: 'Miles de Toneladas (kTon)', color: COLORS.textPrimary, font: { size: 9.5, weight: '600' } }
-                    }
-                }
-            }
-        });
-    }
-
-    // 3. Doughnut Proporción de Flota de Carga
-    const k = data.kpis;
-    const piePeajes = [
-        { label: 'Camiones de 3 y más ejes', value: k.total_peaje_camiones_3mas_ejes, color: COLORS.primary },
-        { label: 'Camiones de 2 ejes', value: k.total_peaje_camiones_2ejes, color: COLORS.amber }
-    ];
-    renderPieWithLegend('chart-peajes-pie', 'chart-peajes-pieLegend', piePeajes, (v) => formatMillion(v, 'Pasadas'));
-
-    // 4. Estacionalidad Mensual de Tránsito Pesado
-    const c4 = document.getElementById('chart-peajes-estacionalidad');
-    if (c4 && data.monthly_seasonality) {
-        destroyChart('chart-peajes-estacionalidad');
-        const mLabels = data.monthly_seasonality.map(d => d.mes_nombre);
-        const mData = data.monthly_seasonality.map(d => roundNumber(d.avg_peajes / 1e3, 1));
-
-        chartInstances['chart-peajes-estacionalidad'] = new Chart(c4.getContext('2d'), {
-            type: 'bar',
-            plugins: [CatlecUtils.groupedBarDataLabelsPlugin],
-            data: {
-                labels: mLabels,
-                datasets: [{
-                    label: 'Pasadas Promedio (Miles)',
-                    data: mData,
-                    backgroundColor: COLORS.emeraldAlpha,
-                    borderColor: COLORS.emerald,
-                    borderWidth: 1,
-                    borderRadius: 3
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: { duration: 450, easing: 'easeOutQuart' },
-                interaction: { mode: 'nearest', intersect: true },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        enabled: false,
-                        external: puertosExternalTooltip,
-                        callbacks: {
-                            title: (items) => `Mes: ${items[0].label}`,
-                            label: (ctx) => ` Pasadas Promedio: ${formatNumber(ctx.raw * 1000)}`
-                        }
-                    },
-                    groupedBarDataLabelsPlugin: {
-                        formatter: (v) => Number(v).toFixed(1),
-                        color: COLORS.emerald,
-                        offset: 4
-                    }
-                },
-                scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: { color: COLORS.textPrimary, font: { size: 10, weight: '600' } }
-                    },
-                    y: {
-                        suggestedMax: Math.max(...mData, 0) * 1.18,
-                        grid: { color: COLORS.grid },
-                        ticks: { color: COLORS.textPrimary, font: { size: 10, weight: '600' } },
-                        title: { display: true, text: 'Miles de Pasadas / Mes', color: COLORS.textPrimary, font: { size: 9.5, weight: '600' } }
+                        ticks: AXIS_TICKS,
+                        title: axisTitle('Miles de Toneladas (kTon)')
                     }
                 }
             }

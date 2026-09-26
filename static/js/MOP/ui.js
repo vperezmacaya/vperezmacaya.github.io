@@ -42,6 +42,7 @@ function switchTab(targetView) {
     });
 
     requestAnimationFrame(() => {
+        if (targetView === 'mapa') initMOPMap();
         renderAllCharts();
         Object.values(charts).forEach(ch => {
             if (ch && typeof ch.resize === 'function') ch.resize();
@@ -49,6 +50,13 @@ function switchTab(targetView) {
     });
 }
 window.switchMOPTab = switchTab;
+
+const MOP_VIEWS = ['resumen', 'mapa', 'inversion', 'programas'];
+
+function viewFromHash() {
+    const view = window.location.hash.replace('#', '');
+    return MOP_VIEWS.includes(view) ? view : 'resumen';
+}
 
 function bindTabEvents() {
     const tabs = document.querySelectorAll('.view-tab-btn[data-mop-view]');
@@ -58,24 +66,8 @@ function bindTabEvents() {
         });
     });
 
-    // Verificar hash en la URL al cargar
-    if (window.location.hash === '#inversion') {
-        switchTab('inversion');
-    } else if (window.location.hash === '#programas') {
-        switchTab('programas');
-    } else {
-        switchTab('resumen');
-    }
-
-    window.addEventListener('hashchange', () => {
-        if (window.location.hash === '#inversion') {
-            switchTab('inversion');
-        } else if (window.location.hash === '#programas') {
-            switchTab('programas');
-        } else if (window.location.hash === '#resumen' || !window.location.hash) {
-            switchTab('resumen');
-        }
-    });
+    switchTab(viewFromHash());
+    window.addEventListener('hashchange', () => switchTab(viewFromHash()));
 }
 
 // ── Bootstrap ────────────────────────────────────────────────────────────

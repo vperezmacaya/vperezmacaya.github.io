@@ -17,6 +17,8 @@ import unicodedata
 import numpy as np
 import pandas as pd
 
+from text_normalize import normalize_description
+
 # ── Rutas ──────────────────────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, 'Bases de dato')
@@ -1150,7 +1152,8 @@ try:
     all_projects = []
     for _, r in df_mop.iterrows():
         yr_ult_raw = pd.to_numeric(r.get('_ultima'), errors='coerce')
-        desc_val = _sv(r, '_desc')
+        # La base trae las descripciones en MAYÚSCULAS y con artefactos de Excel
+        desc_val = normalize_description(_sv(r, '_desc'))
         loc_val = _sv(r, '_loc')
         if loc_val in {'0', '0.0', 'nan', 'none'}:
             loc_val = ''

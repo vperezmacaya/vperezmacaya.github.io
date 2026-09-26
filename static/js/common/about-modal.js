@@ -12,7 +12,7 @@ window.CatlecAboutModal = {
         if (!modal) return;
 
         function open() {
-            modal.style.display = 'flex';
+            modal.style.display = 'flex';   
             if (window.lucide) lucide.createIcons();
         }
         function close() {

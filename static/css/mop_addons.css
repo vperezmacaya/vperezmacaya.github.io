@@ -24,7 +24,7 @@
 /* Nota: .view-subheader.mop-tabs se eliminó de aquí por ser 100% idéntica a la
    regla ya compartida en styles.css (.sectra-tabs, .mop-tabs, .three-tabs). */
 
-/* ── MOP Data Table Column Sizing (Aligned with index.html data-table) ─── */
+/* ── MOP Data Table Column Sizing (Aligned with DGC.html data-table) ─── */
 .data-table.mop-data-table {
     table-layout: fixed;
     width: 100%;
@@ -79,3 +79,201 @@
 
 /* ── Hidden utility ──────────────────────────────────────────────── */
 .hidden { display: none !important; }
+
+/* ── Vistas de análisis: contenedor a alto completo ─────────────── */
+.mop-view-fill {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+/* Tarjeta de gráfico (reemplaza el style inline repetido sobre .panel-card) */
+.panel-card.mop-card {
+    padding: 0.45rem 0.5rem 0.35rem;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.mop-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.15rem;
+    margin-bottom: 0.15rem;
+    flex-shrink: 0;
+}
+
+.mop-card-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+}
+
+.mop-title-icon {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+    color: var(--legend-color);
+}
+
+.mop-card-body {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+}
+
+.mop-card-badge {
+    font-size: 0.62rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* ── Micro-leyenda de cabecera (estándar catlec-bar-chart) ──────── */
+.mop-legend {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.63rem;
+    flex-shrink: 0;
+}
+
+.mop-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--legend-color, var(--text-secondary));
+}
+
+.mop-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background: var(--legend-color);
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.mop-legend-dot--line {
+    border-radius: 50%;
+}
+
+/* Perfil: celeste claro de la escala de etapas (texto en gris para legibilidad) */
+.mop-legend-dot--perfil {
+    background: #9fd1f6;
+}
+
+.mop-legend-dot--dashed {
+    width: 14px;
+    height: 0;
+    border-radius: 0;
+    background: none;
+    border-top: 2px dashed var(--legend-color);
+}
+
+/* Paleta MOP (mismos valores que MOP_COLORS en static/js/MOP/state.js) */
+.mop-c-navy { --legend-color: #001c41; }
+.mop-c-blue { --legend-color: #0c71c3; }
+.mop-c-sky { --legend-color: #2ea3f2; }
+.mop-c-petrol { --legend-color: #1e4f65; }
+.mop-c-teal { --legend-color: #2d717c; }
+.mop-c-orange { --legend-color: #de702c; }
+.mop-c-red { --legend-color: #a51f15; }
+.mop-c-stone { --legend-color: #6b7280; }
+
+/* ── Layouts por visualización ──────────────────────────────────── */
+.mop-layout {
+    display: grid;
+    gap: 0.5rem;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Mapa Regional: ranking a la izquierda + mapa angosto a la derecha (78% / 22%, como SNI) */
+.mop-layout-mapa {
+    grid-template-columns: calc(78% - 0.25rem) calc(22% - 0.25rem);
+    grid-template-rows: minmax(0, 1fr);
+}
+
+/* Inversión: columna alta + columna apilada (patrón DGC 42/58) */
+.mop-layout-inversion {
+    grid-template-columns: 42% 1fr;
+    grid-template-rows: minmax(0, 1fr);
+}
+
+/* Programas: combo ancho arriba + 2 columnas abajo */
+.mop-layout-programas {
+    grid-template-columns: 1.3fr 1fr;
+    grid-template-rows: minmax(0, 1.1fr) minmax(0, 1fr);
+}
+
+.mop-span-full {
+    grid-column: 1 / -1;
+}
+
+.mop-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-height: 0;
+    min-width: 0;
+}
+
+.mop-stack > .mop-card {
+    flex: 1;
+    height: auto;
+}
+
+/* ── Mapa coroplético ───────────────────────────────────────────── */
+.panel-card.mop-map-card {
+    padding: 0;
+}
+
+.mop-map-wrap {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+}
+
+#mop-map {
+    position: absolute;
+    inset: 0;
+}
+
+/* ── Pantallas angostas: una columna con scroll ─────────────────── */
+@media (max-width: 900px) {
+    .mop-layout-mapa,
+    .mop-layout-inversion,
+    .mop-layout-programas {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: none;
+        overflow-y: auto;
+    }
+
+    .mop-layout > .mop-card,
+    .mop-stack > .mop-card {
+        min-height: 300px;
+    }
+
+    .mop-layout-mapa > .mop-map-card {
+        min-height: 520px;
+    }
+}

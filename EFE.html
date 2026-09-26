@@ -14,7 +14,7 @@
     <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 
     <!-- CATLEC Global Stylesheet & EFE Addon -->
-    <link rel="stylesheet" href="static/css/styles.css?v=20260924_gl3">
+    <link rel="stylesheet" href="static/css/styles.css?v=20260925_land1">
     <link rel="stylesheet" href="static/css/efe_addons.css?v=20260924_gl4">
 
     <!-- SheetJS for Client-Side Excel Export -->
@@ -31,9 +31,11 @@
         <!-- Top Navigation Banner -->
         <header class="top-navbar">
             <div class="top-navbar-left">
-                <img src="logo/Escudo_udec.gif" alt="Escudo UdeC" class="top-navbar-logo-udec">
-                <img src="logo/cropped-Logo-CATLEC-horizontal-sin-fondo-1.png" alt="Logo CATLEC"
-                    class="top-navbar-logo">
+                <a href="index.html" class="top-navbar-home" title="Volver al inicio del Observatorio CATLEC">
+                    <img src="logo/Escudo_udec.gif" alt="Escudo UdeC" class="top-navbar-logo-udec">
+                    <img src="logo/cropped-Logo-CATLEC-horizontal-sin-fondo-1.png" alt="Logo CATLEC"
+                        class="top-navbar-logo">
+                </a>
                 <span class="top-navbar-title">Visor de datos - EFE Trenes de
                     Chile</span>
                 <span class="top-navbar-divider"></span>
@@ -76,7 +78,7 @@
             <div class="efe-dashboard-grid catlec-resizable-grid">
 
                 <!-- Left Panel: Search & Filters + Analytics Charts -->
-                <section class="left-panel">
+                <section class="left-panel left-panel-scroll">
 
                     <!-- Filters Card -->
                     <div class="panel-card"
@@ -175,13 +177,13 @@
                                     style="flex: 1; padding: 0.28rem 0.4rem; font-size: 0.72rem; justify-content: center; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); color: #10b981; font-weight: 600; cursor: pointer; transition: all 0.15s ease;"
                                     title="Descargar datos en Excel (.xlsx)">
                                     <i data-lucide="file-spreadsheet" style="width: 12px; height: 12px;"></i>
-                                    Exportar Excel
+                                    Excel
                                 </button>
                                 <button class="btn-reset" id="efe-btn-export-geojson"
                                     style="flex: 1; padding: 0.28rem 0.4rem; font-size: 0.72rem; justify-content: center; background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.3); color: #6366f1; font-weight: 600; cursor: pointer; transition: all 0.15s ease;"
                                     title="Descargar red e infraestructura ferroviaria oficial en formato GeoJSON (.geojson)">
                                     <i data-lucide="map-pin" style="width: 12px; height: 12px;"></i>
-                                    Exportar GeoJSON
+                                    GeoJSON
                                 </button>
                             </div>
                         </div>
@@ -189,7 +191,7 @@
 
                     <!-- Analytics Charts Card -->
                     <div class="panel-card panel-card-analytics"
-                        style="padding: 0.55rem 0.75rem; gap: 0.3rem; flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
+                        style="padding: 0.55rem 0.75rem; gap: 0.3rem; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
                         <h2 class="panel-title"
                             style="font-size: 0.8rem; padding-bottom: 0.25rem; border-bottom: 1px solid var(--border-color); margin-bottom: 0.1rem;">
                             <i data-lucide="pie-chart" style="width: 14px; height: 14px; color: var(--primary);"></i>
@@ -197,7 +199,7 @@
                         </h2>
 
                         <!-- Chart 1: Proyectos por Filial -->
-                        <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 0.15rem;">
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 0.15rem;">
                             <div style="display: flex; flex-direction: column; gap: 0.05rem;">
                                 <div
                                     style="font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: flex; align-items: center; gap: 0.3rem;">
@@ -222,7 +224,7 @@
 
                         <!-- Chart 2: Cartera de Proyectos -->
                         <div
-                            style="flex: 1.1; min-height: 0; display: flex; flex-direction: column; gap: 0.15rem; border-top: 1px solid var(--border-color); padding-top: 0.3rem;">
+                            style="flex: 1.1; display: flex; flex-direction: column; gap: 0.15rem; border-top: 1px solid var(--border-color); padding-top: 0.3rem;">
                             <div style="display: flex; flex-direction: column; gap: 0.05rem;">
                                 <div
                                     style="font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: flex; align-items: center; gap: 0.3rem;">
@@ -739,7 +741,7 @@
             <span class="app-footer-text">Desarrollado por: Jose Oliveros, Vicente Pérez</span>
         </div>
         <div class="app-footer-right">
-            <span class="app-footer-text">Universidad de Concepción &nbsp;·&nbsp; Facultad de Ingeniería</span>
+            <span class="app-footer-text">Universidad de Concepción &nbsp;·&nbsp; Facultad de Ingeniería &nbsp;·&nbsp; Departamento de Ingeniería Industrial</span>
         </div>
     </footer>
 
@@ -769,7 +771,7 @@
     <script src="static/js/EFE/ui.js?v=20260924_3"></script>
 
     <!-- Nav Menu & View Switcher Logic -->
-    <script src="static/js/common/nav-menu.js?v=20260924_5"></script>
+    <script src="static/js/common/nav-menu.js?v=20260925_land1"></script>
     <script>
         (function () {
             CatlecNav.render();
@@ -894,7 +896,7 @@
                                     <i data-lucide="user-check" style="width: 13px; height: 13px; color: #2563eb;"></i>
                                     Vicente Pérez
                                 </div>
-                                <span class="about-author-role">Facultad de Ingeniería, Universidad de Concepción</span>
+                                <span class="about-author-role">Departamento de Ingeniería Industrial, Facultad de Ingeniería, Universidad de Concepción</span>
                                 <div class="about-author-contacts">
                                     <a href="mailto:vicperez2021@udec.cl" class="about-author-contact-item" title="Enviar correo a Vicente Pérez">
                                         <i data-lucide="mail" style="width: 12px; height: 12px; color: #64748b;"></i>
@@ -917,7 +919,7 @@
                                     <i data-lucide="user-check" style="width: 13px; height: 13px; color: #2563eb;"></i>
                                     José Oliveros
                                 </div>
-                                <span class="about-author-role">Facultad de Ingeniería, Universidad de Concepción</span>
+                                <span class="about-author-role">Departamento de Ingeniería Industrial, Facultad de Ingeniería, Universidad de Concepción</span>
                                 <div class="about-author-contacts">
                                     <a href="mailto:joseoliveros@udec.cl" class="about-author-contact-item" title="Enviar correo a José Oliveros">
                                         <i data-lucide="mail" style="width: 12px; height: 12px; color: #64748b;"></i>

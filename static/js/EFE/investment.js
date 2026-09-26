@@ -1,7 +1,7 @@
 /**
  * static/js/EFE/investment.js
  * Visualización de Análisis de Inversión para EFE Trenes de Chile.
- * Harmonized with CATLEC index.html design palette.
+ * Harmonized with CATLEC DGC.html design palette.
  */
 
 let efeChartInvByTipoInstance = null;

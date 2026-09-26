@@ -77,7 +77,7 @@ function renderGlobalTable() {
                 <td>${escapeHtml(p.servicio) || '—'}</td>
                 <td>${escapeHtml(p.programa) || '—'}</td>
                 <td><span class="badge ${badgeClass}">${escapeHtml(p.etapa) || '—'}</span></td>
-                <td style="text-align: right; font-weight: 700; color: #3b82f6;">${costFmt}</td>
+                <td style="text-align: right; font-weight: 700; color: #0c71c3;">${costFmt}</td>
                 <td style="text-align: center; color: var(--text-muted);">${yearFmt}</td>
                 <td style="text-align: center; color: var(--text-muted);">${yearUltFmt}</td>
             </tr>

@@ -2,7 +2,7 @@
  * static/js/SNI/charts.js
  * Gráficos analíticos con Chart.js para la plataforma SNI
  * Homologados con la estética, tipografía ('Helvetica Neue'), tooltips,
- * formato de ejes y animaciones de transición fluidas (sin destrucción) de index.html
+ * formato de ejes y animaciones de transición fluidas (sin destrucción) de DGC.html
  *
  * Patrón de actualización reactiva (idéntico a investment.js / contracts_analysis.js):
  *   - Si la instancia NO existe → new Chart(ctx, config)
@@ -29,11 +29,11 @@ if (typeof Chart !== 'undefined') {
 }
 
 // Tooltip externo negro compartido para todos los gráficos SNI
-// (réplica exacta de investmentExternalTooltip de index.html)
+// (réplica exacta de investmentExternalTooltip de DGC.html)
 const sniExternalTooltip = CatlecTooltip.create({ domId: 'sni-shared-tooltip' });
 
 
-// Opciones comunes y tema unificado (idéntico a index.html)
+// Opciones comunes y tema unificado (idéntico a DGC.html)
 function getChartThemeOptions() {
     const textColor = '#334155';
     const textMuted = '#334155';
@@ -587,12 +587,6 @@ function updateMinistryShareChart() {
     const labels = ministries.map(m => m.ministerio);
     const data = ministries.map(m => m.total_usd);
 
-    const colors = labels.map((name, i) => {
-        return (typeof SNI_COLORS !== 'undefined' && SNI_COLORS.ministries && SNI_COLORS.ministries[name])
-            ? SNI_COLORS.ministries[name]
-            : (SNI_COLORS && SNI_COLORS.palette ? SNI_COLORS.palette[i % SNI_COLORS.palette.length] : '#2563eb');
-    });
-
     const baseOpts = getChartThemeOptions();
 
     const tooltipCb = (c) => {
@@ -615,10 +609,10 @@ function updateMinistryShareChart() {
                 datasets: [{
                     label: 'Inversión por Ministerio (MM USD)',
                     data: data,
-                    backgroundColor: colors.map(c => `${c}cc`),
+                    backgroundColor: 'rgba(37,99,235,0.8)',
                     borderRadius: 3,
                     borderWidth: 1,
-                    borderColor: colors,
+                    borderColor: '#2563eb',
                     barPercentage: 0.75
                 }]
             },
@@ -661,8 +655,6 @@ function updateMinistryShareChart() {
         const chart = sniChartInstances.ministryShare;
         chart.data.labels = labels;
         chart.data.datasets[0].data = data;
-        chart.data.datasets[0].backgroundColor = colors.map(c => `${c}cc`);
-        chart.data.datasets[0].borderColor = colors;
         chart.options.plugins.tooltip.callbacks.label = tooltipCb;
         chart.options.scales.x.ticks.callback = (v) => v.toLocaleString('es-CL');
         if (chart.options.plugins.horizontalBarDataLabelsPlugin) {

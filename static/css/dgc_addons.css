@@ -1,6 +1,6 @@
 /* ─── static/css/dgc_addons.css ─────────────────────────────────────────────
    Addon modular específico para DGC (Dirección General de Concesiones).
-   Reglas usadas únicamente por index.html / static/js/DGC/*.js, extraídas del
+   Reglas usadas únicamente por DGC.html / static/js/DGC/*.js, extraídas del
    design system global (static/css/styles.css) para mantenerlo liviano. */
 
 /* ─── Separador mapa ↔ tabla (common/panel-resizer.js) ──────────────────────
@@ -164,7 +164,7 @@
 
 /* ─── Icon size/color utilities ──────────────────────────────────────────────
    Extraídas de decenas de style="width:Npx;height:Npx" repetidos inline en
-   index.html (íconos Lucide/SVG). Reduce a un solo lugar para cambiar tamaños
+   DGC.html (íconos Lucide/SVG). Reduce a un solo lugar para cambiar tamaños
    o colores de ícono en vez de buscar y reemplazar en el HTML. */
 .icon-10-block { width: 10px; height: 10px; display: block; }
 .icon-11 { width: 11px; height: 11px; }

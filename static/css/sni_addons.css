@@ -446,48 +446,6 @@
     width: 100%;
 }
 
-/* Header de vistas del mapa: replica el layout y diseño de .efe-table-mode-switch (EFE.html) */
-.map-metric-toolbar {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0.4rem 0.5rem;
-    border-bottom: 1px solid var(--border-color);
-    background: var(--bg-card);
-    flex-shrink: 0;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.map-metric-btn {
-    flex: 1;
-    justify-content: center;
-    font-size: 0.7rem;
-    padding: 0.26rem 0.35rem;
-    border-radius: 4px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    background: transparent;
-    color: var(--text-secondary);
-    border: 1px solid var(--border-color);
-    transition: all 0.15s ease;
-    white-space: nowrap;
-}
-
-.map-metric-btn:hover {
-    color: var(--text-primary);
-    border-color: var(--text-muted);
-}
-
-.map-metric-btn.active {
-    background: var(--primary);
-    color: #ffffff;
-    border: 1px solid var(--primary);
-}
-
 .map-region-detail-card {
     position: absolute;
     bottom: 15px;
@@ -503,73 +461,7 @@
     display: none;
 }
 
-/* ── Mapa Coroplético D3 (SNI) ─────────────────────────────────────────── */
 
-/* Control de zoom +/- flotante (reemplaza el zoomControl nativo de Leaflet) */
-/* SVG del mapa estático */
-.sni-map-svg {
-    cursor: default;
-    user-select: none;
-}
-
-/* Path de región: recoloreo instantáneo para máxima fluidez a 60 FPS;
-   stroke/fill-opacity de hover permanecen instantáneos */
-.sni-region-path {
-    cursor: pointer;
-    stroke: #ffffff;
-    stroke-width: 1.5px;
-    transition: none;
-}
-
-/* Tooltip flotante: agregado a <body> (no anidado en .sni-card, que tiene
-   overflow:hidden y lo recortaría). Reutiliza .catlec-map-tooltip solo para
-   tipografía/colores; el posicionamiento es propio (position:fixed + JS) */
-#sni-map-tooltip {
-    position: fixed;
-    z-index: 2000;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.1s ease;
-}
-
-#sni-map-tooltip.visible {
-    opacity: 1;
-}
-
-.map-metric-mini-kpis {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.35rem;
-    padding-top: 0.35rem;
-    border-top: 1px solid var(--border-color);
-    flex-shrink: 0;
-}
-
-.map-metric-mini-kpi {
-    background: var(--bg-sidebar);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 4px 6px;
-    text-align: center;
-}
-
-.map-metric-mini-kpi-label {
-    font-size: 0.58rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-}
-
-.map-metric-mini-kpi-val {
-    font-size: 0.76rem;
-    font-weight: 700;
-    color: var(--primary);
-    margin-top: 1px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
 
 @keyframes sniSpin {
     0% {

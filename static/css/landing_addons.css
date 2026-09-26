@@ -1,0 +1,1617 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   landing_addons.css — Landing del Observatorio CATLEC (index.html)
+   Estética liquid glass + gradientes. Usa los tokens de styles.css
+   (--primary, --accent, --font-heading, --radius-*, --text-*) y solo define
+   aquí lo exclusivo del landing. Tema claro únicamente.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.landing-page {
+    /* Paleta sobria derivada del logo CATLEC: azul marino, pizarra y un teal apagado */
+    --lp-ink: #17233a;
+    --lp-navy: #1b365d;
+    --lp-accent: #3d5a80;
+    --lp-slate: #64748b;
+    --lp-mist: #94a3b8;
+    --lp-teal: #4f7c7a;
+    --lp-tint: rgba(27, 54, 93, 0.06);
+    --lp-tint-strong: rgba(27, 54, 93, 0.1);
+    --lp-gradient: linear-gradient(100deg, #1b365d 0%, #3d5a80 100%);
+    --lp-glass-bg: rgba(255, 255, 255, 0.62);
+    --lp-glass-border: rgba(255, 255, 255, 0.8);
+    --lp-glass-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset, 0 10px 32px rgba(23, 35, 58, 0.06);
+    --lp-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --lp-header-h: 68px;
+    --lp-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --lp-line: rgba(27, 54, 93, 0.14);
+    --lp-art-stroke: rgba(27, 54, 93, 0.62);
+    --lp-art-fill: #f6f7f9;
+    --lp-art-far: #e4e9ef;
+}
+
+/* styles.css fija html/body a 100vh sin scroll (layout de dashboard); el
+   landing es una página larga con scroll normal. */
+html.landing-root,
+html.landing-root body.landing-page {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: visible;
+    display: block;
+}
+
+html.landing-root {
+    scroll-behavior: smooth;
+    scroll-padding-top: var(--lp-header-h);
+}
+
+body.landing-page {
+    background: #f6f7f9;
+    color: var(--text-primary);
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.landing-page ::selection {
+    background: rgba(61, 90, 128, 0.18);
+}
+
+.lp-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+main,
+.lp-footer {
+    position: relative;
+    z-index: 1;
+}
+
+/* ─── Vidrio líquido (utilidad) ───────────────────────────────────────────── */
+/* El reflejo especular superior es la primera capa del fondo, así nunca
+   se pinta por encima del contenido. */
+.lp-glass {
+    position: relative;
+    background:
+        linear-gradient(160deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0) 38%),
+        var(--lp-glass-bg);
+    -webkit-backdrop-filter: blur(20px) saturate(120%);
+    backdrop-filter: blur(20px) saturate(120%);
+    border: 1px solid var(--lp-glass-border);
+    box-shadow: var(--lp-glass-shadow);
+}
+
+/* Utilidad de ícono (misma que dgc_addons.css; styles.css no la trae) */
+.landing-page .icon-13 {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+}
+
+/* ─── Header ─────────────────────────────────────────────────────────────── */
+/* Franja de vidrio a todo el ancho; el contenido se alinea con .lp-container */
+.lp-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: rgba(255, 255, 255, 0.62);
+    -webkit-backdrop-filter: blur(20px) saturate(120%);
+    backdrop-filter: blur(20px) saturate(120%);
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    transition: background var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.lp-header.is-scrolled {
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: 0 6px 24px rgba(23, 35, 58, 0.06);
+}
+
+.lp-header-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    height: var(--lp-header-h);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0 24px;
+}
+
+.lp-brand {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+/* Logo UdeC (escudo + nombre), con fondo transparente. Va un poco más grande
+   que la parte visible del logo CATLEC (~107 × 28 px a 50 px de alto). */
+.lp-brand-udec {
+    height: 44px;
+    width: auto;
+    display: block;
+}
+
+/* El PNG trae mucho margen transparente: se agranda y se recorta con margen negativo */
+.lp-brand-catlec {
+    height: 42px;
+    width: auto;
+    display: block;
+    margin: 0 -12px 0 -15px;
+}
+
+.lp-brand-divider {
+    width: 1px;
+    height: 26px;
+    background: rgba(15, 23, 42, 0.14);
+}
+
+.lp-tabs {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    margin: 0 auto;
+}
+
+.lp-tab {
+    position: relative;
+    padding: 0.45rem 0.85rem;
+    border-radius: 10px;
+    font-family: var(--font-heading);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.lp-tab:hover {
+    color: var(--lp-ink);
+    background: var(--lp-tint);
+}
+
+.lp-tab.active {
+    color: var(--lp-accent);
+}
+
+.lp-tab.active::after {
+    content: '';
+    position: absolute;
+    left: 0.85rem;
+    right: 0.85rem;
+    bottom: 0.2rem;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--lp-gradient);
+}
+
+.lp-header-actions {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.lp-menu-toggle {
+    display: none;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    background: rgba(255, 255, 255, 0.6);
+    color: var(--lp-ink);
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.lp-menu-toggle svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* ─── Botones ────────────────────────────────────────────────────────────── */
+.lp-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: 48px;
+    padding: 0 1.4rem;
+    border-radius: 14px;
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: transform var(--transition-fast), box-shadow var(--transition-normal), background var(--transition-normal);
+}
+
+.lp-btn:hover {
+    transform: translateY(-1px);
+}
+
+.lp-btn--primary {
+    color: #fff;
+    background: var(--lp-navy);
+    border: 1px solid var(--lp-navy);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 6px 18px rgba(23, 35, 58, 0.16);
+}
+
+.lp-btn--primary:hover {
+    background: #152b4b;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 8px 22px rgba(23, 35, 58, 0.22);
+}
+
+.lp-btn--glass {
+    color: var(--lp-ink);
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    -webkit-backdrop-filter: blur(16px) saturate(170%);
+    backdrop-filter: blur(16px) saturate(170%);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 8px 24px rgba(23, 35, 58, 0.06);
+}
+
+.lp-btn--glass:hover {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.lp-btn--sm {
+    height: 36px;
+    padding: 0 0.95rem;
+    border-radius: 11px;
+    font-size: 0.82rem;
+}
+
+/* ─── Hero: lámina de plano ─────────────────────────────────────────────── */
+/* Alto del corte de obras: proporcional al ancho (viewBox 1600×380), con un
+   mínimo para que en pantallas angostas se vea la parte central recortada. */
+.lp-hero {
+    --lp-art-h: max(150px, 23.75vw);
+    position: relative;
+    min-height: 100vh;
+    min-height: 100svh;
+    display: flex;
+    align-items: center;
+    padding: calc(var(--lp-header-h) + 40px) 0 calc(var(--lp-art-h) + 28px);
+    overflow: hidden;
+}
+
+/* Cuadrícula milimetrada: trama menor de 24 px y mayor de 120 px */
+.lp-hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(27, 54, 93, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(27, 54, 93, 0.045) 1px, transparent 1px),
+        linear-gradient(rgba(27, 54, 93, 0.075) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(27, 54, 93, 0.075) 1px, transparent 1px);
+    background-size: 24px 24px, 24px 24px, 120px 120px, 120px 120px;
+    background-position: -1px -1px;
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 18%, #000 88%, transparent 100%);
+    mask-image: linear-gradient(180deg, transparent 0, #000 18%, #000 88%, transparent 100%);
+}
+
+.lp-hero-art {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: var(--lp-art-h);
+    pointer-events: none;
+}
+
+.lp-art {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.lp-art-far rect {
+    fill: var(--lp-art-far);
+}
+
+.lp-art-item,
+.lp-art-static {
+    fill: none;
+    stroke: var(--lp-art-stroke);
+    stroke-width: 1.3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.lp-art .f {
+    fill: var(--lp-art-fill);
+}
+
+.lp-art .b {
+    stroke-width: 3;
+}
+
+.lp-art .w {
+    stroke: rgba(61, 90, 128, 0.35);
+    stroke-width: 1;
+}
+
+.lp-art .dash {
+    stroke-dasharray: 14 10;
+    stroke: rgba(27, 54, 93, 0.3);
+}
+
+.lp-art-callout .lead {
+    fill: none;
+    stroke: var(--lp-teal);
+    stroke-width: 1;
+}
+
+.lp-art-callout .dot {
+    fill: #fff;
+    stroke: var(--lp-teal);
+    stroke-width: 1.4;
+}
+
+.lp-art-callout .t {
+    font-family: var(--lp-mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    fill: var(--lp-slate);
+}
+
+.lp-art-callout .v {
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 700;
+    fill: var(--lp-ink);
+}
+
+/* Dibujo progresivo (art.js agrega .is-drawing y luego .is-drawn) */
+.lp-art.is-drawing .lp-art-item * {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation:
+        lp-draw 1.5s var(--lp-ease) forwards,
+        lp-fill 0.7s ease forwards;
+    animation-delay: var(--d, 0s), calc(var(--d, 0s) + 0.9s);
+}
+
+.lp-art.is-drawing .lp-art-item .f {
+    fill-opacity: 0;
+}
+
+.lp-art.is-drawing .lp-art-far,
+.lp-art.is-drawing .lp-art-static {
+    opacity: 0;
+    animation: lp-fade 1.2s ease forwards 0.3s;
+}
+
+.lp-art.is-drawing .lp-art-callout {
+    opacity: 0;
+    animation: lp-fade 0.6s ease forwards;
+    animation-delay: var(--d, 2s);
+}
+
+@keyframes lp-draw {
+    to { stroke-dashoffset: 0; }
+}
+
+@keyframes lp-fill {
+    to { fill-opacity: 1; }
+}
+
+@keyframes lp-fade {
+    to { opacity: 1; }
+}
+
+.lp-hero-content {
+    position: relative;
+}
+
+/* Texto de la institución sobre el titular, sin contenedor */
+.lp-hero-kicker {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--lp-accent);
+}
+
+.lp-hero-title {
+    margin: 1.4rem 0 1.3rem;
+    font-size: clamp(2.5rem, 6vw, 5.2rem);
+    line-height: 1.02;
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    color: var(--lp-ink);
+}
+
+.lp-hero-subtitle {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.56em;
+    font-weight: 300;
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+    color: var(--lp-mist);
+    max-width: 17em;
+}
+
+.lp-hero-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 2rem;
+}
+
+/* ─── Franja de portada (foto a todo el ancho) ───────────────────────────── */
+.lp-band {
+    position: relative;
+    height: clamp(300px, 38vw, 540px);
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+    background: var(--lp-ink);
+    color: #fff;
+}
+
+.lp-band-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 34%;
+    transform: scale(1.18);
+    filter: grayscale(0.35) saturate(0.8) contrast(1.05);
+    will-change: transform;
+}
+
+/* Velo azul marino: más denso abajo, donde va el texto */
+.lp-band::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(180deg, rgba(23, 35, 58, 0.15) 0%, rgba(23, 35, 58, 0.35) 45%, rgba(23, 35, 58, 0.82) 100%),
+        linear-gradient(90deg, rgba(27, 54, 93, 0.35), rgba(27, 54, 93, 0) 60%);
+    pointer-events: none;
+}
+
+.lp-band-content {
+    position: relative;
+    z-index: 1;
+    padding-bottom: clamp(28px, 4vw, 56px);
+}
+
+.lp-band-quote {
+    max-width: 760px;
+    font-family: var(--font-heading);
+    font-size: clamp(1.45rem, 3vw, 2.4rem);
+    font-weight: 600;
+    line-height: 1.18;
+    letter-spacing: -0.02em;
+    color: #fff;
+}
+
+.lp-band-quote span {
+    display: block;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.72);
+}
+
+/* Crédito de foto sobre imagen (franja y tarjetas) */
+.lp-band-credit,
+.lp-module-photo figcaption {
+    position: absolute;
+    right: 10px;
+    bottom: 8px;
+    z-index: 1;
+    font-size: 0.64rem;
+    color: rgba(255, 255, 255, 0.72);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.lp-band-credit a {
+    color: inherit;
+}
+
+/* ─── Secciones ──────────────────────────────────────────────────────────── */
+.lp-section {
+    position: relative;
+    padding: 96px 0;
+    border-top: 1px solid var(--lp-line);
+}
+
+.lp-section > .lp-container {
+    position: relative;
+    z-index: 1;
+}
+
+/* Ilustraciones de fondo de sección (curvas de nivel, trama urbana) */
+.lp-section-art {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.lp-section-art svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.lp-topo path {
+    fill: none;
+    stroke: rgba(27, 54, 93, 0.08);
+    stroke-width: 1;
+}
+
+.lp-topo path.idx {
+    stroke: rgba(27, 54, 93, 0.15);
+    stroke-width: 1.3;
+}
+
+.lp-section-art--streets {
+    -webkit-mask-image: radial-gradient(ellipse 70% 80% at 70% 50%, #000 30%, transparent 85%);
+    mask-image: radial-gradient(ellipse 70% 80% at 70% 50%, #000 30%, transparent 85%);
+}
+
+.lp-streets rect {
+    fill: none;
+    stroke: rgba(27, 54, 93, 0.12);
+    stroke-width: 1;
+}
+
+.lp-streets .river {
+    fill: none;
+    stroke: rgba(61, 90, 128, 0.28);
+    stroke-width: 1.2;
+}
+
+.lp-streets .park {
+    fill: rgba(79, 124, 122, 0.06);
+    stroke: rgba(79, 124, 122, 0.3);
+}
+
+.lp-streets .tree {
+    fill: none;
+    stroke: rgba(79, 124, 122, 0.35);
+}
+
+.lp-streets .avenue {
+    fill: none;
+    stroke: rgba(27, 54, 93, 0.22);
+    stroke-width: 1.2;
+}
+
+.lp-streets .median {
+    fill: none;
+    stroke: rgba(27, 54, 93, 0.18);
+    stroke-dasharray: 16 12;
+}
+
+.lp-streets .rail {
+    fill: none;
+    stroke: rgba(27, 54, 93, 0.3);
+    stroke-width: 1.2;
+}
+
+.lp-streets .ties {
+    fill: none;
+    stroke: rgba(27, 54, 93, 0.3);
+    stroke-width: 7;
+    stroke-dasharray: 1.2 9;
+}
+
+.lp-streets .station {
+    fill: #fff;
+    stroke: var(--lp-teal);
+    stroke-width: 2;
+}
+
+.lp-section-head {
+    max-width: 720px;
+    margin-bottom: 44px;
+}
+
+/* "01 — OBJETIVOS" seguido de una regla graduada */
+.lp-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 1rem;
+    font-family: var(--lp-mono);
+    font-size: 0.74rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--lp-accent);
+}
+
+.lp-eyebrow b {
+    padding: 0.1rem 0.4rem;
+    border: 1px solid rgba(27, 54, 93, 0.3);
+    font-weight: 600;
+    color: var(--lp-navy);
+}
+
+.lp-eyebrow::after {
+    content: '';
+    flex: 1;
+    max-width: 260px;
+    height: 7px;
+    border-bottom: 1px solid rgba(27, 54, 93, 0.3);
+    background: repeating-linear-gradient(90deg, rgba(27, 54, 93, 0.3) 0 1px, transparent 1px 10px);
+    background-size: 100% 4px;
+    background-position: bottom;
+    background-repeat: no-repeat;
+}
+
+.lp-section-title {
+    font-size: clamp(2rem, 4.2vw, 3.1rem);
+    line-height: 1.08;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--lp-ink);
+}
+
+.lp-section-lead {
+    margin-top: 1rem;
+    font-size: 1.05rem;
+    color: var(--text-secondary);
+}
+
+/* ─── Objetivos ──────────────────────────────────────────────────────────── */
+.lp-objectives {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.lp-objective::before,
+.lp-objective::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-color: rgba(27, 54, 93, 0.35);
+    border-style: solid;
+    pointer-events: none;
+}
+
+.lp-objective::before {
+    top: 10px;
+    left: 10px;
+    border-width: 1px 0 0 1px;
+}
+
+.lp-objective::after {
+    right: 10px;
+    bottom: 10px;
+    border-width: 0 1px 1px 0;
+}
+
+.lp-objective {
+    border-radius: 6px;
+    padding: 26px 24px 28px;
+    transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.lp-objective:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset, 0 20px 50px rgba(23, 35, 58, 0.09);
+}
+
+.lp-objective-top {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.6rem;
+}
+
+.lp-objective-num {
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--lp-accent);
+}
+
+.lp-objective-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--lp-navy);
+    background: var(--lp-tint);
+    border: 1px solid rgba(27, 54, 93, 0.08);
+}
+
+.lp-objective-icon svg {
+    width: 19px;
+    height: 19px;
+}
+
+.lp-objective h3 {
+    position: relative;
+    font-size: 1.3rem;
+    color: var(--lp-ink);
+    margin-bottom: 0.5rem;
+}
+
+.lp-objective p {
+    position: relative;
+    font-size: 0.93rem;
+    color: var(--text-secondary);
+}
+
+/* ─── Carrusel de cifras ─────────────────────────────────────────────────── */
+.lp-carousel-viewport {
+    border-radius: 28px;
+    overflow: hidden;
+    touch-action: pan-y;
+}
+
+.lp-carousel-track {
+    position: relative;
+    display: grid;
+}
+
+.lp-slide {
+    grid-area: 1 / 1;
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    gap: 40px;
+    padding: 44px 48px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(28px);
+    filter: blur(6px);
+    transition: opacity 0.6s var(--lp-ease), transform 0.6s var(--lp-ease), filter 0.6s var(--lp-ease), visibility 0s linear 0.6s;
+}
+
+/* La foto va de fondo, difuminada y velada hacia la columna de texto */
+.lp-slide {
+    position: relative;
+    overflow: hidden;
+}
+
+.lp-slide-photo {
+    position: absolute;
+    inset: -12px;
+    z-index: 0;
+    background-size: cover;
+    background-position: center;
+    filter: blur(3px) grayscale(0.3) saturate(0.8);
+    opacity: 0.9;
+    pointer-events: none;
+}
+
+.lp-slide-photo::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg,
+        rgba(246, 247, 249, 0.97) 0%,
+        rgba(246, 247, 249, 0.92) 38%,
+        rgba(246, 247, 249, 0.62) 70%,
+        rgba(246, 247, 249, 0.5) 100%);
+}
+
+.lp-slide-info,
+.lp-slide-chart {
+    z-index: 1;
+}
+
+.lp-slide-source a {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: rgba(100, 116, 139, 0.4);
+}
+
+.lp-slide.is-before {
+    transform: translateX(-28px);
+}
+
+.lp-slide.is-active {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    filter: none;
+    transition: opacity 0.6s var(--lp-ease), transform 0.6s var(--lp-ease), filter 0.6s var(--lp-ease), visibility 0s;
+}
+
+.lp-slide-info {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.lp-slide-module {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    align-self: flex-start;
+    padding: 0.35rem 0.8rem 0.35rem 0.45rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.lp-slide-module-logo {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.1);
+    color: var(--slide-accent);
+}
+
+.lp-slide-module-logo img {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+}
+
+.lp-slide-module-logo svg {
+    width: 13px;
+    height: 13px;
+}
+
+.lp-big {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    column-gap: 0.6rem;
+    margin: 1.6rem 0 0.4rem;
+    font-family: var(--font-heading);
+    color: var(--lp-ink);
+}
+
+.lp-big-prefix {
+    font-size: clamp(1.6rem, 3vw, 2.4rem);
+    font-weight: 600;
+    color: var(--slide-accent);
+}
+
+.lp-big-num {
+    font-size: clamp(3.8rem, 8vw, 6.4rem);
+    font-weight: 700;
+    line-height: 0.95;
+    letter-spacing: -0.045em;
+    font-variant-numeric: tabular-nums;
+    color: var(--lp-ink);
+}
+
+.lp-big-unit {
+    font-size: clamp(1.25rem, 2.4vw, 1.8rem);
+    font-weight: 600;
+    color: var(--slide-accent);
+}
+
+.lp-slide-phrase {
+    font-size: 1.08rem;
+    color: var(--text-secondary);
+    max-width: 30em;
+}
+
+.lp-slide-phrase strong {
+    color: var(--lp-ink);
+    font-weight: 700;
+}
+
+.lp-slide-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 1.6rem;
+}
+
+.lp-slide-stat {
+    padding: 0.8rem 1rem;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+.lp-slide-stat strong {
+    display: block;
+    font-family: var(--font-heading);
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--lp-ink);
+    line-height: 1.2;
+}
+
+.lp-slide-stat span {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.lp-slide-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    align-self: flex-start;
+    margin-top: auto;
+    padding-top: 1.6rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--slide-accent);
+    text-decoration: none;
+}
+
+.lp-slide-link svg {
+    transition: transform var(--transition-fast);
+}
+
+.lp-slide-link:hover svg {
+    transform: translateX(3px);
+}
+
+.lp-slide-chart {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    padding: 20px 20px 14px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.95);
+    box-shadow: 0 10px 30px rgba(23, 35, 58, 0.05);
+}
+
+.lp-slide-chart-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 10px;
+}
+
+.lp-slide-chart-title {
+    font-family: var(--font-heading);
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--lp-ink);
+}
+
+/* Micro-leyenda en cabecera (estándar catlec-bar-chart) */
+.lp-legend {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    font-size: 0.63rem;
+    flex-shrink: 0;
+}
+
+.lp-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-weight: 600;
+}
+
+.lp-legend-swatch {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+.lp-legend-swatch--line {
+    border-radius: 50%;
+}
+
+.lp-slide-canvas {
+    position: relative;
+    flex: 1;
+    min-height: 300px;
+}
+
+.lp-slide-source {
+    margin-top: 8px;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.lp-carousel-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 22px;
+}
+
+.lp-carousel-arrow {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--lp-ink);
+    cursor: pointer;
+    transition: transform var(--transition-fast);
+}
+
+.lp-carousel-arrow:hover {
+    transform: scale(1.06);
+}
+
+.lp-carousel-arrow svg {
+    position: relative;
+    width: 20px;
+    height: 20px;
+}
+
+.lp-carousel-dots {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.lp-dot {
+    width: 7px;
+    height: 7px;
+    padding: 0;
+    border-radius: 50%;
+    border: none;
+    background: rgba(100, 116, 139, 0.35);
+    cursor: pointer;
+    transition: background var(--transition-fast), transform var(--transition-fast);
+}
+
+.lp-dot:hover {
+    background: rgba(100, 116, 139, 0.6);
+}
+
+.lp-dot.is-active {
+    background: var(--lp-ink);
+    transform: scale(1.35);
+}
+
+/* Barra de progreso del autoplay: muy delgada, se rellena a lo largo de la
+   diapositiva activa; su animationend avanza el carrusel, así que pausar la
+   animación (hover, foco, fuera de pantalla) pausa también el avance. */
+.lp-carousel-progress {
+    height: 2px;
+    margin: 14px 0 2px;
+    border-radius: 999px;
+    background: rgba(100, 116, 139, 0.18);
+    overflow: hidden;
+}
+
+.lp-carousel-progress-fill {
+    display: block;
+    height: 100%;
+    width: 100%;
+    transform-origin: left center;
+    transform: scaleX(0);
+    background: rgba(100, 116, 139, 0.45);
+}
+
+.lp-carousel.is-autoplay .lp-carousel-progress-fill {
+    animation: lp-progress var(--lp-autoplay-ms, 7000ms) linear forwards;
+}
+
+.lp-carousel.is-paused .lp-carousel-progress-fill {
+    animation-play-state: paused;
+}
+
+@keyframes lp-progress {
+    to { transform: scaleX(1); }
+}
+
+/* ─── Módulos ────────────────────────────────────────────────────────────── */
+.lp-modules {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.lp-module {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    padding: 24px;
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    color: inherit;
+    transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.lp-module:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset, 0 20px 50px rgba(23, 35, 58, 0.09);
+}
+
+.lp-module-photo {
+    position: relative;
+    margin: -24px -24px 0.2rem;
+    height: 150px;
+    overflow: hidden;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    background: var(--lp-ink);
+}
+
+.lp-module-photo img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    filter: grayscale(0.25) saturate(0.8);
+    transition: transform 0.6s var(--lp-ease), filter 0.6s var(--lp-ease);
+}
+
+.lp-module-photo::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(23, 35, 58, 0) 45%, rgba(23, 35, 58, 0.55) 100%);
+    pointer-events: none;
+}
+
+.lp-module:hover .lp-module-photo img {
+    transform: scale(1.05);
+    filter: grayscale(0) saturate(0.95);
+}
+
+.lp-module {
+    overflow: hidden;
+}
+
+.lp-module-head {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.lp-module-logo {
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+    color: var(--lp-navy);
+}
+
+.lp-module-logo img {
+    width: 26px;
+    height: 26px;
+    object-fit: contain;
+}
+
+.lp-module-logo svg {
+    width: 22px;
+    height: 22px;
+}
+
+.lp-module-name {
+    font-family: var(--font-heading);
+    font-size: 1.02rem;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--lp-ink);
+}
+
+.lp-module p {
+    position: relative;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.lp-module-foot {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: auto;
+    padding-top: 0.9rem;
+    border-top: 1px solid rgba(15, 23, 42, 0.07);
+    font-size: 0.82rem;
+}
+
+.lp-module-stat {
+    font-weight: 600;
+    color: var(--lp-ink);
+}
+
+.lp-module-go {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-weight: 600;
+    color: var(--lp-accent);
+}
+
+.lp-module-go svg {
+    transition: transform var(--transition-fast);
+}
+
+.lp-module:hover .lp-module-go svg {
+    transform: translateX(3px);
+}
+
+/* ─── Autores ────────────────────────────────────────────────────────────── */
+.lp-authors-photo {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(46%, 620px);
+    z-index: 0;
+    background-size: cover;
+    background-position: center 30%;
+    filter: grayscale(0.6) contrast(0.95);
+    opacity: 0.32;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 55%);
+    mask-image: linear-gradient(90deg, transparent 0%, #000 55%);
+    pointer-events: none;
+}
+
+.lp-authors {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    max-width: 880px;
+}
+
+.lp-author {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    padding: 24px;
+    border-radius: var(--radius-lg);
+}
+
+.lp-author-avatar {
+    position: relative;
+    width: 68px;
+    height: 68px;
+    border-radius: 22px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-heading);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #fff;
+    background: var(--lp-gradient);
+    box-shadow: 0 8px 20px rgba(23, 35, 58, 0.14);
+}
+
+.lp-author-body {
+    position: relative;
+    min-width: 0;
+}
+
+.lp-author-name {
+    font-size: 1.2rem;
+    color: var(--lp-ink);
+}
+
+.lp-author-role {
+    font-size: 0.86rem;
+    color: var(--text-secondary);
+}
+
+.lp-author-mail {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.45rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--lp-accent);
+    text-decoration: none;
+    word-break: break-all;
+}
+
+.lp-author-mail:hover {
+    text-decoration: underline;
+}
+
+/* ─── Footer ─────────────────────────────────────────────────────────────── */
+.lp-footer {
+    padding: 28px 0 36px;
+    border-top: 1px solid rgba(15, 23, 42, 0.07);
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.lp-footer-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+}
+
+.lp-footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-weight: 600;
+    color: var(--lp-ink);
+}
+
+.lp-brand-udec-shield {
+    height: 38px;
+    width: auto;
+    display: block;
+}
+
+.lp-credits {
+    margin-top: 14px;
+    font-size: 0.74rem;
+    color: var(--text-muted);
+}
+
+.lp-credits summary {
+    cursor: pointer;
+    width: max-content;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.lp-credits ul {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 4px 24px;
+    margin-top: 10px;
+}
+
+.lp-credits a {
+    color: var(--lp-accent);
+}
+
+.lp-footer-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    text-align: right;
+}
+
+.lp-footer-funding {
+    font-weight: 600;
+    color: var(--lp-ink);
+}
+
+.lp-footer-note {
+    color: var(--text-muted);
+}
+
+/* ─── Aparición al hacer scroll ──────────────────────────────────────────── */
+.lp-reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 0.8s var(--lp-ease), transform 0.8s var(--lp-ease);
+    transition-delay: var(--lp-reveal-delay, 0ms);
+}
+
+.lp-reveal.is-visible {
+    opacity: 1;
+    transform: none;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .lp-art-callout {
+        display: none;
+    }
+}
+
+@media (max-width: 1100px) {
+    .lp-objectives {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .lp-modules {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 1023px) {
+    .lp-slide {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 26px;
+        padding: 32px 28px;
+    }
+
+    .lp-slide-link {
+        margin-top: 0;
+    }
+}
+
+@media (max-width: 900px) {
+    .lp-menu-toggle {
+        display: inline-flex;
+    }
+
+    /* Pestañas en un panel a todo el ancho bajo la franja del header */
+    .lp-tabs {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 2px;
+        padding: 8px 12px 12px;
+        background: rgba(255, 255, 255, 0.96);
+        border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+        box-shadow: 0 14px 30px rgba(23, 35, 58, 0.08);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-6px) scale(0.98);
+        transform-origin: top center;
+        transition: opacity 0.22s var(--lp-ease), transform 0.22s var(--lp-ease), visibility 0s linear 0.22s;
+    }
+
+    .lp-header.menu-open .lp-tabs {
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+        transition: opacity 0.22s var(--lp-ease), transform 0.22s var(--lp-ease), visibility 0s;
+    }
+
+    .lp-tab {
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+    }
+
+    .lp-tab.active::after {
+        display: none;
+    }
+
+    .lp-tab.active {
+        background: var(--lp-tint);
+    }
+
+    .lp-header-inner {
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 640px) {
+    .lp-container {
+        padding: 0 16px;
+    }
+
+    .lp-header-inner {
+        padding: 0 12px 0 16px;
+        gap: 0.5rem;
+    }
+
+    .lp-brand {
+        gap: 0.5rem;
+    }
+
+    .lp-brand-udec {
+        height: 34px;
+    }
+
+    .lp-brand-catlec {
+        height: 40px;
+        margin: 0 -12px 0 -14px;
+    }
+
+    .lp-section {
+        padding: 72px 0;
+    }
+
+    .lp-objectives,
+    .lp-modules,
+    .lp-authors {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .lp-slide {
+        padding: 24px 18px;
+    }
+
+    .lp-slide-chart {
+        padding: 14px 12px 10px;
+    }
+
+    .lp-slide-chart-head {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .lp-legend {
+        justify-content: flex-start;
+    }
+
+    .lp-slide-canvas {
+        min-height: 260px;
+    }
+
+    .lp-slide-photo::after {
+        background: rgba(246, 247, 249, 0.9);
+    }
+
+    .lp-band {
+        height: 340px;
+    }
+
+    .lp-authors-photo {
+        width: 70%;
+        opacity: 0.18;
+    }
+
+    .lp-module-photo {
+        margin: -24px -24px 0.2rem;
+        height: 130px;
+    }
+
+    .lp-carousel-arrow {
+        width: 38px;
+        height: 38px;
+        flex-shrink: 0;
+    }
+
+    .lp-author {
+        padding: 18px;
+    }
+
+    .lp-footer-meta {
+        align-items: flex-start;
+        text-align: left;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html.landing-root {
+        scroll-behavior: auto;
+    }
+
+
+    .lp-band-img {
+        transform: none;
+        will-change: auto;
+    }
+
+    .lp-reveal,
+    .lp-slide {
+        transition: none;
+        transform: none;
+        filter: none;
+    }
+
+    .lp-reveal {
+        opacity: 1;
+    }
+}

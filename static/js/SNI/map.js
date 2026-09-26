@@ -3,91 +3,29 @@
  * Mapa Coroplético Regional Interactivo (D3.js) para SNI
  */
 
-let sniSvg = null;
-let sniZoomGroup = null;
-let sniProjection = null;
-let sniPathGen = null;
-let sniResizeObserver = null;
+let sniChoropleth = null;
 let sniTooltipEl = null;
-let sniPathsInitialized = false;
-
-// Límites territoriales exactos de Chile Continental (Arica a Magallanes / Cabo de Hornos)
-// como Polygon GeoJSON (lon, lat). Excluye la distorsión del extremo oceánico insular
-// (Isla de Pascua, dentro del MultiPolygon de la Región de Valparaíso, a ~lon -109°) para
-// un encuadre inicial perfecto — usar SIEMPRE este rectángulo sintético para fitExtent,
-// nunca el bounding box real de window.REGIONS_DATA.
-// IMPORTANTE: el anillo debe quedar en sentido horario (SW→NW→NE→SE→SW) para que
-// d3-geo lo interprete como el interior pequeño del rectángulo. Un anillo antihorario
-// aquí hace que d3 lo trate como "todo el globo salvo este recorte", arruinando
-// fitExtent (el "interior" quedaría siendo la mayor parte del planeta).
-const CHILE_CONTINENTAL_BOUNDS_GEOJSON = {
-    type: 'Feature',
-    geometry: {
-        type: 'Polygon',
-        coordinates: [[
-            [-76.20, -55.98],
-            [-76.20, -17.50],
-            [-66.40, -17.50],
-            [-66.40, -55.98],
-            [-76.20, -55.98]
-        ]]
-    }
-};
 
 function initSNIMap() {
-    const mapContainer = document.getElementById('sni-map');
-    if (!mapContainer || sniSvg) return;
-
+    if (sniChoropleth) return;
     sniTooltipEl = document.getElementById('sni-map-tooltip');
-
-    sniSvg = d3.select(mapContainer)
-        .append('svg')
-        .attr('class', 'sni-map-svg')
-        .style('width', '100%')
-        .style('height', '100%')
-        .style('display', 'block');
-
-    sniZoomGroup = sniSvg.append('g').attr('class', 'sni-map-regions');
-
     setupMapMetricSelectors();
 
-    // Primer dibujo síncrono: no depender únicamente del primer disparo de
-    // ResizeObserver (en algunos entornos/pestañas en segundo plano puede no
-    // llegar de inmediato). drawOrResizeSNIMap() es seguro de invocar dos
-    // veces gracias al guard sniPathsInitialized.
-    drawOrResizeSNIMap();
-
-    // ResizeObserver cubre los redibujados posteriores (cambio de vista,
-    // resize de ventana, colapso de sidebar).
-    if (typeof ResizeObserver !== 'undefined') {
-        sniResizeObserver = new ResizeObserver(() => drawOrResizeSNIMap());
-        sniResizeObserver.observe(mapContainer);
-    } else {
-        window.addEventListener('resize', () => drawOrResizeSNIMap());
-    }
+    sniChoropleth = CatlecChoropleth.create('sni-map', {
+        features: getD3SafeRegionFeatures(),
+        onEnter: (event, feature) => {
+            const { rawName, regionKey } = getRegionKeyForFeature(feature);
+            showRegionTooltip(event, regionKey, rawName);
+        },
+        onMove: (event) => CatlecChoropleth.positionTooltip(sniTooltipEl, event),
+        onLeave: () => hideRegionTooltip(),
+        onDraw: () => updateSNIMapChoropleth()
+    });
+    if (sniChoropleth) sniChoropleth.redraw();
 }
 
 function drawOrResizeSNIMap() {
-    const mapContainer = document.getElementById('sni-map');
-    if (!mapContainer || !sniSvg) return;
-
-    const width = mapContainer.clientWidth || 400;
-    const height = mapContainer.clientHeight || 400;
-    if (width <= 0 || height <= 0) return;
-
-    const padding = 14;
-    sniProjection = d3.geoMercator().fitExtent(
-        [[padding, padding], [width - padding, height - padding]],
-        CHILE_CONTINENTAL_BOUNDS_GEOJSON
-    );
-    sniPathGen = d3.geoPath().projection(sniProjection);
-
-    if (!sniPathsInitialized) {
-        drawRegionPaths();
-        sniPathsInitialized = true;
-    } else {
-        sniZoomGroup.selectAll('path.sni-region-path').attr('d', sniPathGen);
-    }
+    if (sniChoropleth) sniChoropleth.redraw();
 }
 
 // Los anillos de window.REGIONS_DATA no vienen exactamente cerrados (el último
@@ -148,26 +86,6 @@ function getD3SafeRegionFeatures() {
     });
 }
 
-function drawRegionPaths() {
-    if ((!window.SNI_REGIONS_DATA && !window.REGIONS_DATA) || !sniZoomGroup) return;
-
-    const features = getD3SafeRegionFeatures();
-
-    sniZoomGroup.selectAll('path.sni-region-path')
-        .data(features)
-        .enter()
-        .append('path')
-        .attr('class', 'sni-region-path')
-        .attr('vector-effect', 'non-scaling-stroke')
-        .attr('d', sniPathGen)
-        .attr('fill-opacity', 0.7)
-        .on('mouseenter', onRegionMouseEnter)
-        .on('mousemove', onRegionMouseMove)
-        .on('mouseleave', onRegionMouseLeave);
-
-    updateSNIMapChoropleth();
-}
-
 function getRegionKeyForFeature(feature) {
     if (feature && feature._sniRegionKey) {
         return { rawName: feature._sniRawName, regionKey: feature._sniRegionKey };
@@ -179,28 +97,6 @@ function getRegionKeyForFeature(feature) {
         feature._sniRegionKey = regionKey;
     }
     return { rawName, regionKey };
-}
-
-function onRegionMouseEnter(event, feature) {
-    const { rawName, regionKey } = getRegionKeyForFeature(feature);
-    d3.select(this)
-        .attr('stroke', '#3b82f6')
-        .attr('stroke-width', 3)
-        .attr('fill-opacity', 0.9)
-        .raise();
-    showRegionTooltip(event, regionKey, rawName);
-}
-
-function onRegionMouseMove(event) {
-    positionSNIMapTooltip(event);
-}
-
-function onRegionMouseLeave() {
-    d3.select(this)
-        .attr('stroke', '#ffffff')
-        .attr('stroke-width', 1.5)
-        .attr('fill-opacity', 0.7);
-    hideRegionTooltip();
 }
 
 function setupMapMetricSelectors() {
@@ -355,23 +251,7 @@ function showRegionTooltip(event, regionKey, rawName) {
         <span style="color:#94a3b8;">Población: ${reg && reg.poblacion ? reg.poblacion.toLocaleString('es-CL') : 'N/A'} hab · Superficie: ${reg && reg.superficie_km2 ? reg.superficie_km2.toLocaleString('es-CL') + ' km²' : 'N/A'}</span>
     `;
     sniTooltipEl.classList.add('visible');
-    positionSNIMapTooltip(event);
-}
-
-function positionSNIMapTooltip(event) {
-    if (!sniTooltipEl) return;
-    const offset = 14;
-    let x = event.clientX + offset;
-    let y = event.clientY + offset;
-
-    const rect = sniTooltipEl.getBoundingClientRect();
-    const maxX = window.innerWidth - rect.width - 8;
-    const maxY = window.innerHeight - rect.height - 8;
-    if (x > maxX) x = event.clientX - rect.width - offset;
-    if (y > maxY) y = event.clientY - rect.height - offset;
-
-    sniTooltipEl.style.left = `${Math.max(x, 4)}px`;
-    sniTooltipEl.style.top = `${Math.max(y, 4)}px`;
+    CatlecChoropleth.positionTooltip(sniTooltipEl, event);
 }
 
 function hideRegionTooltip() {
@@ -379,7 +259,7 @@ function hideRegionTooltip() {
 }
 
 function updateSNIMapChoropleth() {
-    if (!sniZoomGroup) return;
+    if (!sniChoropleth) return;
 
     const { regions } = getRegionalAggregates();
     const metric = (typeof sniState !== 'undefined' && sniState.selectedMapMetric) ? sniState.selectedMapMetric : 'total';
@@ -397,7 +277,7 @@ function updateSNIMapChoropleth() {
     const maxVal = activeVals.length > 0 ? Math.max(...activeVals) : 0;
     const minVal = activeVals.length > 0 ? Math.min(...activeVals) : 0;
 
-    sniZoomGroup.selectAll('path.sni-region-path')
+    sniChoropleth.paths()
         .attr('fill', (d) => {
             const { regionKey } = getRegionKeyForFeature(d);
             const val = valueMap[regionKey] || 0;

@@ -180,41 +180,48 @@ window.CatlecUtils = {
     },
 
     // Plugin de Chart.js: dibuja el valor de cada barra horizontal, adentro si
-    // hay espacio o afuera a la derecha si la barra es angosta. La plataforma
-    // opera solo en tema claro (ver CLAUDE.md), por eso no hay rama de tema oscuro.
+    // hay espacio o afuera si la barra es angosta. Por defecto solo el dataset 0
+    // y valores positivos; `allDatasets` y `allowNegative` habilitan butterfly y
+    // barras divergentes (la barra negativa crece a la izquierda del eje).
     horizontalBarDataLabelsPlugin: {
         id: 'horizontalBarDataLabelsPlugin',
         afterDatasetsDraw: (chart, args, pluginOptions) => {
             const ctx = chart.ctx;
-            const meta = chart.getDatasetMeta(0);
-            if (!meta || !meta.data) return;
-
-            const outsideColor = '#334155';
-            const insideColor = '#ffffff';
-            const formatter = (pluginOptions && pluginOptions.formatter) || ((v) => String(v));
-            const font = (pluginOptions && pluginOptions.font) || '700 9.5px Helvetica Neue, Helvetica, Arial, sans-serif';
+            const opts = pluginOptions || {};
+            const outsideColorOpt = opts.outsideColor || '#334155';
+            const insideColorOpt = opts.insideColor || '#ffffff';
+            const formatter = opts.formatter || ((v) => String(v));
+            const font = opts.font || '700 9.5px Helvetica Neue, Helvetica, Arial, sans-serif';
+            const datasetIdxs = opts.allDatasets ? chart.data.datasets.map((_, i) => i) : [0];
 
             ctx.save();
             ctx.font = font;
             ctx.textBaseline = 'middle';
 
-            meta.data.forEach((bar, index) => {
-                const rawVal = chart.data.datasets[0].data[index];
-                if (rawVal === undefined || rawVal === null || rawVal <= 0) return;
+            datasetIdxs.forEach((dIdx) => {
+                const meta = chart.getDatasetMeta(dIdx);
+                if (!meta || meta.hidden || !meta.data) return;
 
-                const text = formatter(rawVal);
-                const textWidth = ctx.measureText(text).width;
-                const barWidth = Math.abs(bar.x - bar.base);
+                meta.data.forEach((bar, index) => {
+                    const rawVal = chart.data.datasets[dIdx].data[index];
+                    if (rawVal === undefined || rawVal === null || rawVal === 0) return;
+                    if (rawVal < 0 && !opts.allowNegative) return;
 
-                if (barWidth >= textWidth + 18) {
-                    ctx.fillStyle = insideColor;
-                    ctx.textAlign = 'right';
-                    ctx.fillText(text, bar.x - 6, bar.y);
-                } else {
-                    ctx.fillStyle = outsideColor;
-                    ctx.textAlign = 'left';
-                    ctx.fillText(text, bar.x + 5, bar.y);
-                }
+                    const text = formatter(rawVal, dIdx, index);
+                    const textWidth = ctx.measureText(text).width;
+                    const barWidth = Math.abs(bar.x - bar.base);
+                    const growsLeft = bar.x < bar.base;
+
+                    if (barWidth >= textWidth + 18) {
+                        ctx.fillStyle = typeof insideColorOpt === 'function' ? insideColorOpt(rawVal, dIdx, index) : insideColorOpt;
+                        ctx.textAlign = growsLeft ? 'left' : 'right';
+                        ctx.fillText(text, growsLeft ? bar.x + 6 : bar.x - 6, bar.y);
+                    } else {
+                        ctx.fillStyle = typeof outsideColorOpt === 'function' ? outsideColorOpt(rawVal, dIdx, index) : outsideColorOpt;
+                        ctx.textAlign = growsLeft ? 'right' : 'left';
+                        ctx.fillText(text, growsLeft ? bar.x - 5 : bar.x + 5, bar.y);
+                    }
+                });
             });
 
             ctx.restore();
@@ -236,12 +243,12 @@ window.CatlecUtils = {
             ctx.font = font;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillStyle = color;
 
             chart.data.datasets.forEach((dataset, dIdx) => {
                 if (dataset.type === 'line') return;
                 const meta = chart.getDatasetMeta(dIdx);
                 if (!meta || meta.hidden || !meta.data) return;
+                ctx.fillStyle = typeof color === 'function' ? color(dIdx, dataset) : color;
 
                 meta.data.forEach((bar, index) => {
                     const rawVal = dataset.data[index];

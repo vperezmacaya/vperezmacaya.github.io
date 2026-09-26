@@ -14,8 +14,8 @@
     <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 
     <!-- CSS Custom stylesheet -->
-    <link rel="stylesheet" href="static/css/styles.css?v=20260924_11">
-    <link rel="stylesheet" href="static/css/sni_addons.css">
+    <link rel="stylesheet" href="static/css/styles.css?v=20260925_land1">
+    <link rel="stylesheet" href="static/css/sni_addons.css?v=20260925_mop4">
 
     <!-- Chart.js for premium chart renders -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
@@ -37,7 +37,8 @@
     <script src="static/js/SNI/state.js"></script>
     <script src="static/js/SNI/filters.js"></script>
     <script src="static/js/SNI/charts.js?v=20260924_1"></script>
-    <script src="static/js/SNI/map.js?v=20260922_0004"></script>
+    <script src="static/js/common/choropleth.js?v=20260925_2"></script>
+    <script src="static/js/SNI/map.js?v=20260925_1"></script>
     <script src="static/js/SNI/ui.js?v=20260924_5"></script>
 
 </head>
@@ -48,8 +49,10 @@
         <!-- Top Navigation Banner -->
         <header class="top-navbar">
             <div class="top-navbar-left">
-                <img src="logo/cropped-Logo-CATLEC-horizontal-sin-fondo-1.png" alt="Logo CATLEC"
-                    class="top-navbar-logo">
+                <a href="index.html" class="top-navbar-home" title="Volver al inicio del Observatorio CATLEC">
+                    <img src="logo/cropped-Logo-CATLEC-horizontal-sin-fondo-1.png" alt="Logo CATLEC"
+                        class="top-navbar-logo">
+                </a>
                 <span class="top-navbar-title">Visor de datos - Sistema Nacional de
                     Inversiones (SNI)</span>
                 <span class="top-navbar-divider"></span>
@@ -182,7 +185,7 @@
             <!-- Main Area: Top KPI Strip + Active View Container -->
             <main class="sni-main-area">
 
-                <!-- Banner de KPIs Globales con el formato exacto de index.html -->
+                <!-- Banner de KPIs Globales con el formato exacto de DGC.html -->
                 <div class="sni-kpi-row">
                     <div class="card-kpi">
                         <div class="kpi-icon"><i data-lucide="dollar-sign"></i></div>
@@ -398,10 +401,10 @@
 
     <!-- Tooltip flotante del Mapa Coroplético (D3.js) — agregado a <body> para evitar
          que .sni-card (overflow:hidden) lo recorte cerca de los bordes -->
-    <div id="sni-map-tooltip" class="catlec-map-tooltip"></div>
+    <div id="sni-map-tooltip" class="catlec-map-tooltip catlec-map-tooltip--fixed"></div>
 
     <!-- Nav Menu JS -->
-    <script src="static/js/common/nav-menu.js?v=20260924_5"></script>
+    <script src="static/js/common/nav-menu.js?v=20260925_land1"></script>
     <script>CatlecNav.render();</script>
 
     <!-- Toast de Notificación para Exportación a Excel On-Demand -->
@@ -449,7 +452,7 @@
                                     <i data-lucide="user-check" style="width: 13px; height: 13px; color: #2563eb;"></i>
                                     Vicente Pérez
                                 </div>
-                                <span class="about-author-role">Facultad de Ingeniería, Universidad de Concepción</span>
+                                <span class="about-author-role">Departamento de Ingeniería Industrial, Facultad de Ingeniería, Universidad de Concepción</span>
                                 <div class="about-author-contacts">
                                     <a href="mailto:vicperez2021@udec.cl" class="about-author-contact-item" title="Enviar correo a Vicente Pérez">
                                         <i data-lucide="mail" style="width: 12px; height: 12px; color: #64748b;"></i>
@@ -472,7 +475,7 @@
                                     <i data-lucide="user-check" style="width: 13px; height: 13px; color: #2563eb;"></i>
                                     José Oliveros
                                 </div>
-                                <span class="about-author-role">Facultad de Ingeniería, Universidad de Concepción</span>
+                                <span class="about-author-role">Departamento de Ingeniería Industrial, Facultad de Ingeniería, Universidad de Concepción</span>
                                 <div class="about-author-contacts">
                                     <a href="mailto:joseoliveros@udec.cl" class="about-author-contact-item" title="Enviar correo a José Oliveros">
                                         <i data-lucide="mail" style="width: 12px; height: 12px; color: #64748b;"></i>

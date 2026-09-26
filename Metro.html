@@ -14,7 +14,7 @@
     <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 
     <!-- CATLEC Global Stylesheet & Metro Addon -->
-    <link rel="stylesheet" href="static/css/styles.css?v=20260924_gl3">
+    <link rel="stylesheet" href="static/css/styles.css?v=20260925_land1">
     <link rel="stylesheet" href="static/css/efe_addons.css?v=20260924_gl4">
     <link rel="stylesheet" href="static/css/metro_addons.css?v=20260924_gl2">
 
@@ -33,9 +33,11 @@
         <!-- Top Navigation Banner -->
         <header class="top-navbar">
             <div class="top-navbar-left">
-                <img src="logo/Escudo_udec.gif" alt="Escudo UdeC" class="top-navbar-logo-udec">
-                <img src="logo/cropped-Logo-CATLEC-horizontal-sin-fondo-1.png" alt="Logo CATLEC"
-                    class="top-navbar-logo">
+                <a href="index.html" class="top-navbar-home" title="Volver al inicio del Observatorio CATLEC">
+                    <img src="logo/Escudo_udec.gif" alt="Escudo UdeC" class="top-navbar-logo-udec">
+                    <img src="logo/cropped-Logo-CATLEC-horizontal-sin-fondo-1.png" alt="Logo CATLEC"
+                        class="top-navbar-logo">
+                </a>
                 <span class="top-navbar-title">Visor de datos - Metro de Santiago</span>
                 <span class="top-navbar-divider"></span>
                 <span class="top-navbar-proto">Prototipo en desarrollo</span>
@@ -137,7 +139,7 @@
                         </div>
                     </section>
 
-                    <!-- Secondary Section: Export Buttons (Estilo index.html) -->
+                    <!-- Secondary Section: Export Buttons (Estilo DGC.html) -->
                     <div class="metro-export-toolbar"
                         style="padding: 0.35rem 0.65rem; border-bottom: 1px solid var(--border-color); background: var(--bg-card); flex-shrink: 0;">
                         <div style="display: flex; gap: 0.25rem; width: 100%;">
@@ -557,12 +559,15 @@
                                 <canvas id="metroChartPoblacionAxisLeft"
                                     style="position: absolute; left: 0; top: 0; z-index: 6; pointer-events: auto;"></canvas>
 
-                                <!-- Contenedor Scrollable del Gráfico Principal -->
-                                <div id="metroComunasScrollContainer" class="metro-comunas-scroll-x"
-                                    style="flex: 1; min-height: 0; overflow-x: auto; overflow-y: hidden; position: relative; width: 100%; padding-bottom: 4px;">
-                                    <div id="metroChartComunasPoblacionWrapper"
-                                        style="height: 100%; min-width: 2250px; position: relative;">
-                                        <canvas id="metroChartComunasPoblacion"></canvas>
+                                <!-- Contenedor Scrollable del Gráfico Principal: se ubica entre los ejes
+                                     inmovilizados (márgenes = ancho de cada eje), así la scrollbar solo abarca el área de trazado -->
+                                <div id="metroComunasScrollContainer"
+                                    style="flex: 1; min-height: 0; overflow-x: auto; overflow-y: hidden; position: relative; padding-bottom: 4px;">
+                                    <!-- Recorte: oculta los ejes Y propios del canvas (ya visibles en los ejes inmovilizados) -->
+                                    <div id="metroChartComunasPoblacionClip">
+                                        <div id="metroChartComunasPoblacionWrapper">
+                                            <canvas id="metroChartComunasPoblacion"></canvas>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -802,7 +807,7 @@
             <span class="app-footer-text">Desarrollado por: Jose Oliveros, Vicente Pérez</span>
         </div>
         <div class="app-footer-right">
-            <span class="app-footer-text">Universidad de Concepción &nbsp;·&nbsp; Facultad de Ingeniería</span>
+            <span class="app-footer-text">Universidad de Concepción &nbsp;·&nbsp; Facultad de Ingeniería &nbsp;·&nbsp; Departamento de Ingeniería Industrial</span>
         </div>
     </footer>
 
@@ -832,7 +837,7 @@
     <script src="static/js/Metro/ui.js?v=20260924_gl1"></script>
 
     <!-- Nav Menu & View Switcher Script -->
-    <script src="static/js/common/nav-menu.js?v=20260924_5"></script>
+    <script src="static/js/common/nav-menu.js?v=20260925_land1"></script>
     <script>
         (function () {
             CatlecNav.render();
@@ -963,7 +968,7 @@
                                     <i data-lucide="user-check" style="width: 13px; height: 13px; color: #2563eb;"></i>
                                     Vicente Pérez
                                 </div>
-                                <span class="about-author-role">Facultad de Ingeniería, Universidad de Concepción</span>
+                                <span class="about-author-role">Departamento de Ingeniería Industrial, Facultad de Ingeniería, Universidad de Concepción</span>
                                 <div class="about-author-contacts">
                                     <a href="mailto:vicperez2021@udec.cl" class="about-author-contact-item" title="Enviar correo a Vicente Pérez">
                                         <i data-lucide="mail" style="width: 12px; height: 12px; color: #64748b;"></i>
@@ -986,7 +991,7 @@
                                     <i data-lucide="user-check" style="width: 13px; height: 13px; color: #2563eb;"></i>
                                     José Oliveros
                                 </div>
-                                <span class="about-author-role">Facultad de Ingeniería, Universidad de Concepción</span>
+                                <span class="about-author-role">Departamento de Ingeniería Industrial, Facultad de Ingeniería, Universidad de Concepción</span>
                                 <div class="about-author-contacts">
                                     <a href="mailto:joseoliveros@udec.cl" class="about-author-contact-item" title="Enviar correo a José Oliveros">
                                         <i data-lucide="mail" style="width: 12px; height: 12px; color: #64748b;"></i>

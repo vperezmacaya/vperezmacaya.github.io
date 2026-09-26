@@ -23,6 +23,11 @@
     flex-shrink: 0;
 }
 
+/* Fila de KPIs (4 Columnas) - Vista Tipología de Carga */
+.puertos-kpi-row-4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
 .kpi-subtext {
     font-size: 0.62rem;
     color: var(--text-muted);
@@ -33,15 +38,64 @@
     display: block;
 }
 
-/* Grilla de Gráficos 2x2 */
+/* ── Grillas de gráficos: un layout propio por visualización ─────── */
 .puertos-charts-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(2, 1fr);
     gap: 0.5rem;
     flex: 1;
     min-height: 0;
-    height: 100%;
+}
+
+/* Resumen: serie ancha arriba + 2 columnas abajo */
+.puertos-layout-resumen {
+    grid-template-columns: 1.45fr 1fr;
+    grid-template-rows: 1.1fr 1fr;
+}
+
+/* Contenedores: columna alta a la izquierda + columna apilada (patrón DGC 42/58) */
+.puertos-layout-contenedores {
+    grid-template-columns: 42% 1fr;
+    grid-template-rows: 1fr;
+}
+
+/* Tipología: 2 tarjetas arriba + una a ancho completo abajo */
+.puertos-layout-tipologia {
+    grid-template-columns: 1.5fr 1fr;
+    grid-template-rows: 1fr 1.1fr;
+}
+
+/* Terrestre: mapa de calor protagonista + columna apilada */
+.puertos-layout-terrestre {
+    grid-template-columns: 58% 1fr;
+    grid-template-rows: 1fr;
+}
+
+.puertos-span-full {
+    grid-column: 1 / -1;
+}
+
+.puertos-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-height: 0;
+    min-width: 0;
+}
+
+.puertos-stack > .puertos-chart-card {
+    flex: 1;
+}
+
+/* Tarjetas compactas (donuts) dentro de una columna apilada */
+.puertos-stack > .puertos-stack-compact {
+    flex: 0 0 36%;
+}
+
+.puertos-pie-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    min-height: 0;
 }
 
 .puertos-chart-card {
@@ -52,6 +106,7 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
+    min-width: 0;
     overflow: hidden;
     box-shadow: var(--shadow-main);
 }
@@ -111,6 +166,7 @@
 .puertos-pie-legend {
     flex: 1;
     min-width: 0;
+    max-width: 220px;
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
@@ -119,7 +175,155 @@
     max-height: 100%;
 }
 
-/* Botón de Exportar Excel (Estilo index.html) */
+/* ── Cabecera: badge y micro-leyenda (estándar catlec-bar-chart) ──── */
+.puertos-chart-badge {
+    font-size: 0.62rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.puertos-title-icon {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+    color: var(--legend-color);
+}
+
+.puertos-legend {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.63rem;
+    flex-shrink: 0;
+}
+
+.puertos-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--legend-color, var(--text-secondary));
+}
+
+.puertos-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background: var(--legend-color);
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.puertos-legend-dot--line {
+    border-radius: 50%;
+}
+
+.puertos-legend-dot--dashed {
+    width: 14px;
+    height: 0;
+    border-radius: 0;
+    background: none;
+    border-top: 2px dashed var(--legend-color);
+}
+
+.puertos-legend-dot--soft {
+    opacity: 0.4;
+}
+
+/* Paleta marina/naval (mismos valores que COLORS en static/js/Puertos/state.js) */
+.puertos-c-navy { --legend-color: #1d3557; }
+.puertos-c-ocean { --legend-color: #3a7ca5; }
+.puertos-c-sand { --legend-color: #d9a23d; }
+.puertos-c-teal { --legend-color: #2a9d8f; }
+.puertos-c-coral { --legend-color: #e76f51; }
+.puertos-c-buoy { --legend-color: #c1121f; }
+.puertos-c-steel { --legend-color: #5c7185; }
+.puertos-c-lagoon { --legend-color: #4ea8c7; }
+
+/* ── Mapa de calor año × mes (Conectividad Terrestre) ───────────── */
+.puertos-heatmap {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 2.4rem repeat(12, minmax(0, 1fr)) 3.6rem;
+    grid-template-rows: auto;
+    grid-auto-rows: minmax(0, 1fr);
+    gap: 3px;
+}
+
+.puertos-heatmap-head {
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-align: center;
+    padding-bottom: 0.15rem;
+}
+
+.puertos-heatmap-year {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+}
+
+.puertos-heatmap-cell {
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 0.64rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.puertos-heatmap-cell--dark {
+    color: #ffffff;
+}
+
+.puertos-heatmap-cell:not(.puertos-heatmap-cell--empty):hover {
+    position: relative;
+    z-index: 1;
+    transform: scale(1.07);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
+}
+
+.puertos-heatmap-cell--empty {
+    background: repeating-linear-gradient(45deg, #f8fafc, #f8fafc 4px, #f1f5f9 4px, #f1f5f9 8px);
+}
+
+.puertos-heatmap-total {
+    font-size: 0.66rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.puertos-heatmap-scale {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.6rem;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.puertos-heatmap-scale-bar {
+    width: 70px;
+    height: 7px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #e8f1f7, #3a7ca5 55%, #1d3557);
+}
+
+/* Botón de Exportar Excel (Estilo DGC.html) */
 #btn-export-excel {
     background: rgba(16, 185, 129, 0.15);
     border-color: rgba(16, 185, 129, 0.35);
@@ -132,4 +336,43 @@
     border-color: rgba(16, 185, 129, 0.6);
     color: #ffffff;
     box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+/* ── Pantallas angostas: una columna con scroll ─────────────────── */
+@media (max-width: 900px) {
+    .puertos-view-wrapper {
+        overflow-y: auto;
+    }
+
+    .puertos-kpi-row,
+    .puertos-kpi-row-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .puertos-layout-resumen,
+    .puertos-layout-contenedores,
+    .puertos-layout-tipologia,
+    .puertos-layout-terrestre {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: none;
+        flex: none;
+    }
+
+    .puertos-charts-grid > .puertos-chart-card,
+    .puertos-stack > .puertos-chart-card {
+        min-height: 280px;
+    }
+
+    .puertos-stack > .puertos-stack-compact,
+    .puertos-pie-row > .puertos-chart-card {
+        min-height: 170px;
+    }
+
+    .puertos-pie-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .puertos-heatmap {
+        grid-auto-rows: 26px;
+    }
 }

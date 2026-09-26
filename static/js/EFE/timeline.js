@@ -1,7 +1,7 @@
 /**
  * static/js/EFE/timeline.js
  * Visualización de Líneas de Tiempo (Gantt) para proyectos EFE Trenes de Chile.
- * Harmonized with CATLEC index.html design palette, fonts, and SVG styling.
+ * Harmonized with CATLEC DGC.html design palette, fonts, and SVG styling.
  */
 
 // ── Color Único para las Barras del Timeline (Azul Marino Corporativo) ──────

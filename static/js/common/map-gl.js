@@ -16,10 +16,17 @@ window.CatlecMapGL = {
     // Créditos del mapa (mismo formato que tenían los mapas Leaflet)
     ATTRIBUTION_HTML: '<a href="https://maplibre.org" target="_blank" rel="noopener" title="Librería de mapas interactivos">MapLibre</a> <span aria-hidden="true">|</span> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
 
+    // Sensibilidad de la rueda del mouse. El valor nativo de MapLibre (1/450)
+    // avanza ~0,15 niveles por muesca (muy lento) y 1/60 ~0,75 (demasiado
+    // sensible); 1/125 da ~0,45, un punto intermedio. Mayor = más sensible (el
+    // máximo por muesca es 1 nivel). No afecta al trackpad (usa zoomRate).
+    WHEEL_ZOOM_RATE: 1 / 125,
+
     // Crea un mapa con el estándar CATLEC: Positron, zoom arriba a la izquierda
-    // sin brújula, sin rotación ni inclinación, y el botón "i" de créditos
-    // contraíble (addCollapsibleAttribution) en lugar del control nativo.
-    createMap(containerId, { center, zoom, minZoom = 0, maxZoom = 20 } = {}) {
+    // sin brújula, sin rotación ni inclinación, rueda con WHEEL_ZOOM_RATE y el
+    // botón "i" de créditos contraíble (addCollapsibleAttribution) en lugar
+    // del control nativo.
+    createMap(containerId, { center, zoom, minZoom = 0, maxZoom = 20, wheelZoomRate = this.WHEEL_ZOOM_RATE } = {}) {
         const map = new maplibregl.Map({
             container: containerId,
             style: this.STYLE_URL,
@@ -34,6 +41,7 @@ window.CatlecMapGL = {
         });
         map.touchZoomRotate.disableRotation();
         map.keyboard.disableRotation();
+        map.scrollZoom.setWheelZoomRate(wheelZoomRate);
         map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-left');
         this.addCollapsibleAttribution(map);
         return map;

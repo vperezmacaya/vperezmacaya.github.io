@@ -75,16 +75,16 @@ function showProjectDetail(p, globalIndex) {
                 <h3 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--text-primary); line-height: 1.35; font-family: var(--font-heading); flex: 1; min-width: 0;">${titleName}</h3>
                 <span class="badge ${badgeClass}" style="flex-shrink: 0; font-size: 0.7rem; padding: 0.2rem 0.5rem; white-space: nowrap; margin-top: 2px;">${escapeHtml(p.etapa) || 'Sin etapa'}</span>
             </div>
-            <div style="font-size: 0.75rem; color: #0d9488; font-weight: 600; margin-top: 0.25rem;">${escapeHtml(p.servicio) || 'Servicio MOP'}</div>
+            <div style="font-size: 0.75rem; color: #2d717c; font-weight: 600; margin-top: 0.25rem;">${escapeHtml(p.servicio) || 'Servicio MOP'}</div>
         </div>
 
         <!-- Sección Descripción -->
         <div class="detail-section" style="margin-top: 0.4rem;">
             <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.35rem;">Descripción</h4>
-            <p class="detail-desc" style="font-size: 0.76rem; line-height: 1.45;">${descText}</p>
+            <p class="detail-desc" style="font-size: 0.76rem; line-height: 1.45; white-space: pre-line;">${descText}</p>
         </div>
 
-        <!-- Datos de la Iniciativa (Detail Grid exacto a index.html) -->
+        <!-- Datos de la Iniciativa (Detail Grid exacto a DGC.html) -->
         <div class="detail-section" style="margin-top: 0.4rem;">
             <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.4rem;">Datos de la Iniciativa</h4>
             <div class="detail-grid" style="grid-template-columns: 130px 1fr; gap: 0.35rem; font-size: 0.74rem;">
@@ -107,7 +107,7 @@ function showProjectDetail(p, globalIndex) {
                 <span class="detail-value"><span class="badge ${badgeClass}">${escapeHtml(p.etapa || 'No informada')}</span></span>
 
                 <span class="detail-label">Costo Total Estimado:</span>
-                <span class="detail-value" style="font-weight: 700; color: #3b82f6;">${costFmt}</span>
+                <span class="detail-value" style="font-weight: 700; color: #0c71c3;">${costFmt}</span>
 
                 <span class="detail-label">Año Primera Postulación:</span>
                 <span class="detail-value">${p.year || 'No informado'}</span>
