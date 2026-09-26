@@ -1,9 +1,11 @@
 // ─── static/js/Landing/slides.js ─────────────────────────────────────────────
-// Define las diapositivas del carrusel de cifras del landing a partir de los
+// Define los paneles de "Módulos del Observatorio" del landing a partir de los
 // datos de cada módulo (window.STATIC_DATA, SNI_DATA, MOP_DATA, METRO_DATA,
 // EFE_DATA, PUERTOS_DATA). Las fórmulas replican los KPI de cada dashboard,
 // así que las cifras se actualizan solas al volver a correr el ETL.
 // Si falta la base de un módulo, su diapositiva simplemente no se incluye.
+// Cada diapositiva trae también el nombre corto y la descripción del módulo
+// que muestra la lista de "Módulos del Observatorio" (carousel.js).
 window.LandingSlides = (function () {
     const landingTooltip = CatlecTooltip.create({ domId: 'landing-shared-tooltip' });
 
@@ -81,6 +83,8 @@ window.LandingSlides = (function () {
         return {
             id: 'dgc',
             short: 'DGC',
+            name: 'Concesiones (DGC)',
+            description: 'Contratos de concesión: mapa, líneas de tiempo, inversión, contratos y oferentes.',
             photo: 'costanera-norte',
             accent: P.steel,
             number: fmt(total / 1e6, 1),
@@ -157,6 +161,8 @@ window.LandingSlides = (function () {
         return {
             id: 'sni',
             short: 'SNI',
+            name: 'Inversión pública (SNI)',
+            description: 'Inversión pública 2010–2024 por región, ministerio y año.',
             photo: 'santiago-hora-azul',
             accent: P.steel,
             prefix: 'US$',
@@ -232,6 +238,8 @@ window.LandingSlides = (function () {
         return {
             id: 'mop',
             short: 'MOP',
+            name: 'Obras Públicas (MOP)',
+            description: 'Cartera de iniciativas del MOP por región, servicio, etapa y programa.',
             photo: 'embalse-el-yeso',
             accent: P.steel,
             number: fmt(projects.length),
@@ -287,6 +295,8 @@ window.LandingSlides = (function () {
         return {
             id: 'metro',
             short: 'Metro',
+            name: 'Metro de Santiago',
+            description: 'Expansión de la red, cobertura por comuna y evolución de la demanda.',
             photo: 'metro-santiago',
             accent: P.steel,
             number: fmt(last.trips_mm),
@@ -372,6 +382,8 @@ window.LandingSlides = (function () {
         return {
             id: 'efe',
             short: 'EFE',
+            name: 'Ferrocarriles (EFE)',
+            description: 'Proyectos ferroviarios, servicios de pasajeros, demanda y satisfacción.',
             photo: 'biotren-biobio',
             accent: P.steel,
             number: fmt(lastTotal, 1),
@@ -447,6 +459,8 @@ window.LandingSlides = (function () {
         return {
             id: 'puertos',
             short: 'Puertos',
+            name: 'Puertos del Biobío',
+            description: 'Carga, contenedores, tipología y transporte terrestre en el Biobío.',
             photo: 'valparaiso-puerto',
             accent: P.steel,
             number: fmt(last.teus_total / 1e6, 2),

@@ -155,14 +155,25 @@ function renderProjectDetailBody(cleanCode, item) {
         `;
     }
 
-    // Foto de referencia (Fotos/DGC → WebP en static/img/fotos/DGC, cruce por código en el ETL)
+    // Fotos de referencia (Fotos/DGC → WebP en static/img/fotos/DGC, cruce por código en el ETL).
+    // Una concesión con varias infraestructuras trae una foto por cada una, con su
+    // nombre (label, tomado del nombre del archivo), y se muestran en carrusel.
     let photoHTML = '';
-    const photoUrl = item && item.photo;
-    if (photoUrl) {
+    const photos = ((item && item.photos) || []).filter(p => p && p.src);
+    if (photos.length) {
+        const first = photos[0];
         photoHTML = `
-            <div class="detail-photo-wrapper">
-                <img src="${encodeURI(photoUrl)}" data-full="${encodeURI(item.photo_full || photoUrl)}" alt="${titleName}" class="detail-project-photo dgc-photo-zoomable" title="Ver imagen completa" loading="eager" onerror="this.closest('.detail-photo-wrapper').remove();">
-                <span class="dgc-photo-ai-note">Imagen de referencia generada por IA</span>
+            <div class="detail-photo-wrapper dgc-photo-carousel">
+                ${photos.map((p, i) => `
+                    <img src="${encodeURI(p.src)}" alt="${dgcPhotoAlt(titleName, p)}" class="detail-project-photo dgc-photo-zoomable dgc-photo-slide${i === 0 ? ' active' : ''}" title="Ver imagen completa" loading="eager" draggable="false">
+                `).join('')}
+                <button type="button" class="dgc-photo-nav dgc-photo-nav--prev" title="Foto anterior" aria-label="Foto anterior"><i data-lucide="chevron-left"></i></button>
+                <button type="button" class="dgc-photo-nav dgc-photo-nav--next" title="Foto siguiente" aria-label="Foto siguiente"><i data-lucide="chevron-right"></i></button>
+                <span class="dgc-photo-counter">1 / ${photos.length}</span>
+                <div class="dgc-photo-overlay">
+                    <span class="dgc-photo-label"${first.label ? '' : ' hidden'}>${first.label || ''}</span>
+                    <span class="dgc-photo-ai-note">Imagen de referencia generada por IA</span>
+                </div>
             </div>
         `;
     }
@@ -353,9 +364,9 @@ function renderProjectDetailBody(cleanCode, item) {
         });
     }
 
-    const photoImg = detailViewBody && detailViewBody.querySelector('.dgc-photo-zoomable');
-    if (photoImg) {
-        photoImg.addEventListener('click', () => openDgcPhotoLightbox(photoImg.dataset.full, photoImg.alt));
+    const photoCarousel = detailViewBody && detailViewBody.querySelector('.dgc-photo-carousel');
+    if (photoCarousel) {
+        setupDgcPhotoCarousel(photoCarousel, photos.slice(), titleName);
     }
 
     const relicitSeg = detailViewBody && detailViewBody.querySelector('.dgc-seg');
@@ -371,11 +382,104 @@ function renderProjectDetailBody(cleanCode, item) {
     lucide.createIcons();
 }
 
-// Visor a tamaño completo de la foto de referencia (se crea una sola vez)
+// Texto alternativo de una foto: nombre del proyecto y, si la hay, su infraestructura
+function dgcPhotoAlt(title, photo) {
+    return photo && photo.label ? `${title} — ${photo.label}` : title;
+}
+
+// Deslizamiento táctil horizontal (> 40 px) sobre `el` para cambiar de foto.
+// Devuelve una función que indica si el último toque fue un deslizamiento,
+// para que el clic que lo sigue no abra ni cierre el visor.
+function bindDgcPhotoSwipe(el, step) {
+    let startX = null;
+    let swiped = false;
+    el.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'mouse') return;
+        startX = e.clientX;
+        swiped = false;
+    });
+    el.addEventListener('pointerup', (e) => {
+        if (startX === null) return;
+        const dx = e.clientX - startX;
+        startX = null;
+        if (Math.abs(dx) > 40) {
+            swiped = true;
+            step(dx < 0 ? 1 : -1);
+        }
+    });
+    el.addEventListener('pointercancel', () => { startX = null; });
+    return () => {
+        const wasSwipe = swiped;
+        swiped = false;
+        return wasSwipe;
+    };
+}
+
+// Carrusel de fotos de la ficha: flechas, contador, nombre de la infraestructura
+// y deslizamiento. Con una sola foto los controles quedan ocultos (CSS).
+function setupDgcPhotoCarousel(wrapper, photos, title) {
+    const slides = Array.from(wrapper.querySelectorAll('.dgc-photo-slide'));
+    const counter = wrapper.querySelector('.dgc-photo-counter');
+    const labelEl = wrapper.querySelector('.dgc-photo-label');
+    let index = 0;
+
+    const show = (i) => {
+        index = (i + slides.length) % slides.length;
+        slides.forEach((s, k) => s.classList.toggle('active', k === index));
+        counter.textContent = `${index + 1} / ${slides.length}`;
+        labelEl.textContent = photos[index].label || '';
+        labelEl.hidden = !photos[index].label;
+    };
+    const refreshControls = () => wrapper.classList.toggle('dgc-photo-carousel--multi', slides.length > 1);
+
+    // Una foto que no carga se quita; si no queda ninguna, se quita el carrusel
+    slides.forEach(img => img.addEventListener('error', () => {
+        const k = slides.indexOf(img);
+        if (k < 0) return;
+        slides.splice(k, 1);
+        photos.splice(k, 1);
+        img.remove();
+        if (!slides.length) {
+            wrapper.remove();
+            return;
+        }
+        if (k < index) index--;
+        refreshControls();
+        show(Math.min(index, slides.length - 1));
+    }));
+
+    wrapper.querySelector('.dgc-photo-nav--prev').addEventListener('click', () => show(index - 1));
+    wrapper.querySelector('.dgc-photo-nav--next').addEventListener('click', () => show(index + 1));
+    const consumeSwipe = bindDgcPhotoSwipe(wrapper, (dir) => { if (slides.length > 1) show(index + dir); });
+    wrapper.addEventListener('click', (e) => {
+        if (consumeSwipe()) return;
+        if (e.target.closest('.dgc-photo-slide.active')) openDgcPhotoLightbox(photos, index, title);
+    });
+
+    refreshControls();
+}
+
+// Visor a tamaño completo de las fotos de referencia (se crea una sola vez)
 let dgcPhotoLightbox = null;
 let dgcPhotoLightboxReleaseTimer = null;
+let dgcPhotoLightboxPhotos = [];
+let dgcPhotoLightboxIndex = 0;
+let dgcPhotoLightboxTitle = '';
 
-function openDgcPhotoLightbox(src, alt) {
+function showDgcPhotoLightboxPhoto(i) {
+    const n = dgcPhotoLightboxPhotos.length;
+    dgcPhotoLightboxIndex = (i + n) % n;
+    const photo = dgcPhotoLightboxPhotos[dgcPhotoLightboxIndex];
+    const img = dgcPhotoLightbox.querySelector('.dgc-photo-lightbox-img');
+    img.src = encodeURI(photo.full || photo.src);
+    img.alt = dgcPhotoAlt(dgcPhotoLightboxTitle, photo);
+    dgcPhotoLightbox.querySelector('.dgc-photo-counter').textContent = `${dgcPhotoLightboxIndex + 1} / ${n}`;
+    const labelEl = dgcPhotoLightbox.querySelector('.dgc-photo-label');
+    labelEl.textContent = photo.label || '';
+    labelEl.hidden = !photo.label;
+}
+
+function openDgcPhotoLightbox(photos, startIndex, title) {
     if (dgcPhotoLightboxReleaseTimer) {
         clearTimeout(dgcPhotoLightboxReleaseTimer);
         dgcPhotoLightboxReleaseTimer = null;
@@ -386,28 +490,49 @@ function openDgcPhotoLightbox(src, alt) {
         dgcPhotoLightbox.setAttribute('role', 'dialog');
         dgcPhotoLightbox.setAttribute('aria-modal', 'true');
         dgcPhotoLightbox.innerHTML = `
-            <button type="button" class="dgc-photo-lightbox-close" title="Cerrar (Esc)" aria-label="Cerrar">
+            <button type="button" class="dgc-photo-lightbox-btn dgc-photo-lightbox-close" title="Cerrar (Esc)" aria-label="Cerrar">
                 <i data-lucide="x"></i>
+            </button>
+            <button type="button" class="dgc-photo-lightbox-btn dgc-photo-lightbox-nav dgc-photo-lightbox-nav--prev" title="Foto anterior (←)" aria-label="Foto anterior">
+                <i data-lucide="chevron-left"></i>
+            </button>
+            <button type="button" class="dgc-photo-lightbox-btn dgc-photo-lightbox-nav dgc-photo-lightbox-nav--next" title="Foto siguiente (→)" aria-label="Foto siguiente">
+                <i data-lucide="chevron-right"></i>
             </button>
             <figure class="dgc-photo-lightbox-figure">
                 <img class="dgc-photo-lightbox-img" alt="">
-                <span class="dgc-photo-ai-note">Imagen de referencia generada por IA</span>
+                <span class="dgc-photo-counter"></span>
+                <div class="dgc-photo-overlay">
+                    <span class="dgc-photo-label" hidden></span>
+                    <span class="dgc-photo-ai-note">Imagen de referencia generada por IA</span>
+                </div>
             </figure>
         `;
         document.body.appendChild(dgcPhotoLightbox);
 
+        const step = (dir) => {
+            if (dgcPhotoLightboxPhotos.length > 1) showDgcPhotoLightboxPhoto(dgcPhotoLightboxIndex + dir);
+        };
+        const consumeSwipe = bindDgcPhotoSwipe(dgcPhotoLightbox, step);
         dgcPhotoLightbox.addEventListener('click', (e) => {
-            if (!e.target.closest('.dgc-photo-lightbox-img')) closeDgcPhotoLightbox();
+            if (consumeSwipe()) return;
+            const nav = e.target.closest('.dgc-photo-lightbox-nav');
+            if (nav) step(nav.classList.contains('dgc-photo-lightbox-nav--prev') ? -1 : 1);
+            else if (!e.target.closest('.dgc-photo-lightbox-img')) closeDgcPhotoLightbox();
         });
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && dgcPhotoLightbox.classList.contains('open')) closeDgcPhotoLightbox();
+            if (!dgcPhotoLightbox.classList.contains('open')) return;
+            if (e.key === 'Escape') closeDgcPhotoLightbox();
+            else if (e.key === 'ArrowLeft') step(-1);
+            else if (e.key === 'ArrowRight') step(1);
         });
         lucide.createIcons();
     }
 
-    const img = dgcPhotoLightbox.querySelector('.dgc-photo-lightbox-img');
-    img.src = src;
-    img.alt = alt || '';
+    dgcPhotoLightboxPhotos = photos;
+    dgcPhotoLightboxTitle = title || '';
+    dgcPhotoLightbox.classList.toggle('dgc-photo-lightbox--multi', photos.length > 1);
+    showDgcPhotoLightboxPhoto(startIndex || 0);
     dgcPhotoLightbox.classList.add('open');
 }
 

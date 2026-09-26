@@ -7,6 +7,7 @@ con coordenadas optimizadas a 5 decimales (~1m de precisión).
 Genera:
   static/data/dgc_data.js     -> window.DGC_DATA
   static/data/efe_geo.js      -> window.EFE_GEO_DATA
+  static/data/landing_routes.js -> window.LANDING_ROUTES (vía export_landing_routes.py)
 """
 
 import os
@@ -718,6 +719,15 @@ if os.path.exists(gran_stgo_path):
         print(f"⚠ Error al procesar comunas del Gran Santiago: {e}")
 else:
     print(f"⚠ No se encontró {gran_stgo_path}")
+
+# 7. Trazados livianos de la sección "Proyectos destacados" del landing
+# (lee los archivos de Metro y EFE recién exportados).
+print("\nExportando trazados del landing (Proyectos destacados)...")
+try:
+    from export_landing_routes import export_landing_routes
+    export_landing_routes()
+except Exception as e:
+    print(f"⚠ Error al exportar los trazados del landing: {e}")
 
 print("\nExportación geográfica completada exitosamente.")
 

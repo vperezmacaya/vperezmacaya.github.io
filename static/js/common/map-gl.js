@@ -47,6 +47,25 @@ window.CatlecMapGL = {
         return map;
     },
 
+    // Mapa de referencia sin interacción (fondo de los trazados de "Proyectos
+    // destacados" del landing): mismo mapa base, sin controles de zoom ni
+    // gestos. `container` puede ser un id o un elemento. Con
+    // `attribution: false` no agrega el botón de créditos: quien lo use debe
+    // mostrar los créditos de OpenStreetMap/CARTO en otro lugar visible.
+    createStaticMap(container, { center, zoom, attribution = true } = {}) {
+        const map = new maplibregl.Map({
+            container,
+            style: this.STYLE_URL,
+            center,
+            zoom,
+            interactive: false,
+            attributionControl: false,
+            fadeDuration: 0
+        });
+        if (attribution) this.addCollapsibleAttribution(map);
+        return map;
+    },
+
     // Botón "i" que despliega los créditos con animación: mismo marcado, clases
     // (.catlec-attribution-* en styles.css) y comportamiento que
     // CatlecUtils.enableCollapsibleAttribution de los mapas Leaflet. Para cumplir

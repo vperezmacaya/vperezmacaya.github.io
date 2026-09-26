@@ -15,7 +15,10 @@
     <link rel="shortcut icon" href="logo/favicon.ico">
     <!-- CSS: sistema de diseño global + addon del landing -->
     <link rel="stylesheet" href="static/css/styles.css?v=20260925_land1">
-    <link rel="stylesheet" href="static/css/landing_addons.css?v=20260925_ud2">
+    <link rel="stylesheet" href="static/css/landing_addons.css?v=20260926_co2">
+    <!-- MapLibre GL: mapa de referencia bajo los trazados de "Proyectos destacados" -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
     <!-- Chart.js (mismos gráficos y versión que los dashboards) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
     <!-- Datos estáticos de cada módulo (las cifras del carrusel se calculan en vivo) -->
@@ -25,6 +28,8 @@
     <script defer src="static/data/metro_data.js?v=20260925_1"></script>
     <script defer src="static/data/efe_data.js?v=20260925_1"></script>
     <script defer src="static/data/puertos_data.js?v=20260925_1"></script>
+    <!-- Trazados livianos de Metro y EFE para "Proyectos destacados" (scripts/export_landing_routes.py) -->
+    <script defer src="static/data/landing_routes.js?v=20260926_1"></script>
 </head>
 
 <body class="light-theme landing-page">
@@ -39,10 +44,9 @@
 
             <nav class="lp-tabs" id="lp-tabs" aria-label="Secciones">
                 <a href="#observatorio" class="lp-tab" data-section="observatorio">Observatorio</a>
-                <a href="#objetivos" class="lp-tab" data-section="objetivos">Objetivos</a>
-                <a href="#cifras" class="lp-tab" data-section="cifras">Cifras</a>
                 <a href="#modulos" class="lp-tab" data-section="modulos">Módulos</a>
-                <a href="#autores" class="lp-tab" data-section="autores">Autores</a>
+                <a href="#destacados" class="lp-tab" data-section="destacados">Destacados</a>
+                <a href="acerca.html" class="lp-tab">Acerca</a>
             </nav>
 
             <div class="lp-header-actions">
@@ -69,11 +73,11 @@
                     <span class="lp-hero-subtitle">infraestructura, transporte y logística en un solo observatorio</span>
                 </h1>
                 <div class="lp-hero-ctas lp-reveal">
-                    <a href="#cifras" class="lp-btn lp-btn--primary">
-                        Explorar las cifras <i data-lucide="arrow-down" class="icon-13"></i>
+                    <a href="#modulos" class="lp-btn lp-btn--primary">
+                        Explorar los módulos <i data-lucide="arrow-down" class="icon-13"></i>
                     </a>
-                    <a href="#modulos" class="lp-btn lp-btn--glass">
-                        Ingresar a la plataforma <i data-lucide="layout-grid" class="icon-13"></i>
+                    <a href="#destacados" class="lp-btn lp-btn--glass">
+                        Ver proyectos destacados <i data-lucide="map-pinned" class="icon-13"></i>
                     </a>
                 </div>
             </div>
@@ -85,117 +89,65 @@
             <div class="lp-container lp-band-content">
                 <p class="lp-band-quote lp-reveal">Cada puente, hospital, puerto y línea de metro deja datos.
                     <span>Los ordenamos para leer cómo se construye el país.</span></p>
+                <!-- Objetivos en versión compacta (completos en acerca.html) -->
+                <ul class="lp-band-objectives" id="lp-band-objectives" aria-label="Objetivos del Observatorio"></ul>
+                <a href="acerca.html" class="lp-band-more lp-reveal">Conoce el Observatorio y su equipo
+                    <i data-lucide="arrow-right" class="icon-13"></i></a>
             </div>
             <span class="lp-band-credit" id="lp-band-credit"></span>
         </section>
 
-        <!-- ═══════════════════════════════ OBJETIVOS -->
-        <section class="lp-section" id="objetivos">
-            <div class="lp-container">
+        <!-- ═══════════════════════════════ MÓDULOS (lista de módulos + panel de cifras) -->
+        <section class="lp-section lp-section--hub" id="modulos">
+            <div class="lp-section-art lp-section-art--topo" id="lp-topo" aria-hidden="true"></div>
+            <div class="lp-container lp-container--wide">
                 <div class="lp-section-head lp-reveal">
-                    <h2 class="lp-section-title">Un observatorio para leer la infraestructura</h2>
-                    <p class="lp-section-lead">La información de inversión y transporte existe, pero está dispersa en
-                        planillas, reportes y portales distintos.</p>
-                    <p class="lp-section-lead">El Observatorio de Infraestructura y Logística reúne las bases de
-                        datos públicas de concesiones, inversión pública, obras, ferrocarriles, metro y puertos, y las
-                        convierte en mapas, líneas de tiempo y gráficos para entender cómo se construye y se mueve el
-                        país.</p>
+                    <h2 class="lp-section-title">Módulos del Observatorio</h2>
+                    <p class="lp-section-lead">Seis bases de datos públicas, cada una con su módulo de mapas, líneas
+                        de tiempo y gráficos. Esta es la cifra que mejor resume cada una.</p>
                 </div>
-                <div class="lp-objectives">
-                    <article class="lp-objective lp-glass lp-reveal">
-                        <div class="lp-objective-top">
-                            <span class="lp-objective-num">01</span>
-                            <span class="lp-objective-icon"><i data-lucide="combine"></i></span>
-                        </div>
-                        <h3>Integrar</h3>
-                        <p>Consolidar fuentes oficiales dispersas (DGC, SNI, MOP, EFE, Metro e INE) en bases limpias,
-                            comparables y actualizables.</p>
-                    </article>
-                    <article class="lp-objective lp-glass lp-reveal">
-                        <div class="lp-objective-top">
-                            <span class="lp-objective-num">02</span>
-                            <span class="lp-objective-icon"><i data-lucide="map"></i></span>
-                        </div>
-                        <h3>Visualizar</h3>
-                        <p>Llevar cada proyecto al mapa y a la línea de tiempo: dónde está, en qué etapa va y cuándo
-                            entra en operación.</p>
-                    </article>
-                    <article class="lp-objective lp-glass lp-reveal">
-                        <div class="lp-objective-top">
-                            <span class="lp-objective-num">03</span>
-                            <span class="lp-objective-icon"><i data-lucide="chart-no-axes-combined"></i></span>
-                        </div>
-                        <h3>Analizar</h3>
-                        <p>Medir la evolución de la inversión, los plazos de tramitación, la competencia entre
-                            oferentes y la demanda de los sistemas de transporte.</p>
-                    </article>
-                    <article class="lp-objective lp-glass lp-reveal">
-                        <div class="lp-objective-top">
-                            <span class="lp-objective-num">04</span>
-                            <span class="lp-objective-icon"><i data-lucide="eye"></i></span>
-                        </div>
-                        <h3>Transparentar</h3>
-                        <p>Ofrecer acceso abierto y exportable a la academia, al sector público y a la ciudadanía
-                            para apoyar decisiones basadas en evidencia.</p>
-                    </article>
+
+                <div class="lp-carousel lp-hub lp-reveal" id="lp-carousel" role="region" aria-roledescription="carrusel"
+                    aria-label="Módulos del Observatorio y sus cifras">
+                    <div class="lp-carousel-dots lp-hub-list" role="tablist" aria-label="Elegir módulo"></div>
+                    <div class="lp-carousel-viewport lp-glass">
+                        <div class="lp-carousel-track" aria-live="polite"></div>
+                    </div>
+                    <span class="lp-carousel-progress-fill" aria-hidden="true"></span>
                 </div>
             </div>
         </section>
 
-        <!-- ═══════════════════════════════ CIFRAS (CARRUSEL) -->
-        <section class="lp-section lp-section--figures" id="cifras">
-            <div class="lp-section-art lp-section-art--topo" id="lp-topo" aria-hidden="true"></div>
+        <!-- ═══════════════════════════════ PROYECTOS DESTACADOS (CARRUSEL) -->
+        <section class="lp-section lp-section--featured" id="destacados">
+            <div class="lp-section-art lp-section-art--streets" id="lp-streets" aria-hidden="true"></div>
             <div class="lp-container">
                 <div class="lp-section-head lp-reveal">
-                    <h2 class="lp-section-title">Lo que dicen los datos</h2>
-                    <p class="lp-section-lead">Una selección de los indicadores más relevantes de los módulos del Observatorio.
-                        </p>
+                    <h2 class="lp-section-title">Infraestructuras destacadas</h2>
+                    <p class="lp-section-lead">Una selección de obras de concesiones, ferrocarriles y metro de alto impacto.</p>
                 </div>
+            </div>
 
-                <div class="lp-carousel lp-reveal" id="lp-carousel" role="region" aria-roledescription="carrusel"
-                    aria-label="Cifras destacadas por módulo">
-                    <div class="lp-carousel-viewport lp-glass" id="lp-carousel-viewport">
-                        <div class="lp-carousel-track" id="lp-carousel-track" aria-live="polite"></div>
-                    </div>
-                    <div class="lp-carousel-progress" aria-hidden="true">
-                        <span class="lp-carousel-progress-fill" id="lp-carousel-progress-fill"></span>
-                    </div>
+            <!-- Franja a todo el ancho de la pantalla (como la foto de portada) -->
+            <div class="lp-carousel lp-carousel--featured lp-reveal" id="lp-featured" role="region"
+                aria-roledescription="carrusel" aria-label="Proyectos destacados">
+                <div class="lp-carousel-viewport">
+                    <div class="lp-carousel-track" aria-live="polite"></div>
+                </div>
+                <div class="lp-carousel-progress" aria-hidden="true">
+                    <span class="lp-carousel-progress-fill"></span>
+                </div>
+                <div class="lp-container">
                     <div class="lp-carousel-controls">
-                        <button class="lp-carousel-arrow lp-glass" id="lp-carousel-prev" aria-label="Cifra anterior">
+                        <button class="lp-carousel-arrow lp-carousel-arrow--prev lp-glass" aria-label="Proyecto anterior">
                             <i data-lucide="chevron-left"></i>
                         </button>
-                        <div class="lp-carousel-dots" id="lp-carousel-dots" role="tablist"
-                            aria-label="Elegir cifra"></div>
-                        <button class="lp-carousel-arrow lp-glass" id="lp-carousel-next" aria-label="Cifra siguiente">
+                        <div class="lp-carousel-dots" role="tablist" aria-label="Elegir proyecto"></div>
+                        <button class="lp-carousel-arrow lp-carousel-arrow--next lp-glass" aria-label="Proyecto siguiente">
                             <i data-lucide="chevron-right"></i>
                         </button>
                     </div>
                 </div>
-            </div>
-        </section>
-
-        <!-- ═══════════════════════════════ MÓDULOS -->
-        <section class="lp-section" id="modulos">
-            <div class="lp-section-art lp-section-art--streets" id="lp-streets" aria-hidden="true"></div>
-            <div class="lp-container">
-                <div class="lp-section-head lp-reveal">
-                    <h2 class="lp-section-title">Módulos del Observatorio</h2>
-
-                </div>
-                <div class="lp-modules" id="lp-modules"></div>
-            </div>
-        </section>
-
-        <!-- ═══════════════════════════════ AUTORES -->
-        <section class="lp-section" id="autores">
-            <div class="lp-authors-photo" id="lp-authors-photo" aria-hidden="true"></div>
-            <div class="lp-container">
-                <div class="lp-section-head lp-reveal">
-                    <h2 class="lp-section-title">Equipo desarrollador</h2>
-                    <p class="lp-section-lead">El Observatorio de Infraestructura y Logística se desarrolla en el
-                        Departamento de Ingeniería Industrial de la Facultad de Ingeniería de la Universidad de Concepción.</p>
-                </div>
-                <div class="lp-authors" id="lp-authors"></div>
             </div>
         </section>
     </main>
@@ -208,7 +160,7 @@
                 <span>Departamento de Ingeniería Industrial · Facultad de Ingeniería · Universidad de Concepción</span>
             </div>
             <div class="lp-footer-meta">
-                <span class="lp-footer-funding">Proyecto financiado por ANID</span>
+                <span class="lp-footer-funding">Proyecto financiado por ANID · <a href="acerca.html">Acerca del Observatorio</a></span>
                 <span class="lp-footer-note">CATLEC · Observatorio de Infraestructura y Logística · Prototipo en
                     desarrollo</span>
             </div>
@@ -223,14 +175,18 @@
     <script src="static/js/common/utils.js?v=20260925_land1"></script>
     <script src="static/js/common/kpi-animate.js?v=20260925_land1"></script>
     <script src="static/js/common/tooltip.js?v=20260925_land1"></script>
+    <script src="static/js/common/map-gl.js?v=20260926_ft16"></script>
     <!-- Solo por NAV_MODULES (logos y enlaces de los módulos); el landing no muestra el menú -->
     <script src="static/js/common/nav-menu.js?v=20260925_land1"></script>
     <!-- Landing -->
-    <script defer src="static/js/Landing/photos.js?v=20260925_ph4"></script>
+    <script defer src="static/js/Landing/photos.js?v=20260926_ph5"></script>
+    <script defer src="static/js/Landing/common.js?v=20260926_ob1"></script>
     <script defer src="static/js/Landing/art.js?v=20260925_bp2"></script>
-    <script defer src="static/js/Landing/slides.js?v=20260925_ph2"></script>
-    <script defer src="static/js/Landing/carousel.js?v=20260925_ph2"></script>
-    <script defer src="static/js/Landing/main.js?v=20260925_af1"></script>
+    <script defer src="static/js/Landing/slides.js?v=20260926_hub1"></script>
+    <script defer src="static/js/Landing/carousel.js?v=20260926_hub1"></script>
+    <script defer src="static/js/Landing/route-art.js?v=20260926_ft13"></script>
+    <script defer src="static/js/Landing/featured.js?v=20260926_ft16"></script>
+    <script defer src="static/js/Landing/main.js?v=20260926_ob1"></script>
     <script defer src="https://unpkg.com/lucide@1.48.0/dist/umd/lucide.min.js"></script>
 </body>
 

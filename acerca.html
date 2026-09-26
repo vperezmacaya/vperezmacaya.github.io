@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es" class="landing-root">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acerca del Observatorio · CATLEC</title>
+    <meta name="description"
+        content="Objetivos, equipo y financiamiento del Observatorio de Infraestructura y Logística CATLEC. Departamento de Ingeniería Industrial, Facultad de Ingeniería, Universidad de Concepción. Proyecto financiado por ANID.">
+    <link rel="icon" type="image/png" href="logo/favicon.png">
+    <link rel="shortcut icon" href="logo/favicon.ico">
+    <!-- Fuente monoespaciada para rótulos técnicos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+    <!-- CSS: sistema de diseño global + addon del landing (compartido con index.html) -->
+    <link rel="stylesheet" href="static/css/styles.css?v=20260925_land1">
+    <link rel="stylesheet" href="static/css/landing_addons.css?v=20260926_co2">
+</head>
+
+<body class="light-theme landing-page">
+    <!-- ═══════════════════════════════ HEADER (mismo del landing) -->
+    <header class="lp-header" id="lp-header">
+        <div class="lp-header-inner">
+            <a href="index.html" class="lp-brand" aria-label="Observatorio CATLEC, inicio">
+                <img src="logo/Udec_grande.png" alt="Universidad de Concepción" class="lp-brand-udec" width="647" height="255">
+                <span class="lp-brand-divider" aria-hidden="true"></span>
+                <img src="logo/cropped-Logo-CATLEC-horizontal-sin-fondo-1.png" alt="Logo CATLEC" class="lp-brand-catlec">
+            </a>
+
+            <nav class="lp-tabs" id="lp-tabs" aria-label="Secciones">
+                <a href="index.html#observatorio" class="lp-tab">Observatorio</a>
+                <a href="index.html#modulos" class="lp-tab">Módulos</a>
+                <a href="index.html#destacados" class="lp-tab">Destacados</a>
+                <a href="acerca.html" class="lp-tab active" aria-current="page">Acerca</a>
+            </nav>
+
+            <div class="lp-header-actions">
+                <a href="DGC.html" class="lp-btn lp-btn--primary lp-btn--sm">
+                    Ingresar <i data-lucide="arrow-right" class="icon-13"></i>
+                </a>
+                <button class="lp-menu-toggle" id="lp-menu-toggle" aria-label="Abrir menú de secciones"
+                    aria-expanded="false" aria-controls="lp-tabs">
+                    <i data-lucide="menu"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- ═══════════════════════════════ ENCABEZADO DE PÁGINA -->
+        <section class="lp-page-head" id="acerca">
+            <div class="lp-hero-grid" aria-hidden="true"></div>
+            <div class="lp-container lp-page-head-content">
+                <p class="lp-hero-kicker lp-reveal">Universidad de Concepción · Facultad de Ingeniería · Departamento de Ingeniería Industrial</p>
+                <h1 class="lp-page-title lp-reveal">Acerca del Observatorio</h1>
+                <p class="lp-section-lead lp-reveal">La información de inversión y transporte existe, pero está dispersa
+                    en planillas, reportes y portales distintos.</p>
+                <p class="lp-section-lead lp-reveal">El Observatorio de Infraestructura y Logística reúne las bases de
+                    datos públicas de concesiones, inversión pública, obras, ferrocarriles, metro y puertos, y las
+                    convierte en mapas, líneas de tiempo y gráficos para entender cómo se construye y se mueve el
+                    país.</p>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════ OBJETIVOS -->
+        <section class="lp-section" id="objetivos">
+            <div class="lp-container">
+                <div class="lp-section-head lp-reveal">
+                    <h2 class="lp-section-title">Objetivos</h2>
+                    <p class="lp-section-lead">Cuatro tareas guían el trabajo del Observatorio, desde reunir los datos
+                        hasta ponerlos a disposición de quien los necesite.</p>
+                </div>
+                <div class="lp-objectives" id="lp-objectives"></div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════ EQUIPO -->
+        <section class="lp-section" id="equipo">
+            <div class="lp-authors-photo" id="lp-authors-photo" aria-hidden="true"></div>
+            <div class="lp-container">
+                <div class="lp-section-head lp-reveal">
+                    <h2 class="lp-section-title">Equipo desarrollador</h2>
+                    <p class="lp-section-lead">El Observatorio de Infraestructura y Logística se desarrolla en el
+                        Departamento de Ingeniería Industrial de la Facultad de Ingeniería de la Universidad de Concepción.</p>
+                </div>
+                <div class="lp-authors" id="lp-authors"></div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════ INSTITUCIÓN Y FINANCIAMIENTO -->
+        <section class="lp-section" id="institucion">
+            <div class="lp-container">
+                <div class="lp-section-head lp-reveal">
+                    <h2 class="lp-section-title">Institución y financiamiento</h2>
+                </div>
+                <div class="lp-institution">
+                    <article class="lp-institution-card lp-glass lp-reveal">
+                        <img src="logo/Escudo_udec.gif" alt="Escudo de la Universidad de Concepción"
+                            class="lp-institution-shield" width="366" height="450">
+                        <div>
+                            <h3>Universidad de Concepción</h3>
+                            <p>Departamento de Ingeniería Industrial, Facultad de Ingeniería.</p>
+                        </div>
+                    </article>
+                    <article class="lp-institution-card lp-glass lp-reveal" style="--lp-reveal-delay:90ms">
+                        <span class="lp-institution-icon" aria-hidden="true"><i data-lucide="landmark"></i></span>
+                        <div>
+                            <h3>Financiamiento</h3>
+                            <p>Proyecto financiado por la Agencia Nacional de Investigación y Desarrollo (ANID).
+                                La plataforma es un prototipo en desarrollo.</p>
+                        </div>
+                    </article>
+                </div>
+                <a href="index.html#modulos" class="lp-more-link lp-reveal">Explorar los módulos del Observatorio
+                    <i data-lucide="arrow-right" class="icon-13"></i></a>
+            </div>
+        </section>
+    </main>
+
+    <!-- ═══════════════════════════════ FOOTER (mismo del landing) -->
+    <footer class="lp-footer">
+        <div class="lp-container lp-footer-inner">
+            <div class="lp-footer-brand">
+                <img src="logo/Escudo_udec.gif" alt="Universidad de Concepción" class="lp-brand-udec-shield" width="366" height="450">
+                <span>Departamento de Ingeniería Industrial · Facultad de Ingeniería · Universidad de Concepción</span>
+            </div>
+            <div class="lp-footer-meta">
+                <span class="lp-footer-funding">Proyecto financiado por ANID · <a href="index.html">Inicio</a></span>
+                <span class="lp-footer-note">CATLEC · Observatorio de Infraestructura y Logística · Prototipo en
+                    desarrollo</span>
+            </div>
+        </div>
+        <details class="lp-container lp-credits">
+            <summary>Créditos fotográficos</summary>
+            <ul id="lp-photo-credits"></ul>
+        </details>
+    </footer>
+
+    <!-- Página "Acerca": contenido compartido con el landing (common.js) -->
+    <script defer src="static/js/Landing/photos.js?v=20260926_ph5"></script>
+    <script defer src="static/js/Landing/common.js?v=20260926_ob1"></script>
+    <script defer src="static/js/Landing/about.js?v=20260926_ac1"></script>
+    <script defer src="https://unpkg.com/lucide@1.48.0/dist/umd/lucide.min.js"></script>
+</body>
+
+</html>

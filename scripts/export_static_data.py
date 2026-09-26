@@ -104,6 +104,11 @@ def _normalize_col(s):
     s = str(s).lower()
     return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
 
+def _slugify(s):
+    """Texto → fragmento seguro para nombre de archivo/URL (ASCII, minúsculas, guiones)."""
+    s = _normalize_col(s).encode('ascii', 'ignore').decode('ascii')
+    return re.sub(r'[^a-z0-9]+', '-', s).strip('-')
+
 def sanitize_value(v):
     try:
         if pd.isna(v):
@@ -377,22 +382,38 @@ status_stats  = {str(k): int(v) for k, v in df_contracts['ESTADO'].value_counts(
 count_total   = len(df_contracts)
 
 # ── Fotos de referencia en Fotos/DGC (nombre de archivo = Código proyecto) ────
-# Por cada foto se generan dos WebP: <código>.webp (ficha) y <código>_full.webp (visor).
+# Una concesión puede agrupar varias infraestructuras (ej. 125_ARNO1, dos aeropuertos):
+#   <código>.jpg              → foto única, sin etiqueta
+#   <código> - <etiqueta>.jpg → una foto por infraestructura; la etiqueta se muestra en la ficha
+# Por cada foto se generan dos WebP: <nombre>.webp (ficha) y <nombre>_full.webp (visor),
+# con <nombre> = <código> o <código>_<etiqueta-slug>. Orden: alfabético (la sin etiqueta primero).
 DGC_PHOTOS_DIR = os.path.join(PHOTOS_SRC_DIR, 'DGC')
 DGC_PHOTOS_OUT_DIR = os.path.join(PHOTOS_OUT_DIR, 'DGC')
 DGC_PHOTOS_BY_CODE = {}
 if os.path.exists(DGC_PHOTOS_DIR):
-    for pf in sorted(os.listdir(DGC_PHOTOS_DIR)):
-        base, ext = os.path.splitext(pf)
-        code_key = base.strip().upper()
-        if ext.lower() in PHOTO_EXTENSIONS and code_key not in DGC_PHOTOS_BY_CODE:
-            card, full = optimize_photo(os.path.join(DGC_PHOTOS_DIR, pf), DGC_PHOTOS_OUT_DIR, [
-                (f'{base.strip()}.webp', PHOTO_CARD_WIDTH),
-                (f'{base.strip()}_full.webp', PHOTO_FULL_WIDTH),
-            ])
-            DGC_PHOTOS_BY_CODE[code_key] = {'photo': card, 'photo_full': full}
-    print(f"  -> {len(DGC_PHOTOS_BY_CODE)} fotos detectadas en Fotos/DGC")
-prune_photo_dir(DGC_PHOTOS_OUT_DIR, {os.path.basename(p) for v in DGC_PHOTOS_BY_CODE.values() for p in v.values()})
+    known_codes = set(df_contracts['Código proyecto'].astype(str).str.strip().str.upper())
+    photo_files = [pf for pf in os.listdir(DGC_PHOTOS_DIR) if os.path.splitext(pf)[1].lower() in PHOTO_EXTENSIONS]
+    for pf in sorted(photo_files, key=lambda f: (' - ' in f, f.lower())):
+        base = os.path.splitext(pf)[0]
+        code, _, label = base.partition(' - ')
+        code, label = code.strip(), label.strip()
+        code_key = code.upper()
+        if code_key not in known_codes:
+            print(f"     ! {pf}: el código '{code}' no corresponde a ninguna concesión (se omite)")
+            continue
+        out_base = f'{code}_{_slugify(label)}' if label else code
+        photos = DGC_PHOTOS_BY_CODE.setdefault(code_key, [])
+        if any(os.path.basename(p['src']) == f'{out_base}.webp' for p in photos):
+            print(f"     ! {pf}: repite la foto de {code}{' - ' + label if label else ''} (se omite)")
+            continue
+        card, full = optimize_photo(os.path.join(DGC_PHOTOS_DIR, pf), DGC_PHOTOS_OUT_DIR, [
+            (f'{out_base}.webp', PHOTO_CARD_WIDTH),
+            (f'{out_base}_full.webp', PHOTO_FULL_WIDTH),
+        ])
+        photos.append({'src': card, 'full': full, 'label': label or None})
+    n_photos = sum(len(v) for v in DGC_PHOTOS_BY_CODE.values())
+    print(f"  -> {n_photos} fotos de {len(DGC_PHOTOS_BY_CODE)} concesiones detectadas en Fotos/DGC")
+prune_photo_dir(DGC_PHOTOS_OUT_DIR, {os.path.basename(p[k]) for v in DGC_PHOTOS_BY_CODE.values() for p in v for k in ('src', 'full')})
 
 # ── Serializar datos de contratos ──────────────────────────────────────────────
 print("Serializando contratos...")
@@ -414,9 +435,7 @@ for _, row in df_contracts.iterrows():
     sanitized['group_timeline'] = BASE_GROUPS.get(base_code, [])
     sanitized['shapes']         = parse_shapes_list(get_row_shapes_val(row_dict))
     sanitized['bidders']        = BIDDERS_BY_PROJECT.get(code, [])
-    photo_entry                 = DGC_PHOTOS_BY_CODE.get(code.strip().upper()) or {}
-    sanitized['photo']          = photo_entry.get('photo')
-    sanitized['photo_full']     = photo_entry.get('photo_full')
+    sanitized['photos']         = DGC_PHOTOS_BY_CODE.get(code.strip().upper()) or []
     sanitized.pop('_search_index', None)
 
     serialized_data.append(sanitized)

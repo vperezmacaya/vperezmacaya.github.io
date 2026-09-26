@@ -1,31 +1,36 @@
 // ─── static/js/Landing/carousel.js ───────────────────────────────────────────
-// Carrusel de cifras del landing: una diapositiva por módulo con una cifra
-// grande, una frase, dos indicadores secundarios y un gráfico Chart.js.
+// Carruseles del landing: "Módulos del Observatorio" (una diapositiva por
+// módulo con una cifra grande y un gráfico Chart.js, elegida desde una lista de
+// módulos) y "Proyectos destacados" (featured.js). Ambos usan la misma
+// mecánica, LandingCarousel.create():
 //
-// - Autoplay: una barra de progreso delgada (compartida, no una por punto) es
-//   una animación CSS que se reinicia en cada cambio de diapositiva; su
-//   animationend avanza a la siguiente. Pausar la animación (hover, foco,
-//   carrusel fuera de pantalla, pestaña del navegador oculta) pausa también
-//   el avance. Sin autoplay con prefers-reduced-motion.
-// - Los gráficos se crean la primera vez que su diapositiva se activa y en las
-//   visitas siguientes repiten su animación de entrada (reset + update).
-// - La cifra grande es un .kpi-value: CatlecKpiAnimate la anima desde cero.
-// - Cada diapositiva tiene de fondo una foto de su módulo (LandingPhotos),
-//   difuminada y velada; se carga recién la primera vez que se activa.
+// - Marcado: dentro de la raíz .lp-carousel van .lp-carousel-viewport >
+//   .lp-carousel-track, .lp-carousel-progress-fill, .lp-carousel-dots y, si
+//   las hay, las flechas .lp-carousel-arrow--prev / --next. Todas las
+//   diapositivas son .lp-slide y comparten la misma celda de la grilla;
+//   cambian con fundido y desplazamiento (o con opts.animate).
+// - Selectores: por omisión, puntos .lp-dot; con opts.dotClass / opts.dotHtml
+//   pueden ser elementos con contenido (la lista de módulos).
+// - Autoplay: una barra de progreso delgada es una animación CSS que se
+//   reinicia en cada cambio de diapositiva; su animationend avanza a la
+//   siguiente. Con opts.progressInDot la barra se mueve dentro del selector
+//   activo. Pausar la animación (hover, foco, carrusel fuera de pantalla,
+//   pestaña del navegador oculta) pausa también el avance. Sin autoplay con
+//   prefers-reduced-motion.
+// - La primera diapositiva se activa recién cuando el carrusel entra en
+//   pantalla. Cada carrusel decide qué pasa al activar/desactivar una
+//   diapositiva (onActivate / onDeactivate).
+//
+// Carrusel de módulos (LandingCarousel.init): los gráficos se crean la primera
+// vez que su diapositiva se activa y en las visitas siguientes repiten su
+// animación de entrada (reset + update); la cifra grande es un .kpi-value que
+// CatlecKpiAnimate anima desde cero; cada diapositiva tiene de fondo una foto
+// de su módulo (LandingPhotos), difuminada y velada.
 window.LandingCarousel = (function () {
-    const AUTOPLAY_MS = 7000;
     const SWIPE_PX = 50;
     const DIGITS_RE = /\d(?:[\d.,]*\d)?/g;
 
     const reduceMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    let slides = [];
-    let slideEls = [];
-    let dotEls = [];
-    let charts = [];
-    let current = -1;
-    let root = null;
-    let progressFill = null;
 
     // "1.033,6" → "0,0" · "661" → "0": misma forma que el valor final, para
     // que CatlecKpiAnimate haga un conteo (y no un fundido) al activar.
@@ -34,19 +39,198 @@ window.LandingCarousel = (function () {
         return dec ? '0,' + '0'.repeat(dec[1].length) : '0';
     });
 
+    function navModule(moduleId) {
+        return (window.CatlecNav && CatlecNav.NAV_MODULES || []).find(m => m.id === moduleId);
+    }
+
     function logoHtml(moduleId) {
-        const mod = (window.CatlecNav && CatlecNav.NAV_MODULES || []).find(m => m.id === moduleId);
+        const mod = navModule(moduleId);
         if (!mod) return '';
         return mod.logo.type === 'lucide'
             ? `<i data-lucide="${mod.logo.name}"></i>`
             : `<img src="${mod.logo.src}" alt="">`;
     }
 
+    function moduleFile(moduleId) {
+        const mod = navModule(moduleId);
+        return mod ? mod.file : '#';
+    }
+
     function moduleLabel(moduleId) {
-        const mod = (window.CatlecNav && CatlecNav.NAV_MODULES || []).find(m => m.id === moduleId);
+        const mod = navModule(moduleId);
         return mod ? mod.label : moduleId.toUpperCase();
     }
 
+    // Pill con el logo y el nombre del módulo (cabecera de cada diapositiva).
+    function modulePillHtml(moduleId) {
+        return `<span class="lp-slide-module">
+                    <span class="lp-slide-module-logo">${logoHtml(moduleId)}</span>${moduleLabel(moduleId)}
+                </span>`;
+    }
+
+    // ─── Fábrica ────────────────────────────────────────────────────────────
+    // opts: {
+    //   slides: [...],                        definiciones (cualquier forma)
+    //   renderSlide(slide, i, total) → HTML,  un <article class="lp-slide" ...>
+    //   dotLabel(slide, i) → texto,           aria-label de cada selector
+    //   dotClass, dotHtml(slide, i) → HTML,   clase y contenido del selector
+    //                                         (por omisión, un punto .lp-dot vacío)
+    //   progressInDot,                        la barra de autoplay va dentro del
+    //                                         selector activo
+    //   onActivate(el, slide, i),             tras el repintado de la activa
+    //   onDeactivate(el, slide, i),           cuando la saliente ya salió de la vista
+    //   deactivateDelay,                      ms hasta onDeactivate (650: el fundido del CSS)
+    //   animate(prevEl, nextEl, dir),         transición propia (opcional; dir = 1
+    //                                         avanza, -1 retrocede); sin ella se usa
+    //                                         el fundido de .lp-slide del CSS
+    //   autoplayMs
+    // }
+    function create(root, opts) {
+        if (!root) return null;
+        const track = root.querySelector('.lp-carousel-track');
+        const dots = root.querySelector('.lp-carousel-dots');
+        const viewport = root.querySelector('.lp-carousel-viewport');
+        const progressFill = root.querySelector('.lp-carousel-progress-fill');
+        if (!track || !dots) return null;
+
+        const slides = opts.slides || [];
+        if (!slides.length) {
+            root.hidden = true;
+            return null;
+        }
+
+        const pauseReasons = new Set();
+        let current = -1;
+
+        track.innerHTML = slides.map((s, i) => opts.renderSlide(s, i, slides.length)).join('');
+        const slideEls = Array.from(track.querySelectorAll('.lp-slide'));
+
+        const prefix = root.id || 'lp-carousel';
+        const dotClass = opts.dotClass || 'lp-dot';
+        dots.innerHTML = slides.map((s, i) => `
+            <button class="${dotClass}" role="tab" id="${prefix}-dot-${i}" aria-controls="${slideEls[i].id}"
+                aria-selected="false" aria-label="${opts.dotLabel(s, i)}" tabindex="-1" data-index="${i}">${opts.dotHtml ? opts.dotHtml(s, i) : ''}</button>`).join('');
+        const dotEls = Array.from(dots.querySelectorAll('[role="tab"]'));
+
+        function goTo(index) {
+            const n = slides.length;
+            const next = ((index % n) + n) % n;
+            if (next === current) return;
+            const prev = current;
+            // Sentido según el índice pedido (antes de dar la vuelta): "siguiente"
+            // desde la última avanza aunque vuelva a la primera.
+            const dir = index > prev ? 1 : -1;
+            current = next;
+
+            slideEls.forEach((el, i) => {
+                const active = i === next;
+                el.classList.toggle('is-active', active);
+                el.classList.toggle('is-before', i < next);
+                el.toggleAttribute('inert', !active);
+                el.setAttribute('aria-hidden', String(!active));
+            });
+            dotEls.forEach((d, i) => {
+                d.classList.toggle('is-active', i === next);
+                d.setAttribute('aria-selected', String(i === next));
+                d.tabIndex = i === next ? 0 : -1;
+            });
+            if (opts.animate && prev >= 0) opts.animate(slideEls[prev], slideEls[next], dir);
+
+            CatlecTooltip.hide('landing-shared-tooltip');
+            if (opts.progressInDot && progressFill) dotEls[next].appendChild(progressFill);
+            restartProgress();
+
+            // La saliente se reinicia cuando ya salió de la vista, para que la
+            // próxima visita vuelva a animarse desde el principio.
+            if (prev >= 0 && opts.onDeactivate) {
+                setTimeout(() => { if (current !== prev) opts.onDeactivate(slideEls[prev], slides[prev], prev); },
+                    opts.deactivateDelay || 650);
+            }
+            if (opts.onActivate) {
+                CatlecUtils.afterNextPaint(() => {
+                    if (current === next) opts.onActivate(slideEls[next], slides[next], next);
+                });
+            }
+        }
+
+        function setPaused(reason, on) {
+            if (on) pauseReasons.add(reason); else pauseReasons.delete(reason);
+            root.classList.toggle('is-paused', pauseReasons.size > 0);
+        }
+
+        // Reinicia la barra de progreso al cambiar de diapositiva quitando y
+        // reponiendo la animación CSS (fuerza un reflow entre medio).
+        function restartProgress() {
+            if (!progressFill) return;
+            progressFill.style.animation = 'none';
+            void progressFill.offsetWidth;
+            progressFill.style.animation = '';
+        }
+
+        function wireAutoplay() {
+            if (reduceMotion() || !progressFill) return;
+            root.style.setProperty('--lp-autoplay-ms', (opts.autoplayMs || 7000) + 'ms');
+            root.classList.add('is-autoplay');
+
+            progressFill.addEventListener('animationend', () => goTo(current + 1));
+
+            root.addEventListener('mouseenter', () => setPaused('hover', true));
+            root.addEventListener('mouseleave', () => setPaused('hover', false));
+            root.addEventListener('focusin', () => setPaused('focus', true));
+            root.addEventListener('focusout', (e) => {
+                if (!root.contains(e.relatedTarget)) setPaused('focus', false);
+            });
+            document.addEventListener('visibilitychange', () => setPaused('hidden', document.hidden));
+
+            // Arranca en pausa hasta que el carrusel entra en pantalla.
+            setPaused('offscreen', true);
+            new IntersectionObserver((entries) => {
+                setPaused('offscreen', !entries[0].isIntersecting);
+            }, { threshold: 0.35 }).observe(root);
+        }
+
+        function wireSwipe() {
+            if (!viewport) return;
+            let startX = null, startY = 0;
+            viewport.addEventListener('pointerdown', (e) => {
+                if (e.pointerType === 'mouse') return;
+                startX = e.clientX;
+                startY = e.clientY;
+            });
+            viewport.addEventListener('pointerup', (e) => {
+                if (startX === null) return;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                startX = null;
+                if (Math.abs(dx) > SWIPE_PX && Math.abs(dx) > Math.abs(dy)) goTo(current + (dx < 0 ? 1 : -1));
+            });
+            viewport.addEventListener('pointercancel', () => { startX = null; });
+        }
+
+        dotEls.forEach(d => d.addEventListener('click', () => goTo(Number(d.dataset.index))));
+        const prevBtn = root.querySelector('.lp-carousel-arrow--prev');
+        const nextBtn = root.querySelector('.lp-carousel-arrow--next');
+        if (prevBtn) prevBtn.addEventListener('click', () => goTo(current - 1));
+        if (nextBtn) nextBtn.addEventListener('click', () => goTo(current + 1));
+        root.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') { e.preventDefault(); goTo(current + 1); dotEls[current].focus(); }
+            if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(current - 1); dotEls[current].focus(); }
+        });
+
+        wireSwipe();
+        wireAutoplay();
+
+        const first = new IntersectionObserver((entries) => {
+            if (!entries[0].isIntersecting) return;
+            first.disconnect();
+            goTo(0);
+        }, { threshold: 0.35 });
+        first.observe(root);
+
+        return { goTo, slideEls, get current() { return current; } };
+    }
+
+    // ─── Módulos del Observatorio (lista de módulos + panel de cifras) ─────
     function legendHtml(items) {
         if (!items.length) return '';
         return `<div class="lp-legend">${items.map(i => `
@@ -55,15 +239,13 @@ window.LandingCarousel = (function () {
             </span>`).join('')}</div>`;
     }
 
-    function slideHtml(s, i) {
+    function figureSlideHtml(s, i, total) {
         return `
         <article class="lp-slide" id="lp-slide-${s.id}" role="group" aria-roledescription="diapositiva"
-            aria-label="${i + 1} de ${slides.length}: ${s.short}" style="--slide-accent:${s.accent}">
+            aria-label="${i + 1} de ${total}: ${s.short}" style="--slide-accent:${s.accent}">
             ${s.photo ? `<div class="lp-slide-photo" data-photo="${s.photo}" aria-hidden="true"></div>` : ''}
             <div class="lp-slide-info">
-                <span class="lp-slide-module">
-                    <span class="lp-slide-module-logo">${logoHtml(s.id)}</span>${moduleLabel(s.id)}
-                </span>
+                ${modulePillHtml(s.id)}
                 <div class="lp-big">
                     ${s.prefix ? `<span class="lp-big-prefix">${s.prefix}</span>` : ''}
                     <span class="kpi-value lp-big-num">${zeroOf(s.number)}</span>
@@ -73,7 +255,10 @@ window.LandingCarousel = (function () {
                 <div class="lp-slide-stats">
                     ${s.stats.map(st => `<div class="lp-slide-stat"><strong>${st.value}</strong><span>${st.label}</span></div>`).join('')}
                 </div>
-                <a class="lp-slide-link" href="${s.link}">Ver en el módulo <i data-lucide="arrow-right" class="icon-13"></i></a>
+                <div class="lp-slide-actions">
+                    <a class="lp-btn lp-btn--primary lp-btn--sm" href="${moduleFile(s.id)}">Abrir módulo <i data-lucide="arrow-right" class="icon-13"></i></a>
+                    <a class="lp-slide-link" href="${s.link}">Ver este análisis</a>
+                </div>
             </div>
             <div class="lp-slide-chart">
                 <div class="lp-slide-chart-head">
@@ -86,165 +271,63 @@ window.LandingCarousel = (function () {
         </article>`;
     }
 
-    function loadPhoto(i) {
-        const layer = slideEls[i].querySelector('.lp-slide-photo');
-        if (!layer || layer.style.backgroundImage || !window.LandingPhotos) return;
-        const photo = LandingPhotos.get(layer.dataset.photo);
-        if (photo) layer.style.backgroundImage = `url("${photo.src}")`;
+    // Selector de la lista: logo, nombre corto y descripción del módulo; la
+    // barra de autoplay se inserta dentro del activo (progressInDot).
+    function moduleItemHtml(s) {
+        return `
+            <span class="lp-hub-item-logo" aria-hidden="true">${logoHtml(s.id)}</span>
+            <span class="lp-hub-item-name">${s.name || moduleLabel(s.id)}</span>
+            <span class="lp-hub-item-desc">${s.description || ''}</span>`;
     }
 
-    function activateChart(i) {
-        const canvas = slideEls[i].querySelector('canvas');
-        if (!charts[i]) {
-            charts[i] = new Chart(canvas.getContext('2d'), slides[i].chart(canvas));
-            return;
-        }
-        if (!reduceMotion()) {
-            charts[i].reset();
-            charts[i].update();
-        }
-    }
-
-    function goTo(index) {
-        const n = slides.length;
-        const next = ((index % n) + n) % n;
-        if (next === current) return;
-        const prev = current;
-        current = next;
-
-        slideEls.forEach((el, i) => {
-            const active = i === next;
-            el.classList.toggle('is-active', active);
-            el.classList.toggle('is-before', i < next);
-            el.toggleAttribute('inert', !active);
-            el.setAttribute('aria-hidden', String(!active));
-        });
-        dotEls.forEach((d, i) => {
-            d.classList.toggle('is-active', i === next);
-            d.setAttribute('aria-selected', String(i === next));
-            d.tabIndex = i === next ? 0 : -1;
-        });
-
-        CatlecTooltip.hide('landing-shared-tooltip');
-        restartProgress();
-
-        // La cifra saliente vuelve a cero cuando ya se desvaneció, para que la
-        // próxima visita cuente de nuevo desde cero.
-        if (prev >= 0) {
-            const prevNum = slideEls[prev].querySelector('.lp-big-num');
-            const zero = zeroOf(slides[prev].number);
-            setTimeout(() => { if (current !== prev) prevNum.textContent = zero; }, 650);
-        }
-
-        loadPhoto(next);
-        loadPhoto((next + 1) % n); // precarga la siguiente para que no aparezca en blanco
-
-        const num = slideEls[next].querySelector('.lp-big-num');
-        CatlecUtils.afterNextPaint(() => {
-            num.textContent = slides[next].number;
-            activateChart(next);
-        });
-    }
-
-    function setPaused(reason, on) {
-        const reasons = root._pauseReasons;
-        if (on) reasons.add(reason); else reasons.delete(reason);
-        root.classList.toggle('is-paused', reasons.size > 0);
-    }
-
-    // Reinicia la barra de progreso al cambiar de diapositiva quitando y
-    // reponiendo la animación CSS (fuerza un reflow entre medio).
-    function restartProgress() {
-        if (!progressFill) return;
-        progressFill.style.animation = 'none';
-        void progressFill.offsetWidth;
-        progressFill.style.animation = '';
-    }
-
-    function wireAutoplay() {
-        if (reduceMotion()) return;
-        root.style.setProperty('--lp-autoplay-ms', AUTOPLAY_MS + 'ms');
-        root.classList.add('is-autoplay');
-        root._pauseReasons = new Set();
-
-        progressFill.addEventListener('animationend', () => goTo(current + 1));
-
-        root.addEventListener('mouseenter', () => setPaused('hover', true));
-        root.addEventListener('mouseleave', () => setPaused('hover', false));
-        root.addEventListener('focusin', () => setPaused('focus', true));
-        root.addEventListener('focusout', (e) => {
-            if (!root.contains(e.relatedTarget)) setPaused('focus', false);
-        });
-        document.addEventListener('visibilitychange', () => setPaused('hidden', document.hidden));
-
-        // Arranca en pausa hasta que el carrusel entra en pantalla.
-        setPaused('offscreen', true);
-        new IntersectionObserver((entries) => {
-            setPaused('offscreen', !entries[0].isIntersecting);
-        }, { threshold: 0.35 }).observe(root);
-    }
-
-    function wireSwipe(viewport) {
-        let startX = null, startY = 0;
-        viewport.addEventListener('pointerdown', (e) => {
-            if (e.pointerType === 'mouse') return;
-            startX = e.clientX;
-            startY = e.clientY;
-        });
-        viewport.addEventListener('pointerup', (e) => {
-            if (startX === null) return;
-            const dx = e.clientX - startX;
-            const dy = e.clientY - startY;
-            startX = null;
-            if (Math.abs(dx) > SWIPE_PX && Math.abs(dx) > Math.abs(dy)) goTo(current + (dx < 0 ? 1 : -1));
-        });
-        viewport.addEventListener('pointercancel', () => { startX = null; });
+    // En móvil la lista es una fila deslizable: centra el módulo activo sin
+    // mover la página (solo el desplazamiento horizontal de la lista).
+    function revealItem(list, item) {
+        if (!list || !item || list.scrollWidth <= list.clientWidth) return;
+        const left = item.offsetLeft - (list.clientWidth - item.offsetWidth) / 2;
+        list.scrollTo({ left: Math.max(0, left), behavior: reduceMotion() ? 'auto' : 'smooth' });
     }
 
     function init(slideDefs) {
-        root = document.getElementById('lp-carousel');
-        const track = document.getElementById('lp-carousel-track');
-        const dots = document.getElementById('lp-carousel-dots');
-        progressFill = document.getElementById('lp-carousel-progress-fill');
-        if (!root || !track || !dots) return;
+        const root = document.getElementById('lp-carousel');
+        const list = root && root.querySelector('.lp-carousel-dots');
+        const charts = new Array(slideDefs.length).fill(null);
 
-        slides = slideDefs;
-        if (!slides.length) {
-            root.hidden = true;
-            return;
+        function loadPhoto(el) {
+            const layer = el && el.querySelector('.lp-slide-photo');
+            if (!layer || layer.style.backgroundImage || !window.LandingPhotos) return;
+            const photo = LandingPhotos.get(layer.dataset.photo);
+            if (photo) layer.style.backgroundImage = `url("${photo.src}")`;
         }
 
-        track.innerHTML = slides.map(slideHtml).join('');
-        slideEls = Array.from(track.querySelectorAll('.lp-slide'));
-        charts = new Array(slides.length).fill(null);
-
-        dots.innerHTML = slides.map((s, i) => `
-            <button class="lp-dot" role="tab" id="lp-dot-${s.id}" aria-controls="lp-slide-${s.id}"
-                aria-selected="false" aria-label="${moduleLabel(s.id)}" tabindex="-1" data-index="${i}"></button>`).join('');
-        dotEls = Array.from(dots.querySelectorAll('.lp-dot'));
-        dotEls.forEach(d => d.addEventListener('click', () => goTo(Number(d.dataset.index))));
-
-        slideEls.forEach(el => CatlecKpiAnimate.observe(el.querySelector('.lp-big-num')));
-
-        document.getElementById('lp-carousel-prev').addEventListener('click', () => goTo(current - 1));
-        document.getElementById('lp-carousel-next').addEventListener('click', () => goTo(current + 1));
-        root.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowRight') { e.preventDefault(); goTo(current + 1); dotEls[current].focus(); }
-            if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(current - 1); dotEls[current].focus(); }
+        const carousel = create(root, {
+            slides: slideDefs,
+            renderSlide: figureSlideHtml,
+            dotLabel: (s) => moduleLabel(s.id),
+            dotClass: 'lp-hub-item',
+            dotHtml: moduleItemHtml,
+            progressInDot: true,
+            autoplayMs: 7000,
+            onActivate(el, s, i) {
+                revealItem(list, list && list.children[i]);
+                loadPhoto(el);
+                loadPhoto(carousel.slideEls[(i + 1) % slideDefs.length]); // precarga la siguiente
+                el.querySelector('.lp-big-num').textContent = s.number;
+                const canvas = el.querySelector('canvas');
+                if (!charts[i]) {
+                    charts[i] = new Chart(canvas.getContext('2d'), s.chart(canvas));
+                } else if (!reduceMotion()) {
+                    charts[i].reset();
+                    charts[i].update();
+                }
+            },
+            onDeactivate(el, s) {
+                el.querySelector('.lp-big-num').textContent = zeroOf(s.number);
+            }
         });
-
-        wireSwipe(document.getElementById('lp-carousel-viewport'));
-        wireAutoplay();
-
-        // La primera diapositiva se activa (y cuenta) cuando el carrusel entra
-        // en pantalla, no al cargar la página.
-        const first = new IntersectionObserver((entries) => {
-            if (!entries[0].isIntersecting) return;
-            first.disconnect();
-            goTo(0);
-        }, { threshold: 0.35 });
-        first.observe(root);
+        if (!carousel) return;
+        carousel.slideEls.forEach(el => CatlecKpiAnimate.observe(el.querySelector('.lp-big-num')));
     }
 
-    return { init, goTo };
+    return { create, init, zeroOf, modulePillHtml, moduleLabel, reduceMotion };
 })();

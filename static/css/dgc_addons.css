@@ -341,12 +341,11 @@
 
 .dgc-detail-notice--empty svg { color: var(--text-muted); }
 
-/* Aviso sobre la foto de referencia (Fotos/DGC) */
-.dgc-photo-ai-note {
-    position: absolute;
-    right: 0.4rem;
-    bottom: 0.4rem;
-    max-width: calc(100% - 0.8rem);
+/* Fotos de referencia (Fotos/DGC): carrusel de la ficha, una foto por infraestructura.
+   Etiquetas sobre la foto: nombre de la infraestructura, contador y aviso de IA. */
+.dgc-photo-ai-note,
+.dgc-photo-label,
+.dgc-photo-counter {
     padding: 0.18rem 0.45rem;
     border-radius: var(--radius-sm);
     background: rgba(15, 23, 42, 0.68);
@@ -357,6 +356,61 @@
     pointer-events: none;
 }
 
+.dgc-photo-overlay {
+    position: absolute;
+    left: 0.4rem;
+    right: 0.4rem;
+    bottom: 0.4rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.4rem;
+    pointer-events: none;
+}
+
+.dgc-photo-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+.dgc-photo-label[hidden] {
+    display: none;
+}
+
+.dgc-photo-ai-note {
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.dgc-photo-counter {
+    position: absolute;
+    top: 0.4rem;
+    left: 0.4rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.dgc-photo-carousel {
+    height: 220px;
+    touch-action: pan-y;
+}
+
+.dgc-photo-carousel .dgc-photo-slide {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.25s ease;
+}
+
+.dgc-photo-carousel .dgc-photo-slide.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
 .detail-project-photo.dgc-photo-zoomable {
     cursor: zoom-in;
     transition: transform 0.25s ease;
@@ -364,6 +418,55 @@
 
 .detail-project-photo.dgc-photo-zoomable:hover {
     transform: scale(1.02);
+}
+
+.dgc-photo-nav {
+    position: absolute;
+    top: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.45);
+    color: #fff;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(-50%);
+    transition: opacity 0.2s ease, background 0.15s ease;
+}
+
+.dgc-photo-nav--prev { left: 0.4rem; }
+.dgc-photo-nav--next { right: 0.4rem; }
+
+.dgc-photo-nav svg {
+    width: 16px;
+    height: 16px;
+}
+
+.dgc-photo-carousel:hover .dgc-photo-nav,
+.dgc-photo-nav:focus-visible {
+    opacity: 1;
+}
+
+.dgc-photo-nav:hover {
+    background: rgba(15, 23, 42, 0.68);
+}
+
+/* En pantallas táctiles no hay hover: flechas siempre visibles */
+@media (hover: none) {
+    .dgc-photo-nav { opacity: 1; }
+}
+
+/* Con una sola foto no hay flechas ni contador */
+.dgc-photo-carousel:not(.dgc-photo-carousel--multi) .dgc-photo-nav,
+.dgc-photo-carousel:not(.dgc-photo-carousel--multi) .dgc-photo-counter,
+.dgc-photo-lightbox:not(.dgc-photo-lightbox--multi) .dgc-photo-lightbox-nav,
+.dgc-photo-lightbox:not(.dgc-photo-lightbox--multi) .dgc-photo-counter {
+    display: none;
 }
 
 /* Visor a tamaño completo de la foto */
@@ -379,6 +482,7 @@
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     cursor: zoom-out;
+    touch-action: pinch-zoom;
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.2s ease, visibility 0s linear 0.2s;
@@ -411,16 +515,39 @@
     cursor: default;
 }
 
-.dgc-photo-lightbox .dgc-photo-ai-note {
+.dgc-photo-lightbox .dgc-photo-overlay {
+    left: 0.6rem;
     right: 0.6rem;
     bottom: 0.6rem;
+}
+
+.dgc-photo-lightbox .dgc-photo-counter {
+    top: 0.6rem;
+    left: 0.6rem;
+}
+
+.dgc-photo-lightbox .dgc-photo-ai-note,
+.dgc-photo-lightbox .dgc-photo-label,
+.dgc-photo-lightbox .dgc-photo-counter {
     font-size: 0.72rem;
 }
 
 .dgc-photo-lightbox-close {
-    position: absolute;
     top: 1rem;
     right: 1rem;
+}
+
+.dgc-photo-lightbox-nav {
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.dgc-photo-lightbox-nav--prev { left: 1rem; }
+.dgc-photo-lightbox-nav--next { right: 1rem; }
+
+.dgc-photo-lightbox-btn {
+    position: absolute;
+    z-index: 1;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -433,11 +560,11 @@
     transition: background 0.15s ease;
 }
 
-.dgc-photo-lightbox-close:hover {
+.dgc-photo-lightbox-btn:hover {
     background: rgba(255, 255, 255, 0.25);
 }
 
-.dgc-photo-lightbox-close svg {
+.dgc-photo-lightbox-btn svg {
     width: 20px;
     height: 20px;
 }
