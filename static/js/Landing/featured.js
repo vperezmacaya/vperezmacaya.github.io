@@ -25,10 +25,11 @@ window.LandingFeatured = (function () {
         + ' &middot; &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>';
 
     // Orden: la Línea 7 abre y el resto de Metro se intercala con proyectos de
-    // EFE y DGC, para no concentrar Metro al principio; dentro de eso, primero
-    // lo de mayor alcance social. module: 'metro' | 'efe' | 'dgc'.
-    // ids (Metro/EFE): proyectos que se dibujan juntos, como un solo trazado.
-    // Si un proyecto falta en los datos, se omite.
+    // EFE y DGC, para no concentrar un módulo ni un tipo de obra seguidos;
+    // dentro de eso, primero lo de mayor alcance social.
+    // module: 'metro' | 'efe' | 'dgc'. ids (Metro/EFE): proyectos que se
+    // dibujan juntos, como un solo trazado. Si un proyecto falta en los datos
+    // (o una concesión no tiene foto), se omite.
     const FEATURED = [
         { module: 'metro', ids: ['METRO-01'], title: 'Línea 7' },
         {
@@ -45,8 +46,8 @@ window.LandingFeatured = (function () {
             phrase: 'Nuevo tren de cercanía para el norponiente de la Región Metropolitana: Quinta Normal, Renca, Quilicura, Lampa y Colina hasta Batuco.'
         },
         {
-            module: 'dgc', id: 'XXX_TAHI1', title: 'Teleférico Alto Hospicio – Iquique',
-            phrase: 'Teleférico de 5,7 km entre Alto Hospicio e Iquique: transporte público no contaminante para hasta 2.000 pasajeros por hora y sentido.'
+            module: 'dgc', id: '080_HSSG1', title: 'Hospital del Salvador e Instituto Nacional de Geriatría',
+            phrase: 'Nuevo recinto de unas 650 camas en la Región Metropolitana, con equipamiento médico y servicios de apoyo a cargo de la concesión.'
         },
         { module: 'metro', ids: ['METRO-05'], title: 'Línea 8' },
         {
@@ -54,10 +55,26 @@ window.LandingFeatured = (function () {
             phrase: 'Extiende el Metro Valparaíso desde Limache hacia Quillota, La Cruz y La Calera, con 26 km de doble vía exclusiva para pasajeros.'
         },
         {
+            module: 'dgc', id: 'XXX_TAHI1', title: 'Teleférico Alto Hospicio – Iquique',
+            phrase: 'Teleférico de 5,7 km entre Alto Hospicio e Iquique: transporte público no contaminante para hasta 2.000 pasajeros por hora y sentido.'
+        },
+        { module: 'metro', ids: ['METRO-07'], title: 'Línea A' },
+        {
+            module: 'dgc', id: '110_HRQQ1', title: 'Hospital de Coquimbo',
+            phrase: 'Hospital de 605 camas que será referente regional en traumatología, neurocirugía, cuidados críticos pediátricos y procuramiento de órganos.'
+        },
+        {
             module: 'dgc', id: '122_NARA2', title: 'Aeropuerto de La Araucanía',
             phrase: 'Ampliación y renovación de la infraestructura, el equipamiento y las instalaciones del aeropuerto regional de La Araucanía.'
         },
-        { module: 'metro', ids: ['METRO-07'], title: 'Línea A' },
+        {
+            module: 'dgc', id: '117_HINN1', title: 'Instituto Nacional de Neurocirugía',
+            phrase: 'Recinto de unos 65 mil m² en Providencia para neurocirugía de mediana y alta complejidad, de adultos y niños, con referencia nacional.'
+        },
+        {
+            module: 'dgc', id: '100_RAUS1', title: 'Red Aeroportuaria Austral',
+            phrase: 'Amplía los terminales de Punta Arenas, a 16.014 m² y 2,1 millones de pasajeros al año, y de Balmaceda, a 12.391 m².'
+        },
         {
             module: 'dgc', id: '125_ARNO1', title: 'Red Aeroportuaria Norte',
             phrase: 'Primera concesión en red: amplía y renueva los aeropuertos Andrés Sabella y Desierto de Atacama, en Antofagasta y Atacama.'

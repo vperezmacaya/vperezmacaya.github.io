@@ -7,7 +7,7 @@ window.LandingCommon = (function () {
     // Autores (los mismos del "Acerca de" de cada módulo).
     const AUTHORS = [
         { name: 'José Oliveros', role: 'Equipo desarrollador', email: 'joseoliveros@udec.cl' },
-        { name: 'Vicente Pérez', role: 'Equipo desarrollador', email: 'vicperez2021@udec.cl' },
+        { name: 'Vicente Pérez', role: 'Ingeniero Civil Industrial', email: 'vicperez2021@udec.cl' },
     ];
     const AFFILIATION = 'Departamento de Ingeniería Industrial, Facultad de Ingeniería, Universidad de Concepción';
 
