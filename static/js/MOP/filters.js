@@ -103,6 +103,7 @@ function applyFilters() {
     updateKPIs();
     renderAllCharts();
     updateProjectCount(filteredProjects.length);
+    mopMapApplyFilters();
 }
 
 function updateProjectCount(count) {

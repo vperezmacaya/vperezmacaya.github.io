@@ -196,57 +196,14 @@
 }
 
 /* ─── Centroid Marker & Train Icons ────────────────────────────────────────── */
+/* Estados de ícono y clusters desplegados (badge, origen, dimmed, deployed):
+   compartidos con MOP, viven en styles.css */
 .centroid-marker-pulse {
     position: relative;
     width: 26px; /* iconSize [26, 26] en EFE/Metro map.js */
     height: 26px;
     background-color: #059669;
     transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
-}
-.marker-cluster-badge {
-    position: absolute;
-    top: -6px;
-    right: -6px;
-    background-color: #ef4444;
-    color: #ffffff;
-    font-size: 0.65rem;
-    font-weight: 800;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1.5px solid #ffffff;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
-    pointer-events: none;
-    z-index: 10;
-    transition: opacity 0.25s ease, transform 0.25s ease;
-}
-.centroid-marker-pulse.deployed .marker-cluster-badge,
-.centroid-marker-pulse.active-selected .marker-cluster-badge {
-    opacity: 0 !important;
-    transform: scale(0.5) !important;
-    pointer-events: none;
-}
-.cluster-origin-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background-color: #059669;
-    border: 1.5px solid #ffffff;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-    cursor: pointer;
-    transition: transform 0.25s ease, background-color 0.25s ease;
-}
-.cluster-origin-dot:hover {
-    transform: scale(1.4);
-    background-color: #047857;
-}
-.centroid-marker-pulse.is-hovered {
-    transform: scale(1.25);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
-    z-index: 1000 !important;
 }
 .centroid-marker-pulse:hover,
 .centroid-marker-pulse.is-hovered,
@@ -256,12 +213,27 @@
 .centroid-marker-pulse.active-selected {
     z-index: 10000 !important;
 }
-.centroid-marker-pulse.dimmed {
-    opacity: 0.48 !important;
+
+/* Íconos de la red en operación (EFE efeRenderServiceMarkers, Metro
+   metroRenderLineMarkers): cuadrado redondeado para distinguirlos de los
+   íconos circulares de proyecto */
+.efe-service-marker .centroid-marker-pulse,
+.efe-legend-icon-badge.efe-legend-service-badge,
+.metro-line-marker .centroid-marker-pulse,
+.efe-legend-icon-badge.metro-legend-line-badge {
+    border-radius: 7px;
 }
-.centroid-marker-pulse.deployed {
-    opacity: 1.0 !important;
-    z-index: 9000 !important;
+
+/* Metro: número de la línea dentro del ícono (líneas en operación y proyectos) */
+.metro-line-marker .centroid-marker-pulse,
+.efe-legend-icon-badge.metro-legend-line-badge,
+.metro-project-marker .centroid-marker-pulse,
+.efe-legend-icon-badge.metro-legend-project-badge {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 800;
+    line-height: 1;
+    color: #ffffff;
 }
 
 /* =============================================================
@@ -271,23 +243,3 @@
    se portaron a la clase global en styles.css.
    ============================================================= */
 
-/* ─── Clusters desplegados en MapLibre (EFE y Metro) ─────────────────────── */
-/* Punto de origen de un cluster desplegado; las patas se dibujan en un SVG
-   centrado en el punto, en píxeles, así que no dependen del zoom */
-.catlec-gl-cluster-origin {
-    position: relative;
-    width: 8px;
-    height: 8px;
-}
-
-.catlec-gl-cluster-origin svg {
-    position: absolute;
-    left: 4px;
-    top: 4px;
-    overflow: visible;
-    pointer-events: none;
-}
-
-.catlec-gl-cluster-origin .cluster-origin-dot {
-    position: relative;
-}

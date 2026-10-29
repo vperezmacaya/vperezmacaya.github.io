@@ -6,18 +6,406 @@
 /* ── Layout overrides for MOP ────────────────────────────────────── */
 .mop-grid {
     display: grid;
-    grid-template-columns: 260px 1fr;
-    gap: 0.6rem;
+    /* Filtros | mapa de proyectos | tabla. La última columna es el ancho de la
+       tabla, ajustable con el separador (common/panel-resizer.js → --catlec-table-width). */
+    grid-template-columns: 260px minmax(0, 1fr) var(--catlec-table-width, 774px);
+    gap: 0.5rem;
     width: 100%;
     height: 100%;
     min-height: 0;
+    overflow: hidden;
 }
 
-/* ── KPI Banner ──────────────────────────────────────────────────── */
+/* Pantallas angostas (celular, tablet): filtros, mapa y tabla en una columna
+   con scroll. Con 3 columnas, los 260 px de filtros y los 769 px mínimos de la
+   tabla dejaban al mapa sin ancho. La tabla conserva su ancho mínimo y se
+   desplaza en horizontal (encabezado y filas juntos). */
+@media (max-width: 1100px) {
+    .mop-grid {
+        grid-template-columns: minmax(0, 1fr);
+        grid-auto-rows: auto;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    /* Sin scroll propio y con el alto de su contenido (con min-height: 0 la
+       grilla, más baja que la suma de las filas, la reducía a 0) */
+    .mop-grid > .left-panel {
+        height: auto;
+        min-height: auto;
+        overflow: visible;
+    }
+
+    .mop-grid > .map-panel {
+        height: 70vh;
+        min-height: 360px;
+    }
+
+    .mop-grid > .right-panel {
+        height: 85vh;
+        min-height: 520px;
+    }
+
+    .mop-grid > .catlec-panel-resizer {
+        display: none;
+    }
+
+    .mop-grid .table-responsive {
+        overflow-x: auto;
+    }
+
+    .mop-grid .table-header-wrapper,
+    .mop-grid .table-body-wrapper {
+        min-width: 769px;
+    }
+
+    /* Vistas de contratos: una columna, cada tarjeta con alto propio */
+    .mop-grid > .mop-view-panel {
+        grid-column: 1 / -1;
+        height: auto;
+        min-height: auto;
+        overflow: visible;
+    }
+
+    /* .mop-grid delante: las reglas generales de estos layouts van después en el archivo */
+    .mop-grid .mop-view-panel .mop-layout {
+        flex: none;
+    }
+
+    .mop-grid .mop-layout-costos,
+    .mop-grid .mop-layout-contratos {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: none;
+        grid-auto-rows: 340px;
+    }
+
+    .mop-grid .mop-ct-top {
+        grid-column: auto;
+        grid-row: auto;
+        height: 440px;
+    }
+}
+
+@media (max-width: 600px) {
+    .mop-grid .mop-kpi-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .mop-grid .mop-kpi-row.mop-kpi-row--4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* ── Mapa de proyectos (MapLibre, static/js/MOP/project-map.js) ──── */
+#mop-project-map {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    z-index: 1;
+}
+
+/* Proyecto seleccionado sin georreferenciación: el mapa se difumina como si no
+   estuviera disponible y un aviso al centro lo explica (bajo "Restablecer
+   Mapa", que sigue disponible para quitar la selección) */
+.mop-map-nogeo {
+    position: absolute;
+    inset: 0;
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: rgba(241, 245, 249, 0.55);
+    backdrop-filter: blur(10px) saturate(0.4);
+    -webkit-backdrop-filter: blur(10px) saturate(0.4);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s;
+}
+
+.mop-map-nogeo.is-visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.mop-map-nogeo-msg {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    max-width: 300px;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+    box-shadow: var(--shadow-main);
+    text-align: center;
+}
+
+.mop-map-nogeo-msg svg {
+    width: 28px;
+    height: 28px;
+    color: var(--text-muted);
+}
+
+.mop-map-nogeo-msg strong {
+    font-size: 0.85rem;
+    color: var(--text-primary);
+}
+
+.mop-map-nogeo-msg span {
+    font-size: 0.72rem;
+    line-height: 1.4;
+    color: var(--text-muted);
+}
+
+/* Íconos de proyectos puntuales: círculo del color del servicio, más chico
+   que el de EFE porque la cartera MOP es densa */
+.mop-point-marker.catlec-gl-marker {
+    width: 18px;
+    height: 18px;
+}
+
+.mop-point-marker .centroid-marker-pulse {
+    width: 16px;
+    height: 16px;
+    border-width: 2px;
+}
+
+#mop-project-map .cluster-origin-dot {
+    background-color: #0c71c3;
+}
+
+#mop-project-map .cluster-origin-dot:hover {
+    background-color: #0a4f8f;
+}
+
+/* Leyenda del mapa (contenedor y título: .catlec-map-legend en styles.css) */
+.mop-maplegend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.72rem;
+    color: var(--text-primary);
+}
+
+.mop-maplegend-line {
+    width: 16px;
+    height: 4px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.mop-maplegend-dot {
+    width: 10px;
+    height: 10px;
+    margin: 0 3px;
+    border-radius: 50%;
+    border: 1.5px solid #ffffff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+    flex-shrink: 0;
+}
+
+.mop-maplegend-neutral {
+    background-color: #64748b;
+}
+
+.mop-maplegend-sep {
+    border-top: 1px solid #e2e8f0;
+    margin: 0.1rem 0;
+}
+
+/* Fila del proyecto seleccionado en la tabla o en el mapa (mismo resaltado que EFE) */
+.mop-data-table tbody tr.row-main.row-selected {
+    background-color: rgba(12, 113, 195, 0.12);
+    box-shadow: inset 4px 0 0 #0c71c3;
+}
+
+/* Polígono de un proyecto (relleno translúcido y borde, capa mop-polys) */
+.mop-maplegend-poly {
+    width: 14px;
+    height: 10px;
+    margin: 0 1px;
+    border: 1.5px solid #64748b;
+    background-color: rgba(100, 116, 139, 0.35);
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+/* Escala del coroplético de regiones (vista del país, project-map.js) */
+.mop-maplegend-subtitle {
+    font-size: 0.66rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-bottom: 0.1rem;
+}
+
+.mop-maplegend-choro {
+    width: 14px;
+    height: 10px;
+    border-radius: 2px;
+    margin: 0 1px;
+    opacity: 0.85;
+    flex-shrink: 0;
+}
+
+#mop-map-choro-legend[hidden] {
+    display: none;
+}
+
+/* Cuántos de los proyectos filtrados tienen ubicación en el mapa */
+.mop-maplegend-note {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    max-width: 150px;
+    line-height: 1.3;
+}
+
+/* Recuadros de Isla de Pascua y Juan Fernández (Región de Valparaíso) y de la
+   Antártica Chilena (Magallanes): una
+   columna pegada a la esquina superior izquierda del mapa, sin esquinas
+   redondeadas ni sombra, con un borde exterior blanco de 2 px que la separa del mapa
+   principal y una línea fina entre recuadros (como Alaska y Hawái en los mapas
+   de EE. UU.). Cerrada queda escondida tras el borde izquierdo del mapa (el
+   panel recorta lo que sale) y al abrirse (.is-open) emerge deslizándose;
+   mientras se ve, los botones de zoom pasan a su derecha
+   (.mop-has-island-insets en el contenedor). */
+#mop-project-map .mop-island-insets {
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin: 0;
+    float: none;
+    display: flex;
+    flex-direction: column;
+    border-right: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+    background: #ffffff;
+    transform: translateX(calc(-100% - 4px));
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 0.38s;
+}
+
+#mop-project-map .mop-island-insets.is-open {
+    transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
+    transition: transform 0.38s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s;
+}
+
+.mop-island-inset-empty[hidden] {
+    display: none;
+}
+
+#mop-project-map .maplibregl-ctrl-top-left > .maplibregl-ctrl-group {
+    transition: margin-left 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #mop-project-map .mop-island-insets,
+    #mop-project-map .mop-island-insets.is-open,
+    #mop-project-map .maplibregl-ctrl-top-left > .maplibregl-ctrl-group {
+        transition: none;
+    }
+}
+
+#mop-project-map.mop-has-island-insets .maplibregl-ctrl-top-left > .maplibregl-ctrl-group {
+    margin-left: calc(var(--mop-inset-width) + 10px);
+}
+
+#mop-project-map {
+    --mop-inset-width: 150px;
+}
+
+.mop-island-inset {
+    position: relative;
+    width: var(--mop-inset-width);
+}
+
+/* Línea fina entre dos recuadros visibles (los de otra región van ocultos) */
+.mop-island-inset:not([hidden]) ~ .mop-island-inset:not([hidden]) {
+    border-top: 1px solid #94a3b8;
+}
+
+.mop-island-inset-title {
+    padding: 0.25rem 0.45rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+    font-family: var(--font-sans);
+    font-size: 0.64rem;
+    font-weight: 600;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mop-island-inset-map {
+    width: 100%;
+    height: 100px;
+}
+
+.mop-island-inset-empty {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 6px;
+    text-align: center;
+    font-size: 0.62rem;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+@media (max-width: 600px) {
+    #mop-project-map {
+        --mop-inset-width: 110px;
+    }
+
+    .mop-island-inset-map {
+        height: 74px;
+    }
+}
+
+/* ── Título y KPIs de "Tabla de proyectos" (columna derecha) ─────── */
+.mop-resumen-title {
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+}
+
+/* Subtexto de las tarjetas KPI sobre la tabla (estándar catlec-kpi-card, 1.1.6) */
+.mop-kpi-sub {
+    display: block;
+    margin-top: 0.05rem;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mop-table-view {
+    position: relative;   /* CatlecUtils.swapView fija la vista saliente (tabla o ficha) sobre su caja */
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
 .mop-kpi-row {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.45rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem;
     flex-shrink: 0;
 }
 
@@ -29,52 +417,58 @@
     table-layout: fixed;
     width: 100%;
 }
+/* Código BIP */
 .data-table.mop-data-table th:nth-child(1),
 .data-table.mop-data-table td:nth-child(1) {
-    width: 36px;
-    text-align: center;
+    width: 96px;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
 }
+/* Nombre: toma el ancho restante */
 .data-table.mop-data-table th:nth-child(2),
 .data-table.mop-data-table td:nth-child(2) {
-    width: 220px;
+    width: auto;
 }
+/* Servicio (sin "Dirección de"), etapa(s) y región; los textos largos pasan a dos líneas */
 .data-table.mop-data-table th:nth-child(3),
 .data-table.mop-data-table td:nth-child(3) {
-    width: 90px;
-    font-family: var(--font-mono, monospace);
-    font-size: 0.7rem;
+    width: 130px;
 }
 .data-table.mop-data-table th:nth-child(4),
 .data-table.mop-data-table td:nth-child(4) {
-    width: 105px;
+    width: 100px;
 }
 .data-table.mop-data-table th:nth-child(5),
 .data-table.mop-data-table td:nth-child(5) {
-    width: 120px;
-    font-weight: 500;
+    width: 130px;
 }
+/* Inversión estimada (MM$ de 2026), alineada a la derecha */
 .data-table.mop-data-table th:nth-child(6),
 .data-table.mop-data-table td:nth-child(6) {
-    width: 140px;
-}
-.data-table.mop-data-table th:nth-child(7),
-.data-table.mop-data-table td:nth-child(7) {
-    width: 85px;
-}
-.data-table.mop-data-table th:nth-child(8),
-.data-table.mop-data-table td:nth-child(8) {
-    width: 110px;
+    width: 122px;
     text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
 }
-.data-table.mop-data-table th:nth-child(9),
-.data-table.mop-data-table td:nth-child(9) {
-    width: 70px;
-    text-align: center;
+
+/* Contenido de las celdas con el diseño de la tabla de Metro (metroRenderTable):
+   nombre en negrita, código destacado como la inversión de Metro y textos
+   secundarios como su etapa */
+.mop-cell-code {
+    font-weight: 700;
+    color: var(--primary);
+    font-variant-numeric: tabular-nums;
 }
-.data-table.mop-data-table th:nth-child(10),
-.data-table.mop-data-table td:nth-child(10) {
-    width: 70px;
-    text-align: center;
+
+.mop-cell-text {
+    font-size: 0.74rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.mop-cell-empty {
+    color: var(--text-muted);
+    font-style: italic;
 }
 
 /* ── Hidden utility ──────────────────────────────────────────────── */
@@ -181,6 +575,11 @@
     background: #9fd1f6;
 }
 
+/* Sin ejecución: gris de MOP_ETAPA_COLORS */
+.mop-legend-dot--sin-ejec {
+    background: #cbd5e1;
+}
+
 .mop-legend-dot--dashed {
     width: 14px;
     height: 0;
@@ -198,6 +597,69 @@
 .mop-c-orange { --legend-color: #de702c; }
 .mop-c-red { --legend-color: #a51f15; }
 .mop-c-stone { --legend-color: #6b7280; }
+
+/* ── Vistas de contratos (static/js/MOP/contratos.js): ocupan el lugar del
+   mapa y la tabla; el panel de filtros sigue a la izquierda ─────── */
+.mop-view-panel {
+    grid-column: 2 / -1;
+    flex-direction: column;
+    gap: 0.5rem;
+    height: 100%;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.mop-kpi-row.mop-kpi-row--4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* Valor de texto (nombre del mayor contratista) en una línea */
+.kpi-value.mop-kpi-value-text {
+    display: block;
+    max-width: 100%;
+    font-size: 0.82rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Costo por región y servicio: dos gráficos lado a lado */
+.mop-layout-costos {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+}
+
+/* Contratos y contratistas: estado y tipo apilados a la izquierda, contratistas a la derecha */
+.mop-layout-contratos {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.mop-ct-top {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+}
+
+/* Donut arriba y su leyenda debajo (la tarjeta es angosta) */
+.mop-card-body.mop-donut-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.mop-donut-canvas {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+}
+
+.mop-donut-legend {
+    flex-shrink: 0;
+    max-height: 45%;
+    overflow-y: auto;
+}
 
 /* ── Layouts por visualización ──────────────────────────────────── */
 .mop-layout {
@@ -276,4 +738,162 @@
     .mop-layout-mapa > .mop-map-card {
         min-height: 520px;
     }
+}
+
+/* ── Ficha del proyecto (static/js/MOP/ficha.js) ─────────────────────
+   Contenedor, cabecera y secciones: .project-detail-view, .detail-view-*,
+   .detail-section, .detail-title, .detail-grid (styles.css), como en DGC. */
+.mop-list-view {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    gap: 0.5rem;
+}
+
+.mop-detail-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-left: auto;
+}
+
+.mop-detail-nav-btn {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.65rem;
+}
+
+.mop-detail-nav-btn svg {
+    width: 13px;
+    height: 13px;
+}
+
+.mop-detail-nav-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.mop-detail-head {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+.mop-detail-head-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.mop-detail-title {
+    margin: 0;
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--text-primary);
+}
+
+.mop-detail-head-row .badge {
+    flex-shrink: 0;
+    margin-top: 2px;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.7rem;
+    white-space: nowrap;
+}
+
+.mop-detail-meta {
+    margin-top: 0.3rem;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.mop-detail-meta .mop-cell-code {
+    margin-right: 0.15rem;
+}
+
+/* Secciones más compactas que el estándar (mismo tamaño que la ficha de DGC) */
+.mop-detail-body .detail-section {
+    gap: 0.35rem;
+}
+
+.mop-detail-body .detail-title {
+    font-size: 0.78rem;
+    margin: 0;
+}
+
+.mop-detail-desc {
+    margin: 0;
+    font-size: 0.76rem;
+    line-height: 1.45;
+    white-space: pre-line;   /* conserva los párrafos de la ficha */
+}
+
+.mop-detail-grid {
+    grid-template-columns: 120px 1fr;
+    gap: 0.3rem;
+    font-size: 0.74rem;
+}
+
+/* Inversión estimada: total destacado y una fila por etapa */
+.mop-detail-inv-total {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.mop-detail-inv-total small {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.mop-detail-etapas {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    column-gap: 0.6rem;
+    row-gap: 0.3rem;
+    font-size: 0.74rem;
+}
+
+.mop-detail-etapa-monto {
+    text-align: right;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.mop-detail-note {
+    margin: 0;
+    font-size: 0.68rem;
+    line-height: 1.4;
+    color: var(--text-muted);
+}
+
+.mop-detail-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 3rem 1rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.mop-detail-loading svg {
+    width: 22px;
+    height: 22px;
+    color: var(--primary);
+    animation: mop-detail-spin 1s linear infinite;
+}
+
+@keyframes mop-detail-spin {
+    to { transform: rotate(360deg); }
+}
+
+.mop-detail-etapa-anio {
+    color: var(--text-muted);
 }

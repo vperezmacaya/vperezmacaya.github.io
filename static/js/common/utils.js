@@ -210,7 +210,12 @@ window.CatlecUtils = {
                     const text = formatter(rawVal, dIdx, index);
                     const textWidth = ctx.measureText(text).width;
                     const barWidth = Math.abs(bar.x - bar.base);
-                    const growsLeft = bar.x < bar.base;
+                    // En barras de menos de ~1 px el extremo queda apenas a la izquierda
+                    // del eje (por el borde): ahí el sentido sale del signo del valor y
+                    // de si el eje va invertido, no de la geometría
+                    const scale = chart.scales[meta.xAxisID];
+                    const reversed = !!(scale && scale.options && scale.options.reverse);
+                    const growsLeft = barWidth > 1 ? bar.x < bar.base : (rawVal < 0) !== reversed;
 
                     if (barWidth >= textWidth + 18) {
                         ctx.fillStyle = typeof insideColorOpt === 'function' ? insideColorOpt(rawVal, dIdx, index) : insideColorOpt;

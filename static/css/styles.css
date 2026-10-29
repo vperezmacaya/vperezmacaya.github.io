@@ -2303,6 +2303,81 @@ footer {
     pointer-events: none;
 }
 
+/* ─── Estados de ícono y clusters desplegables (EFE, Metro y MOP) ─────────── */
+/* Los íconos a menos de ~80 m se agrupan: el badge cuenta los proyectos; al
+   desplegarse cada ícono se separa (.deployed) y el punto de origen dibuja sus
+   patas en un SVG en píxeles (CatlecMapGL.createClusterOrigin), así que no
+   dependen del zoom. El color de hover/selección del ícono es de cada módulo. */
+.marker-cluster-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background-color: #ef4444;
+    color: #ffffff;
+    font-size: 0.65rem;
+    font-weight: 800;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid #ffffff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+    pointer-events: none;
+    z-index: 10;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.centroid-marker-pulse.deployed .marker-cluster-badge,
+.centroid-marker-pulse.active-selected .marker-cluster-badge {
+    opacity: 0 !important;
+    transform: scale(0.5) !important;
+    pointer-events: none;
+}
+.cluster-origin-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #059669;
+    border: 1.5px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    transition: transform 0.25s ease, background-color 0.25s ease;
+}
+.cluster-origin-dot:hover {
+    transform: scale(1.4);
+    background-color: #047857;
+}
+.centroid-marker-pulse.is-hovered {
+    transform: scale(1.25);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+    z-index: 1000 !important;
+}
+.centroid-marker-pulse.dimmed {
+    opacity: 0.48 !important;
+}
+.centroid-marker-pulse.deployed {
+    opacity: 1.0 !important;
+    z-index: 9000 !important;
+}
+.catlec-gl-cluster-origin {
+    position: relative;
+    width: 8px;
+    height: 8px;
+}
+
+.catlec-gl-cluster-origin svg {
+    position: absolute;
+    left: 4px;
+    top: 4px;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.catlec-gl-cluster-origin .cluster-origin-dot {
+    position: relative;
+}
+
 /* Cluster Marker for Multiple Concessions sharing location (Spiderfy) */
 .cluster-marker-pulse {
     width: 32px;

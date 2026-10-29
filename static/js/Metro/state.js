@@ -20,7 +20,7 @@ var metroState = {
     sortOrder: 'desc',
     page: 1,
     pageSize: 50,
-    tableMode: 'projects', // 'projects', 'lines' or 'comunas'
+    tableMode: 'lines', // 'lines' (red en operación, vista inicial), 'projects' or 'comunas'
     selectedComuna: null,
     userExplicitlyEnabledComunas: false,
     timelineOpen: false,

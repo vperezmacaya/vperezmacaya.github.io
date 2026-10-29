@@ -14,15 +14,15 @@
     <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 
     <!-- CATLEC Global Stylesheet & EFE Addon -->
-    <link rel="stylesheet" href="static/css/styles.css?v=20260925_land1">
-    <link rel="stylesheet" href="static/css/efe_addons.css?v=20260924_gl4">
+    <link rel="stylesheet" href="static/css/styles.css?v=20261023_mopgl">
+    <link rel="stylesheet" href="static/css/efe_addons.css?v=20261026_prj1">
 
     <!-- SheetJS for Client-Side Excel Export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <!-- Static Data -->
     <script src="static/data/efe_data.js?v=20260924_2"></script>
-    <script src="static/data/efe_geo.js?v=20260919_2325"></script>
+    <script src="static/data/efe_geo.js?v=20261028_sinmetro"></script>
 </head>
 
 <body class="light-theme">
@@ -36,7 +36,7 @@
                     <img src="logo/cropped-Logo-CATLEC-horizontal-sin-fondo-1.png" alt="Logo CATLEC"
                         class="top-navbar-logo">
                 </a>
-                <span class="top-navbar-title">Visor de datos - EFE Trenes de
+                <span class="top-navbar-title">Observatorio de Infraestructura - EFE Trenes de
                     Chile</span>
                 <span class="top-navbar-divider"></span>
                 <span class="top-navbar-proto">Prototipo en desarrollo</span>
@@ -198,50 +198,50 @@
                             Análisis
                         </h2>
 
-                        <!-- Chart 1: Proyectos por Filial -->
+                        <!-- Chart 1: Pasajeros por filial (red en operación, charts.js) -->
                         <div style="flex: 1; display: flex; flex-direction: column; gap: 0.15rem;">
                             <div style="display: flex; flex-direction: column; gap: 0.05rem;">
                                 <div
                                     style="font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: flex; align-items: center; gap: 0.3rem;">
-                                    Proyectos por Filial
+                                    Pasajeros por Filial
                                 </div>
                                 <span
                                     style="font-size: 0.61rem; color: var(--text-muted); font-style: italic; line-height: 1.1;">
-                                    * Proyectos clasificados por filial operativa
+                                    * Millones de pasajeros transportados en el último año
                                 </span>
                             </div>
                             <div
                                 style="flex: 1; min-height: 0; display: flex; align-items: center; gap: 0.4rem; position: relative;">
                                 <div
                                     style="width: 72px; height: 72px; min-width: 72px; flex-shrink: 0; position: relative; margin: auto 0;">
-                                    <canvas id="efeFilialChart"></canvas>
+                                    <canvas id="efeLinesFilialChart"></canvas>
                                 </div>
-                                <div id="efeFilialChartLegend"
+                                <div id="efeLinesFilialChartLegend"
                                     style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.05rem; overflow: hidden;">
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Chart 2: Cartera de Proyectos -->
+                        <!-- Chart 2: Extensión de red por tracción (charts.js) -->
                         <div
                             style="flex: 1.1; display: flex; flex-direction: column; gap: 0.15rem; border-top: 1px solid var(--border-color); padding-top: 0.3rem;">
                             <div style="display: flex; flex-direction: column; gap: 0.05rem;">
                                 <div
                                     style="font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: flex; align-items: center; gap: 0.3rem;">
-                                    Cartera de Proyectos
+                                    Red por Tracción
                                 </div>
                                 <span
                                     style="font-size: 0.61rem; color: var(--text-muted); font-style: italic; line-height: 1.1;">
-                                    * Estratégicos, Preinversionales y Otros
+                                    * Kilómetros de servicios eléctricos, bimodales y diésel
                                 </span>
                             </div>
                             <div
                                 style="flex: 1; min-height: 0; display: flex; align-items: center; gap: 0.4rem; position: relative;">
                                 <div
                                     style="width: 72px; height: 72px; min-width: 72px; flex-shrink: 0; position: relative; margin: auto 0;">
-                                    <canvas id="efeDetailChart"></canvas>
+                                    <canvas id="efeLinesTraccionChart"></canvas>
                                 </div>
-                                <div id="efeDetailChartLegend"
+                                <div id="efeLinesTraccionChartLegend"
                                     style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.05rem; overflow: hidden;">
                                 </div>
                             </div>
@@ -268,20 +268,20 @@
 
                 <!-- Right Panel: KPIs & Projects Table / Details -->
                 <section class="right-panel results-panel">
-                    <!-- Top View Mode Switcher: Proyectos vs Servicios Actuales (Arriba de los KPI) -->
+                    <!-- Top View Mode Switcher: Servicios Actuales (red en operación, vista inicial) vs Proyectos (Arriba de los KPI) -->
                     <div class="efe-table-mode-switch"
                         style="display: flex; align-items: center; gap: 0.35rem; padding: 0.45rem 0.65rem; border-bottom: 1px solid var(--border-color); background: var(--bg-card); flex-shrink: 0;">
-                        <button class="btn btn-xs efe-mode-btn active" id="efe-tab-mode-projects"
-                            onclick="setEfeTableMode('projects')"
-                            style="flex: 1; justify-content: center; font-size: 0.72rem; padding: 0.28rem 0.5rem; border-radius: 4px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; background: var(--primary); color: #ffffff; border: 1px solid var(--primary); transition: all 0.15s ease;">
-                            <i data-lucide="folder-kanban" style="width: 12px; height: 12px;"></i>
-                            <span id="efe-tab-text-projects">Proyectos</span>
-                        </button>
-                        <button class="btn btn-xs efe-mode-btn" id="efe-tab-mode-lines"
+                        <button class="btn btn-xs efe-mode-btn active" id="efe-tab-mode-lines"
                             onclick="setEfeTableMode('lines')"
-                            style="flex: 1; justify-content: center; font-size: 0.72rem; padding: 0.28rem 0.5rem; border-radius: 4px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); transition: all 0.15s ease;">
+                            style="flex: 1; justify-content: center; font-size: 0.72rem; padding: 0.28rem 0.5rem; border-radius: 4px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; background: var(--primary); color: #ffffff; border: 1px solid var(--primary); transition: all 0.15s ease;">
                             <i data-lucide="train-front" style="width: 12px; height: 12px;"></i>
                             <span id="efe-tab-text-lines">Servicios Actuales</span>
+                        </button>
+                        <button class="btn btn-xs efe-mode-btn" id="efe-tab-mode-projects"
+                            onclick="setEfeTableMode('projects')"
+                            style="flex: 1; justify-content: center; font-size: 0.72rem; padding: 0.28rem 0.5rem; border-radius: 4px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); transition: all 0.15s ease;">
+                            <i data-lucide="folder-kanban" style="width: 12px; height: 12px;"></i>
+                            <span id="efe-tab-text-projects">Proyectos</span>
                         </button>
                     </div>
 
@@ -290,16 +290,34 @@
                         <div class="card-kpi">
                             <div class="kpi-icon" id="efe-kpi-icon-1"><i data-lucide="train-front"></i></div>
                             <div class="kpi-val-container">
-                                <span class="kpi-label" id="efe-kpi-label-1">Proyectos totales</span>
+                                <span class="kpi-label" id="efe-kpi-label-1">Servicios en Operación</span>
                                 <span class="kpi-value" id="efe-kpi-total-projects">—</span>
                             </div>
                         </div>
 
                         <div class="card-kpi">
-                            <div class="kpi-icon" id="efe-kpi-icon-2"><i data-lucide="dollar-sign"></i></div>
+                            <div class="kpi-icon" id="efe-kpi-icon-2"><i data-lucide="route"></i></div>
                             <div class="kpi-val-container">
-                                <span class="kpi-label" id="efe-kpi-label-2">Inversión total</span>
+                                <span class="kpi-label" id="efe-kpi-label-2">Extensión de Red</span>
                                 <span class="kpi-value" id="efe-kpi-total-investment"
+                                    style="font-size: 0.95rem;">—</span>
+                            </div>
+                        </div>
+
+                        <!-- Solo en "Servicios Actuales" (setEfeTableMode los oculta en Proyectos) -->
+                        <div class="card-kpi efe-kpi-network-only">
+                            <div class="kpi-icon"><i data-lucide="map-pin"></i></div>
+                            <div class="kpi-val-container">
+                                <span class="kpi-label">Estaciones en Operación</span>
+                                <span class="kpi-value" id="efe-kpi-network-stations">—</span>
+                            </div>
+                        </div>
+
+                        <div class="card-kpi efe-kpi-network-only">
+                            <div class="kpi-icon"><i data-lucide="users"></i></div>
+                            <div class="kpi-val-container">
+                                <span class="kpi-label" id="efe-kpi-network-pax-label">Pasajeros</span>
+                                <span class="kpi-value" id="efe-kpi-network-pax"
                                     style="font-size: 0.95rem;">—</span>
                             </div>
                         </div>
@@ -307,7 +325,7 @@
 
                     <!-- Table Container View (Shown by default) -->
                     <div id="efe-table-container-view"
-                        style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
+                        style="display: none; flex-direction: column; flex: 1; min-height: 0;">
                         <span id="efe-count-loaded" style="display:none;"></span>
                         <span id="efe-count-total" style="display:none;"></span>
 
@@ -364,7 +382,7 @@
 
                     <!-- Table Container View 2: Consolidated Operating Lines (Memoria 2025) -->
                     <div id="efe-lines-container-view"
-                        style="display: none; flex-direction: column; flex: 1; min-height: 0;">
+                        style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
 
                         <div class="table-responsive">
                             <div class="table-header-wrapper">
@@ -755,23 +773,23 @@
 
     <!-- EFE App Logic -->
     <script src="static/js/common/tooltip.js?v=20260919_2325"></script>
-    <script src="static/js/common/utils.js?v=20260924_gl1"></script>
+    <script src="static/js/common/utils.js?v=20261029_barlbl"></script>
     <script src="static/js/common/map-gl.js?v=20260924_4"></script>
     <script src="static/js/common/kpi-animate.js?v=20260924_2"></script>
     <script src="static/js/common/table-fade.js?v=20260924_1"></script>
     <script src="static/js/common/panel-resizer.js?v=20260924_gl2"></script>
     <script src="static/js/common/timeline.js?v=20260920_1"></script>
-    <script src="static/js/EFE/state.js?v=20260919_2325"></script>
-    <script src="static/js/EFE/charts.js?v=20260924_1"></script>
+    <script src="static/js/EFE/state.js?v=20261028_sinmetro"></script>
+    <script src="static/js/EFE/charts.js?v=20261026_red3"></script>
     <script src="static/js/EFE/investment.js?v=20260924_gl1"></script>
     <script src="static/js/EFE/timeline.js?v=20260924_gl1"></script>
-    <script src="static/js/EFE/operacion.js?v=20260924_gl1"></script>
-    <script src="static/js/EFE/map.js?v=20260924_gl2"></script>
-    <script src="static/js/EFE/filters.js?v=20260924_1"></script>
-    <script src="static/js/EFE/ui.js?v=20260924_3"></script>
+    <script src="static/js/EFE/operacion.js?v=20261026_red1"></script>
+    <script src="static/js/EFE/map.js?v=20261028_leyenda1"></script>
+    <script src="static/js/EFE/filters.js?v=20261026_srv1"></script>
+    <script src="static/js/EFE/ui.js?v=20261026_red1"></script>
 
     <!-- Nav Menu & View Switcher Logic -->
-    <script src="static/js/common/nav-menu.js?v=20260925_land1"></script>
+    <script src="static/js/common/nav-menu.js?v=20261029_unif"></script>
     <script>
         (function () {
             CatlecNav.render();

@@ -52,13 +52,22 @@ window.CatlecMapGL = {
     // gestos. `container` puede ser un id o un elemento. Con
     // `attribution: false` no agrega el botón de créditos: quien lo use debe
     // mostrar los créditos de OpenStreetMap/CARTO en otro lugar visible.
-    createStaticMap(container, { center, zoom, attribution = true } = {}) {
+    // `bounds` encuadra el mapa en lugar de center/zoom. Con `events: true`
+    // recibe hover y clic (map.on('mousemove'/'click'), recuadros de islas de
+    // MOP), pero sigue sin arrastre, zoom ni rotación.
+    createStaticMap(container, { center, zoom, bounds, attribution = true, events = false } = {}) {
+        const gestures = events
+            ? { dragPan: false, scrollZoom: false, boxZoom: false, dragRotate: false, keyboard: false, doubleClickZoom: false, touchZoomRotate: false, touchPitch: false }
+            : {};
         const map = new maplibregl.Map({
             container,
             style: this.STYLE_URL,
             center,
             zoom,
-            interactive: false,
+            bounds,
+            fitBoundsOptions: { padding: 6 },
+            interactive: events,
+            ...gestures,
             attributionControl: false,
             fadeDuration: 0
         });
@@ -388,15 +397,16 @@ window.CatlecMapGL = {
     // viene como `html` o como un `element` ya existente en la página (DGC); su
     // primer .catlec-map-legend-title se convierte en la cabecera que repliega
     // la leyenda. `onMount(div)` permite enganchar checkboxes del módulo y
-    // `storageKey` recuerda en el navegador si quedó replegada.
-    addLegendControl(map, { className, html, element, onMount, position = 'bottom-left', storageKey = null } = {}) {
+    // `storageKey` recuerda en el navegador si quedó replegada;
+    // `collapsedByDefault` es el estado inicial cuando no hay nada guardado.
+    addLegendControl(map, { className, html, element, onMount, position = 'bottom-left', storageKey = null, collapsedByDefault = false } = {}) {
         if (!map || (!html && !element)) return null;
         const div = element || document.createElement('div');
         div.classList.add('maplibregl-ctrl', 'catlec-map-legend');
         if (className) div.classList.add(...className.split(/\s+/).filter(Boolean));
         if (html) div.innerHTML = html;
         div.hidden = false;
-        this.makeLegendCollapsible(div, { storageKey });
+        this.makeLegendCollapsible(div, { storageKey, collapsedByDefault });
         if (typeof onMount === 'function') onMount(div);
         map.addControl({ onAdd: () => div, onRemove: () => div.remove() }, position);
         return div;
@@ -406,7 +416,7 @@ window.CatlecMapGL = {
     // recuadro anima su ancho y alto entre el tamaño medido antes y después del
     // cambio (queda anclado abajo a la izquierda, así que se pliega hacia su
     // cabecera) y el cuerpo se desvanece (keyframes en styles.css).
-    makeLegendCollapsible(div, { storageKey = null } = {}) {
+    makeLegendCollapsible(div, { storageKey = null, collapsedByDefault = false } = {}) {
         const titleEl = div.querySelector('.catlec-map-legend-title');
         if (!titleEl || div.querySelector('.catlec-map-legend-header')) return;
 
@@ -467,9 +477,12 @@ window.CatlecMapGL = {
             timer = setTimeout(cleanup, 400); // por si no llega transitionend
         };
 
-        let initial = false;
+        let initial = collapsedByDefault;
         if (storageKey) {
-            try { initial = localStorage.getItem(storageKey) === '1'; } catch (e) { /* sin storage */ }
+            try {
+                const saved = localStorage.getItem(storageKey);
+                if (saved !== null) initial = saved === '1';
+            } catch (e) { /* sin storage */ }
         }
         setState(initial);
 

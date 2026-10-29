@@ -34,9 +34,11 @@ const DISTINCT_PALETTE = [
     MOP_COLORS.petrol, MOP_COLORS.red, MOP_COLORS.navy, MOP_COLORS.stone
 ];
 
-// Etapas en orden de madurez, con escala secuencial del celeste al azul marino
-const MOP_ETAPA_ORDER = ['PERFIL', 'PREFACTIBILIDAD', 'FACTIBILIDAD', 'DISEÑO', 'EJECUCION'];
+// Etapas en orden de madurez, con escala secuencial del celeste al azul marino.
+// "SIN EJECUCION" (etapa vigente informada así en la ficha) va primero, en gris.
+const MOP_ETAPA_ORDER = ['SIN EJECUCION', 'PERFIL', 'PREFACTIBILIDAD', 'FACTIBILIDAD', 'DISEÑO', 'EJECUCION'];
 const MOP_ETAPA_COLORS = {
+    'SIN EJECUCION': '#cbd5e1',
     'PERFIL': '#9fd1f6',
     'PREFACTIBILIDAD': MOP_COLORS.sky,
     'FACTIBILIDAD': MOP_COLORS.blue,

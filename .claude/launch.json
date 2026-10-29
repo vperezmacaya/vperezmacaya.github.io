@@ -4,32 +4,63 @@
     {
       "name": "catlec-static",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8894"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8894"
+      ],
       "port": 8894
     },
     {
       "name": "catlec-static-alt",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8895"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8895"
+      ],
       "port": 8895
     },
     {
       "name": "catlec-static-verify",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8896"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8896"
+      ],
       "port": 8896
     },
     {
       "name": "catlec-static-map",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8897"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8897"
+      ],
       "port": 8897
     },
     {
       "name": "catlec-static-rowanim",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8898"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8898"
+      ],
       "port": 8898
+    },
+    {
+      "name": "catlec-static-mopgeo",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8901"
+      ],
+      "port": 8901,
+      "autoPort": false
     }
   ]
 }

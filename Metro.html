@@ -14,9 +14,9 @@
     <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 
     <!-- CATLEC Global Stylesheet & Metro Addon -->
-    <link rel="stylesheet" href="static/css/styles.css?v=20260925_land1">
-    <link rel="stylesheet" href="static/css/efe_addons.css?v=20260924_gl4">
-    <link rel="stylesheet" href="static/css/metro_addons.css?v=20260924_gl2">
+    <link rel="stylesheet" href="static/css/styles.css?v=20261023_mopgl">
+    <link rel="stylesheet" href="static/css/efe_addons.css?v=20261026_prj1">
+    <link rel="stylesheet" href="static/css/metro_addons.css?v=20261028_leyenda1">
 
     <!-- SheetJS for Client-Side Excel Export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -38,7 +38,7 @@
                     <img src="logo/cropped-Logo-CATLEC-horizontal-sin-fondo-1.png" alt="Logo CATLEC"
                         class="top-navbar-logo">
                 </a>
-                <span class="top-navbar-title">Visor de datos - Metro de Santiago</span>
+                <span class="top-navbar-title">Observatorio de Infraestructura - Metro de Santiago</span>
                 <span class="top-navbar-divider"></span>
                 <span class="top-navbar-proto">Prototipo en desarrollo</span>
             </div>
@@ -97,20 +97,20 @@
 
                 <!-- Right Panel: KPIs & Projects Table / Details -->
                 <section class="right-panel results-panel">
-                    <!-- Top View Mode Switcher: Proyectos vs Líneas Actuales vs Comunas (Arriba de los KPI) -->
+                    <!-- Top View Mode Switcher: Líneas Actuales (red en operación, vista inicial) vs Proyectos vs Comunas (Arriba de los KPI) -->
                     <div class="metro-table-mode-switch"
                         style="display: flex; align-items: center; gap: 0.35rem; padding: 0.45rem 0.65rem; border-bottom: 1px solid var(--border-color); background: var(--bg-card); flex-shrink: 0;">
-                        <button class="btn btn-xs metro-mode-btn active" id="metro-tab-mode-projects"
-                            onclick="setMetroTableMode('projects')"
-                            style="flex: 1; justify-content: center; font-size: 0.72rem; padding: 0.28rem 0.5rem; border-radius: 4px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; background: var(--primary); color: #ffffff; border: 1px solid var(--primary); transition: all 0.15s ease;">
-                            <i data-lucide="folder-kanban" style="width: 12px; height: 12px;"></i>
-                            <span id="metro-tab-text-projects">Proyectos</span>
-                        </button>
-                        <button class="btn btn-xs metro-mode-btn" id="metro-tab-mode-lines"
+                        <button class="btn btn-xs metro-mode-btn active" id="metro-tab-mode-lines"
                             onclick="setMetroTableMode('lines')"
-                            style="flex: 1; justify-content: center; font-size: 0.72rem; padding: 0.28rem 0.5rem; border-radius: 4px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); transition: all 0.15s ease;">
+                            style="flex: 1; justify-content: center; font-size: 0.72rem; padding: 0.28rem 0.5rem; border-radius: 4px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; background: var(--primary); color: #ffffff; border: 1px solid var(--primary); transition: all 0.15s ease;">
                             <i data-lucide="train-front" style="width: 12px; height: 12px;"></i>
                             <span id="metro-tab-text-lines">Líneas Actuales</span>
+                        </button>
+                        <button class="btn btn-xs metro-mode-btn" id="metro-tab-mode-projects"
+                            onclick="setMetroTableMode('projects')"
+                            style="flex: 1; justify-content: center; font-size: 0.72rem; padding: 0.28rem 0.5rem; border-radius: 4px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); transition: all 0.15s ease;">
+                            <i data-lucide="folder-kanban" style="width: 12px; height: 12px;"></i>
+                            <span id="metro-tab-text-projects">Proyectos</span>
                         </button>
                         <button class="btn btn-xs metro-mode-btn" id="metro-tab-mode-comunas"
                             onclick="setMetroTableMode('comunas')"
@@ -123,18 +123,35 @@
                     <!-- Top KPI Grid -->
                     <section class="kpi-grid" aria-label="Indicadores Clave">
                         <div class="card-kpi">
-                            <div class="kpi-icon" id="metro-kpi-icon-1"><i data-lucide="train-front-tunnel"></i></div>
+                            <div class="kpi-icon" id="metro-kpi-icon-1"><i data-lucide="milestone"></i></div>
                             <div class="kpi-val-container">
-                                <span class="kpi-label" id="metro-kpi-label-1">Proyectos de Expansión</span>
+                                <span class="kpi-label" id="metro-kpi-label-1">Red Operativa</span>
                                 <span class="kpi-value" id="metro-kpi-val-1">—</span>
                             </div>
                         </div>
 
                         <div class="card-kpi">
-                            <div class="kpi-icon" id="metro-kpi-icon-2"><i data-lucide="dollar-sign"></i></div>
+                            <div class="kpi-icon" id="metro-kpi-icon-2"><i data-lucide="map-pin"></i></div>
                             <div class="kpi-val-container">
-                                <span class="kpi-label" id="metro-kpi-label-2">Inversión Estimada</span>
+                                <span class="kpi-label" id="metro-kpi-label-2">Estaciones Activas</span>
                                 <span class="kpi-value" id="metro-kpi-val-2" style="font-size: 0.95rem;">—</span>
+                            </div>
+                        </div>
+
+                        <!-- Solo en "Líneas Actuales" (setMetroTableMode los oculta en las otras pestañas) -->
+                        <div class="card-kpi metro-kpi-network-only">
+                            <div class="kpi-icon"><i data-lucide="train-front"></i></div>
+                            <div class="kpi-val-container">
+                                <span class="kpi-label">Líneas en Operación</span>
+                                <span class="kpi-value" id="metro-kpi-network-lines">—</span>
+                            </div>
+                        </div>
+
+                        <div class="card-kpi metro-kpi-network-only">
+                            <div class="kpi-icon"><i data-lucide="users"></i></div>
+                            <div class="kpi-val-container">
+                                <span class="kpi-label" id="metro-kpi-network-trips-label">Viajes</span>
+                                <span class="kpi-value" id="metro-kpi-network-trips" style="font-size: 0.95rem;">—</span>
                             </div>
                         </div>
                     </section>
@@ -160,7 +177,7 @@
 
                     <!-- Table Container View 1: Projects (Shown by default) -->
                     <div id="metro-table-container-view"
-                        style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
+                        style="display: none; flex-direction: column; flex: 1; min-height: 0;">
 
                         <!-- Responsive Search Table List -->
                         <div class="table-responsive">
@@ -213,7 +230,7 @@
 
                     <!-- Table Container View 2: Consolidated Operating Lines -->
                     <div id="metro-lines-container-view"
-                        style="display: none; flex-direction: column; flex: 1; min-height: 0;">
+                        style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
 
                         <div class="table-responsive">
                             <div class="table-header-wrapper">
@@ -822,22 +839,22 @@
 
     <!-- Metro App Modules -->
     <script src="static/js/common/tooltip.js?v=20260917_1"></script>
-    <script src="static/js/common/utils.js?v=20260924_gl1"></script>
+    <script src="static/js/common/utils.js?v=20261029_barlbl"></script>
     <script src="static/js/common/map-gl.js?v=20260924_4"></script>
     <script src="static/js/common/kpi-animate.js?v=20260924_2"></script>
     <script src="static/js/common/table-fade.js?v=20260924_1"></script>
     <script src="static/js/common/panel-resizer.js?v=20260924_gl2"></script>
     <script src="static/js/common/timeline.js?v=20260920_1"></script>
-    <script src="static/js/Metro/state.js?v=20260924_gl1"></script>
+    <script src="static/js/Metro/state.js?v=20261026_red1"></script>
     <script src="static/js/Metro/timeline.js?v=20260924_gl1"></script>
     <script src="static/js/Metro/comunas.js?v=20260924_gl1"></script>
     <script src="static/js/Metro/demanda.js?v=20260924_gl1"></script>
-    <script src="static/js/Metro/map.js?v=20260924_gl1"></script>
+    <script src="static/js/Metro/map.js?v=20261028_leyenda1"></script>
     <script src="static/js/Metro/filters.js?v=20260905_1750"></script>
-    <script src="static/js/Metro/ui.js?v=20260924_gl1"></script>
+    <script src="static/js/Metro/ui.js?v=20261026_red2"></script>
 
     <!-- Nav Menu & View Switcher Script -->
-    <script src="static/js/common/nav-menu.js?v=20260925_land1"></script>
+    <script src="static/js/common/nav-menu.js?v=20261029_unif"></script>
     <script>
         (function () {
             CatlecNav.render();

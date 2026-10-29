@@ -139,6 +139,11 @@ function setMetroTableMode(mode) {
     const kpiLabel2 = document.getElementById('metro-kpi-label-2');
     const kpiVal2 = document.getElementById('metro-kpi-val-2');
 
+    // Líneas y viajes: solo describen la red en operación
+    document.querySelectorAll('.metro-kpi-network-only').forEach(card => {
+        card.style.display = mode === 'lines' ? '' : 'none';
+    });
+
     // Reset styles de los tres botones
     [btnProjects, btnLines, btnComunas].forEach(b => {
         if (!b) return;
@@ -162,11 +167,23 @@ function setMetroTableMode(mode) {
         const totalKm = lines.reduce((acc, l) => acc + (Number(l.length_km) || 0), 0);
         const totalEst = lines.reduce((acc, l) => acc + (Number(l.stations) || 0), 0);
 
-        if (kpiVal1) kpiVal1.textContent = totalKm > 0 ? `${totalKm.toFixed(1)} km` : '—';
+        if (kpiVal1) kpiVal1.textContent = totalKm > 0 ? `${totalKm.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km` : '—';
 
         if (kpiIcon2) kpiIcon2.innerHTML = '<i data-lucide="map-pin"></i>';
         if (kpiLabel2) kpiLabel2.textContent = 'Estaciones Activas';
         if (kpiVal2) kpiVal2.textContent = totalEst > 0 ? `${totalEst} est.` : '—';
+
+        // Líneas en operación y viajes del último año (mismo dato que "Demanda y Operación")
+        const demand = (window.METRO_DATA && window.METRO_DATA.historical_demand) ? window.METRO_DATA.historical_demand : [];
+        const latestDemand = demand.length ? demand[demand.length - 1] : null;
+        const elLines = document.getElementById('metro-kpi-network-lines');
+        const elTrips = document.getElementById('metro-kpi-network-trips');
+        const elTripsLabel = document.getElementById('metro-kpi-network-trips-label');
+        if (elLines) elLines.textContent = lines.length > 0 ? String(lines.length) : '—';
+        if (elTrips) elTrips.textContent = latestDemand
+            ? `${latestDemand.trips_mm.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} MM`
+            : '—';
+        if (elTripsLabel) elTripsLabel.textContent = latestDemand ? `Viajes ${latestDemand.year}` : 'Viajes';
 
         // Desactivar capa comunas si el usuario no la activó manualmente
         const userActive = (window.metroState && window.metroState.userExplicitlyEnabledComunas) || (typeof metroUserExplicitlyEnabledComunas !== 'undefined' && metroUserExplicitlyEnabledComunas);
@@ -1031,7 +1048,7 @@ function metroUpdateDynamicLabels() {
     }
 
     if (typeof setMetroTableMode === 'function') {
-        setMetroTableMode(metroState.tableMode || 'projects');
+        setMetroTableMode(metroState.tableMode || 'lines');
     }
 }
 window.metroUpdateDynamicLabels = metroUpdateDynamicLabels;

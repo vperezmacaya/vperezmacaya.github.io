@@ -3,7 +3,7 @@ export_landing_routes.py
 ------------------------
 Exporta los trazados livianos que dibuja la sección "Proyectos destacados" del
 landing (index.html). El landing no carga metro_geo.js ni efe_geo.js (este
-último pesa ~5 MB y además redefine window.METRO_GEO_DATA), así que aquí se
+último pesa ~4 MB), así que aquí se
 extraen solo los proyectos Metro y los proyectos ferroviarios EFE con trazado,
 simplificados, más la red existente de ambos como contexto tenue.
 

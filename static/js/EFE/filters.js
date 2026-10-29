@@ -198,6 +198,20 @@ function efeFetchData() {
 
         if (kpiVal1) kpiVal1.textContent = totalServices.toLocaleString('es-CL');
         if (kpiVal2) kpiVal2.textContent = totalKm.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' km';
+
+        // Estaciones y pasajeros con el mismo cálculo que "Demanda y Operación"
+        if (typeof efeComputeOperationTotals === 'function') {
+            // Sin servicios filtrados el cálculo vuelve a los totales globales: aquí es cero
+            const op = filteredLines.length
+                ? efeComputeOperationTotals(filteredLines)
+                : { activeStationsCount: 0, totalPax: 0, latestYear: getEfeLatestYear() };
+            const elStations = document.getElementById('efe-kpi-network-stations');
+            const elPax = document.getElementById('efe-kpi-network-pax');
+            const elPaxLabel = document.getElementById('efe-kpi-network-pax-label');
+            if (elStations) elStations.textContent = op.activeStationsCount.toLocaleString('es-CL');
+            if (elPax) elPax.textContent = op.totalPax.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' MM';
+            if (elPaxLabel) elPaxLabel.textContent = `Pasajeros ${op.latestYear}`;
+        }
     } else {
         efeRenderTable(pageSlice);
         efeUpdatePagination(efeState.page, totalPages, totalFiltered);
@@ -221,6 +235,9 @@ function efeFetchData() {
     if (typeof efeRenderProjectMarkers === 'function') {
         efeRenderProjectMarkers(filtered);
     }
+    if (typeof efeRenderServiceMarkers === 'function') {
+        efeRenderServiceMarkers(filteredLines);
+    }
 
     // Update unified map styles
     if (typeof efeUpdateMapStyles === 'function') {
@@ -232,8 +249,8 @@ function efeFetchData() {
     if (efeCountTotal) efeCountTotal.textContent = totalAll;
 
     // Update analytics charts
-    if (typeof efeUpdateAnalyticsCharts === 'function') {
-        efeUpdateAnalyticsCharts(filtered);
+    if (typeof efeUpdateLinesAnalyticsCharts === 'function') {
+        efeUpdateLinesAnalyticsCharts(filteredLines);
     }
 
     // Update investment panel if currently open

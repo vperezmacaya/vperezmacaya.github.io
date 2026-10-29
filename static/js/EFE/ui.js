@@ -102,6 +102,11 @@ function setEfeTableMode(mode) {
     const kpiIcon2 = document.getElementById('efe-kpi-icon-2');
     const kpiLabel2 = document.getElementById('efe-kpi-label-2');
 
+    // Estaciones y pasajeros: solo describen la red en operación
+    document.querySelectorAll('.efe-kpi-network-only').forEach(card => {
+        card.style.display = mode === 'lines' ? '' : 'none';
+    });
+
     // Reset styles de ambos botones
     [btnProjects, btnLines].forEach(b => {
         if (!b) return;
@@ -502,7 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof efeInitLinesFilters === 'function') efeInitLinesFilters();
     if (typeof efeInitLeafletMap === 'function') efeInitLeafletMap();
     if (typeof efeFetchData === 'function') efeFetchData();
-    if (typeof setEfeTableMode === 'function') setEfeTableMode(efeState.tableMode || 'projects');
+    if (typeof setEfeTableMode === 'function') setEfeTableMode(efeState.tableMode || 'lines');
 
     // Back to table list view
     if (efeBtnBackToTable) {

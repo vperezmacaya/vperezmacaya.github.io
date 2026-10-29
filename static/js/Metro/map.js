@@ -376,10 +376,11 @@ function metroStyleExpansionShape(layer, ctx, bringHoveredToFront = true) {
             });
             if (bringHoveredToFront && layer.bringToFront) layer.bringToFront();
         } else if (isVisible) {
+            // Trazado proyectado: más delgado y translúcido que la red en operación
             layer.setStyle({
                 color: projColor,
-                weight: 4.0,
-                opacity: 0.90,
+                weight: 3.0,
+                opacity: 0.6,
                 dashArray: null
             });
         } else {
@@ -443,16 +444,17 @@ function metroStyleOperatingNetwork(ctx) {
                 } else {
                     layer.setStyle({
                         color: baseColor,
-                        weight: 3.5,
-                        opacity: 0.85
+                        weight: 4.0,
+                        opacity: 0.95
                     });
                 }
             } else {
-                // Normal
+                // Normal (observatorio: la red en operación es la base del mapa,
+                // más gruesa y opaca que los trazados de proyectos)
                 layer.setStyle({
                     color: baseColor,
-                    weight: 3.5,
-                    opacity: 0.85
+                    weight: 4.0,
+                    opacity: 0.95
                 });
             }
         });
@@ -772,6 +774,9 @@ function metroSetHover(projectName, lineName, projectId = null) {
 
     if (prevLine !== lineName) {
         metroStyleOperatingNetwork(ctx);
+        metroLineMarkers.forEach(marker => {
+            if (marker.lineName === prevLine || marker.lineName === lineName) metroApplyLineMarkerState(marker, ctx);
+        });
     }
 
     if (prevName !== projectName || prevId !== projectId) {
@@ -827,18 +832,12 @@ function metroAddMapLegend() {
         <div class="catlec-map-legend-title">Leyenda</div>
         <label class="efe-legend-item efe-legend-toggleable" for="metro-toggle-metro-lines" title="Activar/desactivar líneas de Metro de Santiago">
             <input type="checkbox" id="metro-toggle-metro-lines" class="efe-legend-checkbox" ${metroShowExistingLines ? 'checked' : ''}>
-            <span class="efe-legend-color-line" style="background-color: #c53030;"></span>
-            <span>Líneas Metro de Santiago</span>
+            <span class="efe-legend-icon-badge metro-legend-line-badge" style="background-color: #d7141a;">1</span>
+            <span>Línea en operación</span>
         </label>
         <label class="efe-legend-item efe-legend-toggleable" for="metro-toggle-projects" title="Activar/desactivar trazados y marcadores de proyectos de expansión de Metro">
             <input type="checkbox" id="metro-toggle-projects" class="efe-legend-checkbox" ${metroShowProjects ? 'checked' : ''}>
-            <span style="display:inline-flex; align-items:center; gap:3px; margin-left: 2px; margin-right: 4px; flex-shrink: 0;">
-                <span style="width: 7px; height: 7px; border-radius: 50%; background-color: #7b1fa2;" title="Línea 6: Morado"></span>
-                <span style="width: 7px; height: 7px; border-radius: 50%; background-color: #52525b;" title="Línea 7: Gris"></span>
-                <span style="width: 7px; height: 7px; border-radius: 50%; background-color: #ea580c;" title="Línea 8: Naranjo"></span>
-                <span style="width: 7px; height: 7px; border-radius: 50%; background-color: #db2777;" title="Línea 9: Rosado"></span>
-                <span style="width: 7px; height: 7px; border-radius: 50%; background-color: #06b6d4;" title="Línea A: Cian"></span>
-            </span>
+            <span class="efe-legend-icon-badge metro-legend-project-badge" style="background-color: #52525b;">7</span>
             <span>Proyectos de Expansión</span>
         </label>
         <label class="efe-legend-item efe-legend-toggleable" for="metro-toggle-stations" title="Activar/desactivar estaciones operativas">
@@ -1138,6 +1137,12 @@ function metroLoadMapLayers() {
     metroMap.addLayer({ id: 'metro-stations', type: 'circle', source: 'metro-stations', minzoom: METRO_STATIONS_MIN_ZOOM, paint: stationPaint }, before);
     metroMap.addLayer({ id: 'metro-stations-future', type: 'circle', source: 'metro-stations-future', minzoom: METRO_STATIONS_MIN_ZOOM, paint: stationPaint }, before);
 
+    // Los nombres de ciudad del mapa base ("Santiago") van bajo la red: caen
+    // justo sobre el centro de la red de Metro. Calles y comunas siguen encima.
+    metroMap.getStyle().layers
+        .filter(l => l.type === 'symbol' && /^place_(city|capital)/.test(l.id))
+        .forEach(l => metroMap.moveLayer(l.id, 'metro-comunas-fill'));
+
     metroComunasLayer.topLayers = [{ id: 'metro-comunas-top', filter: isSolid }, { id: 'metro-comunas-top-dashed', filter: isDashed }];
     metroExistingLinesLayer.topLayers = [{ id: 'metro-lines-top' }];
     metroExpansionLayer.topLayers = [{ id: 'metro-expansion-top' }];
@@ -1154,7 +1159,9 @@ function metroLoadMapLayers() {
     // Encuadre y zoom por defecto (idéntico al botón de restablecer)
     metroApplyDefaultMapView(false);
 
-    // 4. Íconos de proyectos en los puntos medios de sus trazados
+    // 4. Íconos de las líneas en operación y, encima, de los proyectos (mismo
+    // z-index en reposo: el orden de inserción deja los proyectos arriba)
+    metroRenderLineMarkers();
     metroRenderProjectMarkers(projects);
 
     metroAddMapLegend();
@@ -1387,18 +1394,35 @@ function metroFindOperatingLayers(lineName) {
 window.metroFindOperatingLayers = metroFindOperatingLayers;
 
 // ─── Íconos de proyecto (marcadores HTML de MapLibre) ───────────────────────
+// Círculo del color de la línea con su número (como los íconos cuadrados de las
+// líneas en operación); las extensiones de línea suman una marca "+".
+const METRO_EXTENSION_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>`;
+
+// "Línea 7", "Línea 9 (Tramo 3)", "Extensión Línea 6 Oriente", "Línea A" -> 7, 9, 6, A
+function metroProjectLineLabel(proj) {
+    const m = /L[íi]nea\s+(\d+[A-Za-z]?|[A-Za-z])(?![A-Za-zÁÉÍÓÚáéíóúñ])/.exec(`${proj.line || ''} ${proj.name || ''}`);
+    return m ? m[1].toUpperCase() : '';
+}
+
+function metroIsExtensionProject(proj) {
+    return /extensi/i.test(proj.type || '') || /^extensi/i.test(proj.name || '');
+}
+
 function metroCreateSubwayMarker(proj, lngLat, isMiniDot = false, clusterCount = 1) {
     const badgeHtml = clusterCount > 1 ? `<span class="marker-cluster-badge">${clusterCount}</span>` : '';
-    const typeSvg = METRO_SUBWAY_SVG;
     const projectColor = (typeof metroGetProjectColor === 'function')
         ? metroGetProjectColor(proj.line || proj.name)
         : (METRO_LINE_COLORS[proj.line] || '#52525b');
+    const lineLabel = metroProjectLineLabel(proj);
+    const extHtml = metroIsExtensionProject(proj)
+        ? `<span class="metro-ext-badge" style="color: ${projectColor};">${METRO_EXTENSION_SVG}</span>`
+        : '';
 
     const el = document.createElement('div');
-    el.className = 'polygon-centroid-marker catlec-gl-marker';
+    el.className = 'polygon-centroid-marker catlec-gl-marker metro-project-marker';
     el.innerHTML = isMiniDot
         ? `<div class="centroid-marker-pulse" style="background-color: ${projectColor}; width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid #ffffff; box-shadow: 0 0 4px rgba(0,0,0,0.3); margin: 8px;">${badgeHtml}</div>`
-        : `<div class="centroid-marker-pulse" style="background-color: ${projectColor};">${typeSvg}${badgeHtml}</div>`;
+        : `<div class="centroid-marker-pulse" style="background-color: ${projectColor}; color: ${metroLineTextColor(projectColor)};">${lineLabel || METRO_SUBWAY_SVG}${extHtml}${badgeHtml}</div>`;
 
     const marker = new maplibregl.Marker({ element: el, anchor: 'center', subpixelPositioning: true }).setLngLat(lngLat);
     marker.projectName = proj.name;
@@ -1417,6 +1441,130 @@ function metroCreateSubwayMarker(proj, lngLat, isMiniDot = false, clusterCount =
     marker.setZIndexOffset = (z) => { el.style.zIndex = String(z); };
 
     return marker;
+}
+
+// ─── Íconos de las líneas en operación (marcadores HTML) ─────────────────────
+// Un ícono por línea, en el punto medio de su trazado: cuadrado redondeado del
+// color oficial con el número de la línea (los proyectos son círculos con un
+// tren). Se crean una vez (la red no depende de filtros) y siguen el
+// interruptor "Red Metro en operación" de la leyenda.
+let metroLineMarkers = [];
+
+function metroLineShortLabel(lineName) {
+    return String(lineName || '').replace(/^Línea\s*/i, '').trim() || '—';
+}
+
+// Texto oscuro sobre colores claros (L2 amarilla), blanco sobre el resto
+function metroLineTextColor(hex) {
+    const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex || '');
+    if (!m) return '#ffffff';
+    const [r, g, b] = m.slice(1).map(h => parseInt(h, 16));
+    return (0.299 * r + 0.587 * g + 0.114 * b) > 170 ? '#1e293b' : '#ffffff';
+}
+
+// Punto del ícono: el vértice del trazado más cercano al centro de su encuadre
+// que quede a METRO_LINE_ICON_GAP_M de los íconos de línea ya ubicados (L2 y L6
+// se cruzan cerca del centro de ambas). CatlecMapGL.lineMidpoint no sirve aquí:
+// cada línea trae sus dos sentidos en tramos desordenados y "la mitad del
+// recorrido" cae en cualquier parte (en L6, en un extremo).
+const METRO_LINE_ICON_GAP_M = 2500;
+
+function metroLineAnchor(features, avoid = []) {
+    const bounds = features.length ? CatlecMapGL.boundsOfFeatures(features) : null;
+    if (!bounds) return null;
+    const center = bounds.getCenter();
+    const vertices = [];
+    features.forEach(f => CatlecMapGL.segments(f.geometry).forEach(seg => seg.forEach(c => vertices.push(c))));
+    if (!vertices.length) return null;
+    vertices.sort((a, b) =>
+        ((a[0] - center.lng) ** 2 + (a[1] - center.lat) ** 2) - ((b[0] - center.lng) ** 2 + (b[1] - center.lat) ** 2));
+    return vertices.find(c => avoid.every(a => CatlecMapGL.distance(c, a) >= METRO_LINE_ICON_GAP_M)) || vertices[0];
+}
+
+function metroRenderLineMarkers() {
+    metroLineMarkers.forEach(m => m.remove());
+    metroLineMarkers = [];
+    if (!metroMap || !metroMapReady) return;
+
+    const lines = (window.METRO_DATA && window.METRO_DATA.lines) ? window.METRO_DATA.lines : [];
+    const placed = [];
+    lines.forEach(line => {
+        const features = metroFindOperatingLayers(line.line).map(item => item.feature).filter(Boolean);
+        const mid = metroLineAnchor(features, placed);
+        if (!mid) return;
+        placed.push(mid);
+
+        const marker = metroCreateLineMarker(line, mid);
+        const el = marker.getElement();
+        const owner = 'line-marker:' + line.line;
+
+        el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (metroIsDragClick()) return;
+            metroTooltip.hide();
+            if (typeof metroOnClickOperatingLine === 'function') metroOnClickOperatingLine(line.line);
+        });
+        el.addEventListener('mouseenter', (e) => {
+            if (typeof metroOnHoverOperatingLine === 'function') metroOnHoverOperatingLine(line.line, true);
+            metroTooltip.show(owner, marker.tooltipHtml, metroTooltip.pointFromEvent(e));
+        });
+        el.addEventListener('mousemove', (e) => {
+            metroTooltip.show(owner, marker.tooltipHtml, metroTooltip.pointFromEvent(e));
+        });
+        el.addEventListener('mouseleave', () => {
+            if (typeof metroOnHoverOperatingLine === 'function') metroOnHoverOperatingLine(line.line, false);
+            if (metroTooltip.owner === owner) metroTooltip.hide();
+        });
+
+        if (metroShowExistingLines) marker.addTo(metroMap);
+        metroLineMarkers.push(marker);
+    });
+
+    const ctx = metroBuildStyleContext(metroCurrentProjects());
+    metroLineMarkers.forEach(marker => metroApplyLineMarkerState(marker, ctx));
+}
+
+function metroCreateLineMarker(line, lngLat) {
+    const color = line.color_hex || metroGetLineColor(line.line);
+    const el = document.createElement('div');
+    el.className = 'polygon-centroid-marker catlec-gl-marker metro-line-marker';
+    el.innerHTML = `<div class="centroid-marker-pulse" style="background-color: ${color}; color: ${metroLineTextColor(color)};">${metroLineShortLabel(line.line)}</div>`;
+
+    const marker = new maplibregl.Marker({ element: el, anchor: 'center', subpixelPositioning: true }).setLngLat(lngLat);
+    marker.lineName = line.line;
+
+    const km = Number(line.length_km) || 0;
+    const details = [
+        km ? `${km.toLocaleString('es-CL', { maximumFractionDigits: 1 })} km` : null,
+        line.stations ? `${line.stations} estaciones` : null
+    ].filter(Boolean).join(' · ');
+    marker.tooltipHtml = `<strong>${line.line}</strong><br>`
+        + `<span style="color:#60a5fa;font-size:0.72rem;font-weight:600;">Línea en operación${line.terminals ? ' · ' + line.terminals : ''}</span><br>`
+        + `<span style="color:#94a3b8;font-size:0.68rem;">${details}</span>`;
+    return marker;
+}
+
+// Estado del ícono de una línea: seleccionada o en hover se agranda; se atenúa
+// cuando hay otra línea o un proyecto seleccionado
+function metroApplyLineMarkerState(marker, ctx) {
+    const elem = marker.getElement();
+    const pulse = elem && elem.querySelector('.centroid-marker-pulse');
+    if (!pulse) return;
+
+    const isSelected = ctx.selectedLine === marker.lineName;
+    const isHovered = ctx.hoveredLine === marker.lineName;
+    const dimmed = !isSelected && !isHovered && !!(ctx.selectedLine || ctx.selectedName);
+
+    pulse.classList.toggle('active-selected', isSelected);
+    pulse.classList.toggle('is-hovered', isHovered && !isSelected);
+    pulse.classList.toggle('dimmed', dimmed);
+
+    let scale = 1;
+    let z = 0;
+    if (isSelected) { scale = 1.35; z = 10000; }
+    else if (isHovered) { scale = 1.25; z = 9500; }
+    pulse.style.transform = `scale(${dimmed ? 0.85 : scale})`;
+    elem.style.zIndex = String(z);
 }
 
 function metroClearClusterDecorations() {
@@ -1566,6 +1714,12 @@ function metroToggleComunas(show) {
 function metroToggleExistingLines(show) {
     metroShowExistingLines = show;
     metroApplyLayerToggles();
+    metroLineMarkers.forEach(m => {
+        if (show) m.addTo(metroMap);
+        else m.remove();
+    });
+    // Reinsertar los íconos de proyecto para que sigan encima de los de línea
+    if (show && metroShowProjects) metroProjectMarkers.forEach(m => m.addTo(metroMap));
 }
 
 function metroToggleStations(show) {
@@ -1639,6 +1793,9 @@ function metroUpdateMapStyles(filteredProjects) {
         });
     }
     metroScheduleTopFilters();
+
+    // Íconos de las líneas en operación
+    metroLineMarkers.forEach(marker => metroApplyLineMarkerState(marker, ctx));
 
     // 5-6. Íconos y clusters desplegados
     metroClearClusterDecorations();

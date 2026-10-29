@@ -64,8 +64,11 @@ function showProjectDetail(p, globalIndex) {
     const costFmt = p.cost_mm > 0 ? `$${p.cost_mm.toLocaleString('es-CL')} MM CLP` : 'No informado';
     const hasDesc = p.descripcion && p.descripcion.trim().length > 0;
     const descText = hasDesc ? escapeHtml(p.descripcion) : 'No se registra descripción en la base de datos.';
-    const hasLoc = p.localizacion && p.localizacion.trim().length > 0 && p.localizacion.trim() !== '—';
-    const locText = hasLoc ? escapeHtml(p.localizacion) : 'No informada';
+    const hasJustif = p.justificacion && p.justificacion.trim().length > 0;
+    const planesText = p.planes && p.planes.length ? p.planes.map(escapeHtml).join('<br>') : 'Sin plan asociado';
+    const fichaUrl = (p.cod_p && p.fuente === 'proyectos.mop.gob.cl')
+        ? `https://proyectos.mop.gob.cl/proyecto.asp?cod_p=${encodeURIComponent(p.cod_p)}` : '';
+    const geoText = mopProjectHasGeo(p.cod_p) ? 'Sí (ver mapa)' : 'Sin geolocalización';
     const badgeClass = getStageBadgeClass(p.etapa);
     const titleName = escapeHtml(p.nombre) || 'Iniciativa MOP';
 
@@ -83,6 +86,11 @@ function showProjectDetail(p, globalIndex) {
             <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.35rem;">Descripción</h4>
             <p class="detail-desc" style="font-size: 0.76rem; line-height: 1.45; white-space: pre-line;">${descText}</p>
         </div>
+        ${hasJustif ? `
+        <div class="detail-section" style="margin-top: 0.4rem;">
+            <h4 class="detail-title" style="font-size: 0.78rem; margin-bottom: 0.35rem;">Justificación</h4>
+            <p class="detail-desc" style="font-size: 0.76rem; line-height: 1.45; white-space: pre-line;">${escapeHtml(p.justificacion)}</p>
+        </div>` : ''}
 
         <!-- Datos de la Iniciativa (Detail Grid exacto a DGC.html) -->
         <div class="detail-section" style="margin-top: 0.4rem;">
@@ -97,23 +105,36 @@ function showProjectDetail(p, globalIndex) {
                 <span class="detail-label">Programa:</span>
                 <span class="detail-value">${escapeHtml(p.programa || 'No especificado')}</span>
 
+                <span class="detail-label">Financiamiento:</span>
+                <span class="detail-value">${escapeHtml(p.financiamiento || 'No informado')}</span>
+
                 <span class="detail-label">Región:</span>
                 <span class="detail-value">${formatRegionCell(p.region)}</span>
 
-                <span class="detail-label">Comuna / Localización:</span>
-                <span class="detail-value">${locText}</span>
+                <span class="detail-label">Provincia(s):</span>
+                <span class="detail-value">${escapeHtml(p.provincia || 'No informada')}</span>
 
-                <span class="detail-label">Etapa Ciclo de Vida:</span>
+                <span class="detail-label">Comuna(s):</span>
+                <span class="detail-value">${escapeHtml(p.comuna || 'No informada')}</span>
+
+                <span class="detail-label">Plan(es):</span>
+                <span class="detail-value">${planesText}</span>
+
+                <span class="detail-label">Etapa Vigente:</span>
                 <span class="detail-value"><span class="badge ${badgeClass}">${escapeHtml(p.etapa || 'No informada')}</span></span>
 
-                <span class="detail-label">Costo Total Estimado:</span>
+                <span class="detail-label">Inversión Global:</span>
                 <span class="detail-value" style="font-weight: 700; color: #0c71c3;">${costFmt}</span>
 
-                <span class="detail-label">Año Primera Postulación:</span>
-                <span class="detail-value">${p.year || 'No informado'}</span>
+                <span class="detail-label">Año Est. Operación:</span>
+                <span class="detail-value">${p.year_op || 'No determinado'}</span>
 
-                <span class="detail-label">Año Última Postulación:</span>
-                <span class="detail-value">${p.year_ult || 'No informado'}</span>
+                <span class="detail-label">Ubicación en mapa:</span>
+                <span class="detail-value">${geoText}</span>
+
+                ${fichaUrl ? `
+                <span class="detail-label">Ficha MOP:</span>
+                <span class="detail-value"><a href="${fichaUrl}" target="_blank" rel="noopener">Ver ficha del proyecto</a></span>` : ''}
             </div>
         </div>
     `;
@@ -124,12 +145,17 @@ function showProjectDetail(p, globalIndex) {
     if (backBtn) {
         backBtn.onclick = hideProjectDetail;
     }
+
+    // La ficha abierta es el proyecto seleccionado en el mapa (vuela a su geometría)
+    mopMapSelectProject(p.cod_p);
 }
 
 function hideProjectDetail() {
     const tableView = document.getElementById('mop-table-container-view');
     const detailView = document.getElementById('mop-project-detail-view');
     if (!tableView || !detailView) return;
+
+    mopMapSelectProject(null);
 
     if (detailView.style.display === 'flex' && typeof CatlecUtils !== 'undefined') {
         CatlecUtils.swapView(detailView, tableView, { direction: 'back' });

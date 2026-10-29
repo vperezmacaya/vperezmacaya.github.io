@@ -8,19 +8,19 @@
     <meta name="description" content="Dashboard de proyectos e inversión del Ministerio de Obras Públicas de Chile - CATLEC">
     <link rel="icon" type="image/png" href="logo/favicon.png">
     <link rel="shortcut icon" href="logo/favicon.ico">
+    <!-- MapLibre GL (mapa de proyectos, por ahora sin capas) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css">
+    <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
     <!-- Shared stylesheet (navbar, footer, panel-card, forms, etc.) -->
-    <link rel="stylesheet" href="static/css/styles.css?v=20260925_land1">
-    <link rel="stylesheet" href="static/css/mop_addons.css?v=20260925_mop7">
-    <!-- D3.js (mapa coroplético regional SVG, mismo enfoque que SNI) -->
-    <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
-    <!-- Chart.js -->
+    <link rel="stylesheet" href="static/css/styles.css?v=20261023_mopgl">
+    <link rel="stylesheet" href="static/css/mop_addons.css?v=20261029_unif">
+    <!-- Chart.js (gráficos de Análisis del panel izquierdo) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
-    <!-- SheetJS for Client-Side Excel Export -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- MOP static data -->
-    <script src="static/data/mop_data.js"></script>
-    <!-- Geometría de regiones (compartida con SNI) -->
-    <script src="static/data/sni_regions_data.js"></script>
+    <!-- Proyectos MOP: Excel de Iniciativas programadas y en ejecución más reciente (export_static_data.py) -->
+    <script src="static/data/mop_data.js?v=20261028_sep26"></script>
+    <script src="static/data/mop_geo.js?v=20261029_valdivia"></script>
+    <!-- Polígonos de las 16 regiones (los del coroplético de SNI): navegación por región del mapa -->
+    <script src="static/data/sni_regions_data.js?v=20261028_reg1"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@1.48.0/dist/umd/lucide.min.js"></script>
 </head>
@@ -35,7 +35,7 @@
                     <img src="logo/Escudo_udec.gif" alt="Escudo UdeC" class="top-navbar-logo-udec">
                     <img src="logo/cropped-Logo-CATLEC-horizontal-sin-fondo-1.png" alt="Logo CATLEC" class="top-navbar-logo">
                 </a>
-                <span class="top-navbar-title">Visor de datos - Cartera de Proyectos MOP</span>
+                <span class="top-navbar-title" id="mop-navbar-title">Observatorio de infraestructura - Proyectos en ejecución y planificados MOP</span>
                 <span class="top-navbar-divider"></span>
                 <span class="top-navbar-proto">Prototipo en desarrollo</span>
             </div>
@@ -51,34 +51,29 @@
         </header>
 
         <!-- ═══════════════════════════════ SUBHEADER TABS -->
-        <div class="view-subheader four-tabs">
+        <!-- Visualizaciones: la tabla de proyectos, el costo por región y servicio y los contratos y contratistas (static/js/MOP/contratos.js) -->
+        <div class="view-subheader three-tabs">
             <button class="view-tab-btn active" data-mop-view="resumen" id="btn-mop-resumen">
                 <i data-lucide="layout-dashboard" style="width:14px;height:14px;"></i>
                 <span>Tabla de proyectos</span>
             </button>
-            <button class="view-tab-btn" data-mop-view="mapa" id="btn-mop-mapa">
-                <i data-lucide="map" style="width:14px;height:14px;"></i>
-                <span>Mapa regional</span>
+            <button class="view-tab-btn" data-mop-view="costos" id="btn-mop-costos">
+                <i data-lucide="bar-chart-horizontal" style="width:14px;height:14px;"></i>
+                <span>Costo por región y servicio</span>
             </button>
-            <button class="view-tab-btn" data-mop-view="inversion" id="btn-mop-inversion">
-                <i data-lucide="bar-chart-2" style="width:14px;height:14px;"></i>
-                <span>Análisis de inversión</span>
-            </button>
-            <button class="view-tab-btn" data-mop-view="programas" id="btn-mop-programas">
-                <i data-lucide="layers" style="width:14px;height:14px;"></i>
-                <span>Programas y Etapas</span>
+            <button class="view-tab-btn" data-mop-view="contratos" id="btn-mop-contratos">
+                <i data-lucide="clipboard-list" style="width:14px;height:14px;"></i>
+                <span>Contratos y contratistas</span>
             </button>
         </div>
 
         <!-- ═══════════════════════════════ MAIN CONTENT -->
         <main class="dashboard-content">
 
-            <div class="mop-grid">
+            <div class="mop-grid catlec-resizable-grid" id="mop-dashboard-grid">
 
-                <!-- ─── LEFT PANEL: Filters + Dual Donut Service Analytics (PERSISTENT ACROSS ALL VIEWS) ── -->
+                <!-- ─── PANEL IZQUIERDO: búsqueda y filtros (static/js/MOP/main.js) ── -->
                 <section class="left-panel left-panel-scroll">
-
-                    <!-- Search & Filter Card -->
                     <div class="panel-card panel-card-filters" style="padding: 0.55rem 0.75rem; gap: 0.35rem; position: relative; z-index: 50; overflow: visible; flex-shrink: 0;">
                         <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem;">
                             <h2 class="panel-title" style="border: none; padding: 0; margin: 0; font-size: 0.8rem;">
@@ -87,7 +82,6 @@
                             </h2>
                         </div>
 
-                        <!-- Buscar -->
                         <div class="form-group" style="gap: 0.15rem;">
                             <label class="form-label" for="mop-search-input" style="font-size: 0.7rem;">Buscar Proyecto / Código BIP</label>
                             <div class="search-wrapper">
@@ -97,29 +91,7 @@
                             </div>
                         </div>
 
-                        <!-- Región Geográfica Multi-Select Filter -->
                         <div class="form-group" style="gap: 0.15rem; position: relative; z-index: 50;">
-                            <label class="form-label" style="font-size: 0.7rem;">Región Geográfica</label>
-                            <div class="custom-multiselect" id="mop-region-multiselect-container">
-                                <button type="button" class="form-input multiselect-trigger" id="mop-region-multiselect-btn"
-                                    style="padding: 0.3rem 0.55rem; font-size: 0.76rem;">
-                                    <span id="mop-region-multiselect-text">Todas las regiones</span>
-                                    <i data-lucide="chevron-down" style="width: 13px; height: 13px; margin-left: 0.35rem; flex-shrink: 0;"></i>
-                                </button>
-                                <div class="multiselect-dropdown" id="mop-region-multiselect-dropdown">
-                                    <div class="multiselect-actions">
-                                        <label class="multiselect-option select-all-option" style="padding: 0.2rem 0; font-weight: 700;">
-                                            <input type="checkbox" id="mop-region-check-all">
-                                            <span>(Seleccionar Todas)</span>
-                                        </label>
-                                    </div>
-                                    <div class="multiselect-options-list" id="mop-region-options-list"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Servicio MOP Multi-Select Filter -->
-                        <div class="form-group" style="gap: 0.15rem; position: relative; z-index: 40;">
                             <label class="form-label" style="font-size: 0.7rem;">Servicio MOP</label>
                             <div class="custom-multiselect" id="mop-servicio-multiselect-container">
                                 <button type="button" class="form-input multiselect-trigger" id="mop-servicio-multiselect-btn"
@@ -139,9 +111,28 @@
                             </div>
                         </div>
 
-                        <!-- Etapa Multi-Select Filter -->
+                        <div class="form-group" style="gap: 0.15rem; position: relative; z-index: 40;">
+                            <label class="form-label" style="font-size: 0.7rem;">Región</label>
+                            <div class="custom-multiselect" id="mop-region-multiselect-container">
+                                <button type="button" class="form-input multiselect-trigger" id="mop-region-multiselect-btn"
+                                    style="padding: 0.3rem 0.55rem; font-size: 0.76rem;">
+                                    <span id="mop-region-multiselect-text">Todas las regiones</span>
+                                    <i data-lucide="chevron-down" style="width: 13px; height: 13px; margin-left: 0.35rem; flex-shrink: 0;"></i>
+                                </button>
+                                <div class="multiselect-dropdown" id="mop-region-multiselect-dropdown">
+                                    <div class="multiselect-actions">
+                                        <label class="multiselect-option select-all-option" style="padding: 0.2rem 0; font-weight: 700;">
+                                            <input type="checkbox" id="mop-region-check-all">
+                                            <span>(Seleccionar Todas)</span>
+                                        </label>
+                                    </div>
+                                    <div class="multiselect-options-list" id="mop-region-options-list"></div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="form-group" style="gap: 0.15rem; position: relative; z-index: 30;">
-                            <label class="form-label" style="font-size: 0.7rem;">Etapa del Proyecto</label>
+                            <label class="form-label" style="font-size: 0.7rem;">Etapa</label>
                             <div class="custom-multiselect" id="mop-etapa-multiselect-container">
                                 <button type="button" class="form-input multiselect-trigger" id="mop-etapa-multiselect-btn"
                                     style="padding: 0.3rem 0.55rem; font-size: 0.76rem;">
@@ -160,23 +151,34 @@
                             </div>
                         </div>
 
-                        <!-- Restablecer & Exportar Filtros -->
-                        <div style="display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.15rem;">
-                            <button class="btn-reset" id="mop-btn-reset"
-                                style="padding: 0.28rem 0.4rem; font-size: 0.72rem; justify-content: center; width: 100%;">
-                                <i data-lucide="rotate-ccw" style="width: 12px; height: 12px;"></i>
-                                Restablecer Filtros
-                            </button>
-                            <button class="btn-reset" id="mop-btn-export-excel"
-                                style="padding: 0.28rem 0.4rem; font-size: 0.72rem; justify-content: center; width: 100%; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); color: #10b981; font-weight: 600; cursor: pointer; transition: all 0.15s ease;"
-                                title="Descargar cartera de proyectos MOP en Excel (.xlsx)">
-                                <i data-lucide="file-spreadsheet" style="width: 12px; height: 12px;"></i>
-                                Exportar a Excel (.xlsx)
-                            </button>
+                        <div class="form-group" style="gap: 0.15rem; position: relative; z-index: 20;">
+                            <label class="form-label" style="font-size: 0.7rem;">Ítem</label>
+                            <div class="custom-multiselect" id="mop-item-multiselect-container">
+                                <button type="button" class="form-input multiselect-trigger" id="mop-item-multiselect-btn"
+                                    style="padding: 0.3rem 0.55rem; font-size: 0.76rem;">
+                                    <span id="mop-item-multiselect-text">Todos los ítems</span>
+                                    <i data-lucide="chevron-down" style="width: 13px; height: 13px; margin-left: 0.35rem; flex-shrink: 0;"></i>
+                                </button>
+                                <div class="multiselect-dropdown" id="mop-item-multiselect-dropdown">
+                                    <div class="multiselect-actions">
+                                        <label class="multiselect-option select-all-option" style="padding: 0.2rem 0; font-weight: 700;">
+                                            <input type="checkbox" id="mop-item-check-all">
+                                            <span>(Seleccionar Todos)</span>
+                                        </label>
+                                    </div>
+                                    <div class="multiselect-options-list" id="mop-item-options-list"></div>
+                                </div>
+                            </div>
                         </div>
+
+                        <button class="btn-reset" id="mop-btn-reset"
+                            style="padding: 0.28rem 0.4rem; font-size: 0.72rem; justify-content: center; width: 100%; margin-top: 0.15rem;">
+                            <i data-lucide="rotate-ccw" style="width: 12px; height: 12px;"></i>
+                            Restablecer Filtros
+                        </button>
                     </div>
 
-                    <!-- Analytics Charts Card (Dual Charts: Proyectos & Inversión por Servicio) -->
+                    <!-- Análisis: proyectos por servicio y por etapa (según los filtros activos) -->
                     <div class="panel-card panel-card-analytics"
                         style="padding: 0.55rem 0.75rem; gap: 0.3rem; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
                         <h2 class="panel-title"
@@ -185,19 +187,13 @@
                             Análisis
                         </h2>
 
-                        <!-- Chart 1: Distribución por Servicio (Nº Proyectos) -->
                         <div style="flex: 1; display: flex; flex-direction: column; gap: 0.15rem;">
-                            <div style="display: flex; flex-direction: column; gap: 0.05rem;">
-                                <div
-                                    style="font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: flex; align-items: center; gap: 0.3rem;">
-                                    Distribución por Servicio
-                                </div>
+                            <div style="font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">
+                                Proyectos por servicio
                             </div>
-                            <div
-                                style="flex: 1; min-height: 0; display: flex; align-items: center; gap: 0.4rem; position: relative;">
-                                <div
-                                    style="width: 72px; height: 72px; min-width: 72px; flex-shrink: 0; position: relative; margin: auto 0;">
-                                    <canvas id="chart-servicio"></canvas>
+                            <div style="flex: 1; min-height: 0; display: flex; align-items: center; gap: 0.4rem; position: relative;">
+                                <div style="width: 72px; height: 72px; min-width: 72px; flex-shrink: 0; position: relative; margin: auto 0;">
+                                    <canvas id="chart-mop-servicio"></canvas>
                                 </div>
                                 <div id="mopServicioChartLegend"
                                     style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.05rem; overflow: hidden;">
@@ -205,322 +201,223 @@
                             </div>
                         </div>
 
-                        <!-- Chart 2: Costo Total por Servicio (Inversión MM$) -->
-                        <div
-                            style="flex: 1.1; display: flex; flex-direction: column; gap: 0.15rem; border-top: 1px solid var(--border-color); padding-top: 0.3rem;">
-                            <div style="display: flex; flex-direction: column; gap: 0.05rem;">
-                                <div
-                                    style="font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: flex; align-items: center; gap: 0.3rem;">
-                                    Inversión por Servicio
-                                </div>
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 0.15rem; border-top: 1px solid var(--border-color); padding-top: 0.3rem;">
+                            <div style="font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">
+                                Proyectos por etapa
                             </div>
-                            <div
-                                style="flex: 1; min-height: 0; display: flex; align-items: center; gap: 0.4rem; position: relative;">
-                                <div
-                                    style="width: 72px; height: 72px; min-width: 72px; flex-shrink: 0; position: relative; margin: auto 0;">
-                                    <canvas id="chart-servicio-cost"></canvas>
+                            <div style="flex: 1; min-height: 0; display: flex; align-items: center; gap: 0.4rem; position: relative;">
+                                <div style="width: 72px; height: 72px; min-width: 72px; flex-shrink: 0; position: relative; margin: auto 0;">
+                                    <canvas id="chart-mop-etapa"></canvas>
                                 </div>
-                                <div id="mopServicioCostChartLegend"
+                                <div id="mopEtapaChartLegend"
                                     style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.05rem; overflow: hidden;">
                                 </div>
                             </div>
                         </div>
                     </div>
-
                 </section>
 
-                <!-- ─── RIGHT CONTENT AREA: Dynamic View Container (Switches with Tabs) ── -->
-                <section style="display:flex;flex-direction:column;height:100%;min-height:0;overflow:hidden;">
+                <!-- ─── MAPA DE PROYECTOS (MapLibre, static/js/MOP/project-map.js; regiones clickeables y geometrías de Base MOP por BIP) ── -->
+                <section class="center-panel map-panel" id="mop-map-panel">
+                    <div id="mop-project-map"></div>
 
-                    <!-- ── TAB 1: Resumen General (Active View) ────────────────── -->
-                    <div class="mop-view-container" data-mop-view="resumen" style="display:flex;flex-direction:column;gap:0.5rem;height:100%;min-height:0;overflow:hidden;">
-                        <!-- Título Principal (Texto plano, grande, sin contenedor) -->
-                        <div style="flex-shrink: 0; padding: 0.15rem 0.1rem 0.15rem 0.1rem;">
-                            <h1 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin: 0; line-height: 1.35; letter-spacing: -0.01em;">
-                                Proyectos del MOP actualmente en ejecución y planificados para los próximos 5 años
-                            </h1>
+                    <!-- Aviso sobre el mapa difuminado: proyecto seleccionado sin georreferenciación (project-map.js) -->
+                    <div class="mop-map-nogeo" id="mop-map-nogeo" aria-hidden="true">
+                        <div class="mop-map-nogeo-msg" role="status">
+                            <i data-lucide="map-pin-off"></i>
+                            <strong>No hay georreferenciación en la base de datos</strong>
+                            <span>Este proyecto no tiene trazado ni ubicación en las fuentes que usa el mapa.</span>
                         </div>
+                    </div>
 
-                        <!-- KPI Row (Aligned with DGC.html styles) -->
+                    <button id="mop-btn-reset-map" class="btn-floating-map">
+                        <i data-lucide="maximize-2" style="width: 13px; height: 13px;"></i>
+                        Restablecer Mapa
+                    </button>
+                </section>
+
+                <!-- Separador arrastrable mapa ↔ tabla (CatlecPanelResizer) -->
+                <div class="catlec-panel-resizer" id="mop-panel-resizer" role="separator"
+                    aria-orientation="vertical" aria-label="Redimensionar tabla" tabindex="0"
+                    title="Arrastrar para ajustar el ancho de la tabla · Doble clic para restablecer"></div>
+
+                <!-- ─── TABLA DE PROYECTOS (nombres, un proyecto por código BIP) ── -->
+                <section class="right-panel results-panel" id="mop-right-panel">
+                    <div class="mop-table-view" data-mop-view="resumen">
                         <div class="mop-kpi-row" aria-label="Indicadores Clave">
-                            <!-- 1. Proyectos -->
                             <div class="card-kpi" id="kpi-total-projects">
                                 <div class="kpi-icon"><i data-lucide="file-text"></i></div>
                                 <div class="kpi-val-container">
                                     <span class="kpi-label">Proyectos Totales</span>
-                                    <span class="kpi-value kpi-val" id="kpi-val-projects">—</span>
+                                    <span class="kpi-value" id="kpi-val-projects">—</span>
+                                    <span class="mop-kpi-sub" id="kpi-sub-projects"></span>
                                 </div>
                             </div>
-
-                            <!-- 2. Costo Total de Proyectos -->
-                            <div class="card-kpi" id="kpi-total-cost">
-                                <div class="kpi-icon"><i data-lucide="trending-up"></i></div>
-                                <div class="kpi-val-container">
-                                    <span class="kpi-label">Inversión Total (MM CLP)</span>
-                                    <span class="kpi-value kpi-val" id="kpi-val-cost" style="font-size: 0.95rem;">—</span>
-                                </div>
-                            </div>
-
-                            <!-- 3. Servicio Principal -->
-                            <div class="card-kpi" id="kpi-top-servicio">
-                                <div class="kpi-icon"><i data-lucide="building-2"></i></div>
-                                <div class="kpi-val-container">
-                                    <span class="kpi-label">Servicio Principal</span>
-                                    <span class="kpi-value kpi-val" id="kpi-val-servicio" style="font-size: 0.82rem; line-height: 1.25;">—</span>
-                                </div>
-                            </div>
-
-                            <!-- 4. En Ejecución -->
                             <div class="card-kpi" id="kpi-en-ejecucion">
                                 <div class="kpi-icon"><i data-lucide="activity"></i></div>
                                 <div class="kpi-val-container">
-                                    <span class="kpi-label">En Ejecución</span>
-                                    <span class="kpi-value kpi-val" id="kpi-val-ejecucion">—</span>
+                                    <span class="kpi-label">Proyectos en Ejecución</span>
+                                    <span class="kpi-value" id="kpi-val-ejecucion">—</span>
+                                    <span class="mop-kpi-sub" id="kpi-sub-ejecucion"></span>
+                                </div>
+                            </div>
+                            <div class="card-kpi" id="kpi-inversion">
+                                <div class="kpi-icon"><i data-lucide="banknote"></i></div>
+                                <div class="kpi-val-container">
+                                    <span class="kpi-label">Costo Total</span>
+                                    <span class="kpi-value" id="kpi-val-inversion">—</span>
+                                    <span class="mop-kpi-sub" id="kpi-sub-inversion"></span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- TABLA GLOBAL DE PROYECTOS MOP (Estructura idéntica a DGC.html) -->
-                        <div id="mop-table-container-view" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
-                            <!-- Responsive Search Table List -->
-                            <div class="table-responsive">
-                                <div class="table-header-wrapper">
-                                    <table class="data-table mop-data-table">
-                                        <thead>
-                                            <tr>
-                                                <th style="width: 36px; text-align: center;">#</th>
-                                                <th class="sortable" data-sort="nombre">Nombre Proyecto</th>
-                                                <th class="sortable" data-sort="bip">Código BIP</th>
-                                                <th class="sortable" data-sort="region">Región</th>
-                                                <th class="sortable" data-sort="servicio">Servicio</th>
-                                                <th class="sortable" data-sort="programa">Programa</th>
-                                                <th class="sortable" data-sort="etapa">Etapa</th>
-                                                <th class="sortable desc active-sort" data-sort="cost_mm" style="text-align: right;">Inversión</th>
-                                                <th class="sortable" data-sort="year" style="text-align: center;">1ª Post.</th>
-                                                <th class="sortable" data-sort="year_ult" style="text-align: center;">Últ. Post.</th>
-                                            </tr>
-                                        </thead>
-                                    </table>
-                                </div>
-                                <div class="table-body-wrapper">
-                                    <table class="data-table mop-data-table" id="mop-contracts-table">
-                                        <tbody id="mop-global-table-tbody">
-                                            <!-- Dynamic rows inserted here -->
-                                        </tbody>
-                                    </table>
-
-                                    <!-- Empty state representation (hidden by default) -->
-                                    <div class="empty-state" id="mop-empty-state" style="display: none; padding: 1.5rem 1rem;">
-                                        <i data-lucide="folder-search" style="width: 28px; height: 28px;"></i>
-                                        <h3 style="font-size: 0.9rem;">No se encontraron proyectos</h3>
-                                        <p style="font-size: 0.75rem;">Prueba ajustando los filtros.</p>
-                                    </div>
-                                </div>
+                        <!-- Lista de proyectos (se alterna con la ficha del proyecto) -->
+                        <div class="mop-list-view" id="mop-table-container-view">
+                        <div class="table-responsive">
+                            <div class="table-header-wrapper">
+                                <table class="data-table mop-data-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="sortable" data-sort="bip">Código BIP</th>
+                                            <th class="sortable" data-sort="nombre">Nombre del proyecto</th>
+                                            <th class="sortable" data-sort="servicio">Servicio</th>
+                                            <th class="sortable" data-sort="etapa">Etapa</th>
+                                            <th class="sortable" data-sort="region">Región</th>
+                                            <th class="sortable desc" data-sort="inversion" title="Costo de la etapa postulada según su ficha IDI (sección 16), en millones de pesos de 2026. En proyectos que aún no llegan a ejecución es el costo del estudio o del diseño, no el de la obra; con varias etapas, su suma">Costo etapa (MM$)</th>
+                                        </tr>
+                                    </thead>
+                                </table>
                             </div>
+                            <div class="table-body-wrapper">
+                                <table class="data-table mop-data-table" id="mop-projects-table">
+                                    <tbody id="mop-projects-tbody"></tbody>
+                                </table>
 
-                            <!-- Pagination Controls (exact matching DGC.html) -->
-                            <div class="pagination-container" style="padding: 0.35rem 0.5rem; gap: 0.5rem;">
-                                <div id="mop-pagination-info" style="font-size: 0.72rem;">0-0 de 0</div>
-                                <div class="pagination-controls">
-                                    <button class="btn-paged" id="mop-btn-prev" disabled
-                                        style="padding: 0.25rem 0.5rem; font-size: 0.72rem;">
-                                        <i data-lucide="chevron-left" style="width: 12px; height: 12px;"></i> Anterior
-                                    </button>
-                                    <button class="btn-paged" id="mop-btn-next" disabled
-                                        style="padding: 0.25rem 0.5rem; font-size: 0.72rem;">
-                                        Siguiente <i data-lucide="chevron-right" style="width: 12px; height: 12px;"></i>
-                                    </button>
+                                <div class="empty-state" id="mop-empty-state" style="display: none; padding: 1.5rem 1rem;">
+                                    <i data-lucide="folder-search" style="width: 28px; height: 28px;"></i>
+                                    <h3 style="font-size: 0.9rem;">No se encontraron proyectos</h3>
+                                    <p style="font-size: 0.75rem;">Prueba ajustando la búsqueda o los filtros.</p>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Dedicated Project Detail View (exact matching DGC.html) -->
+                        <div class="pagination-container" style="padding: 0.35rem 0.5rem; gap: 0.5rem;">
+                            <div id="mop-pagination-info" style="font-size: 0.72rem;">0-0 de 0</div>
+                            <div class="pagination-controls">
+                                <button class="btn-paged" id="mop-btn-prev" disabled
+                                    style="padding: 0.25rem 0.5rem; font-size: 0.72rem;">
+                                    <i data-lucide="chevron-left" style="width: 12px; height: 12px;"></i> Anterior
+                                </button>
+                                <button class="btn-paged" id="mop-btn-next" disabled
+                                    style="padding: 0.25rem 0.5rem; font-size: 0.72rem;">
+                                    Siguiente <i data-lucide="chevron-right" style="width: 12px; height: 12px;"></i>
+                                </button>
+                            </div>
+                        </div>
+                        </div>
+
+                        <!-- Ficha del proyecto (static/js/MOP/ficha.js), al elegir una fila o un elemento del mapa -->
                         <div id="mop-project-detail-view" class="project-detail-view" style="display: none;">
                             <div class="detail-view-header">
-                                <button id="mop-btn-back-to-list" class="btn-reset" style="font-size: 0.75rem; padding: 0.35rem 0.65rem;">
-                                    <i data-lucide="arrow-left" style="width: 13px; height: 13px;"></i>
+                                <button id="mop-btn-back-to-list" class="btn-reset mop-detail-nav-btn">
+                                    <i data-lucide="arrow-left"></i>
                                     Volver a la Lista
                                 </button>
-
-                                <div class="detail-nav-controls" style="display: flex; align-items: center; gap: 0.35rem; margin-left: auto;">
-                                    <button id="mop-btn-detail-prev" class="btn-reset" style="font-size: 0.75rem; padding: 0.35rem 0.65rem;" title="Iniciativa anterior">
-                                        <i data-lucide="chevron-left" style="width: 13px; height: 13px;"></i> Anterior
+                                <div class="mop-detail-nav">
+                                    <button id="mop-btn-detail-prev" class="btn-reset mop-detail-nav-btn" title="Proyecto anterior">
+                                        <i data-lucide="chevron-left"></i> Anterior
                                     </button>
-                                    <button id="mop-btn-detail-next" class="btn-reset" style="font-size: 0.75rem; padding: 0.35rem 0.65rem;" title="Siguiente iniciativa">
-                                        Siguiente <i data-lucide="chevron-right" style="width: 13px; height: 13px;"></i>
+                                    <button id="mop-btn-detail-next" class="btn-reset mop-detail-nav-btn" title="Proyecto siguiente">
+                                        Siguiente <i data-lucide="chevron-right"></i>
                                     </button>
                                 </div>
                             </div>
-                            <div id="mop-detail-view-body" class="detail-view-body">
-                                <!-- Populated dynamically -->
+                            <div id="mop-detail-view-body" class="detail-view-body"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ─── COSTO POR REGIÓN Y SERVICIO (static/js/MOP/contratos.js; costo de los proyectos filtrados, fichas IDI) ── -->
+                <section class="mop-view-panel" id="mop-view-costos" style="display: none;">
+                    <div class="mop-layout mop-layout-costos">
+                        <div class="panel-card mop-card">
+                            <div class="mop-card-header">
+                                <h3 class="mop-card-title"><i data-lucide="map" class="mop-title-icon mop-c-blue"></i>Costo total por región (miles de millones $)</h3>
+                                <span class="mop-card-badge" id="mop-co-region-badge"></span>
+                            </div>
+                            <div class="mop-card-body"><canvas id="chart-mop-co-region"></canvas></div>
+                        </div>
+                        <div class="panel-card mop-card">
+                            <div class="mop-card-header">
+                                <h3 class="mop-card-title"><i data-lucide="building-2" class="mop-title-icon mop-c-blue"></i>Costo total por servicio (miles de millones $)</h3>
+                                <span class="mop-card-badge" id="mop-co-servicio-badge"></span>
+                            </div>
+                            <div class="mop-card-body"><canvas id="chart-mop-co-servicio"></canvas></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ─── CONTRATOS Y CONTRATISTAS (static/js/MOP/contratos.js; contratos de los proyectos filtrados) ── -->
+                <section class="mop-view-panel" id="mop-view-contratos" style="display: none;">
+                    <div class="mop-kpi-row mop-kpi-row--4" aria-label="Indicadores de contratos y contratistas">
+                        <div class="card-kpi">
+                            <div class="kpi-icon"><i data-lucide="files"></i></div>
+                            <div class="kpi-val-container">
+                                <span class="kpi-label">Contratos</span>
+                                <span class="kpi-value" id="mop-ct-kpi-total">—</span>
+                                <span class="mop-kpi-sub" id="mop-ct-kpi-total-sub"></span>
+                            </div>
+                        </div>
+                        <div class="card-kpi">
+                            <div class="kpi-icon"><i data-lucide="hard-hat"></i></div>
+                            <div class="kpi-val-container">
+                                <span class="kpi-label">En ejecución</span>
+                                <span class="kpi-value" id="mop-ct-kpi-ejecucion">—</span>
+                                <span class="mop-kpi-sub" id="mop-ct-kpi-ejecucion-sub"></span>
+                            </div>
+                        </div>
+                        <div class="card-kpi">
+                            <div class="kpi-icon"><i data-lucide="gavel"></i></div>
+                            <div class="kpi-val-container">
+                                <span class="kpi-label">Por licitar o en licitación</span>
+                                <span class="kpi-value" id="mop-ct-kpi-licitar">—</span>
+                                <span class="mop-kpi-sub" id="mop-ct-kpi-licitar-sub"></span>
+                            </div>
+                        </div>
+                        <div class="card-kpi">
+                            <div class="kpi-icon"><i data-lucide="users"></i></div>
+                            <div class="kpi-val-container">
+                                <span class="kpi-label">Contratistas</span>
+                                <span class="kpi-value" id="mop-cs-kpi-total">—</span>
+                                <span class="mop-kpi-sub" id="mop-cs-kpi-total-sub"></span>
                             </div>
                         </div>
                     </div>
-
-                    <!-- ── TAB 2: Mapa Regional (choropleth + ranking) ───────────────── -->
-                    <div class="mop-view-container mop-view-fill hidden" data-mop-view="mapa">
-                        <div class="mop-layout mop-layout-mapa">
-                            <!-- Columna izquierda: ranking regional -->
-                            <div class="panel-card mop-card">
-                                <div class="mop-card-header">
-                                    <h3 class="mop-card-title">
-                                        <i data-lucide="map" class="mop-title-icon mop-c-blue"></i>
-                                        <span id="mop-map-ranking-title">Inversión por Región (Millones CLP)</span>
-                                    </h3>
-                                    <span class="mop-card-badge">Según filtros activos</span>
-                                </div>
-                                <div class="mop-card-body">
-                                    <canvas id="chart-mapa-ranking"></canvas>
-                                </div>
-                                <div class="map-metric-mini-kpis">
-                                    <div class="map-metric-mini-kpi">
-                                        <div class="map-metric-mini-kpi-label">Región líder</div>
-                                        <div class="map-metric-mini-kpi-val" id="mop-map-kpi-leader">-</div>
-                                    </div>
-                                    <div class="map-metric-mini-kpi">
-                                        <div class="map-metric-mini-kpi-label">Menor valor</div>
-                                        <div class="map-metric-mini-kpi-val" id="mop-map-kpi-lowest">-</div>
-                                    </div>
-                                    <div class="map-metric-mini-kpi">
-                                        <div class="map-metric-mini-kpi-label">Promedio regional</div>
-                                        <div class="map-metric-mini-kpi-val" id="mop-map-kpi-avg">-</div>
-                                    </div>
-                                </div>
+                    <div class="mop-layout mop-layout-contratos">
+                        <div class="panel-card mop-card">
+                            <div class="mop-card-header">
+                                <h3 class="mop-card-title"><i data-lucide="list-checks" class="mop-title-icon mop-c-blue"></i>Contratos por estado</h3>
+                                <span class="mop-card-badge" id="mop-ct-estado-badge"></span>
                             </div>
-
-                            <!-- Columna derecha: mapa coroplético D3 (angosto, como SNI) -->
-                            <div class="panel-card mop-card mop-map-card">
-                                <div class="map-metric-toolbar" id="mop-map-metric-toolbar">
-                                    <button class="btn btn-xs map-metric-btn active" data-metric="total">
-                                        <i data-lucide="dollar-sign" style="width: 12px; height: 12px;"></i>
-                                        <span>Total</span>
-                                    </button>
-                                    <button class="btn btn-xs map-metric-btn" data-metric="count">
-                                        <i data-lucide="hash" style="width: 12px; height: 12px;"></i>
-                                        <span>Proyectos</span>
-                                    </button>
-                                    <button class="btn btn-xs map-metric-btn" data-metric="avg">
-                                        <i data-lucide="divide" style="width: 12px; height: 12px;"></i>
-                                        <span>Promedio</span>
-                                    </button>
-                                </div>
-                                <div class="mop-map-wrap">
-                                    <div id="mop-map"></div>
-                                </div>
+                            <div class="mop-card-body"><canvas id="chart-mop-ct-estado"></canvas></div>
+                        </div>
+                        <div class="panel-card mop-card">
+                            <div class="mop-card-header">
+                                <h3 class="mop-card-title"><i data-lucide="pie-chart" class="mop-title-icon mop-c-blue"></i>Tipo de contratación</h3>
+                                <span class="mop-card-badge">por monto</span>
+                            </div>
+                            <div class="mop-card-body mop-donut-body">
+                                <div class="mop-donut-canvas"><canvas id="chart-mop-tipo"></canvas></div>
+                                <div class="mop-donut-legend" id="mopTipoChartLegend"></div>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- ── TAB 3: Análisis de Inversión (columna alta + columna apilada) ── -->
-                    <div class="mop-view-container mop-view-fill hidden" data-mop-view="inversion">
-                        <div class="mop-layout mop-layout-inversion">
-                            <!-- Top 10 programas -->
-                            <div class="panel-card mop-card">
-                                <div class="mop-card-header">
-                                    <h3 class="mop-card-title">
-                                        <i data-lucide="layers" class="mop-title-icon mop-c-petrol"></i>
-                                        Inversión por Programa (Top 10, Millones CLP)
-                                    </h3>
-                                </div>
-                                <div class="mop-card-body">
-                                    <canvas id="chart-programa-inversion"></canvas>
-                                </div>
+                        <div class="panel-card mop-card mop-ct-top">
+                            <div class="mop-card-header">
+                                <h3 class="mop-card-title"><i data-lucide="bar-chart-horizontal" class="mop-title-icon mop-c-blue"></i>15 mayores contratistas por monto vigente (miles de millones $)</h3>
                             </div>
-
-                            <div class="mop-stack">
-                                <!-- Servicio × etapa -->
-                                <div class="panel-card mop-card">
-                                    <div class="mop-card-header">
-                                        <h3 class="mop-card-title">
-                                            <i data-lucide="building-2" class="mop-title-icon mop-c-blue"></i>
-                                            Composición por Etapa de la Inversión de cada Servicio (%)
-                                        </h3>
-                                        <div class="mop-legend">
-                                            <span class="mop-legend-item mop-c-stone"><span class="mop-legend-dot mop-legend-dot--perfil"></span>Perfil</span>
-                                            <span class="mop-legend-item mop-c-sky"><span class="mop-legend-dot"></span>Prefact.</span>
-                                            <span class="mop-legend-item mop-c-blue"><span class="mop-legend-dot"></span>Fact.</span>
-                                            <span class="mop-legend-item mop-c-petrol"><span class="mop-legend-dot"></span>Diseño</span>
-                                            <span class="mop-legend-item mop-c-navy"><span class="mop-legend-dot"></span>Ejecución</span>
-                                        </div>
-                                    </div>
-                                    <div class="mop-card-body">
-                                        <canvas id="chart-servicio-etapa"></canvas>
-                                    </div>
-                                </div>
-
-                                <!-- Concentración (Pareto) -->
-                                <div class="panel-card mop-card">
-                                    <div class="mop-card-header">
-                                        <h3 class="mop-card-title">
-                                            <i data-lucide="funnel" class="mop-title-icon mop-c-orange"></i>
-                                            Concentración de la Inversión por Tamaño de Proyecto
-                                        </h3>
-                                        <div class="mop-legend">
-                                            <span class="mop-legend-item mop-c-blue"><span class="mop-legend-dot"></span>Nº proyectos (izq.)</span>
-                                            <span class="mop-legend-item mop-c-orange"><span class="mop-legend-dot mop-legend-dot--line"></span>% acumulado de la inversión (der.)</span>
-                                        </div>
-                                    </div>
-                                    <div class="mop-card-body">
-                                        <canvas id="chart-concentracion"></canvas>
-                                    </div>
-                                </div>
-                            </div>
+                            <div class="mop-card-body"><canvas id="chart-mop-cs-top"></canvas></div>
                         </div>
                     </div>
-
-                    <!-- ── TAB 4: Programas y Etapas (combo ancho + 2 columnas) ───────── -->
-                    <div class="mop-view-container mop-view-fill hidden" data-mop-view="programas">
-                        <div class="mop-layout mop-layout-programas">
-                            <!-- Evolución anual por primera postulación -->
-                            <div class="panel-card mop-card mop-span-full">
-                                <div class="mop-card-header">
-                                    <h3 class="mop-card-title">
-                                        <i data-lucide="trending-up" class="mop-title-icon mop-c-blue"></i>
-                                        Evolución Anual (Primera Postulación)
-                                    </h3>
-                                    <div class="mop-legend">
-                                        <span class="mop-legend-item mop-c-blue"><span class="mop-legend-dot"></span>Nº Proyectos (Izq)</span>
-                                        <span class="mop-legend-item mop-c-orange"><span class="mop-legend-dot mop-legend-dot--line"></span>Inversión MM$ (Der)</span>
-                                    </div>
-                                </div>
-                                <div class="mop-card-body">
-                                    <canvas id="chart-year"></canvas>
-                                </div>
-                            </div>
-
-                            <!-- Cartera activa por año -->
-                            <div class="panel-card mop-card">
-                                <div class="mop-card-header">
-                                    <h3 class="mop-card-title">
-                                        <i data-lucide="calendar-range" class="mop-title-icon mop-c-petrol"></i>
-                                        Cartera Activa por Año
-                                    </h3>
-                                    <div class="mop-legend">
-                                        <span class="mop-legend-item mop-c-petrol"><span class="mop-legend-dot"></span>Proyectos activos (izq.)</span>
-                                        <span class="mop-legend-item mop-c-orange"><span class="mop-legend-dot mop-legend-dot--dashed"></span>Inversión activa MM$ (der.)</span>
-                                    </div>
-                                </div>
-                                <div class="mop-card-body">
-                                    <canvas id="chart-cartera-activa"></canvas>
-                                </div>
-                            </div>
-
-                            <!-- Pipeline por etapa -->
-                            <div class="panel-card mop-card">
-                                <div class="mop-card-header">
-                                    <h3 class="mop-card-title">
-                                        <i data-lucide="git-commit-vertical" class="mop-title-icon mop-c-navy"></i>
-                                        Pipeline por Etapa del Ciclo de Vida
-                                    </h3>
-                                    <span class="mop-card-badge">Perfil → Ejecución</span>
-                                </div>
-                                <div class="mop-card-body">
-                                    <canvas id="chart-pipeline-etapa"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                 </section>
             </div>
 
@@ -539,55 +436,36 @@
 
     </div><!-- /app-container -->
 
-    <!-- Tooltip del mapa regional (fuera de las tarjetas para que overflow:hidden no lo recorte) -->
-    <div id="mop-map-tooltip" class="catlec-map-tooltip catlec-map-tooltip--fixed"></div>
-
     <!-- MOP logic -->
     <script src="static/js/common/tooltip.js?v=1"></script>
-    <script src="static/js/common/utils.js?v=20260925_2"></script>
+    <script src="static/js/common/utils.js?v=20261029_barlbl"></script>
+    <script src="static/js/common/map-gl.js?v=20261029_movil"></script>
     <script src="static/js/common/kpi-animate.js?v=20260924_2"></script>
     <script src="static/js/common/table-fade.js?v=20260924_1"></script>
-    <script src="static/js/MOP/state.js?v=20260925_mop7"></script>
-    <script src="static/js/MOP/utils.js?v=20260925_mop7"></script>
-    <script src="static/js/MOP/filters.js?v=20260925_mop7"></script>
-    <script src="static/js/MOP/table.js?v=20260925_mop7"></script>
-    <script src="static/js/MOP/project-detail.js?v=20260925_mop7"></script>
-    <script src="static/js/MOP/charts.js?v=20260925_mop7"></script>
-    <script src="static/js/common/choropleth.js?v=20260925_2"></script>
-    <script src="static/js/MOP/map.js?v=20260925_mop7"></script>
-    <script src="static/js/MOP/export.js"></script>
-    <script src="static/js/MOP/ui.js?v=20260925_mop7"></script>
+    <script src="static/js/common/panel-resizer.js?v=20260924_gl2"></script>
+    <script src="static/js/MOP/project-map.js?v=20261029_leyenda"></script>
+    <script src="static/js/MOP/ficha.js?v=20261029_aero"></script>
+    <script src="static/js/MOP/main.js?v=20261029_titulo"></script>
+    <script src="static/js/MOP/contratos.js?v=20261029_unif"></script>
 
     <!-- Nav Menu JS -->
-    <script src="static/js/common/nav-menu.js?v=20260925_land1"></script>
+    <script src="static/js/common/nav-menu.js?v=20261029_unif"></script>
     <script>
         (function () {
             CatlecNav.render();
 
-            const navMopGroup = document.getElementById('nav-mop-group');
-
-            // MOP parent link & submenu items: switch tab without reloading
-            if (navMopGroup) {
-                const mopMainLink = document.getElementById('nav-mop-main-link');
-                if (mopMainLink) {
-                    mopMainLink.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        if (typeof window.switchMOPTab === 'function') window.switchMOPTab('resumen');
-                        CatlecNav.close();
-                    });
-                }
-
-                // MOP submenu item direct switching without reload
-                ['resumen', 'mapa', 'inversion', 'programas'].forEach(function (view) {
-                    const sub = document.getElementById('nav-mop-sub-' + view);
-                    if (!sub) return;
-                    sub.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        if (typeof window.switchMOPTab === 'function') window.switchMOPTab(view);
-                        CatlecNav.close();
-                    });
+            // Ya estamos en MOP: los enlaces del menú cierran el menú y cambian de
+            // visualización sin recargar (mopSetView en static/js/MOP/contratos.js)
+            [['nav-mop-main-link', 'resumen'], ['nav-mop-sub-resumen', 'resumen'], ['nav-mop-sub-costos', 'costos'],
+             ['nav-mop-sub-contratos', 'contratos']].forEach(function (pair) {
+                const link = document.getElementById(pair[0]);
+                if (!link) return;
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    CatlecNav.close();
+                    mopSetView(pair[1]);
                 });
-            }
+            });
         })();
     </script>
 
@@ -671,194 +549,80 @@
                 <!-- SECCIÓN 1: DESCRIPCIÓN Y OBJETIVO DEL MÓDULO -->
                 <div class="about-section">
                     <div class="about-section-header">
-                        <h4 class="about-section-title">1. Descripción y Objetivo del Módulo</h4>
+                        <h4 class="about-section-title">1. Descripción del Módulo</h4>
                     </div>
-                    <div
-                        style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.9rem 1.1rem; display: flex; flex-direction: column; gap: 0.65rem;">
+                    <div class="about-source-card" style="background: #f8fafc; padding: 0.9rem 1.1rem;">
                         <p style="margin: 0; font-size: 0.78rem; line-height: 1.55; color: #334155;">
-                            Este módulo agrupa la cartera histórica y planificada de proyectos e iniciativas de inversión del <strong>Ministerio de Obras Públicas (MOP)</strong> de Chile, integrando las obras gestionadas por sus distintas direcciones sectoriales (Dirección de Vialidad, Dirección de Obras Portuarias, Subdirección de Servicios Sanitarios Rurales, Dirección de Obras Hidráulicas, Dirección de Aeropuertos y Dirección de Arquitectura).
+                            Este módulo lista las iniciativas de inversión de financiamiento sectorial del <strong>Ministerio de Obras Públicas (MOP)</strong> programadas y en ejecución durante el año, de sus servicios (Vialidad, Obras Hidráulicas, Obras Portuarias, Aeropuertos, Arquitectura, Servicios Sanitarios Rurales, Dirección General de Aguas y otros). No incluye las concesiones (Dirección General de Concesiones). El módulo está en desarrollo: por ahora muestra el listado de proyectos y el mapa sin capas.
                         </p>
-
-                        <div
-                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 0.75rem; margin-top: 0.2rem;">
-                            <!-- Lo que mapea -->
-                            <div
-                                style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem 0.9rem; display: flex; flex-direction: column; gap: 0.3rem;">
-                                <div
-                                    style="font-size: 0.78rem; font-weight: 700; color: #1e3a8a; display: flex; align-items: center; gap: 0.35rem;">
-                                    <i data-lucide="map-pin" style="width: 14px; height: 14px; color: #2563eb;"></i>
-                                    ¿Qué sistematiza este módulo?
-                                </div>
-                                <p style="margin: 0; font-size: 0.73rem; color: #475569; line-height: 1.5;">
-                                    Registra y sistematiza la cartera de proyectos de inversión en infraestructura pública sectorial a nivel nacional, detallando sus códigos BIP (Banco Integrado de Proyectos), montos presupuestarios en millones de pesos (MM CLP), direcciones o servicios ejecutores, programas sectoriales, etapas del ciclo de vida (Perfil, Prefactibilidad, Factibilidad, Diseño y Ejecución), y los años de primera y última postulación presupuestaria.
-                                </p>
-                            </div>
-
-                            <!-- Objetivo -->
-                            <div
-                                style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem 0.9rem; display: flex; flex-direction: column; gap: 0.3rem;">
-                                <div
-                                    style="font-size: 0.78rem; font-weight: 700; color: #1e3a8a; display: flex; align-items: center; gap: 0.35rem;">
-                                    <i data-lucide="target" style="width: 14px; height: 14px; color: #2563eb;"></i>
-                                    Objetivo
-                                </div>
-                                <p style="margin: 0; font-size: 0.73rem; color: #475569; line-height: 1.5;">
-                                    Facilitar el análisis interactivo, territorial, temporal y sectorial de la inversión pública ejecutada y planificada por el MOP en todas las regiones del país, permitiendo examinar la distribución del gasto fiscal por servicio técnico, los programas prioritarios de conectividad y recursos hídricos, y el avance de las iniciativas dentro del Sistema Nacional de Inversiones (SNI).
-                                </p>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
                 <!-- SECCIÓN 2: FUENTES DE DATOS -->
                 <div class="about-section">
-                    <div class="about-section-header"
-                        style="display: flex; align-items: center; justify-content: space-between;">
-                        <h4 class="about-section-title">2. Fuentes de Datos</h4>
-                        <span style="font-size: 0.68rem; color: #64748b; font-weight: 500;">Última actualización: Agosto 2026</span>
+                    <div class="about-section-header">
+                        <h4 class="about-section-title">2. Fuente de Datos</h4>
                     </div>
-
-                    <!-- Contenedor Único de Fuentes de Datos -->
-                    <div class="about-source-card" style="background: #f8fafc; padding: 0.9rem 1.1rem; display: flex; flex-direction: column; gap: 0.75rem;">
-                        <!-- 1. Cartera Oficial MOP -->
-                        <div style="display: flex; flex-direction: column; gap: 0.3rem;">
-                            <div class="about-source-top" style="margin-bottom: 0.15rem;">
-                                <span class="about-source-name"
-                                    style="font-size: 0.82rem; font-weight: 700; color: #0f172a;">
-                                    <i data-lucide="folder-git-2" style="width: 15px; height: 15px; color: #0284c7;"></i>
-                                    Cartera Oficial de Proyectos MOP:
-                                </span>
-                            </div>
-                            <p style="margin: 0; font-size: 0.77rem; line-height: 1.45; color: #334155;">
-                                <a href="https://proyectos.mop.gob.cl/Default.asp?buscar=true"
-                                    target="_blank" rel="noopener noreferrer"
-                                    style="color: #0284c7; font-weight: 600; text-decoration: underline; display: inline-flex; align-items: center; gap: 0.25rem;">
-                                    https://proyectos.mop.gob.cl/Default.asp?buscar=true
-                                    <i data-lucide="external-link" style="width: 12px; height: 12px;"></i>
-                                </a>
-                            </p>
-                        </div>
-
-                        <!-- 2. Banco Integrado de Proyectos -->
-                        <div style="border-top: 1px solid #e2e8f0; padding-top: 0.65rem; display: flex; flex-direction: column; gap: 0.3rem;">
-                            <div class="about-source-top" style="margin-bottom: 0.15rem;">
-                                <span class="about-source-name"
-                                    style="font-size: 0.82rem; font-weight: 700; color: #0f172a;">
-                                    <i data-lucide="database" style="width: 15px; height: 15px; color: #2563eb;"></i>
-                                    Banco Integrado de Proyectos (BIP):
-                                </span>
-                            </div>
-                            <p style="margin: 0; font-size: 0.77rem; line-height: 1.45; color: #334155;">
-                                <a href="https://bip.ministeriodesarrollosocial.gob.cl/bip2-consulta/app/parent-flow;jsessionid=026A6AFF8B6241D3A8AF8F5BAAF8D4D2?execution=e1s1"
-                                    target="_blank" rel="noopener noreferrer"
-                                    style="color: #2563eb; font-weight: 600; text-decoration: underline; display: inline-flex; align-items: center; gap: 0.25rem;">
-                                    https://bip.ministeriodesarrollosocial.gob.cl/bip2-consulta/
-                                    <i data-lucide="external-link" style="width: 12px; height: 12px;"></i>
-                                </a>
-                            </p>
-                        </div>
+                    <div class="about-source-card" style="background: #f8fafc; padding: 0.9rem 1.1rem; display: flex; flex-direction: column; gap: 0.45rem;">
+                        <span class="about-source-name" style="font-size: 0.82rem; font-weight: 700; color: #0f172a;">
+                            <i data-lucide="folder-git-2" style="width: 15px; height: 15px; color: #0284c7;"></i>
+                            Iniciativas programadas y en ejecución (Dirección de Planeamiento, MOP):
+                        </span>
+                        <p style="margin: 0; font-size: 0.77rem; line-height: 1.45; color: #334155;">
+                            <a href="https://planeamiento.mop.gob.cl/iniciativas-de-inversion-programadas-y-en-ejecucion/"
+                                target="_blank" rel="noopener noreferrer"
+                                style="color: #0284c7; font-weight: 600; text-decoration: underline; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                planeamiento.mop.gob.cl/iniciativas-de-inversion-programadas-y-en-ejecucion
+                                <i data-lucide="external-link" style="width: 12px; height: 12px;"></i>
+                            </a>
+                        </p>
+                        <p style="margin: 0; font-size: 0.73rem; line-height: 1.45; color: #475569;">
+                            Planilla mensual con el detalle de cada contrato de las iniciativas de inversión del MOP al cierre de cada mes. Se usa la planilla más reciente disponible.
+                        </p>
+                    </div>
+                    <div class="about-source-card" style="background: #f8fafc; padding: 0.9rem 1.1rem; display: flex; flex-direction: column; gap: 0.45rem; margin-top: 0.5rem;">
+                        <span class="about-source-name" style="font-size: 0.82rem; font-weight: 700; color: #0f172a;">
+                            <i data-lucide="banknote" style="width: 15px; height: 15px; color: #0284c7;"></i>
+                            Fichas IDI del Banco Integrado de Proyectos (Ministerio de Desarrollo Social y Familia):
+                        </span>
+                        <p style="margin: 0; font-size: 0.77rem; line-height: 1.45; color: #334155;">
+                            <a href="https://bip.ministeriodesarrollosocial.gob.cl/bip2-consulta/app/parent-flow"
+                                target="_blank" rel="noopener noreferrer"
+                                style="color: #0284c7; font-weight: 600; text-decoration: underline; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                bip.ministeriodesarrollosocial.gob.cl (BIP Consulta)
+                                <i data-lucide="external-link" style="width: 12px; height: 12px;"></i>
+                            </a>
+                        </p>
+                        <p style="margin: 0; font-size: 0.73rem; line-height: 1.45; color: #475569;">
+                            Ficha de cada código BIP con la programación de la inversión de cada etapa postulada. Se usa para estimar la inversión de los proyectos.
+                        </p>
                     </div>
                 </div>
 
-                <!-- SECCIÓN 3: METODOLOGÍA Y FÓRMULAS POR VISUALIZACIÓN -->
+                <!-- SECCIÓN 3: METODOLOGÍA -->
                 <div class="about-section">
                     <div class="about-section-header">
-                        <h4 class="about-section-title">3. Metodología y Criterios por Visualización</h4>
+                        <h4 class="about-section-title">3. Metodología</h4>
                     </div>
-
-                    <div style="display: flex; flex-direction: column; gap: 0.85rem; margin-top: 0.25rem;">
-
-                        <!-- 1. VISUALIZACIÓN TABLA DE PROYECTOS -->
-                        <div class="formula-card">
-                            <div class="formula-card-title">
-                                <i data-lucide="layout-dashboard" style="width: 15px; height: 15px; color: #2563eb;"></i>
-                                Visualización: Tabla de proyectos (Resumen General)
-                            </div>
-
-                            <div class="formula-subtitle">
-                                <i data-lucide="gauge" style="width: 13px; height: 13px; color: #2563eb;"></i>
-                                Indicadores Clave (KPIs superiores):
-                            </div>
-                            <ul
-                                style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
-                                <li><strong>Proyectos Totales:</strong> Conteo total neto de iniciativas de inversión pública del MOP registradas según los filtros activos de búsqueda, región geográfica, servicio ejecutor y etapa del proyecto.</li>
-                                <li><strong>Inversión Total (MM CLP):</strong> Suma acumulada del costo total oficial estimado en millones de pesos chilenos ($MM CLP) de los proyectos seleccionados.</li>
-                                <li><strong>Servicio Principal:</strong> Dirección técnica u operativa del MOP con mayor cantidad de proyectos o concentración dentro del portafolio filtrado.</li>
-                                <li><strong>En Ejecución:</strong> Cantidad de proyectos cuya fase del ciclo de vida se encuentra actualmente en ejecución material de obras.</li>
-                            </ul>
-
-                            <div class="formula-subtitle">
-                                <i data-lucide="pie-chart" style="width: 13px; height: 13px; color: #2563eb;"></i>
-                                Panel Lateral de Análisis (Dual Donut):
-                            </div>
-                            <ul
-                                style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
-                                <li><strong>Distribución por Servicio:</strong> Proporción y conteo de iniciativas por cada dirección técnica (Vialidad, Obras Portuarias, SSR, Aeropuertos, Obras Hidráulicas, Arquitectura).</li>
-                                <li><strong>Inversión por Servicio:</strong> Distribución del volumen presupuestario agregado en MM CLP correspondiente a cada servicio ejecutor.</li>
-                            </ul>
+                    <div class="formula-card">
+                        <div class="formula-card-title">
+                            <i data-lucide="layout-dashboard" style="width: 15px; height: 15px; color: #2563eb;"></i>
+                            Visualización: Tabla de proyectos
                         </div>
-
-                        <!-- 2. VISUALIZACIÓN MAPA REGIONAL -->
-                        <div class="formula-card">
-                            <div class="formula-card-title">
-                                <i data-lucide="map" style="width: 15px; height: 15px; color: #0c71c3;"></i>
-                                Visualización: Mapa regional
-                            </div>
-
-                            <div class="formula-subtitle">
-                                <i data-lucide="gauge" style="width: 13px; height: 13px; color: #0c71c3;"></i>
-                                Mapa coroplético y ranking regional:
-                            </div>
-                            <ul
-                                style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
-                                <li><strong>Métricas:</strong> Inversión total (MM CLP), número de proyectos o inversión promedio por proyecto de cada una de las 16 regiones. La métrica elegida colorea el mapa y ordena el ranking.</li>
-                                <li><strong>Escala de color:</strong> 6 clases por cuantiles (cada clase agrupa una cantidad similar de regiones), desde celeste claro (menor) hasta azul marino (mayor). Las regiones sin proyectos quedan en gris.</li>
-                                <li><strong>Filtros:</strong> El mapa y el ranking reflejan todos los filtros activos del panel izquierdo (búsqueda, región, servicio y etapa). Al pasar el cursor sobre una región se resalta su barra en el ranking.</li>
-                            </ul>
-                        </div>
-
-                        <!-- 3. VISUALIZACIÓN ANÁLISIS DE INVERSIÓN -->
-                        <div class="formula-card">
-                            <div class="formula-card-title">
-                                <i data-lucide="bar-chart-2" style="width: 15px; height: 15px; color: #0284c7;"></i>
-                                Visualización: Análisis de inversión
-                            </div>
-
-                            <div class="formula-subtitle">
-                                <i data-lucide="gauge" style="width: 13px; height: 13px; color: #0284c7;"></i>
-                                Métricas y Gráficos Comparativos:
-                            </div>
-                            <ul
-                                style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
-                                <li><strong>Inversión por Programa (Top 10 Millones CLP):</strong> Clasificación del gasto fiscal en las líneas y programas estratégicos de mayor envergadura presupuestaria (Conservación Vial, Red Austral, Caminos Nacionales, Grandes Obras de Riego, etc.).</li>
-                                <li><strong>Composición por Etapa de la Inversión de cada Servicio (%):</strong> Para cada servicio ejecutor, porcentaje de su inversión acumulada que corresponde a proyectos en cada etapa del ciclo de vida (el monto total de cada servicio se muestra en el panel lateral).</li>
-                                <li><strong>Concentración de la Inversión:</strong> Número de proyectos por tramo de costo (de mayor a menor) y porcentaje acumulado de la inversión total que representan, para ver cuántos proyectos concentran la mayor parte del presupuesto.</li>
-                            </ul>
-                        </div>
-
-                        <!-- 4. VISUALIZACIÓN PROGRAMAS Y ETAPAS -->
-                        <div class="formula-card">
-                            <div class="formula-card-title">
-                                <i data-lucide="layers" style="width: 15px; height: 15px; color: #059669;"></i>
-                                Visualización: Programas y Etapas
-                            </div>
-
-                            <div class="formula-subtitle">
-                                <i data-lucide="gauge" style="width: 13px; height: 13px; color: #059669;"></i>
-                                Métricas y Gráficos de Ciclo de Vida:
-                            </div>
-                            <ul
-                                style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
-                                <li><strong>Evolución Anual (Primera Postulación):</strong> Serie temporal que refleja la cantidad de proyectos y el flujo de inversión según su año inicial de ingreso al banco de proyectos.</li>
-                                <li><strong>Cartera Activa por Año:</strong> Para cada año, cantidad de proyectos (y su inversión) cuyo período entre el año de primera postulación y el último año de postulación incluye ese año. Excluye los proyectos sin año registrado.</li>
-                                <li><strong>Pipeline por Etapa del Ciclo de Vida:</strong> Cantidad de proyectos en fases de <em>Perfil</em>, <em>Prefactibilidad</em>, <em>Factibilidad</em>, <em>Diseño</em> y <em>Ejecución</em>, en orden de madurez, dentro del Sistema Nacional de Inversiones.</li>
-                            </ul>
-                        </div>
-
+                        <ul
+                            style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
+                            <li><strong>Proyecto:</strong> cada fila de la planilla es un contrato; los contratos se agrupan por código BIP y cada código es un proyecto. El nombre es el de la iniciativa (columna "Nombre IDI").</li>
+                            <li><strong>Servicio, etapa y región:</strong> los de la iniciativa; si sus contratos están en distintas etapas, se muestran todas en orden de madurez separadas por un guion (ej. "Diseño - Ejecución").</li>
+                            <li><strong>Exclusión:</strong> no se consideran los contratos de la Dirección General de Concesiones (pagos fiscales de las concesiones, no la obra concesionada).</li>
+                            <li><strong>Período:</strong> se identifica el mes y año de cierre de cada planilla y se usa la más reciente; el encabezado de la tabla indica cuál.</li>
+                            <li><strong>Indicadores:</strong> <em>Proyectos Totales</em> cuenta los códigos BIP que cumplen los filtros; <em>Proyectos en Ejecución</em>, los que tienen la etapa Ejecución (también si la comparten con otra, ej. "Diseño - Ejecución").</li>
+                            <li><strong>Costo etapa y Costo Total:</strong> para cada etapa del proyecto se toma la ficha IDI del último año postulado y su costo total programado (sección 16, "Programación de la inversión", monto directo); los montos se llevan a pesos de 2026 con el factor de moneda de cada ficha y se suman las etapas. Cada ficha cubre solo la etapa a la que postula: en los proyectos en prefactibilidad, factibilidad o diseño es el costo de ese estudio o diseño, no el de la obra, que la ficha no estima. La columna "Costo etapa" lo muestra en millones de pesos y el indicador "Costo Total" suma los proyectos filtrados. Los proyectos sin ficha en BIP Consulta quedan sin monto.</li>
+                            <li><strong>Ficha del proyecto:</strong> al elegir un proyecto en la tabla o en el mapa se muestra su ficha, con el costo de cada etapa y la justificación y descripción de su ficha IDI más reciente, tal como vienen en ella (la ficha recorta los textos largos; esos terminan en "…").</li>
+                            <li><strong>Análisis:</strong> número de proyectos por servicio (los 6 con más proyectos y el resto en "Otros") y por etapa, según los filtros activos. Los proyectos con contratos en más de una etapa se cuentan una sola vez, en "Varias etapas".</li>
+                            <li><strong>Mapa:</strong> muestra los proyectos que tienen trazado o punto en la cartera de proyectos.mop.gob.cl; el resto aparece solo en la tabla.</li>
+                        </ul>
                     </div>
                 </div>
-
-
 
             </div>
         </div>

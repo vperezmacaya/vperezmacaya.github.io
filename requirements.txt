@@ -2,9 +2,15 @@
 pandas>=2.0.0
 numpy>=1.24.0
 openpyxl>=3.1.0
+xlrd>=2.0.1          # Excel .xls (Iniciativas programadas y en ejecución, DIRPLAN MOP)
 
 # Automatización y Web Scraping
 playwright>=1.40.0
+requests>=2.31.0
+beautifulsoup4>=4.12.0  # BIP Consulta (scripts/bip_client.py)
+
+# Lectura de PDF (fichas IDI)
+pymupdf>=1.24.0
 
 # Soporte para Jupyter Notebooks
 ipykernel>=6.29.0

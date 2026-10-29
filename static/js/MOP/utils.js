@@ -22,7 +22,7 @@ function formatMM(val) {
     return `$${Number(val).toLocaleString('es-CL')}M`;
 }
 
-const MOP_ETAPA_LABELS = { EJECUCION: 'Ejecución', DISEÑO: 'Diseño', PERFIL: 'Perfil', PREFACTIBILIDAD: 'Prefactibilidad', FACTIBILIDAD: 'Factibilidad' };
+const MOP_ETAPA_LABELS = { 'SIN EJECUCION': 'Sin ejecución', EJECUCION: 'Ejecución', DISEÑO: 'Diseño', PERFIL: 'Perfil', PREFACTIBILIDAD: 'Prefactibilidad', FACTIBILIDAD: 'Factibilidad' };
 
 function mopEtapaLabel(etapa) {
     return MOP_ETAPA_LABELS[etapa] || etapa || 'Sin etapa';
@@ -49,6 +49,7 @@ function escapeHtml(str) {
 function getStageBadgeClass(etapa) {
     if (!etapa) return 'badge-neutral';
     const e = etapa.toUpperCase();
+    if (e.startsWith('SIN ')) return 'badge-neutral';
     if (e.includes('EJECUCION') || e.includes('EJECUCIÓN')) return 'badge-info';
     if (e.includes('DISEÑO') || e.includes('DISENO')) return 'badge-warning';
     if (e.includes('LICITAC')) return 'badge-licitacion';

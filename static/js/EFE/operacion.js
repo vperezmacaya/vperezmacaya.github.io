@@ -319,7 +319,9 @@ function calculateEfeTotalSatisfaction(year) {
 }
 
 // ── 1. Top KPI Banner ─────────────────────────────────────────────────────────
-function renderEfeOperacionKPIs(lines) {
+// Pasajeros del último año, satisfacción ponderada y estaciones en operación de
+// los servicios dados. También los usan los KPI de "Servicios Actuales" (filters.js).
+function efeComputeOperationTotals(lines) {
     const allLines = (window.EFE_DATA && window.EFE_DATA.lines) ? window.EFE_DATA.lines : [];
     const demandSummary = window.EFE_DATA?.demand_summary || {};
     const allFiliales = window.EFE_DATA?.demand_filiales || Object.keys(demandSummary);
@@ -397,6 +399,12 @@ function renderEfeOperacionKPIs(lines) {
         // Total global de estaciones activas en operación
         activeStationsCount = allStations.filter(s => s.in_operation === true || s.in_operation === 'Si' || s.in_operation === 'si').length;
     }
+
+    return { totalPax, avgSat, activeStationsCount, latestYear };
+}
+
+function renderEfeOperacionKPIs(lines) {
+    const { totalPax, avgSat, activeStationsCount } = efeComputeOperationTotals(lines);
 
     const elPax = document.getElementById('efe-kpi-op-pax');
     const elSt = document.getElementById('efe-kpi-op-estaciones');

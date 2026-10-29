@@ -38,6 +38,23 @@
     box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.85), 0 6px 18px rgba(0, 0, 0, 0.5);
 }
 
+/* Marca "+" de las extensiones de línea (abajo a la derecha del ícono de
+   proyecto; el contador de cluster va arriba a la derecha) */
+.metro-ext-badge {
+    position: absolute;
+    right: -5px;
+    bottom: -5px;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background-color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
 /* ─── Panel Comunal: badges, scroll interno y ejes fijos ────────────────── */
 .metro-badge {
     font-size: 0.62rem;

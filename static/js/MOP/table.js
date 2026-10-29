@@ -62,35 +62,31 @@ function renderGlobalTable() {
 
     tbody.innerHTML = pageProjects.map((p, idx) => {
         const rowNum = startIndex + idx + 1;
-        const costFmt = p.cost_mm > 0 ? `$${p.cost_mm.toLocaleString('es-CL')} M` : '—';
-        const bipFmt = p.bip || '—';
-        const yearFmt = p.year || '—';
-        const yearUltFmt = p.year_ult || '—';
+        const costFmt = p.cost_mm > 0 ? `$${p.cost_mm.toLocaleString('es-CL', { maximumFractionDigits: 0 })} M` : '—';
+        const yearOpFmt = p.year_op || '—';
         const badgeClass = getStageBadgeClass(p.etapa);
 
         return `
             <tr class="row-main mop-project-row" data-idx="${idx}" style="cursor: pointer;">
                 <td style="text-align: center; color: var(--text-muted);">${rowNum}</td>
                 <td><strong>${escapeHtml(p.nombre) || 'Sin nombre'}</strong></td>
-                <td>${bipFmt}</td>
-                <td>${formatRegionCell(p.region)}</td>
-                <td>${escapeHtml(p.servicio) || '—'}</td>
-                <td>${escapeHtml(p.programa) || '—'}</td>
-                <td><span class="badge ${badgeClass}">${escapeHtml(p.etapa) || '—'}</span></td>
+                <td title="${escapeHtml(p.servicio)}">${escapeHtml(shortServiceName(p.servicio || '')) || '—'}</td>
+                <td><span class="badge ${badgeClass}">${escapeHtml(mopEtapaLabel(p.etapa))}</span></td>
                 <td style="text-align: right; font-weight: 700; color: #0c71c3;">${costFmt}</td>
-                <td style="text-align: center; color: var(--text-muted);">${yearFmt}</td>
-                <td style="text-align: center; color: var(--text-muted);">${yearUltFmt}</td>
+                <td style="text-align: center; color: var(--text-muted);">${yearOpFmt}</td>
             </tr>
         `;
     }).join('');
 
-    // Bind click event on rows to open project detail
+    // Clic: abre la ficha (y la ficha selecciona el proyecto en el mapa);
+    // hover: resalta su trazado o ubicación en el mapa (hover liviano)
     tbody.querySelectorAll('.mop-project-row').forEach(row => {
-        row.addEventListener('click', () => {
-            const idx = parseInt(row.dataset.idx, 10);
-            const proj = pageProjects[idx];
-            if (proj) showProjectDetail(proj, startIndex + idx);
-        });
+        const idx = parseInt(row.dataset.idx, 10);
+        const proj = pageProjects[idx];
+        if (!proj) return;
+        row.addEventListener('click', () => showProjectDetail(proj, startIndex + idx));
+        row.addEventListener('mouseenter', () => mopMapSetHover(proj.cod_p));
+        row.addEventListener('mouseleave', () => mopMapSetHover(null));
     });
 
     if (typeof lucide !== 'undefined') lucide.createIcons();

@@ -26,7 +26,7 @@ var efeState = {
     investmentOpen: false,
     timelineOpen: false,
     operacionOpen: false,
-    tableMode: 'projects'
+    tableMode: 'lines'   // vista inicial: red en operación (Servicios Actuales)
 };
 if (typeof window !== 'undefined') window.efeState = efeState;
 
@@ -97,8 +97,6 @@ function efeGetProjectTypeSvg(tipo, w = 13, h = 13, stroke = 'currentColor') {
 var efeMap = null;
 var efeTileLayer = null;
 var efeGeoLayer = null;         // GeoJSON layer for all EFE shapes
-var efeMetroGeoLayer = null;    // GeoJSON layer for Metro de Santiago lines
-var efeMetroPointsLayer = null; // GeoJSON layer for Metro de Santiago stations
 var efeEstacionesGeoLayer = null; // GeoJSON layer for EFE active passenger stations
 var efeShapeToProjects = {};    // cod (int) -> array of project names
 var efeShapeToLines = {};       // cod (int) -> array of operating line service names
@@ -108,7 +106,6 @@ var efeProjectMarkers = [];     // Array of train marker objects currently on ma
 var efeClusterOriginMarkers = []; // Array of cluster origin dot markers
 var efeClusterLegLayers = [];     // Array of spiderfy connecting leg polylines
 var efeShowEfeLines = true;       // Toggle for EFE passenger lines layer
-var efeShowMetroLines = false;    // Toggle for Metro lines and stations layer (disabled by default)
 var efeShowProjects = true;       // Toggle for project icons and shapes layer
 
 let efeAvailableFiliales = [

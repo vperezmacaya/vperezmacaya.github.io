@@ -10,6 +10,15 @@ function init() {
     applyFilters();
     bindFilterEvents();
     bindTableSortEvents();
+
+    // Separador mapa ↔ tabla de "Tabla de proyectos" (antes de mostrar la vista)
+    CatlecPanelResizer.init({
+        resizer: '#mop-panel-resizer',
+        minWidth: MOP_TABLE_MIN_WIDTH,
+        storageKey: 'catlec.mop.tableWidth',
+        getMap: () => mopProjectMap
+    });
+
     bindTabEvents();
 
     window.addEventListener('resize', () => {
@@ -28,6 +37,10 @@ function init() {
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
+// Ancho mínimo de la tabla (separador): el ancho medido en que se ven completas
+// todas sus columnas y encabezados
+const MOP_TABLE_MIN_WIDTH = 560;
+
 // ── Tabs del subheader ────────────────────────────────────────────────────
 function switchTab(targetView) {
     currentActiveTab = targetView;
@@ -40,6 +53,7 @@ function switchTab(targetView) {
         const isMatch = (c.dataset.mopView === targetView);
         c.classList.toggle('hidden', !isMatch);
     });
+    mopMapOnViewChange(targetView);
 
     requestAnimationFrame(() => {
         if (targetView === 'mapa') initMOPMap();

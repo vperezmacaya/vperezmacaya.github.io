@@ -212,55 +212,57 @@ window.LandingSlides = (function () {
         };
     }
 
-    // ── MOP: iniciativas por etapa ───────────────────────────────────────────
-    // Escala secuencial por madurez, de la etapa más temprana a la ejecución
-    const MOP_ETAPAS = [
-        { key: 'PERFIL', label: 'Perfil', color: '#c9d3df' },
-        { key: 'PREFACTIBILIDAD', label: 'Prefactibilidad', color: '#9fb1c6' },
-        { key: 'FACTIBILIDAD', label: 'Factibilidad', color: '#6f89a6' },
-        { key: 'DISEÑO', label: 'Diseño', color: '#3d5a80' },
-        { key: 'EJECUCION', label: 'Ejecución', color: '#1b365d' },
-    ];
+    // ── MOP: proyectos por servicio ──────────────────────────────────────────
+    // Datos del Excel más reciente de "Iniciativas programadas y en ejecución"
+    // (Dirección de Planeamiento): un proyecto por código BIP. Los 3 servicios
+    // con más proyectos + "Otros", en la escala secuencial; nombres cortos para
+    // que la leyenda quepa en la cabecera del gráfico.
+    const MOP_TOP_SERVICIOS = 3;
+    const MOP_SERVICIO_CORTO = {
+        'Servicios Sanitarios Rurales': 'SSR',
+        'Concesiones de Obras Públicas': 'Concesiones',
+    };
+    const mopShortServicio = (s) => {
+        const name = s.replace(/^(Subdirección|Dirección) (General )?de /, '');
+        return MOP_SERVICIO_CORTO[name] || name;
+    };
 
     function mopSlide() {
         const D = window.MOP_DATA;
-        if (!D || !Array.isArray(D.projects)) return null;
-        const projects = D.projects;
-        const totalCost = sum(projects, p => p.cost_mm);
-        const exec = projects.filter(p => p.etapa === 'EJECUCION');
-        const execCost = sum(exec, p => p.cost_mm);
-        const counts = MOP_ETAPAS.map(e => projects.filter(p => p.etapa === e.key).length);
-
-        const bySrv = {};
-        projects.forEach(p => { bySrv[p.servicio] = (bySrv[p.servicio] || 0) + 1; });
-        const [topSrv, topSrvCount] = Object.entries(bySrv).sort((a, b) => b[1] - a[1])[0];
+        if (!D || !Array.isArray(D.projects) || !Array.isArray(D.by_servicio) || !D.by_servicio.length) return null;
+        const total = D.projects.length;
+        const top = D.by_servicio.slice(0, MOP_TOP_SERVICIOS);
+        const otros = sum(D.by_servicio.slice(MOP_TOP_SERVICIOS), s => s.count);
+        const groups = top.map(s => ({ label: mopShortServicio(s.servicio), count: s.count }));
+        if (otros > 0) groups.push({ label: 'Otros', count: otros });
+        const colors = groups.map((_, i) => SEQ[Math.min(i, SEQ.length - 1)]);
+        const period = D.source && D.source.label ? D.source.label : '';
 
         return {
             id: 'mop',
             short: 'MOP',
             name: 'Obras Públicas (MOP)',
-            description: 'Cartera de iniciativas del MOP por región, servicio, etapa y programa.',
+            description: 'Iniciativas de inversión del MOP programadas y en ejecución.',
             photo: 'embalse-el-yeso',
             accent: P.steel,
-            number: fmt(projects.length),
-            unit: 'iniciativas',
-            phrase: `en la cartera del Ministerio de Obras Públicas. Las <strong>${fmt(exec.length)} en ejecución</strong> `
-                + `concentran el <strong>${pct(execCost, totalCost)}</strong> del costo total.`,
+            number: fmt(total),
+            unit: 'proyectos',
+            phrase: `del Ministerio de Obras Públicas programados o en ejecución al cierre de <strong>${period}</strong>.`,
             stats: [
-                { value: `$${fmt(totalCost)} MM`, label: 'costo total de la cartera (CLP)' },
-                { value: fmt(topSrvCount), label: `iniciativas de ${topSrv.replace('Dirección de ', '')}` },
+                { value: fmt(top[0].count), label: `proyectos de ${mopShortServicio(top[0].servicio)}` },
+                { value: fmt(D.by_servicio.length), label: 'servicios del MOP con proyectos' },
             ],
-            chartTitle: 'Iniciativas por etapa',
-            legend: MOP_ETAPAS.map(e => ({ label: e.label, color: e.color, shape: 'bar' })),
-            source: 'Fuente: Ministerio de Obras Públicas, cartera de proyectos.',
-            link: 'MOP.html#inversion',
+            chartTitle: 'Proyectos por servicio',
+            legend: groups.map((g, i) => ({ label: g.label, color: colors[i], shape: 'bar' })),
+            source: 'Fuente: Dirección de Planeamiento (MOP), iniciativas programadas y en ejecución.',
+            link: 'MOP.html',
             chart: () => ({
                 type: 'doughnut',
                 data: {
-                    labels: MOP_ETAPAS.map(e => e.label),
+                    labels: groups.map(g => g.label),
                     datasets: [{
-                        data: counts,
-                        backgroundColor: MOP_ETAPAS.map(e => e.color),
+                        data: groups.map(g => g.count),
+                        backgroundColor: colors,
                         borderColor: '#ffffff',
                         borderWidth: 1.5,
                         hoverOffset: 6,
@@ -274,7 +276,7 @@ window.LandingSlides = (function () {
                         tooltip: {
                             enabled: false,
                             external: landingTooltip,
-                            callbacks: { label: (ctx) => ` ${fmt(ctx.raw)} iniciativas (${pct(ctx.raw, projects.length, 1)})` },
+                            callbacks: { label: (ctx) => ` ${fmt(ctx.raw)} proyectos (${pct(ctx.raw, total, 1)})` },
                         },
                     },
                 }),
@@ -535,7 +537,7 @@ window.LandingSlides = (function () {
             art.hospital = `${fmt(bySector('Hospitalaria') / 1e6, 1)} M UF`;
             art.aero = `${fmt(bySector('Aeroportuaria') / 1e6, 1)} M UF`;
         }
-        if (M && M.projects) art.mop = `${fmt(M.projects.filter(p => p.etapa === 'EJECUCION').length)} en ejecución`;
+        if (M && M.projects) art.mop = `${fmt(M.projects.length)} proyectos`;
         if (MT && MT.historical_demand && MT.historical_demand.length) {
             const last = MT.historical_demand.slice().sort((a, b) => a.year - b.year).pop();
             art.metro = `${fmt(last.trips_mm)} MM viajes/año`;
@@ -551,7 +553,7 @@ window.LandingSlides = (function () {
             dgc: S && S.data ? `${fmt(S.data.length)} contratos` : null,
             efe: E && E.data ? `${fmt(E.data.length)} proyectos · ${fmt((E.lines || []).length)} servicios` : null,
             metro: MT && MT.data ? `${fmt(MT.data.length)} proyectos de expansión` : null,
-            mop: M && M.projects ? `${fmt(M.projects.length)} iniciativas` : null,
+            mop: M && M.projects ? `${fmt(M.projects.length)} proyectos` : null,
             sni: sniYears ? `${sniYears[0]}–${sniYears[1]}` : null,
             puertos: P && P.metadata ? `${fmt(P.metadata.total_meses)} meses de registros` : null,
         };

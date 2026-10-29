@@ -5,6 +5,8 @@ Genera el archivo JSON/JS estático necesario para la plataforma estática.
 
 Salida:
   static/data/contracts_data.js  → window.STATIC_DATA = { data, regions, sectors, stats, summary, map_projects }
+  static/data/mop_data.js        → window.MOP_DATA = { source, summary, filters, by_servicio, projects: [{bip, nombre, servicio, etapa, region, item, inversion}] }
+  static/data/mop_fichas.js      → window.MOP_FICHAS = { <bip>: {justificacion, descripcion, ficha, etapas: [{etapa, anio, monto}]} } (se carga al abrir la ficha)
 
 Uso:
   python export_static_data.py
@@ -17,7 +19,6 @@ import unicodedata
 import numpy as np
 import pandas as pd
 
-from text_normalize import normalize_description
 
 # ── Rutas ──────────────────────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -1008,223 +1009,247 @@ except Exception as e:
     import traceback; traceback.print_exc()
 
 
-# ── MOP: Exportar datos del Ministerio de Obras Públicas ───────────────────────
-print("\nProcesando hoja 'Base MOP'...")
+# ── MOP: Iniciativas programadas y en ejecución (Dirección de Planeamiento) ────
+# Fuente: Excel mensuales "Iniciativas programadas y en ejecución al cierre de
+# <mes> <año>" (planeamiento.mop.gob.cl). Se usa el más reciente de la carpeta;
+# cada fila del Excel es un contrato y los proyectos se agrupan por código BIP.
+# Por ahora la carpeta con los cierres de diciembre 2021-2024 y el de septiembre 2026
+# (el más reciente, el que se usa)
+MOP_INICIATIVAS_DIR = os.path.join(DATA_DIR, 'Iniciativas programadas y en ejecucion (otros años)')
+MOP_MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
+             'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+MOP_REGIONES = [
+    'Arica y Parinacota', 'Tarapacá', 'Antofagasta', 'Atacama', 'Coquimbo', 'Valparaíso',
+    'Metropolitana de Santiago', "Libertador General Bernardo O'Higgins", 'Maule', 'Ñuble',
+    'Biobío', 'La Araucanía', 'Los Ríos', 'Los Lagos',
+    'Aysén del General Carlos Ibáñez del Campo', 'Magallanes y de la Antártica Chilena',
+]
+# Servicios que no se consideran: las concesiones (sus contratos son los pagos
+# fiscales de cada concesión, no la obra concesionada)
+MOP_SERVICIOS_EXCLUIDOS = {'Dirección General de Concesiones de Obras Públicas'}
+# Etapas en orden de madurez (un proyecto con varias se muestra "Diseño - Ejecución")
+MOP_ETAPAS = {'PERFIL': 'Perfil', 'PREFACTIBILIDAD': 'Prefactibilidad', 'FACTIBILIDAD': 'Factibilidad',
+              'DISEÑO': 'Diseño', 'EJECUCION': 'Ejecución'}
+# Ítem presupuestario del contrato (columna "Item"): todos los contratos de un BIP comparten el suyo
+MOP_ITEMS = {'PROYECTOS': 'Proyectos', 'ESTUDIOS BÁSICOS': 'Estudios básicos'}
+# Inversión estimada por BIP (M$ de 2026): suma por etapa del TOTAL de la sección 16
+# "Programación de la inversión" de su ficha IDI en BIP Consulta. La generan
+# scripts/bip_download_fichas.py (descarga) y scripts/bip_resumen_fichas.py (lectura).
+MOP_INVERSION_JSON = os.path.join(DATA_DIR, 'BIP fichas IDI', '_resumen_inversion.json')
+MOP_INVERSION_KEY = 'Inversión S16 (M$ 2026)'
+MOP_INVERSION_ANIO = 2026
+# Etapa del nombre de la ficha (DISENO, EJECUCION, ...) → como se muestra (Diseño, Ejecución, ...)
+MOP_ETAPA_FICHA = {unicodedata.normalize('NFKD', k).encode('ascii', 'ignore').decode(): v for k, v in MOP_ETAPAS.items()}
+
+
+def mop_ficha_text(text):
+    """Texto de la ficha IDI tal como viene; la ficha recorta los textos largos al alto de su
+    recuadro, así que si no termina en punto (o paréntesis/comillas) se marca con '…'."""
+    text = (text or '').strip()
+    return text if not text or text.endswith(('.', ')', '"')) else text + '…'
+
+
+def mop_etapas(values):
+    """Etapas distintas de los contratos de un proyecto, en orden de madurez y unidas por ' - '."""
+    found = {str(v).strip().upper() for v in values if str(v).strip()}
+    order = list(MOP_ETAPAS)
+    return ' - '.join(MOP_ETAPAS.get(e, e.capitalize()) for e in sorted(found, key=lambda e: order.index(e) if e in order else len(order)))
+
+
+def mop_region(raw):
+    """Nombre oficial de la región ('del Biobío' -> 'Biobío', 'de los Lagos' -> 'Los Lagos'); 'Interregional' queda igual."""
+    norm = lambda s: re.sub(r'[^a-z0-9 ]', ' ', unicodedata.normalize('NFKD', str(s)).encode('ascii', 'ignore').decode().lower()).split()
+    first = lambda words: next((w for w in words if w not in ('de', 'del', 'la', 'los')), '')
+    key = first(norm(raw))
+    return next((r for r in MOP_REGIONES if first(norm(r)) == key), str(raw).strip())
+
+
+def mop_file_period(path):
+    """(año, mes) del cierre que informa el archivo: celda 'Mes:' del encabezado o, si falta, el nombre del archivo."""
+    head = pd.read_excel(path, header=None, nrows=6)
+    cells = [str(v).strip() for v in head.values.ravel() if pd.notna(v) and str(v).strip()]
+    texts = [c for i, c in enumerate(cells) if i and cells[i - 1].lower().startswith('mes')]
+    for text in texts + [os.path.basename(path)]:
+        m = re.search(r'(' + '|'.join(MOP_MESES) + r')\D{0,6}(20\d{2})', text.lower())
+        if m:
+            return int(m.group(2)), MOP_MESES.index(m.group(1)) + 1
+    return None
+
+
+def mop_read_iniciativas(path):
+    """Tabla de contratos del Excel (la fila de encabezados es la que trae la columna 'Bip').
+    Las últimas columnas ("Arrastre Año Siguiente", "Saldo", "Tipo de gasto") no traen
+    nombre en esa fila sino en la de grupos de encima: se nombran con el texto más
+    cercano hacia arriba."""
+    raw = pd.read_excel(path, header=None)
+    hdr = next(i for i in range(min(40, len(raw))) if any(str(v).strip() == 'Bip' for v in raw.iloc[i]))
+    df = raw.iloc[hdr + 1:].reset_index(drop=True)
+    names = []
+    for j, c in enumerate(raw.iloc[hdr]):
+        name = '' if pd.isna(c) else str(c).strip()
+        if not name:
+            above = [raw.iat[i, j] for i in range(hdr - 1, -1, -1) if pd.notna(raw.iat[i, j]) and str(raw.iat[i, j]).strip()]
+            name = str(above[0]).strip() if above else f'col_{j}'
+        names.append(name)
+    df.columns = names
+    return df
+
+
+MOP_MESES_COLS = [m.upper() for m in MOP_MESES]
+# Contratistas genéricos del Excel (gastos con varios proveedores, expropiaciones o sin adjudicar)
+MOP_CONTRATISTAS_GENERICOS = {'', 'VARIOS PROVEEDORES', 'VARIOS EXPROPIADOS'}
+
+
+def mop_contratos_payload(df, latest):
+    """Un registro por contrato para las visualizaciones de ejecución, contratos y
+    contratistas (static/js/MOP/contratos.js). Montos en M$ (miles de pesos, como el
+    Excel). En `m` van los 12 meses del año: hasta el mes de cierre son pagos y de
+    ahí en adelante, lo programado (los grupos "PAGADO AÑO" y "PROGRAMADO AÑO" del
+    Excel); la columna "Pagado Año" no se usa porque viene en 0 en muchos contratos
+    que sí registran pagos mensuales."""
+    num = lambda v: 0 if pd.isna(pd.to_numeric(v, errors='coerce')) else float(pd.to_numeric(v, errors='coerce'))
+    txt = lambda v: '' if pd.isna(v) else re.sub(r'\s+', ' ', str(v)).strip()
+
+    def fecha(v):
+        d = pd.to_datetime(v, errors='coerce')
+        return None if pd.isna(d) else d.strftime('%Y-%m-%d')
+
+    contratos = []
+    for _, r in df.iterrows():
+        contratista = txt(r.get('Nombre Contratista'))
+        generico = contratista.upper() in MOP_CONTRATISTAS_GENERICOS or txt(r.get('Rut Contratista')) in ('', '1-9')
+        cod = pd.to_numeric(r.get('Cod Contrato'), errors='coerce')
+        contratos.append({
+            'bip': r['Bip'],
+            'cod': None if pd.isna(cod) else int(cod),
+            'nombre': txt(r.get('Nombre Contrato')),
+            'estado': txt(r.get('Estado')),
+            'tipo': txt(r.get('Tipo Contratación')),
+            'gasto': txt(r.get('Tipo de gasto')),
+            'an': txt(r.get('A/N')),
+            'fl': fecha(r.get('F Licitación')),
+            'fa': fecha(r.get('F Apertura')),
+            'fi': fecha(r.get('F Inicio')),
+            'ft': fecha(r.get('F Término')),
+            'po': round(num(r.get('Presupuesto oficial'))),
+            'mv': round(num(r.get('Monto Vigente Contrato'))),
+            'ct': None if generico else contratista,
+            'rut': None if generico else txt(r.get('Rut Contratista')),
+            'av': round(num(r.get('% ejecución')), 1),
+            'm': [round(num(r.get(m))) for m in MOP_MESES_COLS],
+            'ar': round(num(r.get('Arrastre Año Siguiente'))),
+        })
+    return {'anio': latest['year'], 'mes': latest['month'], 'label': latest['label'], 'contratos': contratos}
+
+
+print("\nProcesando Iniciativas programadas y en ejecución (MOP)...")
 
 try:
-    MOP_EXCEL_PATH = os.path.join(DATA_DIR, 'BASE MOP.xlsx')
-    if not os.path.exists(MOP_EXCEL_PATH):
-        MOP_EXCEL_PATH = os.path.join(BASE_DIR, 'BASE MOP.xlsx')
-    df_mop = pd.read_excel(MOP_EXCEL_PATH, sheet_name='Base MOP')
-    print(f"  -> {len(df_mop)} filas cargadas en hoja 'Base MOP'")
+    mop_files = []
+    for name in sorted(os.listdir(MOP_INICIATIVAS_DIR)):
+        if name.startswith('~$') or not name.lower().endswith(('.xls', '.xlsx')):
+            continue
+        path = os.path.join(MOP_INICIATIVAS_DIR, name)
+        period = mop_file_period(path)
+        if period is None:
+            print(f"  [WARN] No se pudo identificar el mes y año de {name}; se omite")
+            continue
+        mop_files.append({'file': name, 'path': path, 'year': period[0], 'month': period[1]})
+    if not mop_files:
+        raise FileNotFoundError(f"Sin Excel de iniciativas en {MOP_INICIATIVAS_DIR}")
 
-    # Normalizar columnas con posibles caracteres especiales
-    df_mop.columns = [str(c).strip() for c in df_mop.columns]
+    mop_files.sort(key=lambda f: (f['year'], f['month']))
+    for f in mop_files:
+        f['label'] = f"{MOP_MESES[f['month'] - 1]} {f['year']}"
+        print(f"  - {f['label']:<16} {f['file']}")
+    latest = mop_files[-1]
+    print(f"  -> Más reciente: {latest['label']} ({latest['file']})")
 
-    # Detectar nombres reales de columnas clave
-    col_region   = next((c for c in df_mop.columns if 'regi' in c.lower()), None)
-    col_servicio = next((c for c in df_mop.columns if 'servicio' in c.lower()), None)
-    col_nombre   = next((c for c in df_mop.columns if 'nombre proyecto' in c.lower()), None)
-    col_bip      = next((c for c in df_mop.columns if 'bip' in c.lower()), None)
-    col_programa = next((c for c in df_mop.columns if 'programa' in c.lower()), None)
-    col_etapa    = next((c for c in df_mop.columns if 'etapa' in c.lower()), None)
-    col_cost     = next((c for c in df_mop.columns if c.lower() == 'cost'), None)
-    col_primera  = next((c for c in df_mop.columns if 'primera' in c.lower() and 'postulacion' in c.lower()), None)
-    col_ultima   = next((c for c in df_mop.columns if 'ultima' in c.lower() and 'postulacion' in c.lower()), None)
-    col_desc     = next((c for c in df_mop.columns if 'desc' in c.lower() or 'ebi_desc' in c.lower()), None)
-    col_loc      = next((c for c in df_mop.columns if 'localizacion' in c.lower() or 'ebi_loc' in c.lower()), None)
+    df_ini = mop_read_iniciativas(latest['path'])
+    df_ini['Bip'] = df_ini['Bip'].fillna('').astype(str).str.replace(r'\s', '', regex=True)
+    df_ini = df_ini[df_ini['Bip'] != '']
+    if 'Item' not in df_ini.columns:
+        df_ini['Item'] = ''
+    for col in ('Nombre IDI', 'Servicio', 'Reg Proyecto', 'Etapa', 'Item'):
+        df_ini[col] = df_ini[col].fillna('').astype(str).str.replace(r'\s+', ' ', regex=True).str.strip()
+    n_excluidos = int(df_ini['Servicio'].isin(MOP_SERVICIOS_EXCLUIDOS).sum())
+    df_ini = df_ini[~df_ini['Servicio'].isin(MOP_SERVICIOS_EXCLUIDOS)]
+    print(f"  -> Se excluyen {n_excluidos} contratos de {', '.join(sorted(MOP_SERVICIOS_EXCLUIDOS))}")
 
-    print(f"  -> Columnas detectadas: región={col_region}, servicio={col_servicio}, "
-          f"nombre={col_nombre}, bip={col_bip}, programa={col_programa}, "
-          f"etapa={col_etapa}, cost={col_cost}, desc={col_desc}, loc={col_loc}")
+    # Un proyecto por código BIP (nombre, servicio, región e ítem son los de su primer
+    # contrato: son los mismos en todos sus contratos). La etapa reúne las de todos sus contratos.
+    df_bip = df_ini.groupby('Bip', sort=False).agg(
+        nombre=('Nombre IDI', 'first'), servicio=('Servicio', 'first'), region=('Reg Proyecto', 'first'),
+        etapa=('Etapa', mop_etapas), item=('Item', 'first'),
+    ).reset_index()
+    df_bip['region'] = df_bip['region'].map(mop_region)
+    df_bip['item'] = df_bip['item'].map(lambda v: MOP_ITEMS.get(v.upper(), v.capitalize()))
+    # Orden alfabético sin tildes y sin guiones o signos iniciales en el nombre
+    sort_key = lambda s: re.sub(r'^[^a-z0-9]+', '', unicodedata.normalize('NFKD', s).encode('ascii', 'ignore').decode().lower())
+    mop_projects = sorted(
+        ({'bip': r['Bip'], 'nombre': r['nombre'], 'servicio': r['servicio'], 'etapa': r['etapa'], 'region': r['region'],
+          'item': r['item']}
+         for _, r in df_bip.iterrows()),
+        key=lambda p: sort_key(p['nombre']),
+    )
+    by_servicio = [{'servicio': s, 'count': int(c)} for s, c in df_bip['servicio'].value_counts().items()]
 
-    # Estandarizar columnas a nombres internos fijos
-    rename_map = {}
-    if col_region:   rename_map[col_region]   = '_region'
-    if col_servicio: rename_map[col_servicio] = '_servicio'
-    if col_nombre:   rename_map[col_nombre]   = '_nombre'
-    if col_bip:      rename_map[col_bip]      = '_bip'
-    if col_programa: rename_map[col_programa] = '_programa'
-    if col_etapa:    rename_map[col_etapa]    = '_etapa'
-    if col_cost:     rename_map[col_cost]     = '_cost_raw'
-    if col_primera:  rename_map[col_primera]  = '_primera'
-    if col_ultima:   rename_map[col_ultima]   = '_ultima'
-    if col_desc:     rename_map[col_desc]     = '_desc'
-    if col_loc:      rename_map[col_loc]      = '_loc'
-    df_mop = df_mop.rename(columns=rename_map)
-
-    df_mop['_cost'] = pd.to_numeric(df_mop['_cost_raw'] if '_cost_raw' in df_mop.columns else 0, errors='coerce').fillna(0)
-    df_mop['_year'] = pd.to_numeric(df_mop['_primera'] if '_primera' in df_mop.columns else None, errors='coerce')
-
-    # ── Limpiar valores "No se encuentra" y cadenas vacías → NaN ─────────────
-    INVALID_VALS = {'no se encuentra', 'n/a', 'nd', '-', ''}
-    str_cols = ['_region', '_servicio', '_nombre', '_programa', '_etapa', '_bip']
-    for col in str_cols:
-        if col in df_mop.columns:
-            df_mop[col] = df_mop[col].apply(
-                lambda v: np.nan if (
-                    pd.isna(v) or str(v).strip().lower() in INVALID_VALS
-                ) else str(v).strip()
-            )
-
-    # Helper seguro para valor de columna
-    def _sv(row, col):
-        val = row.get(col)
-        if val is None or (isinstance(val, float) and np.isnan(val)):
-            return ''
-        if str(val).strip().lower() in {'no se encuentra', 'n/a', 'nd', '-'}:
-            return ''
-        return str(val).strip()
-
-    # ── By Región ─────────────────────────────────────────────────────────────
-    MOP_NORTE_SUR = [
-        'Arica y Parinacota','Tarapacá','Antofagasta','Atacama','Coquimbo',
-        'Valparaíso','Metropolitana de Santiago',
-        "Libertador General Bernardo O'Higgins",'Maule','Ñuble',
-        'Biobío','La Araucanía','Los Ríos','Los Lagos',
-        'Aysén del General Carlos Ibáñez del Campo',
-        'Magallanes y de la Antártica Chilena'
-    ]
-
-    def mop_region_sort(r):
-        norm_r = unicodedata.normalize('NFD', str(r)).encode('ascii','ignore').decode().lower()
-        for i, ref in enumerate(MOP_NORTE_SUR):
-            norm_ref = unicodedata.normalize('NFD', ref).encode('ascii','ignore').decode().lower()
-            if norm_ref in norm_r or norm_r in norm_ref:
-                return i
-        return 99
-
-    reg_g = df_mop.groupby('_region').agg(
-        count=('_nombre','count'), total=('_cost','sum')
-    ).reset_index().sort_values('total', ascending=False)
-
-    by_region = [
-        {'region': str(r['_region']), 'count': int(r['count']),
-         'total_mm': round(float(r['total'])/1e6, 2)}
-        for _, r in reg_g.iterrows()
-    ]
-    by_region_ns = sorted(by_region, key=lambda x: mop_region_sort(x['region']))
-
-    # ── By Servicio ───────────────────────────────────────────────────────────
-    srv_g = df_mop.groupby('_servicio').agg(
-        count=('_nombre','count'), total=('_cost','sum')
-    ).reset_index().sort_values('count', ascending=False)
-
-    by_servicio = [
-        {'servicio': str(r['_servicio']), 'count': int(r['count']),
-         'total_mm': round(float(r['total'])/1e6, 2)}
-        for _, r in srv_g.iterrows()
-    ]
-
-    # ── By Etapa ──────────────────────────────────────────────────────────────
-    etp_g = df_mop.groupby('_etapa').agg(
-        count=('_nombre','count'), total=('_cost','sum')
-    ).reset_index().sort_values('count', ascending=False)
-
-    ETAPA_EXCLUIR = {'no se encuentra', 'nan', ''}
-    by_etapa = [
-        {'etapa': str(r['_etapa']), 'count': int(r['count']),
-         'total_mm': round(float(r['total'])/1e6, 2)}
-        for _, r in etp_g.iterrows()
-        if str(r['_etapa']).lower() not in ETAPA_EXCLUIR
-    ]
-
-    # ── By Programa (top 10 por inversión) ────────────────────────────────────
-    prg_g = df_mop.groupby('_programa').agg(
-        count=('_nombre','count'), total=('_cost','sum')
-    ).reset_index().sort_values('total', ascending=False).head(10)
-
-    by_programa = [
-        {'programa': str(r['_programa']), 'count': int(r['count']),
-         'total_mm': round(float(r['total'])/1e6, 2)}
-        for _, r in prg_g.iterrows()
-    ]
-
-    # ── By Year ───────────────────────────────────────────────────────────────
-    yr_g = df_mop[df_mop['_year'].notna()].groupby('_year').agg(
-        count=('_nombre','count'), total=('_cost','sum')
-    ).reset_index().sort_values('_year')
-
-    by_year = [
-        {'year': int(r['_year']), 'count': int(r['count']),
-         'total_mm': round(float(r['total'])/1e6, 2)}
-        for _, r in yr_g.iterrows()
-    ]
-
-    # ── Top 10 megaproyectos ──────────────────────────────────────────────────
-    top10 = df_mop.sort_values('_cost', ascending=False).head(10)
-    top_projects = [
-        {
-            'nombre':   _sv(r, '_nombre'),
-            'region':   _sv(r, '_region'),
-            'servicio': _sv(r, '_servicio'),
-            'etapa':    _sv(r, '_etapa'),
-            'programa': _sv(r, '_programa'),
-            'bip':      _sv(r, '_bip'),
-            'cost_mm':  round(float(r['_cost'])/1e6, 2),
-            'year':     int(r['_year']) if pd.notna(r.get('_year')) else None,
+    # Inversión estimada (fichas IDI); null si el BIP no tiene ficha en BIP Consulta
+    mop_inversion, mop_fichas = {}, {}
+    if os.path.exists(MOP_INVERSION_JSON):
+        with open(MOP_INVERSION_JSON, encoding='utf-8') as f:
+            mop_resumen = json.load(f)['proyectos']
+        mop_inversion = {r['BIP']: r[MOP_INVERSION_KEY] for r in mop_resumen if r.get(MOP_INVERSION_KEY) is not None}
+        # Ficha del proyecto (static/js/MOP/main.js): justificación y descripción de la ficha
+        # más reciente e inversión de cada etapa
+        mop_fichas = {
+            r['BIP']: {
+                'justificacion': mop_ficha_text(r.get('Justificación')),
+                'descripcion': mop_ficha_text(r.get('Descripción')),
+                'ficha': r.get('Ficha de los textos'),
+                'etapas': [{'etapa': MOP_ETAPA_FICHA.get(e['etapa'], e['etapa'].capitalize()), 'anio': e['anio'], 'monto': e['monto']}
+                           for e in r.get('Por etapa', [])],
+            }
+            for r in mop_resumen
         }
-        for _, r in top10.iterrows()
-    ]
+    else:
+        print(f"  [WARN] Sin {MOP_INVERSION_JSON}; los proyectos quedan sin inversión")
+    for p in mop_projects:
+        p['inversion'] = mop_inversion.get(p['bip'])
+    n_inversion = sum(p['inversion'] is not None for p in mop_projects)
+    print(f"  -> Inversión estimada (fichas IDI) en {n_inversion} de {len(mop_projects)} proyectos")
 
-    # ── All projects list (para tabla filtrable) ───────────────────────────────
-    all_projects = []
-    for _, r in df_mop.iterrows():
-        yr_ult_raw = pd.to_numeric(r.get('_ultima'), errors='coerce')
-        # La base trae las descripciones en MAYÚSCULAS y con artefactos de Excel
-        desc_val = normalize_description(_sv(r, '_desc'))
-        loc_val = _sv(r, '_loc')
-        if loc_val in {'0', '0.0', 'nan', 'none'}:
-            loc_val = ''
-
-        all_projects.append({
-            'nombre':       _sv(r, '_nombre'),
-            'region':       _sv(r, '_region'),
-            'servicio':     _sv(r, '_servicio'),
-            'programa':     _sv(r, '_programa'),
-            'etapa':        _sv(r, '_etapa'),
-            'bip':          _sv(r, '_bip'),
-            'cost_mm':      round(float(r['_cost'])/1e6, 2),
-            'year':         int(r['_year']) if pd.notna(r.get('_year')) else None,
-            'year_ult':     int(yr_ult_raw) if pd.notna(yr_ult_raw) else None,
-            'descripcion':  desc_val,
-            'localizacion': loc_val,
-        })
-
-    # ── KPIs Resumen ──────────────────────────────────────────────────────────
-    total_cost_mm = round(float(df_mop['_cost'].sum())/1e6, 2)
-    top_srv = by_servicio[0] if by_servicio else {}
-    en_ejecucion = int((df_mop['_etapa'].str.upper() == 'EJECUCION').sum()) if '_etapa' in df_mop else 0
-
-    # ── Filtros únicos ────────────────────────────────────────────────────────
-    unique_regions  = sorted(df_mop['_region'].dropna().unique().tolist(), key=mop_region_sort)
-    unique_servicios= sorted(df_mop['_servicio'].dropna().unique().tolist())
-    unique_etapas   = [e for e in df_mop['_etapa'].dropna().unique().tolist()
-                       if str(e).lower() not in ETAPA_EXCLUIR]
-    unique_programas= sorted(df_mop['_programa'].dropna().unique().tolist())
+    # Opciones de los filtros: regiones de norte a sur (Interregional al final),
+    # servicios por nombre, etapas en orden de madurez e ítems en el orden de MOP_ITEMS
+    present_regions = set(df_bip['region'])
+    present_etapas = {e for v in df_bip['etapa'] for e in v.split(' - ') if e}
+    mop_filters = {
+        'regions': [r for r in MOP_REGIONES if r in present_regions] + sorted(present_regions - set(MOP_REGIONES)),
+        'servicios': sorted(set(df_bip['servicio']) - {''}, key=sort_key),
+        'etapas': [e for e in MOP_ETAPAS.values() if e in present_etapas] + sorted(present_etapas - set(MOP_ETAPAS.values())),
+        'items': [i for i in MOP_ITEMS.values() if i in set(df_bip['item'])] + sorted(set(df_bip['item']) - set(MOP_ITEMS.values()) - {''}),
+    }
 
     mop_payload = {
-        'summary': {
-            'total_projects': len(df_mop),
-            'total_cost_mm':  total_cost_mm,
-            'top_servicio':   top_srv.get('servicio', ''),
-            'top_servicio_count': top_srv.get('count', 0),
-            'en_ejecucion':   en_ejecucion,
+        'source': {
+            'folder': os.path.basename(MOP_INICIATIVAS_DIR),
+            'file': latest['file'],
+            'year': latest['year'],
+            'month': latest['month'],
+            'label': latest['label'],
+            'files': [{k: f[k] for k in ('file', 'year', 'month', 'label')} for f in mop_files],
         },
-        'by_region':   by_region,
-        'by_region_ns': by_region_ns,
+        'summary': {
+            'total_projects': len(mop_projects),
+            'total_contracts': int(len(df_ini)),
+            'total_inversion': sum(p['inversion'] or 0 for p in mop_projects),
+            'projects_with_inversion': n_inversion,
+            'inversion_year': MOP_INVERSION_ANIO,
+        },
+        'filters': mop_filters,
+        # Solo para la diapositiva del landing (static/js/Landing/slides.js)
         'by_servicio': by_servicio,
-        'by_etapa':    by_etapa,
-        'by_programa': by_programa,
-        'by_year':     by_year,
-        'top_projects': top_projects,
-        'projects':    all_projects,
-        'filters': {
-            'regions':   unique_regions,
-            'servicios': unique_servicios,
-            'etapas':    unique_etapas,
-            'programas': unique_programas,
-        }
+        'projects': mop_projects,
     }
 
     out_mop_js = os.path.join(OUT_DIR, 'mop_data.js')
@@ -1232,9 +1257,21 @@ try:
     with open(out_mop_js, 'w', encoding='utf-8') as f:
         f.write(f'window.MOP_DATA = {mop_json};')
 
+    out_contratos_js = os.path.join(OUT_DIR, 'mop_contratos.js')
+    mop_contratos = mop_contratos_payload(df_ini, latest)
+    with open(out_contratos_js, 'w', encoding='utf-8') as f:
+        f.write('window.MOP_CONTRATOS = ' + json.dumps(mop_contratos, ensure_ascii=False, separators=(',', ':')) + ';')
+    print(f"OK MOP Contratos: {out_contratos_js} ({os.path.getsize(out_contratos_js) / 1024 / 1024:.3f} MB, "
+          f"{len(mop_contratos['contratos'])} contratos)")
+
+    out_fichas_js = os.path.join(OUT_DIR, 'mop_fichas.js')
+    with open(out_fichas_js, 'w', encoding='utf-8') as f:
+        f.write('window.MOP_FICHAS = ' + json.dumps(mop_fichas, ensure_ascii=False, separators=(',', ':')) + ';')
+    print(f"OK MOP Fichas: {out_fichas_js} ({os.path.getsize(out_fichas_js) / 1024 / 1024:.3f} MB, {len(mop_fichas)} proyectos)")
+
     size_mop = os.path.getsize(out_mop_js) / 1024 / 1024
     print(f"OK MOP Generado: {out_mop_js} ({size_mop:.3f} MB)")
-    print(f"   Proyectos MOP exportados: {len(all_projects)}")
+    print(f"   Proyectos (código BIP) al cierre de {latest['label']}: {len(mop_projects)} (de {len(df_ini)} contratos)")
 
 except Exception as e:
     print(f"[WARN] Error al exportar datos MOP: {e}")

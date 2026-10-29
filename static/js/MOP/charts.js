@@ -383,11 +383,11 @@ function renderServicioEtapaStacked() {
 
 // ── 4. Inversión: Concentración por tramo de costo (Pareto) ───────────────
 const MOP_COST_BINS = [
-    { label: '> $100M', test: v => v > 100 },
-    { label: '$20–100M', test: v => v > 20 && v <= 100 },
-    { label: '$5–20M', test: v => v > 5 && v <= 20 },
-    { label: '$1–5M', test: v => v > 1 && v <= 5 },
-    { label: '≤ $1M', test: v => v > 0 && v <= 1 },
+    { label: '> $100kM', test: v => v > 100000 },
+    { label: '$20–100kM', test: v => v > 20000 && v <= 100000 },
+    { label: '$5–20kM', test: v => v > 5000 && v <= 20000 },
+    { label: '$1–5kM', test: v => v > 1000 && v <= 5000 },
+    { label: '≤ $1kM', test: v => v > 0 && v <= 1000 },
     { label: 'Sin costo', test: v => !v },
 ];
 
@@ -501,7 +501,7 @@ function renderConcentracion() {
     });
 }
 
-// ── 5. Programas: Evolución por año de primera postulación (combo) ─────────
+// ── 5. Programas: Proyectos por año estimado de operación (combo) ──────────
 function renderYearLine() {
     const id = 'year';
     const canvas = document.getElementById('chart-year');
@@ -510,10 +510,10 @@ function renderYearLine() {
 
     const map = {};
     filteredProjects.forEach(p => {
-        if (!p.year) return;
-        if (!map[p.year]) map[p.year] = { count: 0, total: 0 };
-        map[p.year].count++;
-        map[p.year].total += (p.cost_mm || 0);
+        if (!p.year_op) return;
+        if (!map[p.year_op]) map[p.year_op] = { count: 0, total: 0 };
+        map[p.year_op].count++;
+        map[p.year_op].total += (p.cost_mm || 0);
     });
     const years = Object.keys(map).map(Number).sort((a,b) => a-b);
     if (!years.length) {
@@ -601,28 +601,29 @@ function renderYearLine() {
     });
 }
 
-// ── 6. Programas: Cartera activa por año (área + línea punteada) ──────────
+// ── 6. Programas: Entrada en operación acumulada (área + línea punteada) ──
 function renderCarteraActiva() {
     const id = 'chart-cartera-activa';
     const canvas = document.getElementById(id);
     if (!canvas) return;
     clearEmpty(canvas);
 
-    const conAnio = filteredProjects.filter(p => p.year);
+    const conAnio = filteredProjects.filter(p => p.year_op);
     if (!conAnio.length) {
         destroyChart(id);
         showEmpty(canvas);
         return;
     }
     const sinAnio = filteredProjects.length - conAnio.length;
-    const desde = Math.min(...conAnio.map(p => p.year));
-    const hasta = Math.max(...conAnio.map(p => p.year_ult || p.year));
+    const desde = Math.min(...conAnio.map(p => p.year_op));
+    const hasta = Math.max(...conAnio.map(p => p.year_op));
     const years = [];
     for (let y = desde; y <= hasta; y++) years.push(y);
 
-    const activos = years.map(y => conAnio.filter(p => p.year <= y && y <= (p.year_ult || p.year)));
-    const counts = activos.map(ps => ps.length);
-    const montos = activos.map(ps => +ps.reduce((s, p) => s + (p.cost_mm || 0), 0).toFixed(1));
+    // Proyectos que ya completaron su inversión global (año de operación ≤ y)
+    const operando = years.map(y => conAnio.filter(p => p.year_op <= y));
+    const counts = operando.map(ps => ps.length);
+    const montos = operando.map(ps => +ps.reduce((s, p) => s + (p.cost_mm || 0), 0).toFixed(1));
 
     upsertChart(id, canvas, {
         type: 'line',
@@ -630,7 +631,7 @@ function renderCarteraActiva() {
             labels: years,
             datasets: [
                 {
-                    label: 'Proyectos activos',
+                    label: 'Proyectos en operación',
                     data: counts,
                     borderColor: MOP_COLORS.petrol,
                     backgroundColor: 'rgba(30, 79, 101, 0.16)',
@@ -644,7 +645,7 @@ function renderCarteraActiva() {
                     order: 2,
                 },
                 {
-                    label: 'Inversión activa',
+                    label: 'Inversión en operación',
                     data: montos,
                     borderColor: MOP_COLORS.orange,
                     backgroundColor: MOP_COLORS.orange,
@@ -672,8 +673,8 @@ function renderCarteraActiva() {
                     external: mopExternalTooltip,
                     callbacks: {
                         title: (items) => (items.length ? `Año ${items[0].label}` : ''),
-                        label: (ctx) => (ctx.datasetIndex === 0 ? ` Proyectos activos: ${ctx.raw}` : ` Inversión activa: ${mopMoney(ctx.raw)}`),
-                        afterBody: () => (sinAnio > 0 ? [`Excluye ${sinAnio} proyecto${sinAnio !== 1 ? 's' : ''} sin año registrado`] : [])
+                        label: (ctx) => (ctx.datasetIndex === 0 ? ` Proyectos en operación: ${ctx.raw}` : ` Inversión en operación: ${mopMoney(ctx.raw)}`),
+                        afterBody: () => (sinAnio > 0 ? [`Excluye ${sinAnio} proyecto${sinAnio !== 1 ? 's' : ''} con inversión posterior a la ficha o sin montos`] : [])
                     }
                 }
             },

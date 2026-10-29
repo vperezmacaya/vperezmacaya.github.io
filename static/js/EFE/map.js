@@ -11,6 +11,8 @@
 //   siempre (.polygon-centroid-marker / .centroid-marker-pulse).
 
 const EFE_TRAIN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8"/><path d="M4 11V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6"/><path d="M4 11h16v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/><line x1="8" y1="15" x2="8.01" y2="15"/><line x1="16" y1="15" x2="16.01" y2="15"/><path d="m9 19-3 3"/><path d="m15 19 3 3"/></svg>`;
+const EFE_RAIL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 17 17 2"/><path d="m2 14 8 8"/><path d="m5 11 8 8"/><path d="m8 8 8 8"/><path d="m11 5 8 8"/><path d="m14 2 8 8"/><path d="M7 22 22 7"/></svg>`;
+const EFE_SERVICE_COLOR = '#0f3b6c';
 const EFE_UPGRADE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>`;
 
 // ─── Lógica de estados ───────────────────────────────────────────────────────
@@ -282,26 +284,28 @@ function efeGetShapeStyle(feature, ctx) {
                 fillColor: hovCol
             };
         } else {
-            // Default active state:
-            // 1) Si está asociado a un proyecto activo -> Verde si es Expansión (#1e9952), Rojo si es No-Expansión (#d92534)
-            // 2) Si el proyecto fue filtrado pero el servicio sigue activo -> Azul Marino (#0f3b6c)
-            if (hasActiveProject) {
+            // Default active state (observatorio: la red existente es la base del mapa):
+            // 1) Tramo con un servicio en operación -> Azul Marino (#0f3b6c), aunque además
+            //    tenga un proyecto de mejoramiento; el proyecto se ve con su ícono y al hover
+            // 2) Tramo solo de proyectos (trazado nuevo) -> Verde si es Expansión (#1e9952),
+            //    Rojo si es No-Expansión (#d92534), algo más delgado que la red
+            if (hasActiveLine) {
                 return {
                     stroke: true,
-                    color: projColor,
+                    color: '#0f3b6c',
                     weight: 3.5,
-                    opacity: 0.85,
-                    fillOpacity: 0.25,
-                    fillColor: projColor
+                    opacity: 0.95,
+                    fillOpacity: 0,
+                    fillColor: '#0f3b6c'
                 };
             } else {
                 return {
                     stroke: true,
-                    color: '#0f3b6c',
+                    color: projColor,
                     weight: 3.0,
-                    opacity: 0.90,
-                    fillOpacity: 0,
-                    fillColor: '#0f3b6c'
+                    opacity: 0.85,
+                    fillOpacity: 0.25,
+                    fillColor: projColor
                 };
             }
         }
@@ -578,7 +582,7 @@ const EFE_DEFAULT_CENTER = [-71.5430, -35.6751];
 const EFE_DEFAULT_ZOOM = 5 - CatlecMapGL.ZOOM_OFFSET;
 
 // Capas consultables al pasar el mouse (de arriba hacia abajo)
-const EFE_HOVER_LAYERS = ['efe-stations', 'metro-stations', 'efe-shapes-hit', 'metro-lines-hit'];
+const EFE_HOVER_LAYERS = ['efe-stations', 'efe-shapes-hit'];
 
 let efeMapReady = false;           // true cuando el estilo y las capas están cargados
 let efeLineCods = new Set();       // CODs con geometría lineal en la fuente 'efe-shapes'
@@ -586,7 +590,6 @@ let efeStationsInfo = [];          // estaciones EFE precalculadas (id, stInfo, 
 let efeTooltip = null;             // tooltip único del mapa (CatlecMapGL.createTooltip)
 let efeIsDragClick = () => false;  // click que el navegador dispara al soltar un arrastre
 let efeMapHoverKey = null;         // elemento del mapa bajo el cursor (no íconos)
-let efeHoveredMetroLineId = null;
 
 // ─── Inicialización ──────────────────────────────────────────────────────────
 // (Nombre heredado de Leaflet: lo llama EFE/ui.js)
@@ -673,7 +676,6 @@ function efeLoadMapLayers() {
         'line-opacity': state('opacity', 0)
     };
     const roundLine = { 'line-cap': 'round', 'line-join': 'round' };
-    const hover = ['boolean', ['feature-state', 'hover'], false];
 
     efeMap.addSource('efe-shapes', {
         type: 'geojson',
@@ -682,28 +684,6 @@ function efeLoadMapLayers() {
     });
     efeMap.addLayer({ id: 'efe-shapes-line', type: 'line', source: 'efe-shapes', layout: roundLine, paint: shapePaint }, before);
 
-    // Metro de Santiago (solo usage == 'main')
-    const metroData = window.METRO_GEO_DATA;
-    const metroFeatures = (metroData && metroData.features ? metroData.features : []).filter(f =>
-        f && f.geometry && f.geometry.coordinates && f.geometry.coordinates.length > 0 && (f.properties || {}).usage === 'main'
-    ).map(f => {
-        const p = f.properties || {};
-        return {
-            type: 'Feature',
-            geometry: f.geometry,
-            properties: { id: String(p.id || p['@id'] || ''), label: p.name || (p.ref ? ('Línea ' + p.ref) : 'Metro de Santiago') }
-        };
-    });
-    efeMap.addSource('metro-lines', { type: 'geojson', data: { type: 'FeatureCollection', features: metroFeatures }, promoteId: 'id' });
-    efeMap.addLayer({
-        id: 'metro-lines', type: 'line', source: 'metro-lines', layout: roundLine,
-        paint: {
-            'line-color': ['case', hover, '#e11d48', '#c53030'],
-            'line-width': ['case', hover, 3.6, 2.3],
-            'line-opacity': ['case', hover, 0.95, 0.75]
-        }
-    }, before);
-
     // Lo seleccionado o en hover se dibuja encima (equivale a bringToFront, sin
     // tocar el DOM ni romper eventos del puntero)
     efeMap.addLayer({
@@ -711,23 +691,8 @@ function efeLoadMapLayers() {
         filter: CatlecMapGL.inFilter('cod', [])
     }, before);
 
-    // Capas invisibles y anchas solo para detectar hover/click con holgura
-    efeMap.addLayer({ id: 'metro-lines-hit', type: 'line', source: 'metro-lines', paint: { 'line-width': 10, 'line-opacity': 0 } }, before);
+    // Capa invisible y ancha solo para detectar hover/click con holgura
     efeMap.addLayer({ id: 'efe-shapes-hit', type: 'line', source: 'efe-shapes', paint: { 'line-width': 12, 'line-opacity': 0 } }, before);
-
-    // Estaciones de Metro
-    const metroPoints = window.METRO_POINTS_DATA;
-    efeMap.addSource('metro-stations', {
-        type: 'geojson',
-        data: metroPoints && metroPoints.features ? metroPoints : { type: 'FeatureCollection', features: [] }
-    });
-    efeMap.addLayer({
-        id: 'metro-stations', type: 'circle', source: 'metro-stations', minzoom: STATIONS_MIN_ZOOM,
-        paint: {
-            'circle-radius': 2.5, 'circle-color': '#ffffff', 'circle-opacity': 0.95,
-            'circle-stroke-color': '#c53030', 'circle-stroke-width': 1.2, 'circle-stroke-opacity': 0.85
-        }
-    }, before);
 
     // Estaciones de pasajeros EFE (estilo por estación vía feature-state)
     const estaciones = window.EFE_ESTACIONES_DATA;
@@ -774,13 +739,11 @@ function efeLoadMapLayers() {
 
 // ─── Visibilidad de capas ────────────────────────────────────────────────────
 function efeApplyLayerToggles() {
-    ['metro-lines', 'metro-lines-hit'].forEach(id => CatlecMapGL.setLayerVisible(efeMap, id, efeShowMetroLines));
     ['efe-shapes-line', 'efe-shapes-top', 'efe-shapes-hit'].forEach(id => CatlecMapGL.setLayerVisible(efeMap, id, efeShowEfeLines));
 }
 
 function efeUpdateStationsVisibility() {
     if (!efeMapReady) return;
-    CatlecMapGL.setLayerVisible(efeMap, 'metro-stations', efeShowMetroLines);
     CatlecMapGL.setLayerVisible(efeMap, 'efe-stations', efeShowEfeLines);
     // Estaciones EFE visibles a cualquier zoom si hay un servicio o proyecto seleccionado
     const hasActiveSelection = !!(efeState.selectedOperatingLine || efeState.selectedProjectName);
@@ -792,14 +755,7 @@ function efeToggleEfeLines(visible) {
     if (!efeMapReady) return;
     efeApplyLayerToggles();
     efeUpdateStationsVisibility();
-    efeUpdateMapStyles();
-}
-
-function efeToggleMetroLines(visible) {
-    efeShowMetroLines = !!visible;
-    if (!efeMapReady) return;
-    efeApplyLayerToggles();
-    efeUpdateStationsVisibility();
+    efeRenderServiceMarkers(currentFilteredEFELines || (window.EFE_DATA && window.EFE_DATA.lines) || []);
     efeUpdateMapStyles();
 }
 
@@ -807,7 +763,7 @@ function efeToggleProjects(visible) {
     efeShowProjects = !!visible;
     if (!efeMap) return;
 
-    const otherBadge = document.querySelector('.efe-legend-subitem');
+    const otherBadge = document.querySelector('.efe-legend-projects-sub');
     if (otherBadge) {
         otherBadge.style.opacity = visible ? '1.0' : '0.4';
     }
@@ -891,17 +847,6 @@ function efeApplyStationStyles(ctx) {
     });
 }
 
-function efeApplyMetroStyles(ctx) {
-    const dimmed = !!(ctx.selectedName || ctx.selectedLine);
-    const hover = ['boolean', ['feature-state', 'hover'], false];
-    efeMap.setPaintProperty('metro-lines', 'line-width', ['case', hover, 3.6, dimmed ? 1.6 : 2.3]);
-    efeMap.setPaintProperty('metro-lines', 'line-opacity', ['case', hover, 0.95, dimmed ? 0.35 : 0.75]);
-    efeMap.setPaintProperty('metro-stations', 'circle-radius', dimmed ? 2.0 : 2.5);
-    efeMap.setPaintProperty('metro-stations', 'circle-stroke-width', dimmed ? 0.8 : 1.2);
-    efeMap.setPaintProperty('metro-stations', 'circle-stroke-opacity', dimmed ? 0.35 : 0.85);
-    efeMap.setPaintProperty('metro-stations', 'circle-opacity', dimmed ? 0.35 : 0.95);
-}
-
 // ─── Dynamic Map Styler (Dimming, Hover, Selection, and Spiderfy Fan-out) ───
 function efeUpdateMapStyles() {
     if (!efeMapReady) return;
@@ -911,7 +856,6 @@ function efeUpdateMapStyles() {
 
     efeLineCods.forEach(cod => efeApplyShapeState(cod, ctx));
     efeUpdateTopLayer(ctx);
-    efeApplyMetroStyles(ctx);
     efeApplyStationStyles(ctx);
 
     // Íconos y clusters desplegados
@@ -935,11 +879,13 @@ function efeUpdateMapStyles() {
 
         efeApplyMarkerState(marker, ctx);
     });
+
+    efeServiceMarkers.forEach(marker => efeApplyServiceMarkerState(marker, ctx));
 }
 
 // ─── Hover liviano (mapa, tabla y líneas de servicio) ───────────────────────
 // Reestiliza solo las shapes e íconos del hover anterior y del nuevo; el hover
-// no afecta Metro, estaciones ni clusters (dependen solo de la selección).
+// no afecta estaciones ni clusters (dependen solo de la selección).
 function efeSetHover(projectName, lineName) {
     const prevProj = efeState.hoveredProjectName;
     const prevLine = efeState.hoveredOperatingLine;
@@ -973,6 +919,11 @@ function efeSetHover(projectName, lineName) {
             efeApplyMarkerState(marker, ctx);
         }
     });
+    efeServiceMarkers.forEach(marker => {
+        if (marker.service === prevLine || marker.service === lineName) {
+            efeApplyServiceMarkerState(marker, ctx);
+        }
+    });
 }
 window.efeSetHover = efeSetHover;
 
@@ -990,13 +941,9 @@ function efePickFeature(point) {
         const layerId = f.layer.id;
         if (layerId === 'efe-shapes-hit') {
             if (efeIsActiveShapeCod(f.properties.cod)) return { kind: 'shape', cod: f.properties.cod };
-        } else if (layerId === 'metro-lines-hit') {
-            return { kind: 'metro-line', id: f.properties.id, label: f.properties.label };
         } else if (layerId === 'efe-stations') {
             const st = efeStationsInfo.find(s => s.id === String(f.properties.id));
             return { kind: 'efe-station', id: String(f.properties.id), name: st ? st.name : 'Estación EFE' };
-        } else if (layerId === 'metro-stations') {
-            return { kind: 'metro-station', id: String(f.id != null ? f.id : f.properties.name), name: f.properties.name || 'Estación Metro' };
         }
     }
     return null;
@@ -1008,14 +955,8 @@ function efeOnMapMouseMove(e) {
 }
 
 function efeTooltipHtml(hit) {
-    if (hit.kind === 'metro-line') {
-        return `<strong>${hit.label}</strong><br><span style="font-size:11px;color:#94a3b8;">Red Metro de Santiago</span>`;
-    }
     if (hit.kind === 'efe-station') {
         return `<strong>${hit.name}</strong><br><span style="font-size:10.5px;color:#94a3b8;">Estación</span>`;
-    }
-    if (hit.kind === 'metro-station') {
-        return `<strong>${hit.name}</strong><br><span style="font-size:10.5px;color:#94a3b8;">Estación Metro de Santiago</span>`;
     }
     return null; // las shapes EFE no tienen tooltip
 }
@@ -1030,14 +971,6 @@ function efeSetMapHover(hit, point) {
         // Salida de una shape EFE: limpiar el hover
         if (prevKey && prevKey.startsWith('shape:') && !(hit && hit.kind === 'shape')) {
             efeSetHover(null, null);
-        }
-
-        // Resaltado de la línea de Metro bajo el cursor
-        const metroId = hit && hit.kind === 'metro-line' ? hit.id : null;
-        if (metroId !== efeHoveredMetroLineId) {
-            if (efeHoveredMetroLineId) efeMap.setFeatureState({ source: 'metro-lines', id: efeHoveredMetroLineId }, { hover: false });
-            if (metroId) efeMap.setFeatureState({ source: 'metro-lines', id: metroId }, { hover: true });
-            efeHoveredMetroLineId = metroId;
         }
 
         if (hit && hit.kind === 'shape') {
@@ -1078,7 +1011,7 @@ function efeOnMapClick(e) {
         return;
     }
 
-    // Clic en el fondo (o en estaciones/Metro): deseleccionar
+    // Clic en el fondo (o en estaciones): deseleccionar
     efeState.selectedProjectName = null;
     efeState.hoveredProjectName = null;
     efeState.selectedOperatingLine = null;
@@ -1225,6 +1158,96 @@ function efeCreateTrainMarker(proj, lngLat, isMiniDot = false, clusterCount = 1)
     return marker;
 }
 
+// ─── Íconos de servicios en operación (marcadores HTML) ──────────────────────
+// Un ícono por servicio filtrado, en el punto medio de su trazado: cuadrado
+// redondeado azul marino con una vía (los proyectos son círculos verdes/rojos).
+// Van bajo los íconos de proyecto (z-index 50 vs 100) y siguen la capa de la red.
+let efeServiceMarkers = [];
+
+function efeRenderServiceMarkers(lines) {
+    efeServiceMarkers.forEach(m => m.remove());
+    efeServiceMarkers = [];
+    if (!efeMap || !efeMapReady || !efeShowEfeLines) return;
+
+    (lines || []).forEach(line => {
+        const lineFeatures = efeFeaturesOfCods(line.shapes || []).filter(f => !efeIsPointFeature(f));
+        const mid = lineFeatures.length ? CatlecMapGL.lineMidpoint(lineFeatures) : null;
+        if (!mid) return;
+
+        const marker = efeCreateServiceMarker(line, mid);
+        const el = marker.getElement();
+        const owner = 'service:' + line.service;
+
+        el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (efeIsDragClick()) return;
+            efeTooltip.hide();
+            efeOnClickOperatingLine(line.service);
+        });
+        el.addEventListener('mouseenter', (e) => {
+            efeOnHoverOperatingLine(line.service, true);
+            efeTooltip.show(owner, marker.tooltipHtml, efeTooltip.pointFromEvent(e));
+        });
+        el.addEventListener('mousemove', (e) => {
+            efeTooltip.show(owner, marker.tooltipHtml, efeTooltip.pointFromEvent(e));
+        });
+        el.addEventListener('mouseleave', () => {
+            efeOnHoverOperatingLine(line.service, false);
+            if (efeTooltip.owner === owner) efeTooltip.hide();
+        });
+
+        marker.addTo(efeMap);
+        efeServiceMarkers.push(marker);
+    });
+
+    const ctx = efeBuildStyleContext();
+    efeServiceMarkers.forEach(marker => efeApplyServiceMarkerState(marker, ctx));
+}
+window.efeRenderServiceMarkers = efeRenderServiceMarkers;
+
+function efeCreateServiceMarker(line, lngLat) {
+    const el = document.createElement('div');
+    el.className = 'polygon-centroid-marker catlec-gl-marker efe-service-marker';
+    el.innerHTML = `<div class="centroid-marker-pulse" style="background-color: ${EFE_SERVICE_COLOR};">${EFE_RAIL_SVG}</div>`;
+
+    const marker = new maplibregl.Marker({ element: el, anchor: 'center', subpixelPositioning: true }).setLngLat(lngLat);
+    marker.service = line.service;
+
+    const km = Number(line.length_km) || 0;
+    const details = [
+        km ? `${km.toLocaleString('es-CL', { maximumFractionDigits: 1 })} km` : null,
+        line.stations ? `${line.stations} estaciones` : null
+    ].filter(Boolean).join(' · ');
+    marker.tooltipHtml = `<strong>${line.service}</strong><br>`
+        + `<span style="color:#60a5fa;font-size:0.72rem;font-weight:600;">Servicio en operación · ${line.filial || 'EFE'}</span><br>`
+        + `<span style="color:#94a3b8;font-size:0.68rem;">${details || (line.terminals || '')}</span>`;
+    return marker;
+}
+
+// Estado del ícono de un servicio: seleccionado o en hover se agranda; se
+// atenúa cuando hay otro servicio o un proyecto seleccionado
+function efeApplyServiceMarkerState(marker, ctx) {
+    const elem = marker.getElement();
+    const pulse = elem && elem.querySelector('.centroid-marker-pulse');
+    if (!pulse) return;
+
+    const isSelected = ctx.selectedLine === marker.service;
+    const isHovered = ctx.hoveredLine === marker.service;
+    const dimmed = !isSelected && !isHovered && !!(ctx.selectedLine || ctx.selectedName);
+
+    pulse.classList.toggle('active-selected', isSelected);
+    pulse.classList.toggle('is-hovered', isHovered && !isSelected);
+    pulse.classList.toggle('dimmed', dimmed);
+
+    let scale = 1;
+    let z = 50;
+    if (isSelected) { scale = 1.35; z = 10000; }
+    else if (isHovered) { scale = 1.25; z = 9500; }
+    else if (dimmed) { scale = 0.85; z = 1; }
+    pulse.style.transform = `scale(${scale})`;
+    elem.style.zIndex = String(z);
+}
+
 // ─── Encuadres y vuelos ──────────────────────────────────────────────────────
 function efeGetProjectsExtentBounds() {
     const all = [];
@@ -1295,15 +1318,12 @@ function efeAddMapLegend() {
 
     const html = `
         <div class="catlec-map-legend-title">Leyenda</div>
-        <label class="efe-legend-item efe-legend-toggleable" for="efe-toggle-efe-lines" title="Activar/desactivar líneas de pasajeros EFE">
+        <label class="efe-legend-item efe-legend-toggleable" for="efe-toggle-efe-lines" title="Activar/desactivar la red de pasajeros EFE en operación">
             <input type="checkbox" id="efe-toggle-efe-lines" class="efe-legend-checkbox" ${efeShowEfeLines ? 'checked' : ''}>
-            <span class="efe-legend-color-line" style="background-color: #0f3b6c; box-shadow: 0 0 4px rgba(15, 59, 108, 0.45);"></span>
-            <span>Línea de pasajeros EFE</span>
-        </label>
-        <label class="efe-legend-item efe-legend-toggleable" for="efe-toggle-metro-lines" title="Activar/desactivar líneas de Metro de Santiago">
-            <input type="checkbox" id="efe-toggle-metro-lines" class="efe-legend-checkbox" ${efeShowMetroLines ? 'checked' : ''}>
-            <span class="efe-legend-color-line" style="background-color: #c53030;"></span>
-            <span>Líneas Metro de Santiago</span>
+            <span class="efe-legend-icon-badge efe-legend-service-badge" style="background-color: ${EFE_SERVICE_COLOR};">
+                ${EFE_RAIL_SVG}
+            </span>
+            <span>Servicio en operación</span>
         </label>
         <label class="efe-legend-item efe-legend-toggleable" for="efe-toggle-projects" title="Activar/desactivar todos los proyectos">
             <input type="checkbox" id="efe-toggle-projects" class="efe-legend-checkbox" ${efeShowProjects ? 'checked' : ''}>
@@ -1312,7 +1332,7 @@ function efeAddMapLegend() {
             </span>
             <span>Proyectos Expansión</span>
         </label>
-        <div class="efe-legend-item efe-legend-subitem" style="padding-left: 1.25rem; ${efeShowProjects ? '' : 'opacity: 0.4;'}">
+        <div class="efe-legend-item efe-legend-subitem efe-legend-projects-sub" style="padding-left: 1.25rem; ${efeShowProjects ? '' : 'opacity: 0.4;'}">
             <span class="efe-legend-icon-badge" style="background-color: #d92534;">
                 ${EFE_UPGRADE_SVG}
             </span>
@@ -1325,7 +1345,6 @@ function efeAddMapLegend() {
         storageKey: 'catlec.efe.legendCollapsed',
         onMount: (div) => {
             div.querySelector('#efe-toggle-efe-lines').addEventListener('change', (e) => efeToggleEfeLines(e.target.checked));
-            div.querySelector('#efe-toggle-metro-lines').addEventListener('change', (e) => efeToggleMetroLines(e.target.checked));
             div.querySelector('#efe-toggle-projects').addEventListener('change', (e) => efeToggleProjects(e.target.checked));
         }
     });

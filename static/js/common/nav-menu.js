@@ -56,9 +56,8 @@ window.CatlecNav = (function () {
             logo: { type: 'img', src: 'logo/Gob_chile_logo.svg' },
             submenu: [
                 { key: 'resumen', icon: 'layout-dashboard', label: 'Tabla de proyectos', hrefSuffix: '' },
-                { key: 'mapa', icon: 'map', label: 'Mapa regional', hrefSuffix: '#mapa' },
-                { key: 'inversion', icon: 'bar-chart-2', label: 'Análisis de inversión', hrefSuffix: '#inversion' },
-                { key: 'programas', icon: 'layers', label: 'Programas y Etapas', hrefSuffix: '#programas' },
+                { key: 'costos', icon: 'bar-chart-horizontal', label: 'Costo por región y servicio', hrefSuffix: '#costos' },
+                { key: 'contratos', icon: 'clipboard-list', label: 'Contratos y contratistas', hrefSuffix: '#contratos' },
             ],
         },
         {

@@ -21,10 +21,13 @@ function exportMOPToExcel() {
         "Región": p.region || '',
         "Servicio / Dirección": p.servicio || '',
         "Programa": p.programa || '',
-        "Etapa del Proyecto": p.etapa || '',
-        "Costo Total (MM$)": p.cost_mm != null ? p.cost_mm : '',
-        "Año Inicio": p.year != null ? p.year : '',
-        "Año Término Estimado": p.year_ult != null ? p.year_ult : ''
+        "Financiamiento": p.financiamiento || '',
+        "Provincia(s)": p.provincia || '',
+        "Comuna(s)": p.comuna || '',
+        "Plan(es)": (p.planes || []).join(' - '),
+        "Etapa Vigente": p.etapa || '',
+        "Inversión Global (MM$)": p.cost_mm != null ? p.cost_mm : '',
+        "Año Estimado de Operación": p.year_op != null ? p.year_op : ''
     }));
 
     const ws = XLSX.utils.json_to_sheet(dataRows);
