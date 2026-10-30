@@ -17,56 +17,14 @@ function efeFormatUSD(value) {
 }
 window.efeFormatUSD = efeFormatUSD;
 
-function efeFilialMatchesFilter(projectFilial, selectedFiliales) {
-    if (!selectedFiliales || selectedFiliales.length === 0) return true;
-    const hasSinFilial = selectedFiliales.includes('Sin filial específica');
-    if (!projectFilial || String(projectFilial).trim() === '' || String(projectFilial).trim().toLowerCase() === 'nan') {
-        return hasSinFilial;
-    }
-    const normProjFilial = CatlecUtils.normalizeAccents(projectFilial);
-    return selectedFiliales.some(selected => {
-        if (selected === 'Sin filial específica') return false;
-        const normSelected = CatlecUtils.normalizeAccents(selected);
-        return normProjFilial.includes(normSelected) || normSelected.includes(normProjFilial);
-    });
-}
-
-function efeDetailMatchesFilter(projectDetail, selectedDetails) {
-    if (!selectedDetails || selectedDetails.length === 0) return true;
-    const cat = typeof efeGetDetailCategory === 'function' ? efeGetDetailCategory(projectDetail) : 'Otros / Extra';
-    return selectedDetails.includes(cat);
-}
-
-function efeTipoMatchesFilter(projectTipo, selectedTipos) {
-    if (!selectedTipos || selectedTipos.length === 0) return true;
-    if (!projectTipo) return false;
-    const t = String(projectTipo).trim();
-    return selectedTipos.includes(t);
-}
-
-function efeLoadFilters() {
-    CatlecUtils.setupMultiselect('efe-filial', efeAvailableFiliales, 'Todas las filiales', 'filiales seleccionadas', (selected) => {
-        efeState.selectedFiliales = selected;
-        efeState.page = 1;
-        efeFetchData();
-    });
-
-    CatlecUtils.setupMultiselect('efe-detail', efeAvailableDetails, 'Toda la cartera', 'carteras seleccionadas', (selected) => {
-        efeState.selectedDetails = selected;
-        efeState.page = 1;
-        efeFetchData();
-    });
-
-    CatlecUtils.setupMultiselect('efe-tipo', efeAvailableTipos, 'Todos los tipos', 'tipos seleccionados', (selected) => {
-        efeState.selectedTipos = selected;
-        efeState.page = 1;
-        efeFetchData();
-    });
-
-    document.addEventListener('click', CatlecUtils.closeAllMultiselects);
-
-    efeInitTableSorting();
-}
+// Extensión de la red por filial (km lineales), Memoria Integrada EFE 2025, pág. 14.
+// El KPI "Extensión de Red" es la suma de todas las filiales.
+const EFE_RED_KM_FILIAL = {
+    'EFE Arica - La Paz': 206.3,
+    'EFE Valparaíso': 88.2,
+    'EFE Central': 1077.7,
+    'EFE Sur': 956.5
+};
 
 function efeInitTableSorting() {
     document.querySelectorAll('.data-table th.sortable').forEach(th => {
@@ -103,29 +61,12 @@ function efeUpdateSortHeaderIcons() {
 }
 
 function efeFetchData() {
+    // Sin filtros: siempre todos los proyectos y servicios (son pocos; se recorren
+    // en la tabla y el mapa). "filtered" queda como la lista ordenada que comparten
+    // tabla, mapa y las demás visualizaciones.
     const allProjects = (window.EFE_DATA && window.EFE_DATA.data) ? window.EFE_DATA.data : [];
-    const matchSearch = CatlecUtils.createSearchMatcher(efeState.search);
-
-    // ─── 1. Filter Projects (Search, Filial, Cartera, Tipo) ───────────────
-    let filtered = allProjects.filter(proj => {
-        // Search
-        if (!matchSearch(proj.name, proj.filial, proj.stage, proj.detail, proj.type, proj.description)) return false;
-        // Filial filter
-        if (!efeFilialMatchesFilter(proj.filial, efeState.selectedFiliales)) return false;
-        // Cartera / Detalle filter (Estratégico vs Preinversional vs Otros)
-        if (!efeDetailMatchesFilter(proj.detail, efeState.selectedDetails)) return false;
-        // Tipo filter
-        if (!efeTipoMatchesFilter(proj.type, efeState.selectedTipos)) return false;
-        return true;
-    });
-
-    // ─── 2. Filter Operating Lines (Search & Filial) ─────────────────────────
-    const allLines = (window.EFE_DATA && window.EFE_DATA.lines) ? window.EFE_DATA.lines : [];
-    let filteredLines = allLines.filter(l => {
-        if (!matchSearch(l.service, l.filial, l.terminals, l.operational_classification, l.regions, l.rolling_stock, l.traction)) return false;
-        if (!efeFilialMatchesFilter(l.filial, efeState.selectedFiliales)) return false;
-        return true;
-    });
+    const filtered = allProjects.slice();
+    const filteredLines = (window.EFE_DATA && window.EFE_DATA.lines) ? window.EFE_DATA.lines.slice() : [];
 
     currentFilteredEFELines = filteredLines;
     if (typeof window !== 'undefined') window.currentFilteredEFELines = currentFilteredEFELines;
@@ -194,10 +135,12 @@ function efeFetchData() {
         const kpiVal2 = document.getElementById('efe-kpi-total-investment');
 
         const totalServices = filteredLines.length;
-        const totalKm = filteredLines.reduce((sum, l) => sum + (typeof l.length_km === 'number' ? l.length_km : (Number(l.length_km) || 0)), 0);
 
         if (kpiVal1) kpiVal1.textContent = totalServices.toLocaleString('es-CL');
-        if (kpiVal2) kpiVal2.textContent = totalKm.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' km';
+        // Extensión de la red: suma de EFE_RED_KM_FILIAL. La suma de length_km de los
+        // servicios repetía la vía que comparten varios.
+        const redKm = Object.values(EFE_RED_KM_FILIAL).reduce((sum, km) => sum + km, 0);
+        if (kpiVal2) kpiVal2.textContent = redKm.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' km';
 
         // Estaciones y pasajeros con el mismo cálculo que "Demanda y Operación"
         if (typeof efeComputeOperationTotals === 'function') {
@@ -247,11 +190,6 @@ function efeFetchData() {
     // Update count badge
     if (efeCountLoaded) efeCountLoaded.textContent = totalFiltered;
     if (efeCountTotal) efeCountTotal.textContent = totalAll;
-
-    // Update analytics charts
-    if (typeof efeUpdateLinesAnalyticsCharts === 'function') {
-        efeUpdateLinesAnalyticsCharts(filteredLines);
-    }
 
     // Update investment panel if currently open
     if (efeState.investmentOpen && typeof renderEfeInvestmentAnalytics === 'function') {

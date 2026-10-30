@@ -406,14 +406,29 @@ function metroStyleOperatingNetwork(ctx) {
             const p = feat.properties || {};
             const featLineName = p.name || `Línea ${p.ref || ''}`;
             const baseColor = metroGetLineColor(featLineName);
+            // Con algo seleccionado, la línea en hover (ícono o tabla) también se resalta.
+            // Sin bringToFront: la capa superior solo se limpia al redibujar todo, y la
+            // línea quedaría atenuada encima de la seleccionada al salir el mouse.
+            const isHoverMatch = !!hoveredLine && metroIsLineMatch(feat, hoveredLine);
+            const hoverOverSelection = () => {
+                layer.setStyle({
+                    color: baseColor,
+                    weight: 5.0,
+                    opacity: 1.0
+                });
+            };
 
             if (selectedName) {
                 // Proyecto seleccionado -> atenuar líneas operativas preservando su color oficial y visibilidad
-                layer.setStyle({
-                    color: baseColor,
-                    weight: 2.5,
-                    opacity: 0.40
-                });
+                if (isHoverMatch) {
+                    hoverOverSelection();
+                } else {
+                    layer.setStyle({
+                        color: baseColor,
+                        weight: 2.5,
+                        opacity: 0.40
+                    });
+                }
             } else if (selectedLine) {
                 // Línea operativa seleccionada
                 const isMatch = metroIsLineMatch(feat, selectedLine);
@@ -424,6 +439,8 @@ function metroStyleOperatingNetwork(ctx) {
                         opacity: 1.0
                     });
                     if (layer.bringToFront) layer.bringToFront();
+                } else if (isHoverMatch) {
+                    hoverOverSelection();
                 } else {
                     // Demás líneas atenuadas suavemente manteniendo su color oficial
                     layer.setStyle({

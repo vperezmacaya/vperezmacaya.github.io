@@ -60,13 +60,12 @@ function setupViewTabs() {
             const href = link.getAttribute('href') || '';
             const hashIndex = href.indexOf('#');
             if (hashIndex !== -1) {
-                const targetView = href.substring(hashIndex + 1);
+                const targetView = href.substring(hashIndex + 1) || 'map';
                 const targetBtn = document.getElementById(`btn-view-${targetView}`);
                 if (targetBtn) {
                     e.preventDefault();
                     targetBtn.click();
                     CatlecNav.close();
-                    window.location.hash = targetView;
                 }
             }
         });
@@ -126,6 +125,13 @@ function switchViewContainer(viewName) {
         if (typeof updateMapMetricRankingChart === 'function') {
             updateMapMetricRankingChart();
         }
+    }
+
+    // La vista abierta queda en el # de la URL, como en los demás módulos; el
+    // mapa va sin # (#map también lo abre, por enlaces antiguos)
+    const hash = viewName === 'map' ? '' : `#${viewName}`;
+    if (window.location.hash !== hash) {
+        history.replaceState(null, '', hash || window.location.pathname + window.location.search);
     }
 
     if (window.lucide) lucide.createIcons();

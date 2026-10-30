@@ -20,9 +20,11 @@
 /* ─── Dashboard Layout ────────────────────────────────────────────────────── */
 .efe-dashboard-grid {
     display: grid;
-    /* Última columna = ancho de la tabla, ajustable con el separador
-       (common/panel-resizer.js → --catlec-table-width) */
-    grid-template-columns: 280px minmax(0, 1fr) var(--catlec-table-width, 520px);
+    /* Mapa + tabla (EFE y Metro no tienen panel izquierdo). Última columna =
+       ancho de la tabla, ajustable con el separador
+       (common/panel-resizer.js → --catlec-table-width); 520px es el mínimo en
+       que se ven todas las columnas de la tabla de EFE. */
+    grid-template-columns: minmax(0, 1fr) var(--catlec-table-width, 520px);
     gap: 0.5rem;
     flex: 1;
     min-height: 0;
@@ -30,15 +32,39 @@
     overflow: hidden;
     align-items: stretch;
 }
-@media (max-width: 1200px) {
-    .efe-dashboard-grid {
-        /* 520px: mínimo en que se ven todas las columnas de la tabla */
-        grid-template-columns: 260px minmax(0, 1fr) var(--catlec-table-width, 520px);
-    }
+
+/* Barra de descargas Excel / GeoJSON bajo los KPI (mismos valores que la de Metro.html) */
+.efe-export-toolbar {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.35rem 0.65rem;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-card);
+    flex-shrink: 0;
+}
+.efe-export-btn {
+    flex: 1;
+    padding: 0.28rem 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    justify-content: center;
+}
+.efe-export-btn svg {
+    width: 12px;
+    height: 12px;
+}
+.efe-export-btn--excel {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.3);
+    color: #10b981;
+}
+.efe-export-btn--geojson {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.3);
+    color: #6366f1;
 }
 
-/* Paneles, KPIs, .panel-card, .panel-title, controles de filtro (.form-*,
-   .search-wrapper), .btn-reset, .btn-floating-map, paginación, .empty-state y
+/* Paneles, KPIs, .panel-card, .panel-title, .btn-reset, .btn-floating-map, paginación, .empty-state y
    vista de detalle usan directamente las reglas globales de styles.css (las
    mismas de DGC). Aquí solo queda lo exclusivo de EFE/Metro. */
 
@@ -101,6 +127,10 @@
     box-shadow: 0 0 4px rgba(37, 99, 235, 0.5);
     transition: all 0.15s ease;
 }
+.efe-legend-color-line.efe-legend-red-line {
+    background-color: #8b95a7;
+    box-shadow: none;
+}
 .efe-legend-icon-badge {
     width: 20px;
     height: 20px;
@@ -115,11 +145,10 @@
 }
 
 
-/* ─── Leaflet Map Tooltips (Estándar Oficial EFE / CATLEC) ─────────────────── */
+/* ─── Tooltips de mapa (Estándar Oficial EFE / CATLEC) ────────────────────── */
 .catlec-map-tooltip,
 .efe-map-tooltip,
-.efe-tooltip,
-.sectra-map-tooltip {
+.efe-tooltip {
     background: #1e293b !important;
     border: 1px solid rgba(59, 130, 246, 0.3) !important;
     color: #ffffff !important;
@@ -139,15 +168,13 @@
 
 .catlec-map-tooltip br,
 .efe-map-tooltip br,
-.efe-tooltip br,
-.sectra-map-tooltip br {
+.efe-tooltip br {
     display: none !important;
 }
 
 .catlec-map-tooltip strong,
 .efe-map-tooltip strong,
-.efe-tooltip strong,
-.sectra-map-tooltip strong {
+.efe-tooltip strong {
     display: block !important;
     white-space: normal !important;
     overflow-wrap: break-word !important;
@@ -158,8 +185,7 @@
 
 .catlec-map-tooltip span,
 .efe-map-tooltip span,
-.efe-tooltip span,
-.sectra-map-tooltip span {
+.efe-tooltip span {
     display: block !important;
     white-space: normal !important;
     overflow-wrap: break-word !important;

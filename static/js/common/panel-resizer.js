@@ -16,7 +16,7 @@
 //       resizer: '#dgc-panel-resizer',       // separador (hermano previo del panel derecho)
 //       minWidth: 500,
 //       storageKey: 'catlec.dgc.tableWidth',
-//       getMap: () => leafletMap             // mapa (MapLibre o Leaflet) a re-dimensionar (puede ser null al inicio)
+//       getMap: () => leafletMap             // mapa MapLibre a re-dimensionar (puede ser null al inicio)
 //   });
 (function () {
     const MAX_LEFT_RATIO = 0.4;
@@ -97,9 +97,6 @@
                     // mismo cuadro evita que el mapa parpadee durante el arrastre.
                     map.resize();
                     if (typeof map.redraw === 'function') map.redraw();
-                } else if (map && typeof map.invalidateSize === 'function') {
-                    // Leaflet
-                    map.invalidateSize({ animate: false });
                 }
             });
         }

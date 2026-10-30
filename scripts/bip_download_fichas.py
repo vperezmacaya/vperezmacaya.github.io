@@ -19,7 +19,7 @@ from bip_client import BipClient
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MOP_DATA_JS = os.path.join(ROOT, 'static', 'data', 'mop_data.js')
-OUT_DIR = os.path.join(ROOT, 'Bases de dato', 'BIP fichas IDI')
+OUT_DIR = os.path.join(ROOT, 'Bases de dato', 'MOP', 'BIP fichas IDI')
 RETRIES = 3          # intentos por BIP ante errores de red o del sitio
 RETRY_WAIT = 30      # segundos de espera entre intentos (se multiplica por el intento)
 

@@ -174,7 +174,6 @@ h6 {
     z-index: 150;
 }
 
-.view-subheader.sectra-tabs,
 .view-subheader.mop-tabs,
 .view-subheader.three-tabs {
     grid-template-columns: repeat(3, 1fr);
@@ -1115,34 +1114,6 @@ body.catlec-resizing .right-panel {
     color: #ffffff;
 }
 
-.map-legend-overlay {
-    position: absolute;
-    bottom: 16px;
-    left: 16px;
-    z-index: 1000;
-    background: var(--bg-card);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 8px 12px;
-    box-shadow: var(--shadow-main);
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    font-size: 0.72rem;
-    pointer-events: auto;
-}
-
-.map-legend-title {
-    font-weight: 700;
-    font-size: 0.72rem;
-    color: var(--text-primary);
-    margin-bottom: 2px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
 .map-legend-item {
     display: flex;
     align-items: center;
@@ -2064,21 +2035,8 @@ footer {
     border: 1px solid var(--border-color);
 }
 
-/* Remove focus black outline on clicked layers */
-.leaflet-interactive:focus {
-    outline: none !important;
-}
-
-/* Custom leaflet style overrides */
-.leaflet-container {
-    background: var(--bg-sidebar) !important;
-    color: var(--text-primary) !important;
-    font-family: var(--font-sans) !important;
-}
-
-/* Créditos del mapa contraíbles tras un botón "i" (CatlecUtils.enableCollapsibleAttribution).
+/* Créditos del mapa contraíbles tras un botón "i" (CatlecMapGL.addCollapsibleAttribution).
    El recorte anima su max-width entre el ancho medido del texto (--catlec-attr-w) y 0. */
-.leaflet-container .leaflet-control-attribution.catlec-attribution,
 .maplibregl-map .maplibregl-ctrl.catlec-attribution {
     display: flex;
     align-items: center;
@@ -2118,14 +2076,9 @@ footer {
     transition-delay: 0s;
 }
 
-.leaflet-container .catlec-attribution a,
+/* Enlaces de créditos: sin subrayado, subrayado al pasar el mouse */
 .maplibregl-map .catlec-attribution a {
     color: var(--primary);
-}
-
-/* Enlaces de créditos en MapLibre: igual que el estilo base de Leaflet
-   (sin subrayado, subrayado al pasar el mouse) */
-.maplibregl-map .catlec-attribution a {
     text-decoration: none;
 }
 
@@ -2166,68 +2119,6 @@ footer {
 .catlec-attribution-toggle:focus-visible {
     outline: 2px solid var(--border-color-focus);
     outline-offset: 1px;
-}
-
-.leaflet-bar a,
-.leaflet-bar a:hover {
-    background-color: var(--bg-sidebar) !important;
-    border-bottom: 1px solid var(--border-color) !important;
-    color: var(--text-primary) !important;
-}
-
-.leaflet-bar {
-    border: 1px solid var(--border-color) !important;
-    box-shadow: var(--shadow-main) !important;
-}
-
-.leaflet-popup-content-wrapper {
-    background: #ffffff !important;
-    color: var(--text-primary) !important;
-    border-radius: var(--radius-md) !important;
-    border: 1px solid var(--border-color) !important;
-    box-shadow: var(--shadow-main) !important;
-    backdrop-filter: blur(10px) !important;
-    padding: 2px !important;
-}
-
-.leaflet-popup-tip {
-    background: #ffffff !important;
-    border: 1px solid var(--border-color) !important;
-}
-
-.leaflet-popup-content {
-    font-size: 0.8rem !important;
-    line-height: 1.4 !important;
-    margin: 12px 14px !important;
-}
-
-.leaflet-popup-content h4 {
-    font-family: var(--font-heading) !important;
-    color: var(--text-primary) !important;
-    margin: 4px 0 8px 0 !important;
-    font-size: 0.9rem !important;
-    font-weight: 600 !important;
-}
-
-/* Region boundary layer styling */
-.region-boundary {
-    fill: var(--bg-card);
-    fill-opacity: 0.15;
-    stroke: var(--primary);
-    stroke-width: 1.2;
-    stroke-opacity: 0.5;
-    transition: all var(--transition-fast);
-}
-
-.region-boundary:hover {
-    fill-opacity: 0.35;
-    stroke: var(--primary);
-    stroke-opacity: 0.95;
-    stroke-width: 1.8;
-}
-
-.leaflet-bar a {
-    background-color: #ffffff !important;
 }
 
 /* ─── Mapas MapLibre GL (CatlecMapGL, static/js/common/map-gl.js) ─────────── */

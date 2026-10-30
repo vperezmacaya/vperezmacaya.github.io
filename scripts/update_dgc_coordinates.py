@@ -10,7 +10,7 @@ def geo_distance(p1, p2):
     return 2 * R * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(ROOT_DIR, "Bases de dato")
+DATA_DIR = os.path.join(ROOT_DIR, "Bases de dato", "DGC")
 EXCEL_PATH = os.path.join(DATA_DIR, "DGC.xlsx")
 BACKUP_PATH = os.path.join(DATA_DIR, "DGC_backup.xlsx")
 GEOJSON_PATH = os.path.join(ROOT_DIR, "Mapas vectoriales", "DGC", "DGC_line.json")

@@ -81,7 +81,7 @@ function hideMetroComunasView() {
     if (btnMap && !metroState.timelineOpen && !metroState.demandaOpen) btnMap.classList.add('active');
 
     if (typeof window !== 'undefined' && window.location && window.location.hash === '#comunas' && window.history && window.history.replaceState) {
-        history.replaceState(null, null, ' ');
+        history.replaceState(null, null, window.location.pathname + window.location.search);
     }
 
     if (metroMap) {

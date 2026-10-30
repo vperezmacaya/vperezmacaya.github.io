@@ -15,7 +15,7 @@
 
     <!-- CATLEC Global Stylesheet & EFE Addon -->
     <link rel="stylesheet" href="static/css/styles.css?v=20261023_mopgl">
-    <link rel="stylesheet" href="static/css/efe_addons.css?v=20261026_prj1">
+    <link rel="stylesheet" href="static/css/efe_addons.css?v=20261030_sinfiltros2">
 
     <!-- SheetJS for Client-Side Excel Export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -23,6 +23,7 @@
     <!-- Static Data -->
     <script src="static/data/efe_data.js?v=20260924_2"></script>
     <script src="static/data/efe_geo.js?v=20261028_sinmetro"></script>
+    <script src="static/data/efe_red.js?v=20261030_red1"></script>
 </head>
 
 <body class="light-theme">
@@ -59,6 +60,10 @@
                 <i data-lucide="map" style="width: 14px; height: 14px;"></i>
                 <span>Mapa</span>
             </button>
+            <button class="view-tab-btn" id="btn-efe-view-operacion">
+                <i data-lucide="trending-up" style="width: 14px; height: 14px;"></i>
+                <span>Demanda y Operación</span>
+            </button>
             <button class="view-tab-btn" id="btn-efe-view-timeline">
                 <i data-lucide="clock" style="width: 14px; height: 14px;"></i>
                 <span>Líneas de Tiempo de Proyectos</span>
@@ -67,187 +72,11 @@
                 <i data-lucide="line-chart" style="width: 14px; height: 14px;"></i>
                 <span>Análisis de Inversión de Proyectos</span>
             </button>
-            <button class="view-tab-btn" id="btn-efe-view-operacion">
-                <i data-lucide="trending-up" style="width: 14px; height: 14px;"></i>
-                <span>Demanda y Operación</span>
-            </button>
         </div>
 
         <!-- Main Content -->
         <main class="dashboard-content">
             <div class="efe-dashboard-grid catlec-resizable-grid">
-
-                <!-- Left Panel: Search & Filters + Analytics Charts -->
-                <section class="left-panel left-panel-scroll">
-
-                    <!-- Filters Card -->
-                    <div class="panel-card"
-                        style="padding: 0.55rem 0.75rem; gap: 0.35rem; flex-shrink: 0; position: relative; z-index: 50; overflow: visible;">
-                        <div
-                            style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border-color);padding-bottom:0.25rem;">
-                            <h2 class="panel-title" style="border:none;padding:0;margin:0;font-size:0.8rem;">
-                                <i data-lucide="sliders-horizontal"></i>
-                                Filtros & Búsqueda
-                            </h2>
-                        </div>
-
-                        <!-- Search -->
-                        <div class="form-group" style="gap:0.15rem;">
-                            <label class="form-label" for="efe-search-input" style="font-size:0.7rem;">Buscar</label>
-                            <div class="search-wrapper">
-                                <i data-lucide="search"></i>
-                                <input type="text" id="efe-search-input" class="form-input"
-                                    placeholder="Buscar proyecto, servicio o filial..."
-                                    style="padding:0.3rem 0.55rem 0.3rem 2.25rem;font-size:0.76rem;">
-                            </div>
-                        </div>
-
-                        <!-- Filial Filter (Affects both Projects and Operating Lines) -->
-                        <div class="form-group" style="gap:0.15rem; position:relative; z-index:90;">
-                            <label class="form-label" style="font-size:0.7rem;">Filial</label>
-                            <div class="custom-multiselect" id="efe-filial-multiselect-container">
-                                <button type="button" class="form-input multiselect-trigger" id="efe-filial-multiselect-btn"
-                                    style="padding: 0.3rem 0.55rem; font-size: 0.76rem;">
-                                    <span id="efe-filial-multiselect-text">Todas las filiales</span>
-                                    <i data-lucide="chevron-down" style="width:12px;height:12px;flex-shrink:0;"></i>
-                                </button>
-                                <div class="multiselect-dropdown" id="efe-filial-multiselect-dropdown">
-                                    <div class="multiselect-actions">
-                                        <label class="multiselect-option select-all-option" style="padding: 0.2rem 0; font-weight: 700;">
-                                            <input type="checkbox" id="efe-filial-check-all">
-                                            <span>(Seleccionar Todas)</span>
-                                        </label>
-                                    </div>
-                                    <div class="multiselect-options-list" id="efe-filial-options-list"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Tipo Filter -->
-                        <div class="form-group" style="gap:0.15rem; position:relative; z-index:85;">
-                            <label class="form-label" style="font-size:0.7rem;">Tipo de Proyecto</label>
-                            <div class="custom-multiselect" id="efe-tipo-multiselect-container">
-                                <button type="button" class="form-input multiselect-trigger" id="efe-tipo-multiselect-btn"
-                                    style="padding: 0.3rem 0.55rem; font-size: 0.76rem;">
-                                    <span id="efe-tipo-multiselect-text">Todos los tipos</span>
-                                    <i data-lucide="chevron-down" style="width:12px;height:12px;flex-shrink:0;"></i>
-                                </button>
-                                <div class="multiselect-dropdown" id="efe-tipo-multiselect-dropdown">
-                                    <div class="multiselect-actions">
-                                        <label class="multiselect-option select-all-option" style="padding: 0.2rem 0; font-weight: 700;">
-                                            <input type="checkbox" id="efe-tipo-check-all">
-                                            <span>(Seleccionar Todos)</span>
-                                        </label>
-                                    </div>
-                                    <div class="multiselect-options-list" id="efe-tipo-options-list"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Cartera de proyectos Filter -->
-                        <div class="form-group" style="gap:0.15rem; position:relative; z-index:80;">
-                            <label class="form-label" style="font-size:0.7rem;">Cartera de proyectos</label>
-                            <div class="custom-multiselect" id="efe-detail-multiselect-container">
-                                <button type="button" class="form-input multiselect-trigger" id="efe-detail-multiselect-btn"
-                                    style="padding: 0.3rem 0.55rem; font-size: 0.76rem;">
-                                    <span id="efe-detail-multiselect-text">Toda la cartera</span>
-                                    <i data-lucide="chevron-down" style="width:12px;height:12px;flex-shrink:0;"></i>
-                                </button>
-                                <div class="multiselect-dropdown" id="efe-detail-multiselect-dropdown">
-                                    <div class="multiselect-actions">
-                                        <label class="multiselect-option select-all-option" style="padding: 0.2rem 0; font-weight: 700;">
-                                            <input type="checkbox" id="efe-detail-check-all">
-                                            <span>(Seleccionar Todas)</span>
-                                        </label>
-                                    </div>
-                                    <div class="multiselect-options-list" id="efe-detail-options-list"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Reset & Export Buttons -->
-                        <div style="display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.1rem;">
-                            <button class="btn-reset" id="efe-btn-reset"
-                                style="padding: 0.28rem 0.4rem; font-size: 0.72rem; justify-content: center; width: 100%;">
-                                <i data-lucide="rotate-ccw" style="width: 12px; height: 12px;"></i>
-                                Restablecer Filtros
-                            </button>
-                            <div style="display: flex; gap: 0.25rem; width: 100%;">
-                                <button class="btn-reset" id="efe-btn-export-excel"
-                                    style="flex: 1; padding: 0.28rem 0.4rem; font-size: 0.72rem; justify-content: center; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); color: #10b981; font-weight: 600; cursor: pointer; transition: all 0.15s ease;"
-                                    title="Descargar datos en Excel (.xlsx)">
-                                    <i data-lucide="file-spreadsheet" style="width: 12px; height: 12px;"></i>
-                                    Excel
-                                </button>
-                                <button class="btn-reset" id="efe-btn-export-geojson"
-                                    style="flex: 1; padding: 0.28rem 0.4rem; font-size: 0.72rem; justify-content: center; background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.3); color: #6366f1; font-weight: 600; cursor: pointer; transition: all 0.15s ease;"
-                                    title="Descargar red e infraestructura ferroviaria oficial en formato GeoJSON (.geojson)">
-                                    <i data-lucide="map-pin" style="width: 12px; height: 12px;"></i>
-                                    GeoJSON
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Analytics Charts Card -->
-                    <div class="panel-card panel-card-analytics"
-                        style="padding: 0.55rem 0.75rem; gap: 0.3rem; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
-                        <h2 class="panel-title"
-                            style="font-size: 0.8rem; padding-bottom: 0.25rem; border-bottom: 1px solid var(--border-color); margin-bottom: 0.1rem;">
-                            <i data-lucide="pie-chart" style="width: 14px; height: 14px; color: var(--primary);"></i>
-                            Análisis
-                        </h2>
-
-                        <!-- Chart 1: Pasajeros por filial (red en operación, charts.js) -->
-                        <div style="flex: 1; display: flex; flex-direction: column; gap: 0.15rem;">
-                            <div style="display: flex; flex-direction: column; gap: 0.05rem;">
-                                <div
-                                    style="font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: flex; align-items: center; gap: 0.3rem;">
-                                    Pasajeros por Filial
-                                </div>
-                                <span
-                                    style="font-size: 0.61rem; color: var(--text-muted); font-style: italic; line-height: 1.1;">
-                                    * Millones de pasajeros transportados en el último año
-                                </span>
-                            </div>
-                            <div
-                                style="flex: 1; min-height: 0; display: flex; align-items: center; gap: 0.4rem; position: relative;">
-                                <div
-                                    style="width: 72px; height: 72px; min-width: 72px; flex-shrink: 0; position: relative; margin: auto 0;">
-                                    <canvas id="efeLinesFilialChart"></canvas>
-                                </div>
-                                <div id="efeLinesFilialChartLegend"
-                                    style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.05rem; overflow: hidden;">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Chart 2: Extensión de red por tracción (charts.js) -->
-                        <div
-                            style="flex: 1.1; display: flex; flex-direction: column; gap: 0.15rem; border-top: 1px solid var(--border-color); padding-top: 0.3rem;">
-                            <div style="display: flex; flex-direction: column; gap: 0.05rem;">
-                                <div
-                                    style="font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: flex; align-items: center; gap: 0.3rem;">
-                                    Red por Tracción
-                                </div>
-                                <span
-                                    style="font-size: 0.61rem; color: var(--text-muted); font-style: italic; line-height: 1.1;">
-                                    * Kilómetros de servicios eléctricos, bimodales y diésel
-                                </span>
-                            </div>
-                            <div
-                                style="flex: 1; min-height: 0; display: flex; align-items: center; gap: 0.4rem; position: relative;">
-                                <div
-                                    style="width: 72px; height: 72px; min-width: 72px; flex-shrink: 0; position: relative; margin: auto 0;">
-                                    <canvas id="efeLinesTraccionChart"></canvas>
-                                </div>
-                                <div id="efeLinesTraccionChartLegend"
-                                    style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.05rem; overflow: hidden;">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
 
                 <!-- Center Panel: Map -->
                 <section class="center-panel map-panel" style="position: relative;">
@@ -323,6 +152,20 @@
                         </div>
                     </section>
 
+                    <!-- Exportar (misma barra que Metro.html) -->
+                    <div class="efe-export-toolbar">
+                        <button class="btn-reset efe-export-btn efe-export-btn--excel" id="efe-btn-export-excel"
+                            title="Descargar datos en Excel (.xlsx)">
+                            <i data-lucide="file-spreadsheet"></i>
+                            Exportar Excel
+                        </button>
+                        <button class="btn-reset efe-export-btn efe-export-btn--geojson" id="efe-btn-export-geojson"
+                            title="Descargar red e infraestructura ferroviaria oficial en formato GeoJSON (.geojson)">
+                            <i data-lucide="map-pin"></i>
+                            Exportar GeoJSON
+                        </button>
+                    </div>
+
                     <!-- Table Container View (Shown by default) -->
                     <div id="efe-table-container-view"
                         style="display: none; flex-direction: column; flex: 1; min-height: 0;">
@@ -358,8 +201,7 @@
                                 <div class="empty-state" id="efe-empty-state"
                                     style="display: none; padding: 1.5rem 1rem;">
                                     <i data-lucide="folder-search" style="width: 28px; height: 28px;"></i>
-                                    <h3 style="font-size: 0.9rem;">No se encontraron proyectos</h3>
-                                    <p style="font-size: 0.75rem;">Prueba ajustando los filtros.</p>
+                                    <h3 style="font-size: 0.9rem;">No hay proyectos en la base de datos</h3>
                                 </div>
                             </div>
                         </div>
@@ -452,7 +294,7 @@
 
                 <!-- Full-Width EFE Timeline Panel -->
                 <div id="efe-timeline-full-panel" class="timeline-full-panel"
-                    style="display:none; grid-column: 2 / -1;">
+                    style="display:none; grid-column: 1 / -1;">
 
                     <!-- Timeline Header -->
                     <div class="timeline-header">
@@ -506,7 +348,7 @@
 
                 <!-- Full-Width EFE Investment Analytics Panel -->
                 <div id="efe-investment-full-panel" class="efe-investment-full-panel"
-                    style="display:none; grid-column: 2 / -1; flex-direction: column; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; height: 100%; min-height: 0;">
+                    style="display:none; grid-column: 1 / -1; flex-direction: column; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; height: 100%; min-height: 0;">
 
                     <div class="investment-body"
                         style="flex: 1; overflow: hidden; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.45rem; min-height: 0;">
@@ -620,7 +462,7 @@
 
                 <!-- Full-Width EFE Demand & Operations Panel -->
                 <div id="efe-operacion-full-panel" class="efe-operacion-full-panel"
-                    style="display:none; grid-column: 2 / -1; flex-direction: column; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; height: 100%; min-height: 0;">
+                    style="display:none; grid-column: 1 / -1; flex-direction: column; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; height: 100%; min-height: 0;">
 
                     <div class="operacion-body"
                         style="flex: 1; overflow: hidden; padding: 0.45rem; display: flex; flex-direction: column; gap: 0.4rem; min-height: 0; height: 100%;">
@@ -779,17 +621,16 @@
     <script src="static/js/common/table-fade.js?v=20260924_1"></script>
     <script src="static/js/common/panel-resizer.js?v=20260924_gl2"></script>
     <script src="static/js/common/timeline.js?v=20260920_1"></script>
-    <script src="static/js/EFE/state.js?v=20261028_sinmetro"></script>
-    <script src="static/js/EFE/charts.js?v=20261026_red3"></script>
-    <script src="static/js/EFE/investment.js?v=20260924_gl1"></script>
-    <script src="static/js/EFE/timeline.js?v=20260924_gl1"></script>
-    <script src="static/js/EFE/operacion.js?v=20261026_red1"></script>
-    <script src="static/js/EFE/map.js?v=20261028_leyenda1"></script>
-    <script src="static/js/EFE/filters.js?v=20261026_srv1"></script>
-    <script src="static/js/EFE/ui.js?v=20261026_red1"></script>
+    <script src="static/js/EFE/state.js?v=20261030_sinfiltros"></script>
+    <script src="static/js/EFE/investment.js?v=20261030_sinfiltros2"></script>
+    <script src="static/js/EFE/timeline.js?v=20261030_sinfiltros2"></script>
+    <script src="static/js/EFE/operacion.js?v=20261030_sinfiltros2"></script>
+    <script src="static/js/EFE/map.js?v=20261030_hovsel1"></script>
+    <script src="static/js/EFE/filters.js?v=20261030_sinfiltros"></script>
+    <script src="static/js/EFE/ui.js?v=20261030_sinfiltros"></script>
 
     <!-- Nav Menu & View Switcher Logic -->
-    <script src="static/js/common/nav-menu.js?v=20261029_unif"></script>
+    <script src="static/js/common/nav-menu.js?v=20261030_hash"></script>
     <script>
         (function () {
             CatlecNav.render();

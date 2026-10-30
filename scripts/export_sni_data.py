@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(BASE_DIR, 'Bases de dato')
+DATA_DIR = os.path.join(BASE_DIR, 'Bases de dato', 'SNI')
 EXCEL_PATH = os.path.join(DATA_DIR, 'SNI.xlsx')
 OUT_DIR = os.path.join(BASE_DIR, 'static', 'data')
 os.makedirs(OUT_DIR, exist_ok=True)

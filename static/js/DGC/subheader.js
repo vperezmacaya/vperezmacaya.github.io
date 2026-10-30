@@ -11,6 +11,14 @@ function setActiveSubheaderTab(activeId) {
     if (btnInv) btnInv.classList.toggle('active', activeId === 'investment');
     if (btnCnt) btnCnt.classList.toggle('active', activeId === 'contracts');
     if (btnBid) btnBid.classList.toggle('active', activeId === 'bidders');
+
+    // La vista abierta queda en el # de la URL (recargar o compartir el enlace
+    // vuelve a ella), como en Metro y EFE; el mapa va sin #. replaceState no
+    // dispara hashchange ni agrega entradas al historial.
+    const hash = activeId === 'map' ? '' : '#' + activeId;
+    if (window.location.hash !== hash) {
+        history.replaceState(null, '', hash || window.location.pathname + window.location.search);
+    }
 }
 
 function initSubheaderViewSwitcher() {

@@ -2,8 +2,8 @@
 // Funciones puras (sin dependencias de estado) compartidas por los módulos
 // CATLEC. Reemplaza ~8 utilidades que existían duplicadas con nombres
 // distintos (normalizeAccents, debounce, dateToYear, wrapText, wrapTextToLines,
-// getLineMidpoint, horizontalBarDataLabelsPlugin, downloadGeoJSON) en DGC, EFE,
-// Metro, MOP, SNI y SECTRA.
+// horizontalBarDataLabelsPlugin, downloadGeoJSON) en DGC, EFE, Metro, MOP y
+// SNI.
 window.CatlecUtils = {
     // Quita tildes/diacríticos y pasa a minúsculas, para comparar texto de forma
     // tolerante a acentos (ej. "Bío-Bío" ~ "bio-bio").
@@ -108,75 +108,6 @@ window.CatlecUtils = {
         }
 
         return lines.length > 1 ? lines : str;
-    },
-
-    // Calcula el punto ubicado al 50% de la distancia recorrida a lo largo de
-    // una o varias polilíneas Leaflet (acepta una sola capa o un arreglo).
-    // Solo mapas Leaflet (SECTRA); en MapLibre usar CatlecMapGL.lineMidpoint.
-    getLineMidpoint(layerOrLayers) {
-        const layers = Array.isArray(layerOrLayers) ? layerOrLayers : [layerOrLayers];
-        if (!layers.length || !layers[0]) return null;
-
-        // Caso especial: una única capa que es un punto (no una línea).
-        if (layers.length === 1 && !layers[0].getLatLngs && layers[0].getLatLng) {
-            return layers[0].getLatLng();
-        }
-
-        let allSegments = [];
-        layers.forEach(l => {
-            if (l && l.getLatLngs) {
-                const rawLatLngs = l.getLatLngs();
-                function extractSegments(arr) {
-                    if (!Array.isArray(arr) || arr.length === 0) return;
-                    if (arr[0] instanceof L.LatLng || (arr[0] && typeof arr[0].lat === 'number')) {
-                        if (arr.length >= 2) {
-                            allSegments.push(arr);
-                        }
-                    } else {
-                        arr.forEach(sub => extractSegments(sub));
-                    }
-                }
-                extractSegments(rawLatLngs);
-            }
-        });
-
-        if (allSegments.length === 0) {
-            const single = layers.length === 1 ? layers[0] : null;
-            return (single && single.getBounds) ? single.getBounds().getCenter() : null;
-        }
-
-        let totalLength = 0;
-        allSegments.forEach(seg => {
-            for (let i = 0; i < seg.length - 1; i++) {
-                totalLength += seg[i].distanceTo(seg[i + 1]);
-            }
-        });
-
-        if (totalLength === 0) {
-            return allSegments[0][0];
-        }
-
-        const halfDistance = totalLength / 2;
-        let accumulated = 0;
-
-        for (let s = 0; s < allSegments.length; s++) {
-            const seg = allSegments[s];
-            for (let i = 0; i < seg.length - 1; i++) {
-                const p1 = seg[i];
-                const p2 = seg[i + 1];
-                const dist = p1.distanceTo(p2);
-                if (accumulated + dist >= halfDistance) {
-                    const needed = halfDistance - accumulated;
-                    const ratio = dist > 0 ? (needed / dist) : 0;
-                    const lat = p1.lat + (p2.lat - p1.lat) * ratio;
-                    const lng = p1.lng + (p2.lng - p1.lng) * ratio;
-                    return L.latLng(lat, lng);
-                }
-                accumulated += dist;
-            }
-        }
-
-        return allSegments[0][Math.floor(allSegments[0].length / 2)];
     },
 
     // Plugin de Chart.js: dibuja el valor de cada barra horizontal, adentro si
@@ -545,15 +476,13 @@ window.CatlecUtils = {
     // regex y solo reescribe los 4 casos cuyo nombre oficial no queda legible
     // tal cual tras el recorte (Metropolitana, Aysén, Magallanes, O'Higgins);
     // el resto de regiones se muestra con su nombre completo post-prefijo
-    // (ej. "Arica y Parinacota", "Los Ríos"). Estándar único usado por DGC,
-    // MOP y SECTRA (antes cada uno tenía su propia variante, incluyendo un
-    // acortado adicional a una sola palabra en SECTRA y una etiqueta "RM"
-    // para la Metropolitana, ambos removidos para unificar el output).
+    // (ej. "Arica y Parinacota", "Los Ríos"). Estándar único usado por DGC y
+    // MOP.
     shortenRegionName(name) {
         if (!name) return '';
         let str = String(name).trim();
-        // "Regi[oó]n" tolera datos de origen sin tilde (ej. SECTRA trae
-        // "Region de Arica y Parinacota" sin acento para esa entrada).
+        // "Regi[oó]n" tolera datos de origen sin tilde (ej. "Region de Arica y
+        // Parinacota").
         str = str.replace(/^Regi[oó]n\s+(de\s+la\s+|del\s+|de\s+)?/i, '');
 
         if (/metropolitana/i.test(str)) return 'Metropolitana';
@@ -658,96 +587,6 @@ window.CatlecUtils = {
         return { maxZoom: 7.0, padding: [80, 80], spanKm, isPoint: false };
     },
 
-    // Función global y estandarizada para hacer zoom fluido y adaptativo a un
-    // proyecto, línea, comuna o conjunto de geometrías en un mapa Leaflet (SECTRA).
-    // En los mapas MapLibre usar CatlecMapGL.flyToBounds (mismos umbrales).
-    zoomToProject(map, target, options = {}) {
-        if (!map) return false;
-
-        const {
-            duration = 1.2,
-            maxZoomOverride = null,
-            paddingOverride = null,
-            onDefaultView = null,
-            onStart = null,
-            onEnd = null
-        } = options;
-
-        let bounds = null;
-
-        // 1. Si target ya es un LatLngBounds válido
-        if (target && typeof target.isValid === 'function' && target.isValid()) {
-            bounds = target;
-        }
-        // 2. Si target es un arreglo de capas o coordenadas
-        else if (Array.isArray(target) && target.length > 0) {
-            bounds = L.latLngBounds();
-            target.forEach(l => {
-                if (!l) return;
-                if (typeof l.getBounds === 'function') {
-                    const b = l.getBounds();
-                    if (b && typeof b.isValid === 'function' && b.isValid()) bounds.extend(b);
-                } else if (typeof l.getLatLng === 'function') {
-                    const ll = l.getLatLng();
-                    if (ll) bounds.extend(ll);
-                } else if (Array.isArray(l) && l.length === 2 && typeof l[0] === 'number' && typeof l[1] === 'number') {
-                    bounds.extend(l);
-                }
-            });
-        }
-        // 3. Si target es una sola capa Leaflet
-        else if (target && typeof target.getBounds === 'function') {
-            const b = target.getBounds();
-            if (b && typeof b.isValid === 'function' && b.isValid()) bounds = b;
-        } else if (target && typeof target.getLatLng === 'function') {
-            const ll = target.getLatLng();
-            if (ll) bounds = L.latLngBounds([ll, ll]);
-        }
-        // 4. Si target es una coordenada [lat, lng] o L.LatLng
-        else if (target && target instanceof L.LatLng) {
-            bounds = L.latLngBounds([target, target]);
-        } else if (Array.isArray(target) && target.length === 2 && typeof target[0] === 'number' && typeof target[1] === 'number') {
-            bounds = L.latLngBounds([target, target]);
-        }
-
-        // Si se obtuvo un bounds válido:
-        if (bounds && typeof bounds.isValid === 'function' && bounds.isValid()) {
-            const adaptive = this.calculateAdaptiveZoom(bounds);
-            const targetMaxZoom = maxZoomOverride != null ? maxZoomOverride : adaptive.maxZoom;
-            const targetPadding = paddingOverride != null ? paddingOverride : adaptive.padding;
-
-            if (typeof onStart === 'function') onStart(Math.round(duration * 1000));
-
-            if (typeof map.flyToBounds === 'function') {
-                map.flyToBounds(bounds, {
-                    animate: true,
-                    duration: duration,
-                    padding: targetPadding,
-                    maxZoom: targetMaxZoom
-                });
-            } else {
-                map.fitBounds(bounds, {
-                    padding: targetPadding,
-                    maxZoom: targetMaxZoom,
-                    animate: true
-                });
-            }
-
-            if (typeof onEnd === 'function') {
-                setTimeout(onEnd, Math.round(duration * 1000) + 50);
-            }
-            return true;
-        }
-
-        // Fallback si no hay geometrías válidas
-        if (typeof onDefaultView === 'function') {
-            onDefaultView(true);
-            return false;
-        }
-
-        return false;
-    },
-
     // Alterna entre dos vistas contenedoras (tabla ↔ ficha de detalle) con un
     // fundido cruzado + desplazamiento horizontal (ver .catlec-view-* en
     // styles.css). `direction: 'forward'` (ir al detalle) hace que `hideEl`
@@ -814,105 +653,5 @@ window.CatlecUtils = {
     // mide por tiempo y "salta" si sus primeros cuadros quedan bloqueados.
     afterNextPaint(fn) {
         requestAnimationFrame(() => requestAnimationFrame(fn));
-    },
-
-    // Convierte el control de atribución de Leaflet en un botón "i" que
-    // despliega los créditos con animación (estilos .catlec-attribution-* en
-    // styles.css). Para cumplir las guías de atribución de OpenStreetMap, los
-    // créditos parten DESPLEGADOS y solo se contraen solos tras la primera
-    // interacción del usuario con el mapa (arrastre, clic o rueda) o después de
-    // `autoCollapseMs` de estar visible en pantalla. El conteo empieza recién
-    // cuando el mapa es visible (IntersectionObserver), porque varios mapas se
-    // crean dentro de pestañas ocultas. Después, solo el botón los abre/cierra.
-    // Lo usa SECTRA (Leaflet); los mapas MapLibre usan el equivalente
-    // CatlecMapGL.addCollapsibleAttribution, con el mismo marcado y estilos.
-    enableCollapsibleAttribution(map, { autoCollapseMs = 6000 } = {}) {
-        const ctrl = map && map.attributionControl;
-        const container = ctrl && ctrl.getContainer();
-        if (!container || container.classList.contains('catlec-attribution')) return;
-
-        // `clip` es el recorte que anima su max-width (ancho medido del texto
-        // ↔ 0); `text` recibe el HTML de Leaflet con su padding, para que el
-        // recorte llegue a 0 real.
-        const clip = L.DomUtil.create('div', 'catlec-attribution-clip');
-        clip.id = `catlec-attribution-${L.Util.stamp(map)}`;
-        const text = L.DomUtil.create('span', 'catlec-attribution-text', clip);
-        const btn = L.DomUtil.create('button', 'catlec-attribution-toggle');
-        btn.type = 'button';
-        btn.title = 'Créditos del mapa';
-        btn.setAttribute('aria-label', 'Créditos del mapa');
-        btn.setAttribute('aria-controls', clip.id);
-        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>';
-
-        // Leaflet reescribe el innerHTML de su contenedor en cada _update (al
-        // agregar/quitar capas con atribución); se redirige esa escritura al
-        // span de texto para no borrar el botón.
-        ctrl._update = function () {
-            const outer = this._container;
-            this._container = text;
-            L.Control.Attribution.prototype._update.call(this);
-            this._container = outer;
-            measure();
-        };
-        // Ancho real del texto para animar el max-width sin tramos muertos. Con
-        // el mapa oculto mide 0 y se conserva el valor previo (o el respaldo
-        // del CSS); se vuelve a medir al hacerse visible y al desplegar.
-        const measure = () => {
-            const w = text.scrollWidth;
-            if (w) clip.style.setProperty('--catlec-attr-w', `${w}px`);
-        };
-        container.innerHTML = '';
-        container.classList.add('catlec-attribution');
-        container.append(clip, btn);
-        ctrl._update();
-
-        const setExpanded = (expanded) => {
-            if (expanded) measure();
-            container.classList.toggle('collapsed', !expanded);
-            btn.setAttribute('aria-expanded', String(expanded));
-        };
-        setExpanded(true);
-        if (document.fonts) document.fonts.ready.then(measure);
-
-        let autoDone = false;
-        let timer = null;
-        let observer = null;
-        const autoCollapse = () => {
-            if (autoDone) return;
-            autoDone = true;
-            clearTimeout(timer);
-            if (observer) observer.disconnect();
-            map.off('dragstart click', autoCollapse);
-            L.DomEvent.off(map.getContainer(), 'wheel', autoCollapse);
-            setExpanded(false);
-        };
-        map.on('dragstart click', autoCollapse);
-        L.DomEvent.on(map.getContainer(), 'wheel', autoCollapse);
-
-        const startTimer = () => {
-            if (!timer && !autoDone) timer = setTimeout(autoCollapse, autoCollapseMs);
-        };
-        if (typeof IntersectionObserver === 'function') {
-            observer = new IntersectionObserver((entries) => {
-                if (entries.some(e => e.isIntersecting)) {
-                    observer.disconnect();
-                    measure();
-                    startTimer();
-                }
-            });
-            observer.observe(map.getContainer());
-        } else {
-            startTimer();
-        }
-
-        L.DomEvent.on(btn, 'click', (e) => {
-            L.DomEvent.stop(e);
-            if (!autoDone) {
-                // Si el usuario cierra antes del auto-contraído, se respeta.
-                autoCollapse();
-                return;
-            }
-            setExpanded(container.classList.contains('collapsed'));
-        });
     }
 };

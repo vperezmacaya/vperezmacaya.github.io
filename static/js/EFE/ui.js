@@ -503,8 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
         storageKey: 'catlec.efe.tableWidth',
         getMap: () => efeMap
     });
-    if (typeof efeLoadFilters === 'function') efeLoadFilters();
-    if (typeof efeInitLinesFilters === 'function') efeInitLinesFilters();
+    efeInitTableSorting();
     if (typeof efeInitLeafletMap === 'function') efeInitLeafletMap();
     if (typeof efeFetchData === 'function') efeFetchData();
     if (typeof setEfeTableMode === 'function') setEfeTableMode(efeState.tableMode || 'lines');
@@ -531,54 +530,6 @@ document.addEventListener('DOMContentLoaded', () => {
         efeBtnNext.addEventListener('click', () => {
             efeState.page++;
             efeFetchData();
-        });
-    }
-
-    // Search
-    if (efeSearchInput) {
-        efeSearchInput.addEventListener('input', CatlecUtils.debounce(() => {
-            efeState.search = efeSearchInput.value;
-            efeState.page = 1;
-            efeFetchData();
-        }, 300));
-    }
-
-    // Reset filters
-    if (efeBtnReset) {
-        efeBtnReset.addEventListener('click', () => {
-            if (efeSearchInput) efeSearchInput.value = '';
-            efeState.search = '';
-            efeState.selectedFiliales = [];
-            efeState.selectedDetails = [];
-            efeState.selectedTipos = [];
-            efeState.selectedProjectName = null;
-            efeState.hoveredProjectName = null;
-            efeState.sortBy = 'investment_mm_usd';
-            efeState.sortOrder = 'desc';
-            efeState.page = 1;
-
-            document.querySelectorAll('.data-table th.sortable').forEach(el => {
-                el.classList.remove('asc', 'desc');
-                if (el.getAttribute('data-sort') === efeState.sortBy) {
-                    el.classList.add(efeState.sortOrder);
-                }
-            });
-
-            document.querySelectorAll('.efe-filial-checkbox').forEach(cb => cb.checked = false);
-            if (efeFilialCheckAll) efeFilialCheckAll.checked = false;
-            if (efeFilialMultiselectText) efeFilialMultiselectText.textContent = 'Todas las filiales';
-
-            document.querySelectorAll('.efe-detail-checkbox').forEach(cb => cb.checked = false);
-            if (efeDetailCheckAll) efeDetailCheckAll.checked = false;
-            if (efeDetailMultiselectText) efeDetailMultiselectText.textContent = 'Toda la cartera';
-
-            document.querySelectorAll('.efe-tipo-checkbox').forEach(cb => cb.checked = false);
-            if (efeTipoCheckAll) efeTipoCheckAll.checked = false;
-            if (efeTipoMultiselectText) efeTipoMultiselectText.textContent = 'Todos los tipos';
-
-            efeShowTableListView();
-            efeFetchData();
-            if (typeof efeUpdateMapStyles === 'function') efeUpdateMapStyles();
         });
     }
 

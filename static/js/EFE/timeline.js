@@ -142,7 +142,7 @@ function showEfeTimelineView() {
     const btnTl = document.getElementById('btn-efe-view-timeline');
     const btnOp = document.getElementById('btn-efe-view-operacion');
 
-    if (grid) grid.style.gridTemplateColumns = '280px 1fr';
+    if (grid) grid.style.gridTemplateColumns = 'minmax(0, 1fr)';
     if (centerPanel) centerPanel.style.display = 'none';
     if (rightPanel) rightPanel.style.display = 'none';
     if (tlPanel) tlPanel.style.display = 'flex';

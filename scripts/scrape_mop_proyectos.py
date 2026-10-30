@@ -1,11 +1,11 @@
 """
-Construye la hoja 'Base MOP' de Bases de dato/BASE MOP.xlsx desde las fichas
+Construye la hoja 'Base MOP' de Bases de dato/MOP/BASE MOP.xlsx desde las fichas
 de https://proyectos.mop.gob.cl (sin cruces con BIP ni BIDAT).
 
   1. Lista todos los proyectos del buscador (Default.asp) → cod_p.
   2. Descarga por proyecto la ficha XML ("Versión en XML", fuente principal)
      y la ficha HTML (proyecto.asp), que se usa de respaldo y para comparar
-     el Total General. Ambas quedan en caché en Bases de dato/MOP fichas/.
+     el Total General. Ambas quedan en caché en Bases de dato/MOP/MOP fichas/.
   3. Consulta el servicio ArcGIS que dibuja el mapa de la ficha para contar
      los proyectos geolocalizados (solo se informan, no van al Excel).
   4. Reescribe la hoja 'Base MOP' y elimina las hojas del cruce antiguo
@@ -31,7 +31,7 @@ from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(BASE_DIR, 'Bases de dato')
+DATA_DIR = os.path.join(BASE_DIR, 'Bases de dato', 'MOP')
 EXCEL_PATH = os.path.join(DATA_DIR, 'BASE MOP.xlsx')
 BACKUP_PATH = os.path.join(DATA_DIR, 'BASE MOP (respaldo cruce BIP).xlsx')
 CACHE_DIR = os.path.join(DATA_DIR, 'MOP fichas')

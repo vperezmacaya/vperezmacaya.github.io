@@ -7,12 +7,6 @@ if (typeof Chart !== 'undefined' && Chart.defaults) {
 
 // ─── Estado global EFE ───────────────────────────────────────────────────────
 var efeState = {
-    search: '',
-    selectedFiliales: [],
-    selectedDetails: [],
-    selectedTipos: [],
-    linesSearch: '',
-    linesSelectedFiliales: [],
     selectedProjectName: null,
     hoveredProjectName: null,
     selectedOperatingLine: null,
@@ -107,43 +101,13 @@ var efeClusterOriginMarkers = []; // Array of cluster origin dot markers
 var efeClusterLegLayers = [];     // Array of spiderfy connecting leg polylines
 var efeShowEfeLines = true;       // Toggle for EFE passenger lines layer
 var efeShowProjects = true;       // Toggle for project icons and shapes layer
+var efeShowRed = true;            // Capa "Red EFE" (vía de cada filial, efe_red.js)
 
-let efeAvailableFiliales = [
-    'EFE Valparaíso',
-    'EFE Central',
-    'EFE Sur',
-    'EFE Arica - La Paz',
-    'Sin filial específica'
-];
-
-let efeAvailableLinesFiliales = [
-    'EFE Central',
-    'EFE Sur',
-    'EFE Valparaíso'
-];
-
-let efeAvailableDetails = [
-    'Portafolio de Proyectos Estratégicos',
-    'Proyectos Preinversionales',
-    'Otros / Extra'
-];
-
-let efeAvailableTipos = [
-    'Expansión',
-    'Ampliación',
-    'Reposición',
-    'Mejoramiento',
-    'Logística',
-    'Mejoramiento Sistemas'
-];
+// Tooltip compartido de los gráficos de EFE (Análisis de Inversión y Demanda y Operación)
+const efeExternalTooltip = CatlecTooltip.create({ domId: 'efe-analysis-tooltip' });
 
 // DOM Element References – initialized after DOMContentLoaded
-var efeSearchInput,
-    efeFilialMultiselectText, efeFilialCheckAll,
-    efeDetailMultiselectText, efeDetailCheckAll,
-    efeTipoMultiselectText, efeTipoCheckAll,
-    efeBtnReset,
-    efeTableBody, efeEmptyState,
+var efeTableBody, efeEmptyState,
     efeCountLoaded, efeCountTotal,
     efeKpiTotalProjects, efeKpiTotalInvestment,
     efeBtnPrev, efeBtnNext, efePaginationInfo,
@@ -152,15 +116,6 @@ var efeSearchInput,
     efeBtnBackToTable, efeBtnDetailPrev, efeBtnDetailNext;
 
 function efeInitDOMReferences() {
-    efeSearchInput                  = document.getElementById('efe-search-input');
-    efeFilialMultiselectText        = document.getElementById('efe-filial-multiselect-text');
-    efeFilialCheckAll               = document.getElementById('efe-filial-check-all');
-    efeDetailMultiselectText        = document.getElementById('efe-detail-multiselect-text');
-    efeDetailCheckAll               = document.getElementById('efe-detail-check-all');
-    efeTipoMultiselectText          = document.getElementById('efe-tipo-multiselect-text');
-    efeTipoCheckAll                 = document.getElementById('efe-tipo-check-all');
-    efeBtnReset                     = document.getElementById('efe-btn-reset');
-
     efeTableBody                    = document.getElementById('efe-table-body');
     efeEmptyState                   = document.getElementById('efe-empty-state');
     efeCountLoaded                  = document.getElementById('efe-count-loaded');

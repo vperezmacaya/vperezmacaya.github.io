@@ -410,7 +410,7 @@
 }
 
 /* Nota: .view-subheader.mop-tabs se eliminó de aquí por ser 100% idéntica a la
-   regla ya compartida en styles.css (.sectra-tabs, .mop-tabs, .three-tabs). */
+   regla ya compartida en styles.css (.mop-tabs, .three-tabs). */
 
 /* ── MOP Data Table Column Sizing (Aligned with DGC.html data-table) ─── */
 .data-table.mop-data-table {

@@ -22,29 +22,13 @@ import pandas as pd
 
 # ── Rutas ──────────────────────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Una subcarpeta por módulo (DGC, EFE, Metro, MOP, SNI, Puertos)
 DATA_DIR = os.path.join(BASE_DIR, 'Bases de dato')
 
-DGC_EXCEL_PATH = os.path.join(DATA_DIR, 'DGC.xlsx')
-if not os.path.exists(DGC_EXCEL_PATH):
-    DGC_EXCEL_PATH = os.path.join(DATA_DIR, 'CATLEC.xlsx')
-if not os.path.exists(DGC_EXCEL_PATH):
-    DGC_EXCEL_PATH = os.path.join(DATA_DIR, 'CALTEC.xlsx')
-if not os.path.exists(DGC_EXCEL_PATH):
-    DGC_EXCEL_PATH = os.path.join(BASE_DIR, 'CATLEC.xlsx')
-
-EFE_EXCEL_PATH = os.path.join(DATA_DIR, 'EFE.xlsx')
-
-if not os.path.exists(EFE_EXCEL_PATH):
-    EFE_EXCEL_PATH = os.path.join(DATA_DIR, 'CATLEC.xlsx')
-if not os.path.exists(EFE_EXCEL_PATH):
-    EFE_EXCEL_PATH = os.path.join(DATA_DIR, 'CALTEC.xlsx')
-if not os.path.exists(EFE_EXCEL_PATH):
-    EFE_EXCEL_PATH = os.path.join(BASE_DIR, 'CATLEC.xlsx')
-
-METRO_EXCEL_PATH = os.path.join(DATA_DIR, 'Metro.xlsx')
-PUERTOS_EXCEL_PATH = os.path.join(DATA_DIR, 'puertos.xlsx')
-if not os.path.exists(PUERTOS_EXCEL_PATH):
-    PUERTOS_EXCEL_PATH = os.path.join(BASE_DIR, 'puertos.xlsx')
+DGC_EXCEL_PATH = os.path.join(DATA_DIR, 'DGC', 'DGC.xlsx')
+EFE_EXCEL_PATH = os.path.join(DATA_DIR, 'EFE', 'EFE.xlsx')
+METRO_EXCEL_PATH = os.path.join(DATA_DIR, 'Metro', 'Metro.xlsx')
+PUERTOS_EXCEL_PATH = os.path.join(DATA_DIR, 'Puertos', 'puertos.xlsx')
 
 EXCEL_PATH = DGC_EXCEL_PATH
 
@@ -1013,9 +997,9 @@ except Exception as e:
 # Fuente: Excel mensuales "Iniciativas programadas y en ejecución al cierre de
 # <mes> <año>" (planeamiento.mop.gob.cl). Se usa el más reciente de la carpeta;
 # cada fila del Excel es un contrato y los proyectos se agrupan por código BIP.
-# Por ahora la carpeta con los cierres de diciembre 2021-2024 y el de septiembre 2026
-# (el más reciente, el que se usa)
-MOP_INICIATIVAS_DIR = os.path.join(DATA_DIR, 'Iniciativas programadas y en ejecucion (otros años)')
+# Por ahora la carpeta tiene los cierres de diciembre 2021-2024, los meses de 2025
+# y el de septiembre 2026 (el más reciente, el que se usa)
+MOP_INICIATIVAS_DIR = os.path.join(DATA_DIR, 'MOP', 'Iniciativas programadas y en ejecucion')
 MOP_MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
              'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
 MOP_REGIONES = [
@@ -1035,7 +1019,7 @@ MOP_ITEMS = {'PROYECTOS': 'Proyectos', 'ESTUDIOS BÁSICOS': 'Estudios básicos'}
 # Inversión estimada por BIP (M$ de 2026): suma por etapa del TOTAL de la sección 16
 # "Programación de la inversión" de su ficha IDI en BIP Consulta. La generan
 # scripts/bip_download_fichas.py (descarga) y scripts/bip_resumen_fichas.py (lectura).
-MOP_INVERSION_JSON = os.path.join(DATA_DIR, 'BIP fichas IDI', '_resumen_inversion.json')
+MOP_INVERSION_JSON = os.path.join(DATA_DIR, 'MOP', 'BIP fichas IDI', '_resumen_inversion.json')
 MOP_INVERSION_KEY = 'Inversión S16 (M$ 2026)'
 MOP_INVERSION_ANIO = 2026
 # Etapa del nombre de la ficha (DISENO, EJECUCION, ...) → como se muestra (Diseño, Ejecución, ...)
@@ -1275,148 +1259,6 @@ try:
 
 except Exception as e:
     print(f"[WARN] Error al exportar datos MOP: {e}")
-    import traceback; traceback.print_exc()
-
-
-# ── SECTRA: Exportar datos de Secretaría de Planificación de Transporte ───────────
-print("\nProcesando Base de Datos SECTRA...")
-
-try:
-    SECTRA_EXCEL_PATH = os.path.join(DATA_DIR, 'Proyectos_SECTRA.xlsx')
-    if not os.path.exists(SECTRA_EXCEL_PATH):
-        SECTRA_EXCEL_PATH = os.path.join(DATA_DIR, 'Proyectos_SECTRA_actualizado.xlsx')
-    if not os.path.exists(SECTRA_EXCEL_PATH):
-        SECTRA_EXCEL_PATH = os.path.join(BASE_DIR, 'Proyectos_SECTRA.xlsx')
-
-    if os.path.exists(SECTRA_EXCEL_PATH):
-        # 1. Cargar proyectos
-        df_sectra = pd.read_excel(SECTRA_EXCEL_PATH, sheet_name='Proyectos SECTRA')
-        print(f"  -> {len(df_sectra)} filas cargadas en hoja 'Proyectos SECTRA'")
-
-        # 2. Cargar conurbaciones e indicadores
-        df_conurb = pd.DataFrame()
-        try:
-            df_conurb = pd.read_excel(SECTRA_EXCEL_PATH, sheet_name='Info por Conurbación')
-            print(f"  -> {len(df_conurb)} filas cargadas en hoja 'Info por Conurbación'")
-        except Exception:
-            print("  -> Hoja 'Info por Conurbación' no encontrada o vacía.")
-
-        sectra_projects = []
-        for idx, row in df_sectra.iterrows():
-            inv = sanitize_value(row.get('Inversión'))
-            if inv is not None:
-                try:
-                    inv = float(inv)
-                except Exception:
-                    inv = None
-
-            sectra_projects.append({
-                'id': int(idx + 1),
-                'region': sanitize_value(row.get('Región')),
-                'city': sanitize_value(row.get('Ciudad / Área')),
-                'number': sanitize_value(row.get('N°')),
-                'name': sanitize_value(row.get('Proyecto')),
-                'investment': inv,
-                'currency': sanitize_value(row.get('Moneda')),
-                'tir': sanitize_value(row.get('TIR')),
-                'mandante': sanitize_value(row.get('Mandante')),
-                'status': sanitize_value(row.get('Estado')),
-                'description': sanitize_value(row.get('Descripción')),
-                'source_url': sanitize_value(row.get('Fuente URL')),
-            })
-
-        conurbations = []
-        if not df_conurb.empty:
-            for c_idx, crow in df_conurb.iterrows():
-                conurbations.append({
-                    'id': int(c_idx + 1),
-                    'region': sanitize_value(crow.get('Región')),
-                    'city': sanitize_value(crow.get('Ciudad / Conurbación')),
-                    'population': sanitize_value(crow.get('Población')),
-                    'households': sanitize_value(crow.get('Hogares')),
-                    'private_vehicles': sanitize_value(crow.get('Vehículos privados')),
-                    'road_network': sanitize_value(crow.get('Redes viales')),
-                    'daily_trips': sanitize_value(crow.get('Viajes diarios')),
-                    'execution_deadline': sanitize_value(crow.get('Plazo de ejecución')),
-                    'portfolio_value': sanitize_value(crow.get('Valor de la cartera')),
-                    'source_url': sanitize_value(crow.get('Fuente URL')),
-                })
-
-        # Summary KPIs & distributions
-        unique_regions = sorted(list(set([p['region'] for p in sectra_projects if p['region']])))
-        unique_cities = sorted(list(set([p['city'] for p in sectra_projects if p['city']])))
-        unique_statuses = sorted(list(set([p['status'] for p in sectra_projects if p['status']])))
-        unique_mandantes = sorted(list(set([p['mandante'] for p in sectra_projects if p['mandante']])))
-
-        # Region stats
-        by_region = []
-        for r in unique_regions:
-            r_projs = [p for p in sectra_projects if p['region'] == r]
-            r_inv = sum([p['investment'] for p in r_projs if p['investment'] and p.get('currency') == 'UF'])
-            by_region.append({
-                'region': r,
-                'count': len(r_projs),
-                'total_inv_uf': round(r_inv, 2)
-            })
-        by_region.sort(key=lambda x: x['count'], reverse=True)
-
-        # Status stats
-        by_status = []
-        for st in unique_statuses:
-            st_projs = [p for p in sectra_projects if p['status'] == st]
-            by_status.append({
-                'status': st,
-                'count': len(st_projs)
-            })
-        by_status.sort(key=lambda x: x['count'], reverse=True)
-
-        # Mandante stats
-        by_mandante = []
-        for m in unique_mandantes:
-            m_projs = [p for p in sectra_projects if p['mandante'] == m]
-            by_mandante.append({
-                'mandante': m,
-                'count': len(m_projs)
-            })
-        by_mandante.sort(key=lambda x: x['count'], reverse=True)
-
-        total_inv_uf = sum([p['investment'] for p in sectra_projects if p['investment'] and p.get('currency') == 'UF'])
-
-        sectra_payload = {
-            'summary': {
-                'total_projects': len(sectra_projects),
-                'total_investment_uf': round(total_inv_uf, 2),
-                'total_conurbations': len(conurbations),
-                'total_regions': len(unique_regions),
-                'total_cities': len(unique_cities)
-            },
-            'projects': sectra_projects,
-            'conurbations': conurbations,
-            'by_region': by_region,
-            'by_status': by_status,
-            'by_mandante': by_mandante,
-            'filters': {
-                'regions': unique_regions,
-                'cities': unique_cities,
-                'statuses': unique_statuses,
-                'mandantes': unique_mandantes
-            }
-        }
-
-        out_sectra_js = os.path.join(OUT_DIR, 'sectra_data.js')
-        sectra_json = json.dumps(sectra_payload, ensure_ascii=False, separators=(',', ':'))
-        with open(out_sectra_js, 'w', encoding='utf-8') as f:
-            f.write(f'window.SECTRA_DATA = {sectra_json};')
-
-        size_sectra = os.path.getsize(out_sectra_js) / 1024 / 1024
-        print(f"OK SECTRA Generado: {out_sectra_js} ({size_sectra:.3f} MB)")
-        print(f"   Proyectos SECTRA exportados: {len(sectra_projects)}")
-        print(f"   Conurbaciones exportadas: {len(conurbations)}")
-    else:
-        print(f"[WARN] No se encontró el archivo Excel de SECTRA en {SECTRA_EXCEL_PATH}")
-
-except Exception as e:
-    print(f"[WARN] Error al exportar datos SECTRA: {e}")
     import traceback; traceback.print_exc()
 
 

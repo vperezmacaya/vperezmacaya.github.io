@@ -75,9 +75,8 @@ window.CatlecMapGL = {
         return map;
     },
 
-    // Botón "i" que despliega los créditos con animación: mismo marcado, clases
-    // (.catlec-attribution-* en styles.css) y comportamiento que
-    // CatlecUtils.enableCollapsibleAttribution de los mapas Leaflet. Para cumplir
+    // Botón "i" que despliega los créditos con animación (clases
+    // .catlec-attribution-* en styles.css). Para cumplir
     // las guías de atribución de OpenStreetMap, los créditos parten DESPLEGADOS
     // y solo se contraen solos tras la primera interacción con el mapa
     // (arrastre, clic o rueda) o después de `autoCollapseMs` de estar visible
@@ -241,7 +240,6 @@ window.CatlecMapGL = {
     },
 
     // Punto medio a lo largo de las líneas de un conjunto de features
-    // (port de CatlecUtils.getLineMidpoint, que trabaja con capas Leaflet)
     lineMidpoint(features) {
         const segs = [];
         (features || []).forEach(f => this.segments(f.geometry).forEach(s => { if (s.length >= 2) segs.push(s); }));

@@ -1,5 +1,5 @@
 // ─── static/js/common/nav-menu.js ─────────────────────────────────────────────
-// Menú "Seleccionar Base de Datos" compartido por los 7 dashboards CATLEC.
+// Menú "Seleccionar Base de Datos" compartido por los 6 dashboards CATLEC.
 // Reemplaza las ~7 copias casi idénticas del árbol de navegación (HTML + JS de
 // apertura/cierre) que existían antes, una por módulo. Cada HTML solo necesita
 // un contenedor vacío <div class="nav-menu" id="nav-menu"></div> y llamar a
@@ -32,9 +32,9 @@ window.CatlecNav = (function () {
             logo: { type: 'img', src: 'logo/efe_logo.png' },
             submenu: [
                 { key: 'map', icon: 'map', label: 'Mapa', hrefSuffix: '' },
+                { key: 'operacion', icon: 'trending-up', label: 'Demanda y Operación', hrefSuffix: '#operacion' },
                 { key: 'timeline', icon: 'clock', label: 'Líneas de Tiempo de Proyectos', hrefSuffix: '#timeline' },
                 { key: 'investment', icon: 'line-chart', label: 'Análisis de Inversión de Proyectos', hrefSuffix: '#inversion' },
-                { key: 'operacion', icon: 'trending-up', label: 'Demanda y Operación', hrefSuffix: '#operacion' },
             ],
         },
         {
@@ -44,9 +44,9 @@ window.CatlecNav = (function () {
             logo: { type: 'img', src: 'logo/metro_logo.png' },
             submenu: [
                 { key: 'map', icon: 'map', label: 'Mapa', hrefSuffix: '' },
-                { key: 'timeline', icon: 'clock', label: 'Líneas de Tiempo', hrefSuffix: '#timeline' },
-                { key: 'comunas', icon: 'building-2', label: 'Estadísticas Comunales', hrefSuffix: '#comunas' },
                 { key: 'demanda', icon: 'trending-up', label: 'Demanda y Operación', hrefSuffix: '#demanda' },
+                { key: 'timeline', icon: 'clock', label: 'Líneas de Tiempo de Proyectos', hrefSuffix: '#timeline' },
+                { key: 'comunas', icon: 'building-2', label: 'Estadísticas Comunales', hrefSuffix: '#comunas' },
             ],
         },
         {
@@ -66,7 +66,7 @@ window.CatlecNav = (function () {
             label: 'Sistema Nacional de Inversiones (SNI)',
             logo: { type: 'img', src: 'logo/Gob_chile_logo.svg' },
             submenu: [
-                { key: 'map', icon: 'map', label: 'Mapa Regional', hrefSuffix: '#map' },
+                { key: 'map', icon: 'map', label: 'Mapa Regional', hrefSuffix: '' },
                 { key: 'territorial', icon: 'bar-chart-2', label: 'Análisis Territorial', hrefSuffix: '#territorial' },
                 { key: 'ministries', icon: 'landmark', label: 'Ministerios y Sectores', hrefSuffix: '#ministries' },
                 { key: 'temporal', icon: 'clock', label: 'Evolución Temporal', hrefSuffix: '#temporal' },
@@ -78,21 +78,10 @@ window.CatlecNav = (function () {
             label: 'Puertos (Región del Biobío)',
             logo: { type: 'lucide', name: 'anchor' },
             submenu: [
-                { key: 'resumen', icon: 'boxes', label: 'Resumen de Carga', hrefSuffix: '#resumen' },
+                { key: 'resumen', icon: 'boxes', label: 'Resumen de Carga', hrefSuffix: '' },
                 { key: 'contenedores', icon: 'package', label: 'Contenedores y TEUs', hrefSuffix: '#contenedores' },
                 { key: 'tipologia', icon: 'layers', label: 'Tipología de Carga', hrefSuffix: '#tipologia' },
                 { key: 'terrestre', icon: 'truck', label: 'Conectividad Terrestre', hrefSuffix: '#terrestre' },
-            ],
-        },
-        {
-            id: 'sectra',
-            file: 'SECTRA.html',
-            label: 'Secretaría de Planificación de Transporte (SECTRA)',
-            logo: { type: 'img', src: 'logo/Gob_chile_logo.svg' },
-            submenu: [
-                { key: 'map', icon: 'map', label: 'Mapa & Proyectos', hrefSuffix: '' },
-                { key: 'conurbaciones', icon: 'map-pin', label: 'Info por Conurbación', hrefSuffix: '#conurbaciones' },
-                { key: 'analytics', icon: 'bar-chart-2', label: 'Estadísticas Generales', hrefSuffix: '#analytics' },
             ],
         },
     ];
@@ -107,7 +96,6 @@ window.CatlecNav = (function () {
         'mop.html': 'mop',
         'sni.html': 'sni',
         'puertos.html': 'puertos',
-        'sectra.html': 'sectra',
     };
 
     function detectCurrentModuleId() {
@@ -129,12 +117,7 @@ window.CatlecNav = (function () {
             ? logoHtml(current.logo, current.label)
             : logoHtml({ type: 'lucide', name: 'database' }, 'Bases de datos');
 
-        // SECTRA es un módulo independiente y aislado (ver CLAUDE.md): no debe
-        // vincularse ni ser accesible desde el menú de ningún otro dashboard,
-        // solo se lista a sí mismo cuando el usuario ya está dentro de SECTRA.html.
-        const visibleModules = NAV_MODULES.filter(m => m.id !== 'sectra' || currentId === 'sectra');
-
-        const groupsHtml = visibleModules.map(m => {
+        const groupsHtml = NAV_MODULES.map(m => {
             const isCurrent = m.id === currentId;
             const rootHref = isCurrent ? '#' : m.file;
             const itemClasses = isCurrent ? 'nav-menu-item active nav-menu-has-sub' : 'nav-menu-item nav-menu-has-sub';

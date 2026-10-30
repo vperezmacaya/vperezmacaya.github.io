@@ -348,8 +348,9 @@ function metroUpdateOperatingLinesTableSelection() {
 }
 window.metroUpdateOperatingLinesTableSelection = metroUpdateOperatingLinesTableSelection;
 
+// También con una línea o proyecto seleccionado: el resto de las líneas se
+// resalta al pasar el mouse, igual que los íconos de proyecto
 function metroOnHoverOperatingLine(lineName, isHover) {
-    if (metroState.selectedProjectName || metroState.selectedOperatingLine) return;
     if (typeof metroSetHover === 'function') {
         metroSetHover(metroState.hoveredProjectName, isHover ? lineName : null, metroState.hoveredProjectId);
     }

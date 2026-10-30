@@ -67,7 +67,6 @@ function showEfeOperacionView() {
     efeState.operacionOpen = true;
 
     const grid = document.querySelector('.efe-dashboard-grid');
-    const leftPanel = document.querySelector('.left-panel');
     const centerPanel = document.querySelector('.center-panel');
     const rightPanel = document.querySelector('.right-panel');
     const opPanel = document.getElementById('efe-operacion-full-panel');
@@ -77,8 +76,7 @@ function showEfeOperacionView() {
     const btnInv = document.getElementById('btn-efe-view-investment');
     const btnOp = document.getElementById('btn-efe-view-operacion');
 
-    if (grid) grid.style.gridTemplateColumns = '280px 1fr';
-    if (leftPanel) leftPanel.style.display = 'flex';
+    if (grid) grid.style.gridTemplateColumns = 'minmax(0, 1fr)';
     if (centerPanel) centerPanel.style.display = 'none';
     if (rightPanel) rightPanel.style.display = 'none';
     if (opPanel) opPanel.style.display = 'flex';
@@ -102,7 +100,6 @@ function hideEfeOperacionView(skipRestoreCenter) {
     efeState.operacionOpen = false;
 
     const grid = document.querySelector('.efe-dashboard-grid');
-    const leftPanel = document.querySelector('.left-panel');
     const centerPanel = document.querySelector('.center-panel');
     const rightPanel = document.querySelector('.right-panel');
     const opPanel = document.getElementById('efe-operacion-full-panel');
@@ -111,7 +108,6 @@ function hideEfeOperacionView(skipRestoreCenter) {
     const btnOp = document.getElementById('btn-efe-view-operacion');
 
     if (grid) grid.style.gridTemplateColumns = '';
-    if (leftPanel) leftPanel.style.display = 'flex';
     if (centerPanel) centerPanel.style.display = 'flex';
     if (rightPanel) rightPanel.style.display = 'flex';
     if (opPanel) opPanel.style.display = 'none';

@@ -38,9 +38,10 @@ window.switchVisualization = function (viewName) {
         renderVistaTerrestre();
     }
 
-    // 6. Actualizar hash en la URL
-    if (window.location.hash !== `#${viewName}`) {
-        history.replaceState(null, '', `#${viewName}`);
+    // 6. Actualizar hash en la URL (la vista inicial, Resumen de Carga, va sin #)
+    const hash = viewName === 'resumen' ? '' : `#${viewName}`;
+    if (window.location.hash !== hash) {
+        history.replaceState(null, '', hash || window.location.pathname + window.location.search);
     }
 
     // 7. Refrescar iconos Lucide
@@ -77,13 +78,22 @@ document.addEventListener('DOMContentLoaded', () => {
         btnExp.addEventListener('click', window.exportPuertosExcel);
     }
 
-    // Comprobar Hash inicial
-    const initialHash = window.location.hash.replace('#', '').trim();
-    if (['resumen', 'contenedores', 'tipologia', 'terrestre'].includes(initialHash)) {
-        window.switchVisualization(initialHash);
-    } else {
-        window.switchVisualization('resumen');
-    }
+    // Vista según el hash (sin hash o desconocido: Resumen de Carga)
+    const viewFromHash = (hash) => {
+        const view = (hash || '').replace('#', '').trim();
+        return tabButtons.some(t => t.view === view) ? view : 'resumen';
+    };
+    window.switchVisualization(viewFromHash(window.location.hash));
+    window.addEventListener('hashchange', () => window.switchVisualization(viewFromHash(window.location.hash)));
+
+    // Submenú de Puertos en "Seleccionar Base de Datos" (misma página)
+    document.querySelectorAll('#nav-puertos-submenu .nav-submenu-item').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            CatlecNav.close();
+            window.switchVisualization(viewFromHash(link.getAttribute('href')));
+        });
+    });
 
     // Eventos de ventana para cerrar tooltips flotantes
     window.addEventListener('resize', () => {
