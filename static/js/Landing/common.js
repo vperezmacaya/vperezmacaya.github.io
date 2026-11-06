@@ -32,6 +32,10 @@ window.LandingCommon = (function () {
         },
     ];
 
+    // Encuesta del Índice de Percepción de Infraestructura (IPI-CATLEC), en
+    // Microsoft Forms. Para cambiar de formulario basta con editar este enlace.
+    const SURVEY_URL = 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=nitYViSI0EmmZc0yjA4AShwY3_k2TGJAhJhLfc0klR5UMVpRS0I3TVpRNkFEWkxUOTZGR05aRFU0My4u';
+
     // Foto de fondo de la sección de autores (static/js/Landing/photos.js)
     const AUTHORS_PHOTO = 'udec-campanil';
 
@@ -148,9 +152,58 @@ window.LandingCommon = (function () {
         els.forEach(el => io.observe(el));
     }
 
+    // Encuesta: todo elemento [data-survey-open] abre la ventana #lp-survey-modal
+    // con el formulario incrustado (iframe con &embed=true, creado recién al
+    // abrirla por primera vez: el landing no contacta a Microsoft si nadie la
+    // abre); los enlaces [data-survey-link] la abren en una pestaña nueva. Se
+    // cierra con la X, con Escape o con un clic fuera. Sin la ventana en la
+    // página, los botones abren el formulario en una pestaña nueva.
+    function wireSurvey() {
+        document.querySelectorAll('[data-survey-link]').forEach(a => { a.href = SURVEY_URL; });
+        const openers = document.querySelectorAll('[data-survey-open]');
+        const modal = document.getElementById('lp-survey-modal');
+        if (!modal) {
+            openers.forEach(b => b.addEventListener('click', () => window.open(SURVEY_URL, '_blank', 'noopener')));
+            return;
+        }
+        const wrap = document.getElementById('lp-survey-frame-wrap');
+        const closeBtn = document.getElementById('lp-survey-close');
+        const closeBtns = modal.querySelectorAll('[data-survey-close]');
+        let lastFocus = null;
+
+        const isOpen = () => modal.style.display === 'flex';
+        const open = () => {
+            lastFocus = document.activeElement;
+            if (!wrap.querySelector('iframe')) {
+                const frame = document.createElement('iframe');
+                frame.src = SURVEY_URL + (SURVEY_URL.includes('?') ? '&' : '?') + 'embed=true';
+                frame.title = 'Encuesta del Índice de Percepción de Infraestructura';
+                frame.allowFullscreen = true;
+                frame.addEventListener('load', () => wrap.classList.add('is-loaded'), { once: true });
+                wrap.appendChild(frame);
+            }
+            modal.style.display = 'flex';
+            document.documentElement.classList.add('lp-modal-open');
+            // El foco va al botón de cerrar visible (X en escritorio, "Cerrar" en celular)
+            const visibleClose = Array.from(closeBtns).find(b => b.offsetParent) || closeBtn;
+            visibleClose.focus();
+        };
+        const close = () => {
+            if (!isOpen()) return;
+            modal.style.display = 'none';
+            document.documentElement.classList.remove('lp-modal-open');
+            if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+        };
+
+        openers.forEach(b => b.addEventListener('click', (e) => { e.preventDefault(); open(); }));
+        closeBtns.forEach(b => b.addEventListener('click', close));
+        modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+    }
+
     function createIcons() {
         if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
     }
 
-    return { AUTHORS, AFFILIATION, OBJECTIVES, renderObjectives, renderObjectivesCompact, renderAuthors, renderPhotoCredits, wireHeader, wireReveal, createIcons };
+    return { AUTHORS, AFFILIATION, OBJECTIVES, SURVEY_URL, renderObjectives, renderObjectivesCompact, renderAuthors, renderPhotoCredits, wireHeader, wireReveal, wireSurvey, createIcons };
 })();

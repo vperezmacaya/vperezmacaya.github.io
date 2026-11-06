@@ -14,8 +14,8 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap">
     <link rel="shortcut icon" href="logo/favicon.ico">
     <!-- CSS: sistema de diseño global + addon del landing -->
-    <link rel="stylesheet" href="static/css/styles.css?v=20261023_mopgl">
-    <link rel="stylesheet" href="static/css/landing_addons.css?v=20260926_co2">
+    <link rel="stylesheet" href="static/css/styles.css?v=20261104_foto2">
+    <link rel="stylesheet" href="static/css/landing_addons.css?v=20261106_ipi3">
     <!-- MapLibre GL: mapa de referencia bajo los trazados de "Proyectos destacados" -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css">
     <script defer src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
@@ -23,12 +23,12 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
     <!-- Datos estáticos de cada módulo (las cifras del carrusel se calculan en vivo) -->
     <script defer src="static/data/contracts_data.js?v=20260928_1"></script>
-    <script defer src="static/data/sni_data.js?v=20260925_1"></script>
-    <script defer src="static/data/mop_data.js?v=20261028_sep26"></script>
+    <script defer src="static/data/sni_data.js?v=20261105_1110"></script>
+    <script defer src="static/data/mop_data.js?v=20261104_foto2"></script>
     <script defer src="static/data/metro_data.js?v=20260925_1"></script>
     <script defer src="static/data/efe_data.js?v=20260925_1"></script>
     <script defer src="static/data/puertos_data.js?v=20260925_1"></script>
-    <!-- Trazados livianos de Metro y EFE para "Proyectos destacados" (scripts/export_landing_routes.py) -->
+    <!-- Trazados livianos de Metro y EFE para "Proyectos destacados" (scripts/etl/landing_rutas.py) -->
     <script defer src="static/data/landing_routes.js?v=20260926_1"></script>
 </head>
 
@@ -46,10 +46,15 @@
                 <a href="#observatorio" class="lp-tab" data-section="observatorio">Observatorio</a>
                 <a href="#modulos" class="lp-tab" data-section="modulos">Módulos</a>
                 <a href="#destacados" class="lp-tab" data-section="destacados">Destacados</a>
+                <a href="#colabora" class="lp-tab" data-section="colabora">Colabora</a>
                 <a href="acerca.html" class="lp-tab">Acerca</a>
             </nav>
 
             <div class="lp-header-actions">
+                <!-- Abre la encuesta del IPI-CATLEC (LandingCommon.wireSurvey) -->
+                <button type="button" class="lp-btn lp-btn--glass lp-btn--sm lp-survey-header-btn" data-survey-open>
+                    <i data-lucide="message-square-text" class="icon-13"></i> Opina
+                </button>
                 <a href="DGC.html" class="lp-btn lp-btn--primary lp-btn--sm">
                     Ingresar <i data-lucide="arrow-right" class="icon-13"></i>
                 </a>
@@ -150,6 +155,33 @@
                 </div>
             </div>
         </section>
+
+        <!-- ═══════════════════════════════ COLABORA (encuesta del IPI-CATLEC) -->
+        <section class="lp-section lp-section--survey" id="colabora">
+            <div class="lp-container">
+                <div class="lp-survey">
+                    <div class="lp-survey-intro lp-reveal">
+                        <h2 class="lp-section-title">Colabora con nosotros</h2>
+                        <p class="lp-section-lead">Cuéntanos cómo percibes la infraestructura de Chile. Con tus
+                            respuestas construimos el Índice de Percepción de Infraestructura, que publicaremos en
+                            el Observatorio.</p>
+                        <ul class="lp-survey-facts" aria-label="Sobre la encuesta">
+                            <li><i data-lucide="list-checks" class="icon-13"></i>6 preguntas</li>
+                            <li><i data-lucide="timer" class="icon-13"></i>Menos de 2 minutos</li>
+                            <li><i data-lucide="shield-check" class="icon-13"></i>Anónima</li>
+                        </ul>
+                        <div class="lp-survey-ctas">
+                            <button type="button" class="lp-btn lp-btn--primary" data-survey-open>
+                                Responder la encuesta <i data-lucide="arrow-right" class="icon-13"></i>
+                            </button>
+                            <a class="lp-survey-ext" data-survey-link target="_blank" rel="noopener">
+                                Abrir en una pestaña nueva <i data-lucide="external-link" class="icon-13"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
 
     <!-- ═══════════════════════════════ FOOTER -->
@@ -171,22 +203,43 @@
         </details>
     </footer>
 
+    <!-- Ventana de la encuesta (fondo y contenedor del modal "Acerca de" de styles.css). El
+         iframe se crea al abrirla por primera vez (LandingCommon.wireSurvey). -->
+    <div class="about-modal-backdrop lp-survey-modal" id="lp-survey-modal" style="display: none;">
+        <div class="about-modal-container lp-survey-modal-container" role="dialog" aria-modal="true"
+            aria-label="Encuesta de percepción de infraestructura">
+            <!-- Sin cabecera: la X flota fuera de la esquina (en celular, "Cerrar" va en el pie) -->
+            <button type="button" class="lp-survey-close" id="lp-survey-close" data-survey-close
+                aria-label="Cerrar encuesta">
+                <i data-lucide="x"></i>
+            </button>
+            <div class="lp-survey-modal-body" id="lp-survey-frame-wrap">
+                <p class="lp-survey-modal-loading">Cargando encuesta…</p>
+            </div>
+            <div class="lp-survey-modal-foot">
+                <span>¿No carga? <a data-survey-link target="_blank" rel="noopener">Ábrela en una pestaña nueva
+                        <i data-lucide="external-link" class="icon-13"></i></a></span>
+                <button type="button" class="lp-survey-foot-close" data-survey-close>Cerrar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Módulos comunes -->
     <script src="static/js/common/utils.js?v=20261029_barlbl"></script>
     <script src="static/js/common/kpi-animate.js?v=20260925_land1"></script>
     <script src="static/js/common/tooltip.js?v=20260925_land1"></script>
     <script src="static/js/common/map-gl.js?v=20260926_ft16"></script>
     <!-- Solo por NAV_MODULES (logos y enlaces de los módulos); el landing no muestra el menú -->
-    <script src="static/js/common/nav-menu.js?v=20261030_hash"></script>
+    <script src="static/js/common/nav-menu.js?v=20261105_portafolio"></script>
     <!-- Landing -->
     <script defer src="static/js/Landing/photos.js?v=20260926_ph5"></script>
-    <script defer src="static/js/Landing/common.js?v=20260926_ob1"></script>
+    <script defer src="static/js/Landing/common.js?v=20261106_ipi3"></script>
     <script defer src="static/js/Landing/art.js?v=20260925_bp2"></script>
     <script defer src="static/js/Landing/slides.js?v=20261026_ini3"></script>
     <script defer src="static/js/Landing/carousel.js?v=20260926_hub1"></script>
     <script defer src="static/js/Landing/route-art.js?v=20260926_ft13"></script>
-    <script defer src="static/js/Landing/featured.js?v=20260928_1"></script>
-    <script defer src="static/js/Landing/main.js?v=20260926_ob1"></script>
+    <script defer src="static/js/Landing/featured.js?v=20261104_efe_ia"></script>
+    <script defer src="static/js/Landing/main.js?v=20261106_ipi"></script>
     <script defer src="https://unpkg.com/lucide@1.48.0/dist/umd/lucide.min.js"></script>
 </body>
 

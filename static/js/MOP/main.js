@@ -4,7 +4,7 @@
 // (project-map.js) y tabla de proyectos.
 //
 // Datos: window.MOP_DATA (static/data/mop_data.js), generado por
-// scripts/export_static_data.py desde el Excel más reciente de "Iniciativas
+// scripts/etl/mop_datos.py desde el Excel más reciente de "Iniciativas
 // programadas y en ejecución" de la Dirección de Planeamiento. Un proyecto por
 // código BIP: { bip, nombre, servicio, etapa, region, item, inversion }; `etapa` puede reunir
 // varias ("Diseño - Ejecución") e `item` es "Proyectos" o "Estudios básicos". MOP_DATA.filters trae las opciones de los

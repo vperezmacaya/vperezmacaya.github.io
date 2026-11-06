@@ -1,15 +1,16 @@
 // ─── static/js/Landing/featured.js ───────────────────────────────────────────
 // Sección "Proyectos destacados" del landing: un carrusel (LandingCarousel) con
-// proyectos emblemáticos de DGC (concesiones con foto), Metro (líneas nuevas)
-// y EFE (servicios ferroviarios nuevos), intercalando los tres módulos y, dentro
-// de eso, por relevancia social (ver el orden en FEATURED).
+// proyectos emblemáticos de DGC (concesiones con foto), MOP (proyectos con
+// foto, por código BIP), Metro (líneas nuevas) y EFE (servicios ferroviarios
+// nuevos), intercalando los módulos y, dentro de eso, por relevancia social
+// (ver el orden en FEATURED).
 //
 // Cada diapositiva tiene un escenario en primer plano (la foto de la concesión,
 // o el trazado SVG animado de LandingRouteArt, que se dibuja y luego muestra las
 // estaciones como pines) y una ficha con dos KPI grandes (sin conteo: se
 // muestran con su valor final). Las diapositivas cambian con un deslizamiento
 // horizontal simple (slideTo). Las cifras se leen en vivo de STATIC_DATA,
-// METRO_DATA y EFE_DATA; los trazados, de LANDING_ROUTES. Aquí solo se elige
+// MOP_DATA, METRO_DATA y EFE_DATA; los trazados, de LANDING_ROUTES. Aquí solo se elige
 // qué proyectos se muestran, en qué orden, y su título y frase.
 window.LandingFeatured = (function () {
     const AUTOPLAY_MS = 9000;
@@ -27,9 +28,10 @@ window.LandingFeatured = (function () {
     // Orden: la Línea 7 abre y el resto de Metro se intercala con proyectos de
     // EFE y DGC, para no concentrar un módulo ni un tipo de obra seguidos;
     // dentro de eso, primero lo de mayor alcance social.
-    // module: 'metro' | 'efe' | 'dgc'. ids (Metro/EFE): proyectos que se
-    // dibujan juntos, como un solo trazado. Si un proyecto falta en los datos
-    // (o una concesión no tiene foto), se omite.
+    // module: 'metro' | 'efe' | 'dgc' | 'mop' (bip: código BIP). ids (Metro/EFE): proyectos que se
+    // dibujan juntos, como un solo trazado; con photo: true (EFE), la diapositiva
+    // muestra la foto del proyecto (EFE_DATA, Fotos/EFE) en vez del trazado.
+    // Si un proyecto falta en los datos (o una concesión no tiene foto), se omite.
     const FEATURED = [
         { module: 'metro', ids: ['METRO-01'], title: 'Línea 7' },
         {
@@ -46,8 +48,8 @@ window.LandingFeatured = (function () {
             phrase: 'Nuevo tren de cercanía para el norponiente de la Región Metropolitana: Quinta Normal, Renca, Quilicura, Lampa y Colina hasta Batuco.'
         },
         {
-            module: 'dgc', id: '080_HSSG1', title: 'Hospital del Salvador e Instituto Nacional de Geriatría',
-            phrase: 'Nuevo recinto de unas 650 camas en la Región Metropolitana, con equipamiento médico y servicios de apoyo a cargo de la concesión.'
+            module: 'mop', bip: '30125021-0', title: 'Puente sobre el canal de Chacao',
+            phrase: 'Puente colgante de unos 2,75 km sobre el canal de Chacao, que unirá por tierra la isla Grande de Chiloé con el continente.'
         },
         { module: 'metro', ids: ['METRO-05'], title: 'Línea 8' },
         {
@@ -76,8 +78,8 @@ window.LandingFeatured = (function () {
             phrase: 'Amplía los terminales de Punta Arenas, a 16.014 m² y 2,1 millones de pasajeros al año, y de Balmaceda, a 12.391 m².'
         },
         {
-            module: 'dgc', id: '125_ARNO1', title: 'Red Aeroportuaria Norte',
-            phrase: 'Primera concesión en red: amplía y renueva los aeropuertos Andrés Sabella y Desierto de Atacama, en Antofagasta y Atacama.'
+            module: 'efe', ids: ['P-3'], photo: true, title: 'Puente Ferroviario Biobío',
+            phrase: 'Viaducto de 1,8 km con dos vías electrificadas para trenes de carga y pasajeros sobre el río Biobío, más un nuevo túnel de 325 m en el cerro Chepe.'
         },
     ];
 
@@ -123,6 +125,9 @@ window.LandingFeatured = (function () {
 
         const kpis = [usdKpi('Inversión estimada', invest)];
         if (benefited) kpis.push(kpi('Población beneficiada', { value: fmt(benefited / 1e6, 1), unit: 'M hab.' }));
+        // Año estimado tal como lo da la Memoria: puede ser un rango ("2030 - 2032") o "2030+"
+        const opYear = String(main.operation_year || '').trim();
+        if (yearOf(opYear)) kpis.push(kpi('Operación estimada', { value: dash(opYear).replace(/ – /g, '–') }));
 
         return {
             key: `metro-${main.id}`,
@@ -148,7 +153,7 @@ window.LandingFeatured = (function () {
         if (!D || !R) return null;
         const projects = cfg.ids.map(id => D.data.find(p => p.id === id)).filter(Boolean);
         const routes = projects.map(p => R.efe[p.id]).filter(Boolean);
-        if (!projects.length || !routes.length) return null;
+        if (!projects.length || (!cfg.photo && !routes.length)) return null;
         const main = projects[0];
 
         const invest = projects.reduce((a, p) => a + (num(p.investment_mm_usd) || 0), 0);
@@ -158,6 +163,20 @@ window.LandingFeatured = (function () {
         const kpis = [usdKpi('Inversión estimada', invest)];
         if (year) kpis.push(yearKpi('Inicio de operación', year));
 
+        // Foto del proyecto en lugar del trazado: imagen de referencia generada por IA
+        // (rótulo por defecto de las diapositivas con foto, como DGC y MOP)
+        const photos = cfg.photo ? (main.photos || []).filter(Boolean).map(src => ({ src })) : [];
+        if (cfg.photo && !photos.length) return null;
+        const stage = cfg.photo
+            ? { type: 'photo', photos }
+            : {
+                type: 'route',
+                context: ['efe', 'metro'],
+                color: EFE_COLOR,
+                segments: projects.map(p => ({ paths: (R.efe[p.id] || {}).paths || [] })),
+                stations,
+            };
+
         return {
             key: `efe-${main.id}`,
             module: 'efe',
@@ -166,13 +185,7 @@ window.LandingFeatured = (function () {
             kpis,
             link: 'EFE.html',
             source: `Fuente: Empresa de los Ferrocarriles del Estado, ${main.source || 'Memoria'}.`,
-            stage: {
-                type: 'route',
-                context: ['efe', 'metro'],
-                color: EFE_COLOR,
-                segments: projects.map(p => ({ paths: (R.efe[p.id] || {}).paths || [] })),
-                stations,
-            },
+            stage,
         };
     }
 
@@ -207,7 +220,41 @@ window.LandingFeatured = (function () {
         };
     }
 
-    const BUILDERS = { metro: metroSlide, efe: efeSlide, dgc: dgcSlide };
+    // ─── MOP ────────────────────────────────────────────────────────────────
+    // Proyectos del Excel mensual de la Dirección de Planeamiento con foto
+    // (Fotos/MOP, cruce por BIP en el ETL). `inversion` va en miles de pesos.
+    function mopSlide(cfg) {
+        const D = window.MOP_DATA;
+        if (!D || !D.projects) return null;
+        const p = D.projects.find(x => x.bip === cfg.bip);
+        const photos = p && (p.photos || []).filter(ph => ph && ph.src);
+        if (!p || !photos.length) return null;
+
+        const kpis = [];
+        const cost = num(p.inversion);
+        if (cost) {
+            const pesos = cost * 1000;
+            const year = (D.summary && D.summary.inversion_year) || '';
+            const label = `Costo estimado${year ? ` (pesos ${year})` : ''}`;
+            kpis.push(pesos >= 1e12
+                ? kpi(label, { prefix: '$', value: fmt(pesos / 1e12, 2), unit: 'billones' })
+                : kpi(label, { prefix: '$', value: fmt(pesos / 1e9), unit: 'mil millones' }));
+        }
+
+        const period = D.source && D.source.label ? `, cartera a ${D.source.label}` : '';
+        return {
+            key: `mop-${p.bip}`,
+            module: 'mop',
+            title: cfg.title || p.nombre,
+            phrase: cfg.phrase || '',
+            kpis,
+            link: 'MOP.html',
+            source: `Fuente: Ministerio de Obras Públicas, Dirección de Planeamiento${period}; costo de la ficha IDI (BIP).`,
+            stage: { type: 'photo', photos },
+        };
+    }
+
+    const BUILDERS = { metro: metroSlide, efe: efeSlide, dgc: dgcSlide, mop: mopSlide };
 
     function build() {
         return FEATURED.map(cfg => {
@@ -239,7 +286,7 @@ window.LandingFeatured = (function () {
                     <img data-src="${encodeURI(p.src)}" alt="${s.title}${p.label ? ' — ' + p.label : ''}" decoding="async">
                     ${p.label ? `<figcaption>${p.label}</figcaption>` : ''}
                 </figure>`).join('')}
-                <span class="lp-feature-ai-note">Imagen de referencia generada por IA</span>
+                <span class="lp-feature-ai-note">${s.stage.note || 'Imagen de referencia generada por IA'}</span>
             </div>`;
         }
         return `

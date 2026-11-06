@@ -16,6 +16,9 @@
 .view-subheader.efe-tabs {
     grid-template-columns: repeat(3, 1fr);
 }
+.view-subheader.efe-tabs.five-tabs {
+    grid-template-columns: repeat(5, 1fr);
+}
 
 /* ─── Dashboard Layout ────────────────────────────────────────────────────── */
 .efe-dashboard-grid {
@@ -269,3 +272,523 @@
    se portaron a la clase global en styles.css.
    ============================================================= */
 
+
+/* ─── Vista "Carga Ferroviaria" (static/js/EFE/carga.js) ──────────────────────
+   Ocupa toda la grilla como "Demanda y Operación": KPI arriba y dos filas de
+   tres tarjetas. El panel se muestra con style.display = 'flex' desde carga.js. */
+.efe-carga-panel {
+    display: none;
+    grid-column: 1 / -1;
+    flex-direction: column;
+    background: var(--bg-card);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    height: 100%;
+    min-height: 0;
+}
+.efe-carga-empty {
+    display: none;
+    flex: 1;
+}
+.efe-carga-body {
+    flex: 1;
+    padding: 0.45rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-height: 0;
+    overflow: hidden;
+}
+.efe-carga-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem;
+    flex-shrink: 0;
+}
+.efe-carga-kpis .card-kpi {
+    min-height: 52px;
+    padding: 0.35rem 0.55rem;
+}
+.efe-carga-kpis .kpi-value {
+    font-size: 0.95rem;
+}
+.efe-carga-kpi-sub {
+    display: block;
+    margin-top: 0.05rem;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.efe-carga-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1.2fr) minmax(0, 0.7fr);   /* carga por año, productos, meta */
+    gap: 0.4rem;
+    flex: 1;
+    min-height: 0;
+}
+.efe-carga-card {
+    padding: 0.4rem 0.5rem 0.3rem;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+.efe-carga-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.2rem;
+    margin-bottom: 0.2rem;
+    flex-shrink: 0;
+}
+.efe-carga-card-head h3 {
+    font-size: 0.74rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+.efe-carga-card-head h3 svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+    color: #0f3b6c;
+}
+.efe-carga-total {
+    font-size: 0.64rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.efe-carga-legend {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.63rem;
+    flex-shrink: 0;
+}
+.efe-carga-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-weight: 600;
+}
+.efe-carga-swatch {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    display: inline-block;
+}
+.efe-carga-swatch--line {
+    border-radius: 50%;
+}
+.efe-carga-chart {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+}
+.efe-carga-src {
+    font-size: 0.58rem;
+    color: var(--text-muted);
+    text-align: right;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+}
+.efe-carga-src:empty {
+    display: none;
+}
+
+/* Meta 2030: avance y ritmo, centrados y sin scroll */
+.efe-carga-meta {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.4rem;
+}
+.efe-carga-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+.efe-carga-meta-pct {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #0f3b6c;
+}
+.efe-carga-progress {
+    height: 10px;
+    background: var(--border-color);
+    border-radius: 5px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.efe-carga-progress-fill {
+    width: 0;
+    height: 100%;
+    background: #0f3b6c;
+    border-radius: inherit;
+    transition: width 0.45s ease-out;
+}
+.efe-carga-facts {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.3rem;
+    margin-top: 0.1rem;
+}
+.efe-carga-fact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.05rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm, 8px);
+    padding: 0.25rem 0.4rem;
+    min-width: 0;
+}
+.efe-carga-fact--ritmo {
+    border-left: 3px solid #0f3b6c;
+    background: rgba(15, 59, 108, 0.04);
+}
+.efe-carga-fact-value {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+.efe-carga-fact-label {
+    font-size: 0.6rem;
+    line-height: 1.25;
+    color: var(--text-secondary);
+}
+
+/* Pantallas angostas: una columna con scroll y tarjetas de alto fijo */
+@media (max-width: 1100px) {
+    .efe-carga-body {
+        overflow-y: auto;
+    }
+    .efe-carga-kpis {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .efe-carga-row {
+        grid-template-columns: 1fr;
+        flex: none;
+    }
+    .efe-carga-card {
+        height: 280px;
+    }
+    /* La meta solo tiene la barra y el ritmo: alto según su contenido, ritmo en dos columnas */
+    .efe-carga-card--meta {
+        height: auto;
+    }
+    .efe-carga-facts {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+@media (max-width: 600px) {
+    .efe-carga-kpis {
+        grid-template-columns: 1fr;
+    }
+    .efe-carga-facts {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .efe-carga-progress-fill {
+        transition: none;
+    }
+}
+.efe-carga-card-head h3 > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ─── Vista Carga: gráfico por año con botones de métrica ──────────────────── */
+.efe-carga-toggle {
+    display: inline-flex;
+    flex-shrink: 0;
+    padding: 2px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-hover, rgba(0, 0, 0, 0.06));
+}
+.efe-carga-toggle button {
+    padding: 2px 8px;
+    font-size: 0.62rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background: transparent;
+    color: var(--text-muted);
+    transition: background-color 0.2s, color 0.2s;
+}
+.efe-carga-toggle button.is-active {
+    background: var(--primary, #2563eb);
+    color: #ffffff;
+}
+.efe-carga-legend--fila {
+    flex-wrap: wrap;
+    margin-bottom: 0.15rem;
+}
+
+/* ─── Vista Carga: mapa de la Red EFE (D3, carga-mapa.js) ──────────────────── */
+/* La fila del mapa tiene el mismo alto que la de los gráficos (las dos con flex: 1) */
+.efe-carga-row--mapa {
+    grid-template-columns: minmax(0, 1fr);
+}
+.efe-carga-row--mapa .efe-carga-card-head .efe-carga-legend {
+    flex: 1;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    row-gap: 0.15rem;
+    flex-shrink: 1;
+    min-width: 0;
+}
+.efe-carga-legend-item--muted {
+    color: var(--text-secondary);
+}
+.efe-carga-legend-sep {
+    width: 1px;
+    height: 10px;
+    background: var(--border-color);
+}
+.efe-carga-swatch--linea {
+    width: 14px;
+    height: 3px;
+    border-radius: 2px;
+}
+.efe-carga-swatch--nodo {
+    border-radius: 50%;
+    border: 1.5px solid;
+    box-sizing: border-box;
+}
+.efe-carga-mapa-reset {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+    padding: 2px 8px;
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+}
+.efe-carga-mapa-reset:hover {
+    border-color: var(--border-color-focus);
+    color: var(--text-primary);
+}
+.efe-carga-mapa-reset svg {
+    width: 11px;
+    height: 11px;
+}
+.efe-carga-mapa {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+    cursor: grab;
+}
+.efe-carga-mapa:active {
+    cursor: grabbing;
+}
+/* Mapa de ubicación (esquina superior derecha del mapa de la Red EFE) */
+.efe-carga-ubicacion {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    padding: 4px;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    pointer-events: none;
+    line-height: 0;
+}
+.efe-carga-ubicacion-region {
+    fill: #d92534;
+    fill-opacity: 0.85;
+    stroke: #ffffff;
+    stroke-width: 0.4;
+}
+.efe-carga-ubicacion-recuadro {
+    fill: rgba(15, 59, 108, 0.12);
+    stroke: #0f3b6c;
+    stroke-width: 1.2;
+    stroke-linejoin: round;
+}
+.efe-carga-red-path {
+    fill: none;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    pointer-events: none;
+}
+.efe-carga-nodo {
+    stroke-width: 1.5;
+}
+.efe-carga-etiqueta {
+    font-size: 9.5px;
+    font-weight: 600;
+    fill: #1e293b;
+    text-anchor: middle;
+    dominant-baseline: central;
+    paint-order: stroke;
+    stroke: #ffffff;
+    stroke-width: 3px;
+    stroke-linejoin: round;
+    pointer-events: none;
+}
+.efe-carga-etiqueta--puerto {
+    fill: #0369a1;
+}
+
+@media (max-width: 1100px) {
+    .efe-carga-row--mapa .efe-carga-card {
+        height: 300px;
+    }
+    .efe-carga-row--mapa .efe-carga-card-head {
+        flex-wrap: wrap;
+    }
+    /* La leyenda del mapa baja a su propia línea, bajo el título y "Restablecer" */
+    .efe-carga-row--mapa .efe-carga-card-head .efe-carga-legend {
+        order: 3;
+        flex-basis: 100%;
+        justify-content: flex-start;
+    }
+}
+@media (max-width: 600px) {
+    .efe-carga-row--mapa .efe-carga-card {
+        height: 340px;
+    }
+    /* En celular el mapa de ubicación taparía la red, que ocupa todo el ancho */
+    .efe-carga-ubicacion {
+        display: none;
+    }
+}
+
+/* ── Portafolio de Proyectos (#proyectos): líneas de tiempo + análisis de inversión ──────────────── */
+.efe-portafolio-full-panel {
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+    gap: 0.4rem;
+    height: 100%;
+    min-height: 0;
+}
+.efe-portafolio-inversion {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-height: 0;
+    min-width: 0;
+}
+.efe-portafolio-kpis {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.4rem;
+    flex-shrink: 0;
+}
+.efe-portafolio-card--tipo {
+    flex: 0 0 40%;
+}
+.efe-portafolio-card--top {
+    flex: 1;
+}
+.efe-portafolio-pie-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0 0.2rem;
+}
+.efe-portafolio-pie {
+    position: relative;
+    width: 150px;   /* donut chico: la leyenda ocupa el resto */
+    height: 150px;
+    max-width: 36%;
+    max-height: 100%;
+    flex-shrink: 0;
+}
+.efe-portafolio-pie-legend {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.18rem;
+}
+.efe-portafolio-legend-row {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.68rem;
+    min-width: 0;
+}
+.efe-portafolio-legend-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.efe-portafolio-legend-label {
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+.efe-portafolio-legend-val {
+    margin-left: auto;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+.efe-portafolio-legend-val span {
+    font-weight: 400;
+    color: var(--text-muted);
+    font-size: 0.62rem;
+}
+/* Pantallas angostas: una columna con scroll (líneas de tiempo arriba, inversión abajo) */
+@media (max-width: 1100px) {
+    .efe-portafolio-full-panel {
+        grid-template-columns: minmax(0, 1fr);
+        grid-auto-rows: max-content;
+        overflow-y: auto;
+    }
+    .efe-portafolio-full-panel > .timeline-full-panel {
+        height: 70vh;
+    }
+    .efe-portafolio-card--tipo {
+        flex: none;
+        height: 220px;
+    }
+    .efe-portafolio-card--top {
+        flex: none;
+        height: 280px;
+    }
+}
+@media (max-width: 600px) {
+    .efe-portafolio-kpis {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

@@ -30,14 +30,25 @@ window.CatlecChoropleth = {
     },
 
     // Crea el mapa dentro de `containerId`. Devuelve un controlador con:
-    // paths() (selección D3 de las regiones) y redraw(). onEnter/onMove/onLeave
+    // paths() (selección D3 de las regiones), redraw(), svg, regionsGroup y
+    // projection() (la proyección del último dibujo). onEnter/onMove/onLeave
     // reciben (event, feature); onDraw se llama tras el primer dibujo (ahí el
     // módulo pinta los colores, porque el contenedor puede no tener tamaño aún).
-    create(containerId, { features, padding = 14, style = {}, onEnter, onMove, onLeave, onDraw } = {}) {
+    // Opciones para mapas que no son coropléticos (ej. la Red EFE en la vista
+    // Carga de EFE): `angle` gira el mapa en grados (90 = Chile "acostado",
+    // con el norte a la izquierda y el Pacífico abajo), `bounds` cambia el
+    // encuadre, `hover: false`
+    // quita el resaltado de las regiones y `onRedraw(projection, pathGen)` se
+    // llama tras cada dibujo para que el módulo dibuje sus capas encima.
+    // `ajuste(projection, width, height)` corrige la proyección después del encuadre (ej. fijar
+    // dónde caen ciertos puntos); se llama en cada dibujo, antes de dibujar las regiones.
+    create(containerId, { features, padding = 14, style = {}, angle = 0, bounds: boundsOpt, ajuste, hover = true,
+        onEnter, onMove, onLeave, onDraw, onRedraw } = {}) {
         const container = document.getElementById(containerId);
         if (!container || typeof d3 === 'undefined') return null;
         const st = Object.assign({}, this.STYLE, style);
-        const bounds = this.CHILE_CONTINENTAL_BOUNDS;
+        const bounds = boundsOpt || this.CHILE_CONTINENTAL_BOUNDS;
+        let projection = null;
 
         const svg = d3.select(container)
             .append('svg')
@@ -59,11 +70,13 @@ window.CatlecChoropleth = {
             const width = container.clientWidth;
             const height = container.clientHeight;
             if (width <= 0 || height <= 0) return;
-            const projection = d3.geoMercator().fitExtent([[padding, padding], [width - padding, height - padding]], bounds);
+            projection = d3.geoMercator().angle(angle).fitExtent([[padding, padding], [width - padding, height - padding]], bounds);
+            if (ajuste) ajuste(projection, width, height);
             const pathGen = d3.geoPath().projection(projection);
 
             if (drawn) {
                 group.selectAll('path.catlec-region-path').attr('d', pathGen);
+                if (onRedraw) onRedraw(projection, pathGen);
                 return;
             }
             group.selectAll('path.catlec-region-path')
@@ -75,16 +88,17 @@ window.CatlecChoropleth = {
                 .attr('d', pathGen)
                 .attr('fill-opacity', st.fillOpacity)
                 .on('mouseenter', function (event, f) {
-                    setHover(d3.select(this), true);
+                    if (hover) setHover(d3.select(this), true);
                     if (onEnter) onEnter(event, f);
                 })
                 .on('mousemove', (event, f) => { if (onMove) onMove(event, f); })
                 .on('mouseleave', function (event, f) {
-                    setHover(d3.select(this), false);
+                    if (hover) setHover(d3.select(this), false);
                     if (onLeave) onLeave(event, f);
                 });
             drawn = true;
             if (onDraw) onDraw();
+            if (onRedraw) onRedraw(projection, pathGen);
         };
 
         // Redibujo al cambiar el tamaño. El primer dibujo lo hace el módulo con
@@ -98,7 +112,9 @@ window.CatlecChoropleth = {
 
         return {
             svg,
+            regionsGroup: group,
             paths: () => group.selectAll('path.catlec-region-path'),
+            projection: () => projection,
             redraw
         };
     },

@@ -1535,6 +1535,235 @@ body.catlec-resizing .right-panel {
     font-weight: 500;
 }
 
+/* Fotos de referencia de las fichas (DGC y MOP, CatlecPhotoViewer en
+   static/js/common/photo-viewer.js): carrusel de la ficha y visor a tamaño completo.
+   Etiquetas sobre la foto: nombre de la infraestructura, contador y aviso de IA. */
+.catlec-photo-ai-note,
+.catlec-photo-label,
+.catlec-photo-counter {
+    padding: 0.18rem 0.45rem;
+    border-radius: var(--radius-sm);
+    background: rgba(15, 23, 42, 0.68);
+    color: #fff;
+    font-size: 0.62rem;
+    font-weight: 500;
+    line-height: 1.3;
+    pointer-events: none;
+}
+
+.catlec-photo-overlay {
+    position: absolute;
+    left: 0.4rem;
+    right: 0.4rem;
+    bottom: 0.4rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.4rem;
+    pointer-events: none;
+}
+
+.catlec-photo-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+.catlec-photo-label[hidden] {
+    display: none;
+}
+
+.catlec-photo-ai-note {
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.catlec-photo-counter {
+    position: absolute;
+    top: 0.4rem;
+    left: 0.4rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.catlec-photo-carousel {
+    height: 220px;
+    touch-action: pan-y;
+}
+
+.catlec-photo-carousel .catlec-photo-slide {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.25s ease;
+}
+
+.catlec-photo-carousel .catlec-photo-slide.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.detail-project-photo.catlec-photo-zoomable {
+    cursor: zoom-in;
+    transition: transform 0.25s ease;
+}
+
+.detail-project-photo.catlec-photo-zoomable:hover {
+    transform: scale(1.02);
+}
+
+.catlec-photo-nav {
+    position: absolute;
+    top: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.45);
+    color: #fff;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(-50%);
+    transition: opacity 0.2s ease, background 0.15s ease;
+}
+
+.catlec-photo-nav--prev { left: 0.4rem; }
+.catlec-photo-nav--next { right: 0.4rem; }
+
+.catlec-photo-nav svg {
+    width: 16px;
+    height: 16px;
+}
+
+.catlec-photo-carousel:hover .catlec-photo-nav,
+.catlec-photo-nav:focus-visible {
+    opacity: 1;
+}
+
+.catlec-photo-nav:hover {
+    background: rgba(15, 23, 42, 0.68);
+}
+
+/* En pantallas táctiles no hay hover: flechas siempre visibles */
+@media (hover: none) {
+    .catlec-photo-nav { opacity: 1; }
+}
+
+/* Con una sola foto no hay flechas ni contador */
+.catlec-photo-carousel:not(.catlec-photo-carousel--multi) .catlec-photo-nav,
+.catlec-photo-carousel:not(.catlec-photo-carousel--multi) .catlec-photo-counter,
+.catlec-photo-lightbox:not(.catlec-photo-lightbox--multi) .catlec-photo-lightbox-nav,
+.catlec-photo-lightbox:not(.catlec-photo-lightbox--multi) .catlec-photo-counter {
+    display: none;
+}
+
+/* Visor a tamaño completo de la foto */
+.catlec-photo-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    cursor: zoom-out;
+    touch-action: pinch-zoom;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0s linear 0.2s;
+}
+
+.catlec-photo-lightbox.open {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.2s ease;
+}
+
+.catlec-photo-lightbox-figure {
+    position: relative;
+    margin: 0;
+    transform: scale(0.96);
+    transition: transform 0.2s ease;
+}
+
+.catlec-photo-lightbox.open .catlec-photo-lightbox-figure {
+    transform: scale(1);
+}
+
+.catlec-photo-lightbox-img {
+    display: block;
+    max-width: calc(100vw - 3rem);
+    max-height: calc(100vh - 3rem);
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 25px 65px rgba(0, 0, 0, 0.45);
+    cursor: default;
+}
+
+.catlec-photo-lightbox .catlec-photo-overlay {
+    left: 0.6rem;
+    right: 0.6rem;
+    bottom: 0.6rem;
+}
+
+.catlec-photo-lightbox .catlec-photo-counter {
+    top: 0.6rem;
+    left: 0.6rem;
+}
+
+.catlec-photo-lightbox .catlec-photo-ai-note,
+.catlec-photo-lightbox .catlec-photo-label,
+.catlec-photo-lightbox .catlec-photo-counter {
+    font-size: 0.72rem;
+}
+
+.catlec-photo-lightbox-close {
+    top: 1rem;
+    right: 1rem;
+}
+
+.catlec-photo-lightbox-nav {
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.catlec-photo-lightbox-nav--prev { left: 1rem; }
+.catlec-photo-lightbox-nav--next { right: 1rem; }
+
+.catlec-photo-lightbox-btn {
+    position: absolute;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.45rem;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.catlec-photo-lightbox-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.catlec-photo-lightbox-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
 .detail-grid {
     display: grid;
     grid-template-columns: auto 1fr;

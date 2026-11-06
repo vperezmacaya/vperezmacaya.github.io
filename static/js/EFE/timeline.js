@@ -54,6 +54,7 @@ const EFE_TL_BAR_H = 14;
 const EFE_TL_AXIS_H = 36;
 const EFE_TL_LABEL_W = 240;
 const EFE_TL_MILESTONE_R = 6.5;
+const EFE_TL_OPEN_PAD = 22;        // margen derecho del bloque abierto ('2030 +'), igual a PAD_X de Metro
 
 // ── Parsea el valor de la columna "Operación estimada" (Excel) y determina la tipología del hito ──
 /**
@@ -120,40 +121,47 @@ function efeGetNumericYear(val) {
 }
 
 
+// Vista "Portafolio de Proyectos" (#proyectos; también abren #timeline, #inversion y #investment):
+// líneas de tiempo a la izquierda y análisis de inversión (investment.js) a la derecha, en
+// #efe-portafolio-full-panel. efeState.timelineOpen y efeState.investmentOpen van juntos (filters.js
+// redibuja ambos al filtrar); showEfeInvestmentView / hideEfeInvestmentView son alias de estas.
+const EFE_PORTAFOLIO_HASHES = ['#proyectos', '#timeline', '#inversion', '#investment'];
+
 function showEfeTimelineView() {
     if (typeof efeMap !== 'undefined' && efeMap && efeMap.getCenter) {
         efeState.savedMapCenter = efeMap.getCenter();
         efeState.savedMapZoom = efeMap.getZoom();
     }
-    if (efeState.investmentOpen && typeof hideEfeInvestmentView === 'function') {
-        hideEfeInvestmentView(true);
-    }
     if (efeState.operacionOpen && typeof hideEfeOperacionView === 'function') {
         hideEfeOperacionView(true);
     }
+    if (efeState.cargaOpen && typeof hideEfeCargaView === 'function') {
+        hideEfeCargaView(true);
+    }
     efeState.timelineOpen = true;
+    efeState.investmentOpen = true;
 
     const grid = document.querySelector('.efe-dashboard-grid');
     const centerPanel = document.querySelector('.center-panel');
     const rightPanel = document.querySelector('.right-panel');
-    const tlPanel = document.getElementById('efe-timeline-full-panel');
+    const panel = document.getElementById('efe-portafolio-full-panel');
     const btnMap = document.getElementById('btn-efe-view-map');
-    const btnInv = document.getElementById('btn-efe-view-investment');
     const btnTl = document.getElementById('btn-efe-view-timeline');
     const btnOp = document.getElementById('btn-efe-view-operacion');
 
     if (grid) grid.style.gridTemplateColumns = 'minmax(0, 1fr)';
     if (centerPanel) centerPanel.style.display = 'none';
     if (rightPanel) rightPanel.style.display = 'none';
-    if (tlPanel) tlPanel.style.display = 'flex';
+    if (panel) panel.style.display = 'grid';
 
     if (btnMap) btnMap.classList.remove('active');
-    if (btnInv) btnInv.classList.remove('active');
     if (btnOp) btnOp.classList.remove('active');
     if (btnTl) btnTl.classList.add('active');
+    const btnCarga = document.getElementById('btn-efe-view-carga');
+    if (btnCarga) btnCarga.classList.remove('active');
 
-    if (window.location.hash !== '#timeline') {
-        history.replaceState(null, null, '#timeline');
+    if (window.location.hash !== '#proyectos') {
+        history.replaceState(null, null, '#proyectos');
     }
 
     const currentList = (typeof efeGetFilteredProjects === 'function')
@@ -163,15 +171,17 @@ function showEfeTimelineView() {
             : ((window.EFE_DATA && window.EFE_DATA.data) ? window.EFE_DATA.data : []));
 
     renderEfeTimeline(currentList);
+    if (typeof renderEfeInvestmentAnalytics === 'function') renderEfeInvestmentAnalytics(currentList);
 }
 
 function hideEfeTimelineView(skipRestoreCenter) {
     efeState.timelineOpen = false;
+    efeState.investmentOpen = false;
 
     const grid = document.querySelector('.efe-dashboard-grid');
     const centerPanel = document.querySelector('.center-panel');
     const rightPanel = document.querySelector('.right-panel');
-    const tlPanel = document.getElementById('efe-timeline-full-panel');
+    const tlPanel = document.getElementById('efe-portafolio-full-panel');
     const btnMap = document.getElementById('btn-efe-view-map');
     const btnTl = document.getElementById('btn-efe-view-timeline');
 
@@ -181,9 +191,9 @@ function hideEfeTimelineView(skipRestoreCenter) {
     if (tlPanel) tlPanel.style.display = 'none';
 
     if (btnTl) btnTl.classList.remove('active');
-    if (btnMap && !efeState.investmentOpen && !efeState.operacionOpen) btnMap.classList.add('active');
+    if (btnMap && !efeState.operacionOpen && !efeState.cargaOpen) btnMap.classList.add('active');
 
-    if (window.location.hash === '#timeline') {
+    if (EFE_PORTAFOLIO_HASHES.includes(window.location.hash)) {
         history.replaceState(null, null, window.location.pathname + window.location.search);
     }
 
@@ -249,8 +259,11 @@ function renderEfeTimeline(projects, highlightName = null) {
     });
 
     // ── Calculate Year Range for Axis ───────────────────────────────────────
+    // Como en Metro: una fecha abierta ('2030 +') alarga el eje 3 años más allá de su inicio, para que el
+    // bloque verde y su rótulo 'P. Operación 2030 +' tengan espacio (con el eje hasta 2031 medía 74 px)
+    const openStarts = data.map(p => parseEfeMilestone(p.operation_year)).filter(ms => ms && ms.type === 'open_range').map(ms => ms.start);
     let minYear = 2024;
-    let maxYear = Math.max(2031, maxOp);
+    let maxYear = Math.max(2031, maxOp, ...openStarts.map(y => y + 3));
 
     // ── Row Metrics ─────────────────────────────────────────────────────────
     const rowMetrics = sortedData.map(p => {
@@ -638,7 +651,7 @@ function renderEfeTimeline(projects, highlightName = null) {
         } else if (ms && ms.type === 'open_range') {
             // Caso 3: Formato '2030+' / '2030 +'
             const mx1 = toPx(ms.start);
-            const mx2 = chartW - PADDING_RIGHT;
+            const mx2 = chartW - EFE_TL_OPEN_PAD;   // casi hasta el borde, más allá del último año (como en Metro)
             const mainW = Math.max(mx1, 0);
 
             // Barra base desde el extremo izquierdo (x=0) hasta el inicio del hito abierto (mx1)

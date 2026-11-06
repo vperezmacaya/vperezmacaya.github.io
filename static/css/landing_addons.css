@@ -2035,6 +2035,207 @@ main,
     transform: none;
 }
 
+/* ─── Colabora: encuesta del IPI-CATLEC ─────────────────────────────────── */
+.lp-section--survey {
+    background-image: var(--lp-graph-paper);
+    background-size: var(--lp-graph-paper-size);
+}
+
+.lp-survey {
+    max-width: 720px;
+}
+
+.lp-survey-facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 22px;
+    margin: 28px 0 0;
+    padding: 0;
+    list-style: none;
+    font-family: var(--lp-mono);
+    font-size: 0.8rem;
+    color: var(--lp-navy);
+}
+
+.lp-survey-facts li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.lp-survey-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px 22px;
+    margin-top: 32px;
+}
+
+.lp-survey-ext {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--lp-accent);
+    text-decoration: none;
+}
+
+.lp-survey-ext:hover {
+    color: var(--lp-navy);
+    text-decoration: underline;
+}
+
+/* Ventana: reutiliza .about-modal-* de styles.css; solo cambia lo propio */
+.lp-modal-open,
+.lp-modal-open body {
+    overflow: hidden;
+}
+
+/* Sin cabecera: el formulario llega arriba y la X flota fuera de la esquina,
+   así que el contenedor no recorta (overflow visible) y el cuerpo redondea. */
+.lp-survey-modal-container {
+    position: relative;
+    max-width: 760px;
+    height: 88vh;
+    overflow: visible;
+}
+
+.lp-survey-close {
+    position: absolute;
+    top: 0;
+    right: -52px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--lp-ink);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
+    cursor: pointer;
+    transition: transform var(--transition-fast), background var(--transition-fast);
+}
+
+.lp-survey-close:hover {
+    background: #fff;
+    transform: scale(1.06);
+}
+
+.lp-survey-close svg {
+    width: 20px;
+    height: 20px;
+}
+
+.lp-survey-modal-body {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: 14px 14px 0 0;
+    background: #f8fafc;
+}
+
+.lp-survey-modal-body iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.lp-survey-modal-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--lp-mono);
+    font-size: 0.8rem;
+    color: var(--lp-slate);
+}
+
+.lp-survey-modal-body.is-loaded .lp-survey-modal-loading {
+    display: none;
+}
+
+.lp-survey-modal-foot {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0.7rem 1.4rem;
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.8rem;
+    color: var(--lp-slate);
+}
+
+/* "Cerrar" del pie: solo cuando la X no cabe fuera de la ventana */
+.lp-survey-foot-close {
+    display: none;
+    flex-shrink: 0;
+    height: 34px;
+    padding: 0 1rem;
+    border: 1px solid var(--lp-navy);
+    border-radius: 10px;
+    background: var(--lp-navy);
+    color: #fff;
+    font-family: var(--font-heading);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.lp-survey-modal-foot a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-weight: 600;
+    color: var(--lp-accent);
+}
+
+@media (max-width: 640px) {
+    /* El cajón de pestañas ya trae "Colabora": el header deja solo "Ingresar" */
+    .lp-survey-header-btn {
+        display: none;
+    }
+
+    .lp-survey-modal {
+        padding: 0;
+    }
+
+    .lp-survey-modal-container {
+        max-width: none;
+        height: 100%;
+        max-height: none;
+        border-radius: 0;
+        border: 0;
+    }
+
+    .lp-survey-modal-body {
+        border-radius: 0;
+    }
+
+    .lp-survey-modal-foot {
+        padding: 0.6rem 1rem;
+    }
+}
+
+/* Sin espacio a la derecha de la ventana para la X: se cierra con "Cerrar" */
+@media (max-width: 900px) {
+    .lp-survey-close {
+        display: none;
+    }
+
+    .lp-survey-foot-close {
+        display: inline-flex;
+        align-items: center;
+    }
+}
+
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
     .lp-art-callout {

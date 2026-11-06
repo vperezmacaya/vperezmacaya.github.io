@@ -14,9 +14,9 @@
     <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 
     <!-- CATLEC Global Stylesheet & Metro Addon -->
-    <link rel="stylesheet" href="static/css/styles.css?v=20261023_mopgl">
-    <link rel="stylesheet" href="static/css/efe_addons.css?v=20261026_prj1">
-    <link rel="stylesheet" href="static/css/metro_addons.css?v=20261028_leyenda1">
+    <link rel="stylesheet" href="static/css/styles.css?v=20261104_foto2">
+    <link rel="stylesheet" href="static/css/efe_addons.css?v=20261106_metroinv">
+    <link rel="stylesheet" href="static/css/metro_addons.css?v=20261106_metroinv">
 
     <!-- SheetJS for Client-Side Excel Export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -376,66 +376,78 @@
                     </div>
                 </section>
 
-                <!-- Full-Width Metro Timeline Panel -->
-                <div id="metro-timeline-full-panel" class="timeline-full-panel"
-                    style="display:none; grid-column: 1 / -1; width: 100%;">
+                <!-- Líneas de Tiempo (#timeline): cronograma a la izquierda y proyectos por inversión a la derecha,
+                     como "Portafolio de Proyectos" de EFE (static/js/Metro/timeline.js e inversion.js) -->
+                <div id="metro-cronograma-full-panel" class="metro-cronograma-full-panel" style="display:none;">
+                    <div id="metro-timeline-full-panel" class="timeline-full-panel">
 
-                    <!-- Timeline Header -->
-                    <div class="timeline-header">
-                        <div class="timeline-header-left">
-                            <i data-lucide="gantt-chart" style="width:14px;height:14px;color:var(--primary);"></i>
-                            <h2 class="timeline-header-title">Cronograma de Expansión Metro de Santiago</h2>
-                            <span id="metro-timeline-count-badge" class="timeline-count-badge">—</span>
-                        </div>
-                        <div class="timeline-header-right" id="metro-timeline-header-legend"
-                            style="display:flex; align-items:center; gap:0.65rem; flex-wrap:wrap;">
-                            <span class="timeline-legend-item">
-                                <span class="tl-legend-dot"
-                                    style="background:#7c3aed; width:8px; height:8px; transform:rotate(45deg); border-radius:1px;"></span>Puesta
-                                en Servicio
-                            </span>
-                            <span class="timeline-legend-item">
-                                <span class="tl-legend-dot"
-                                    style="background:#2563eb; width:12px; height:6px; border-radius:2px;"></span>En
-                                Ejecución
-                            </span>
-                            <span class="timeline-legend-item">
-                                <span class="tl-legend-dot"
-                                    style="background:#ea580c; width:12px; height:6px; border-radius:2px;"></span>En
-                                Diseño
-                            </span>
-                            <span class="timeline-legend-item">
-                                <span class="tl-legend-dot"
-                                    style="background:#0891b2; width:12px; height:6px; border-radius:2px;"></span>En
-                                Factibilidad
-                            </span>
-                            <span class="timeline-legend-item">
-                                <span
-                                    style="display:inline-block;width:2px;height:12px;background:#ef4444;border-radius:1px;"></span>
-                                Hoy
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Timeline Year Axis (sticky) -->
-                    <div class="timeline-axis-wrapper">
-                        <div class="timeline-label-col" id="metro-timeline-label-col-header"
-                            style="display: flex; align-items: center; padding-left: 12px; font-family: var(--font-heading); font-weight: 600; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">
-                            Proyecto / Línea
-                        </div>
-                        <div class="timeline-axis-scroll" id="metro-timeline-axis-scroll">
-                            <svg id="metro-timeline-axis-svg" style="display:block;"></svg>
-                        </div>
-                    </div>
-
-                    <!-- Timeline Rows (scrollable) -->
-                    <div class="timeline-body" id="metro-timeline-body">
-                        <div class="timeline-rows-wrapper" id="metro-timeline-rows-wrapper">
-                            <div class="timeline-label-col" id="metro-timeline-label-col"></div>
-                            <div class="timeline-bars-scroll" id="metro-timeline-bars-scroll">
-                                <svg id="metro-timeline-bars-svg" style="display:block;"></svg>
+                        <!-- Timeline Header -->
+                        <div class="timeline-header">
+                            <div class="timeline-header-left">
+                                <i data-lucide="gantt-chart" style="width:14px;height:14px;color:var(--primary);"></i>
+                                <h2 class="timeline-header-title">Cronograma de Expansión Metro de Santiago</h2>
+                                <span id="metro-timeline-count-badge" class="timeline-count-badge">—</span>
+                            </div>
+                            <div class="timeline-header-right" id="metro-timeline-header-legend"
+                                style="display:flex; align-items:center; gap:0.65rem; flex-wrap:wrap;">
+                                <span class="timeline-legend-item">
+                                    <span class="tl-legend-dot"
+                                        style="background:#7c3aed; width:8px; height:8px; transform:rotate(45deg); border-radius:1px;"></span>Puesta
+                                    en Servicio
+                                </span>
+                                <span class="timeline-legend-item">
+                                    <span class="tl-legend-dot"
+                                        style="background:#2563eb; width:12px; height:6px; border-radius:2px;"></span>En
+                                    Ejecución
+                                </span>
+                                <span class="timeline-legend-item">
+                                    <span class="tl-legend-dot"
+                                        style="background:#ea580c; width:12px; height:6px; border-radius:2px;"></span>En
+                                    Diseño
+                                </span>
+                                <span class="timeline-legend-item">
+                                    <span class="tl-legend-dot"
+                                        style="background:#0891b2; width:12px; height:6px; border-radius:2px;"></span>En
+                                    Factibilidad
+                                </span>
+                                <span class="timeline-legend-item">
+                                    <span
+                                        style="display:inline-block;width:2px;height:12px;background:#ef4444;border-radius:1px;"></span>
+                                    Hoy
+                                </span>
                             </div>
                         </div>
+
+                        <!-- Timeline Year Axis (sticky) -->
+                        <div class="timeline-axis-wrapper">
+                            <div class="timeline-label-col" id="metro-timeline-label-col-header"
+                                style="display: flex; align-items: center; padding-left: 12px; font-family: var(--font-heading); font-weight: 600; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">
+                                Proyecto / Línea
+                            </div>
+                            <div class="timeline-axis-scroll" id="metro-timeline-axis-scroll">
+                                <svg id="metro-timeline-axis-svg" style="display:block;"></svg>
+                            </div>
+                        </div>
+
+                        <!-- Timeline Rows (scrollable) -->
+                        <div class="timeline-body" id="metro-timeline-body">
+                            <div class="timeline-rows-wrapper" id="metro-timeline-rows-wrapper">
+                                <div class="timeline-label-col" id="metro-timeline-label-col"></div>
+                                <div class="timeline-bars-scroll" id="metro-timeline-bars-scroll">
+                                    <svg id="metro-timeline-bars-svg" style="display:block;"></svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Proyectos ordenados por inversión (static/js/Metro/inversion.js) -->
+                    <div class="panel-card efe-carga-card metro-inversion-card">
+                        <div class="efe-carga-card-head">
+                            <h3><i data-lucide="train"></i><span>Proyectos por inversión</span></h3>
+                            <span class="efe-carga-total" id="metro-inversion-total"></span>
+                        </div>
+                        <div class="efe-carga-chart"><canvas id="metroChartInversion"></canvas></div>
+                        <div class="metro-inversion-nota" id="metro-inversion-nota"></div>
                     </div>
                 </div>
 
@@ -846,7 +858,8 @@
     <script src="static/js/common/panel-resizer.js?v=20260924_gl2"></script>
     <script src="static/js/common/timeline.js?v=20260920_1"></script>
     <script src="static/js/Metro/state.js?v=20261026_red1"></script>
-    <script src="static/js/Metro/timeline.js?v=20260924_gl1"></script>
+    <script src="static/js/Metro/timeline.js?v=20261106_metroinv"></script>
+    <script src="static/js/Metro/inversion.js?v=20261106_metroinv"></script>
     <script src="static/js/Metro/comunas.js?v=20261030_hash"></script>
     <script src="static/js/Metro/demanda.js?v=20260924_gl1"></script>
     <script src="static/js/Metro/map.js?v=20261030_hovsel2"></script>
@@ -854,7 +867,7 @@
     <script src="static/js/Metro/ui.js?v=20261030_hovsel1"></script>
 
     <!-- Nav Menu & View Switcher Script -->
-    <script src="static/js/common/nav-menu.js?v=20261030_hash"></script>
+    <script src="static/js/common/nav-menu.js?v=20261105_portafolio"></script>
     <script>
         (function () {
             CatlecNav.render();
@@ -1193,6 +1206,9 @@
                                     <em>Factibilidad</em> o <em>Diseño</em>).</li>
                                 <li><strong>Hitos de Puesta en Servicio:</strong> Indicadores de diamante que marcan los
                                     años programados para la entrada en operación comercial de cada nuevo tramo.</li>
+                                <li><strong>Proyectos por inversión:</strong> a la derecha del cronograma, los proyectos de
+                                    mayor a menor inversión (MM USD), cada uno con el color de su línea. Los que no tienen
+                                    monto informado no se dibujan y se nombran bajo el gráfico.</li>
                             </ul>
                         </div>
 

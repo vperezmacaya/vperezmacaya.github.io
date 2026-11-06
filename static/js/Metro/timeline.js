@@ -23,7 +23,7 @@ function showMetroTimelineView() {
     const grid = document.querySelector('.efe-dashboard-grid');
     const centerPanel = document.querySelector('.center-panel');
     const rightPanel = document.querySelector('.right-panel');
-    const tlPanel = document.getElementById('metro-timeline-full-panel');
+    const tlPanel = document.getElementById('metro-cronograma-full-panel');   // cronograma + inversión
     const btnMap = document.getElementById('btn-metro-view-map');
     const btnTl = document.getElementById('btn-metro-view-timeline');
     const btnComunas = document.getElementById('btn-metro-view-comunas');
@@ -32,7 +32,7 @@ function showMetroTimelineView() {
     if (grid) grid.style.gridTemplateColumns = '1fr';
     if (centerPanel) centerPanel.style.display = 'none';
     if (rightPanel) rightPanel.style.display = 'none';
-    if (tlPanel) tlPanel.style.display = 'flex';
+    if (tlPanel) tlPanel.style.display = 'grid';
 
     if (btnMap) btnMap.classList.remove('active');
     if (btnComunas) btnComunas.classList.remove('active');
@@ -59,7 +59,7 @@ function hideMetroTimelineView() {
     const grid = document.querySelector('.efe-dashboard-grid');
     const centerPanel = document.querySelector('.center-panel');
     const rightPanel = document.querySelector('.right-panel');
-    const tlPanel = document.getElementById('metro-timeline-full-panel');
+    const tlPanel = document.getElementById('metro-cronograma-full-panel');
     const btnMap = document.getElementById('btn-metro-view-map');
     const btnTl = document.getElementById('btn-metro-view-timeline');
 
@@ -250,6 +250,9 @@ function renderMetroTimeline(projects, highlightId = null) {
 
     const badge = document.getElementById('metro-timeline-count-badge');
     if (badge) badge.textContent = `${data.length} Proyectos`;
+
+    // Gráfico de proyectos por inversión (columna derecha de la vista, inversion.js)
+    if (typeof renderMetroInversionChart === 'function') renderMetroInversionChart(data);
 
     if (typeof lucide !== 'undefined' && lucide.createIcons) {
         lucide.createIcons();

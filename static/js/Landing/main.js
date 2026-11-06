@@ -2,7 +2,8 @@
 // Arranque del landing del Observatorio CATLEC (index.html): hero, franja de
 // portada con los objetivos en versión compacta, módulos del Observatorio
 // (lista de módulos con el panel de cifras de cada uno, LandingCarousel.init)
-// y proyectos destacados (LandingFeatured). El header, las apariciones al
+// proyectos destacados (LandingFeatured) y la encuesta del IPI-CATLEC
+// (sección "Colabora con nosotros" y su ventana). El header, las apariciones al
 // hacer scroll, los objetivos y los créditos fotográficos vienen de
 // LandingCommon (common.js), compartido con acerca.html.
 
@@ -55,5 +56,6 @@ document.addEventListener('DOMContentLoaded', () => {
     LandingCommon.createIcons();
     LandingCommon.wireHeader();
     LandingCommon.wireReveal();
+    LandingCommon.wireSurvey();
     wireBandParallax();
 });

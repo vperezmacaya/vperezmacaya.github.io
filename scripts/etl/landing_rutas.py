@@ -1,14 +1,14 @@
 """
-export_landing_routes.py
-------------------------
+landing_rutas.py
+----------------
 Exporta los trazados livianos que dibuja la sección "Proyectos destacados" del
 landing (index.html). El landing no carga metro_geo.js ni efe_geo.js (este
 último pesa ~4 MB), así que aquí se
 extraen solo los proyectos Metro y los proyectos ferroviarios EFE con trazado,
 simplificados, más la red existente de ambos como contexto tenue.
 
-Lee los archivos ya exportados en static/data/ (lo llama export_geo_data.py al
-final; también se puede ejecutar solo):
+Lee los archivos ya exportados en static/data/ (lo corren al final actualizar_efe.py,
+actualizar_metro.py y actualizar_todo.py):
   metro_geo.js, metro_data.js, efe_geo.js, efe_data.js
 
 Genera:
@@ -32,7 +32,7 @@ import re
 from shapely.geometry import LineString, MultiLineString
 from shapely.ops import linemerge
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DATA_DIR = os.path.join(BASE_DIR, 'static', 'data')
 OUT_PATH = os.path.join(DATA_DIR, 'landing_routes.js')
 
@@ -353,6 +353,3 @@ def export_landing_routes():
             n_pts = sum(len(p) for p in r['paths'])
             print(f"  -> {group} {pid}: {len(r['paths'])} tramos, {n_pts} vértices, {len(r['stations'])} estaciones")
 
-
-if __name__ == '__main__':
-    export_landing_routes()

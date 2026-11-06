@@ -1,4 +1,4 @@
-// static/data/sni_data.js - Generado automáticamente por scripts/export_sni_data.py
+// static/data/sni_data.js - Generado automáticamente por scripts/actualizar_sni.py
 window.SNI_DATA = {
   "summary": {
     "total_usd_mm_2024": 126955.51,

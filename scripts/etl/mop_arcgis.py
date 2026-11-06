@@ -13,22 +13,44 @@ su CODPROYECTO se piden también sus líneas.
 
 Cada shape lleva en la propiedad COD el ID del proyecto MOP (CODPROYECTO; en Base
 MOP, la columna CODIGO PROYECTO MOP) y en BIP su código BIP (de Base MOP o, si no
-está ahí, de COD_BIP). export_geo_data.py cruza por BIP con el dashboard.
+está ahí, de COD_BIP). mop_mapa.py cruza por BIP con el dashboard.
 Al volver a correr solo se reemplazan los shapes con FUENTE = "ArcGIS MOP";
 los dibujados a mano (otra FUENTE o sin ella) se conservan.
 
-Uso:  python scripts/download_mop_geo.py
+Lo corre scripts/actualizar_mop.py (salvo con --sin-descargas).
 """
 import os
+import re
 import json
 from datetime import datetime, timezone
 
 import pandas as pd
+import requests
 
-from scrape_mop_proyectos import (EXCEL_PATH, ARCGIS_URL, ARCGIS_FILTER, session,
-                                  _clean, mop_id)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Hoja 'Base MOP': CODIGO PROYECTO MOP → CODIGO BIP (también la usa mop_mapa.py)
+EXCEL_PATH = os.path.join(BASE_DIR, 'Bases de dato', 'MOP', 'BASE MOP.xlsx')
+ARCGIS_URL = 'https://rest-sit.mop.gob.cl/arcgis/rest/services/INTEROP/EXPLORATORIO_PROYECTOS_VISION/MapServer/{layer}/query'
+# Mismo filtro que usa el mapa de la ficha (ide.mop.gob.cl/Framework/data/config.js)
+ARCGIS_FILTER = "(ESTADO_EDIT LIKE '2' OR ESTADO_EDIT LIKE '3') AND TIPO LIKE '1'"
+session = requests.Session()
+session.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) CATLEC-Observatorio'})
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+def _clean(s):
+    return re.sub(r'\s+', ' ', str(s or '')).strip()
+
+
+def mop_id(val):
+    """ID de proyecto como texto: 38417, 38417.0 y '38417' → '38417'; 'M-001' se mantiene."""
+    if val is None or (isinstance(val, float) and val != val):
+        return ''
+    if isinstance(val, float) and val.is_integer():
+        val = int(val)
+    s = str(val).strip()
+    return s[:-2] if re.fullmatch(r'\d+\.0', s) else s
+
+
 MOP_MAPS_DIR = os.path.join(BASE_DIR, 'Mapas vectoriales', 'MOP')
 MOP_DATA_JS = os.path.join(BASE_DIR, 'static', 'data', 'mop_data.js')
 LAYERS = {
@@ -150,7 +172,7 @@ def load_manual(path):
             if (ft.get('properties') or {}).get('FUENTE') != ARCGIS_SOURCE]
 
 
-def main():
+def descargar():
     os.makedirs(MOP_MAPS_DIR, exist_ok=True)
     df = pd.read_excel(EXCEL_PATH, sheet_name='Base MOP')
     base_cods = [mop_id(v) for v in df['CODIGO PROYECTO MOP']]
@@ -190,6 +212,3 @@ def main():
     orphan = sorted(all_geo - known)
     print(f"Shapes con COD sin fila en Base MOP ni BIP del dashboard: {len(orphan)} {orphan[:20]}")
 
-
-if __name__ == '__main__':
-    main()

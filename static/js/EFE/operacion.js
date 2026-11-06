@@ -7,9 +7,9 @@
 
 let efeChartDemandaPaxInstance = null;
 let efeChartDemandaFilialInstance = null;
-let efeChartLongitudEstacionesInstance = null;
+let efeChartTrenesInstance = null;
 let efeChartSatisfaccionInstance = null;
-let efeChartTraccionFlotaInstance = null;
+let efeChartSeguridadInstance = null;
 
 let lastRenderedEfeDemandLines = [];
 let efeSatisfactionViewMode = 'trend'; // 'trend' | 'ranking'
@@ -37,16 +37,6 @@ function getEfeFilialColor(filial) {
     return '#2b5ec9';
 }
 
-function getEfeTractionGroup(traction) {
-    if (!traction) return 'Otros';
-    const t = traction.toLowerCase();
-    if (t.includes('bimodal')) return 'Bimodal (160 km/h)';
-    if (t.includes('eléctrica') || t.includes('electrica')) return 'Eléctrica (EMU)';
-    if (t.includes('buscarril')) return 'Diésel Buscarril';
-    if (t.includes('diésel') || t.includes('diesel')) return 'Diésel (Locomotora / DMU)';
-    return 'Otros';
-}
-
 // Tooltip compartido flotante oscuro CATLEC (idéntico al de análisis de inversión y gráficos EFE)
 const efeOperacionExternalTooltip = (typeof efeExternalTooltip === 'function')
     ? efeExternalTooltip
@@ -63,6 +53,9 @@ function showEfeOperacionView() {
     }
     if (efeState.investmentOpen && typeof hideEfeInvestmentView === 'function') {
         hideEfeInvestmentView(true);
+    }
+    if (efeState.cargaOpen && typeof hideEfeCargaView === 'function') {
+        hideEfeCargaView(true);
     }
     efeState.operacionOpen = true;
 
@@ -85,6 +78,8 @@ function showEfeOperacionView() {
     if (btnTl) btnTl.classList.remove('active');
     if (btnInv) btnInv.classList.remove('active');
     if (btnOp) btnOp.classList.add('active');
+    const btnCarga = document.getElementById('btn-efe-view-carga');
+    if (btnCarga) btnCarga.classList.remove('active');
 
     if (window.location.hash !== '#operacion') {
         history.replaceState(null, null, '#operacion');
@@ -113,7 +108,7 @@ function hideEfeOperacionView(skipRestoreCenter) {
     if (opPanel) opPanel.style.display = 'none';
 
     if (btnOp) btnOp.classList.remove('active');
-    if (btnMap && !efeState.investmentOpen && !efeState.timelineOpen) {
+    if (btnMap && !efeState.investmentOpen && !efeState.timelineOpen && !efeState.cargaOpen) {
         btnMap.classList.add('active');
     }
 
@@ -151,9 +146,9 @@ function renderEfeOperacionView(linesData) {
 
     renderEfeOperacionKPIs(lines);
     renderEfeChartDemandaPax(lines);
-    renderEfeChartLongitudEstaciones(lines);
+    renderEfeChartTrenes();
     renderEfeChartSatisfaccion(lines);
-    renderEfeChartTraccionFlota(lines);
+    renderEfeChartSeguridad();
 
     if (typeof lucide !== 'undefined' && lucide.createIcons) {
         lucide.createIcons();
@@ -573,101 +568,73 @@ function renderEfeChartDemandaPax(linesData) {
     });
 }
 
-// ── 4. Gráfico 3: Extensión de Red (km) vs Estaciones (Combo Bar + Line) ──────
-function renderEfeChartLongitudEstaciones(lines) {
-    const ctx = document.getElementById('efeChartLongitudEstaciones');
-    if (!ctx) return;
+// ── 4. Gráfico 3: Trenes en operación por año ───────────────────────────────────
+// Cifra de "trenes en operación" de cada Memoria (static/data/efe_trenes.js, paso etl/efe_trenes.py).
+// No depende de los servicios: se dibuja una vez. El eje va del primer al último año con cifra; un
+// año sin cifra entre medio quedaría vacío con "Sin info" (efeCargaSinInfoPlugin de carga.js).
+function renderEfeChartTrenes() {
+    const ctx = document.getElementById('efeChartTrenes');
+    const T = window.EFE_TRENES;
+    if (!ctx || !T || !T.serie || !T.serie.length || efeChartTrenesInstance) return;
 
-    // Ordenar por longitud descendente
-    const sorted = [...lines].sort((a, b) => (b.length_km || 0) - (a.length_km || 0));
+    const porAnio = {};
+    T.serie.forEach(s => { porAnio[s.anio] = s; });
+    const todos = T.serie.map(s => s.anio);   // desde el primer año con cifra (sin 2018 ni 2019)
+    const anios = [];
+    for (let a = Math.min(...todos); a <= Math.max(...todos); a++) anios.push(a);
+    const data = anios.map(a => (porAnio[a] ? porAnio[a].trenes : null));
+    const fmt = n => Number(n).toLocaleString('es-CL');
 
-    const labels = sorted.map(l => l.service);
-    const dataKm = sorted.map(l => l.length_km || 0);
-    const dataStations = sorted.map(l => l.stations || 0);
-
-    if (efeChartLongitudEstacionesInstance) {
-        efeChartLongitudEstacionesInstance.data.labels = labels;
-        efeChartLongitudEstacionesInstance.data.datasets[0].data = dataKm;
-        efeChartLongitudEstacionesInstance.data.datasets[0].backgroundColor = 'rgba(15, 59, 108, 0.85)';
-        efeChartLongitudEstacionesInstance.data.datasets[0].borderColor = '#0f3b6c';
-        efeChartLongitudEstacionesInstance.data.datasets[1].data = dataStations;
-        efeChartLongitudEstacionesInstance.data.datasets[1].borderColor = '#d92534';
-        efeChartLongitudEstacionesInstance.data.datasets[1].backgroundColor = '#d92534';
-        efeChartLongitudEstacionesInstance.options.scales.y.suggestedMax = Math.max(...dataKm, 0) * 1.18;
-        efeChartLongitudEstacionesInstance.options.plugins.tooltip.callbacks = {
-            title: (items) => (sorted[items[0].dataIndex] ? sorted[items[0].dataIndex].service : ''),
-            label: (c) => {
-                if (c.datasetIndex === 0) {
-                    return ' Extensión: ' + Number(c.raw).toFixed(1) + ' km';
-                } else {
-                    return ' Estaciones: ' + c.raw + ' paradas';
-                }
-            }
-        };
-        efeChartLongitudEstacionesInstance.update();
-        return;
-    }
-
-    efeChartLongitudEstacionesInstance = new Chart(ctx, {
+    efeChartTrenesInstance = new Chart(ctx, {
+        type: 'bar',
         data: {
-            labels: labels,
-            datasets: [
-                {
-                    type: 'bar',
-                    label: 'Extensión (km)',
-                    data: dataKm,
-                    backgroundColor: 'rgba(15, 59, 108, 0.85)',
-                    borderColor: '#0f3b6c',
-                    borderWidth: 1,
-                    borderRadius: 4,
-                    yAxisID: 'y',
-                    order: 2
-                },
-                {
-                    type: 'line',
-                    label: 'Estaciones',
-                    data: dataStations,
-                    borderColor: '#d92534',
-                    backgroundColor: '#d92534',
-                    pointRadius: 3.5,
-                    pointHoverRadius: 5.5,
-                    borderWidth: 2,
-                    tension: 0.2,
-                    yAxisID: 'y1',
-                    order: 1
-                }
-            ]
+            labels: anios.map(String),
+            datasets: [{
+                label: 'Trenes en operación',
+                data,
+                backgroundColor: 'rgba(15, 59, 108, 0.85)',
+                borderColor: '#0f3b6c',
+                borderWidth: 1,
+                borderRadius: 4,
+                maxBarThickness: 44
+            }]
         },
-        plugins: [CatlecUtils.groupedBarDataLabelsPlugin],
+        plugins: [CatlecUtils.groupedBarDataLabelsPlugin].concat(typeof efeCargaSinInfoPlugin !== 'undefined' ? [efeCargaSinInfoPlugin] : []),
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            animation: {
-                duration: 450,
-                easing: 'easeOutQuart'
-            },
-            interaction: {
-                mode: 'index',
-                intersect: false
-            },
+            animation: { duration: 450, easing: 'easeOutQuart' },
+            interaction: { mode: 'index', intersect: false },
             plugins: {
                 legend: { display: false },
                 tooltip: {
                     enabled: false,
                     external: efeOperacionExternalTooltip,
+                    filter: item => item.raw !== null && item.raw !== undefined,
                     callbacks: {
-                        title: (items) => (sorted[items[0].dataIndex] ? sorted[items[0].dataIndex].service : ''),
-                        label: (c) => {
-                            if (c.datasetIndex === 0) {
-                                return ' Extensión: ' + Number(c.raw).toFixed(1) + ' km';
-                            } else {
-                                return ' Estaciones: ' + c.raw + ' paradas';
+                        label: c => ` ${fmt(c.raw)} trenes en operación`,
+                        afterBody: items => {
+                            if (!items.length) return [];
+                            const i = items[0].dataIndex;
+                            const s = porAnio[anios[i]];
+                            if (!s) return [];
+                            const lineas = [];
+                            if (s.electricos != null) lineas.push(`${fmt(s.electricos)} eléctricos (${Math.round(s.electricos / s.trenes * 100)}%)`);
+                            else if (s.pct_electricos != null) lineas.push(`${s.pct_electricos}% eléctricos`);
+                            for (let j = i - 1; j >= 0; j--) {
+                                if (data[j] != null) {
+                                    const d = s.trenes - data[j];
+                                    lineas.push(`${d > 0 ? '+' : d < 0 ? '−' : '±'}${fmt(Math.abs(d))} trenes respecto de ${anios[j]}`);
+                                    break;
+                                }
                             }
+                            lineas.push(`Fuente: ${s.fuente}`);
+                            return lineas;
                         }
                     }
                 },
                 groupedBarDataLabelsPlugin: {
-                    formatter: (v) => Number(v).toFixed(1),
+                    formatter: v => fmt(v),
                     color: '#0f3b6c',
                     offset: 4
                 }
@@ -675,45 +642,14 @@ function renderEfeChartLongitudEstaciones(lines) {
             scales: {
                 x: {
                     grid: { display: false },
-                    ticks: {
-                        color: '#334155',
-                        font: { size: 10, weight: '600' },
-                        maxRotation: 35,
-                        minRotation: 20
-                    }
+                    ticks: { color: '#334155', font: { size: 10, weight: '600' } }
                 },
                 y: {
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    suggestedMax: Math.max(...dataKm, 0) * 1.18,
+                    beginAtZero: true,
+                    suggestedMax: Math.max(...data.filter(v => v != null)) * 1.18,
                     grid: { color: 'rgba(0,0,0,0.06)' },
-                    ticks: {
-                        color: '#0f3b6c',
-                        font: { size: 10, weight: '600' }
-                    },
-                    title: {
-                        display: true,
-                        text: 'Longitud (km)',
-                        color: '#0f3b6c',
-                        font: { size: 9.5, weight: '600' }
-                    }
-                },
-                y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    grid: { drawOnChartArea: false },
-                    ticks: {
-                        color: '#d92534',
-                        font: { size: 10, weight: '600' }
-                    },
-                    title: {
-                        display: true,
-                        text: 'N° Estaciones',
-                        color: '#d92534',
-                        font: { size: 9.5, weight: '600' }
-                    }
+                    ticks: { color: '#334155', font: { size: 10 }, precision: 0 },
+                    title: { display: true, text: 'N° de trenes', color: '#334155', font: { size: 9.5, weight: '600' } }
                 }
             }
         }
@@ -1074,96 +1010,129 @@ function renderEfeChartSatisfaccion(linesData) {
     }
 }
 
-// ── 6. Gráfico 5: Distribución de Tracción y Tecnología (Doughnut) ────────────
-function renderEfeChartTraccionFlota(lines) {
-    const ctx = document.getElementById('efeChartTraccionFlota');
-    const legendEl = document.getElementById('efeChartTraccionFlotaLegend');
-    if (!ctx) return;
+// ── 6. Gráfico 5: Seguridad ferroviaria ─────────────────────────────────────────
+// Barras: tasa de accidentabilidad ferroviaria (TAF, accidentes por cada 100.000 trenes-km); línea, en
+// el eje derecho: fallecidos por accidentes operacionales (sin suicidios). Datos de static/data/efe_seguridad.js
+// (etl/efe_seguridad.py; la proyección y las metas que trae no se dibujan).
+// No depende de los servicios: se dibuja una vez.
+const EFE_SEGURIDAD_COLORS = { taf: '#0f3b6c', fallecidos: '#d92534' };
 
-    const groupMap = {};
-    lines.forEach(l => {
-        const g = getEfeTractionGroup(l.traction);
-        groupMap[g] = (groupMap[g] || 0) + 1;
-    });
+function renderEfeChartSeguridad() {
+    const ctx = document.getElementById('efeChartSeguridad');
+    const S = window.EFE_SEGURIDAD;
+    if (!ctx || !S || !S.serie || efeChartSeguridadInstance) return;
 
-    const labels = Object.keys(groupMap);
-    const dataVals = labels.map(g => groupMap[g]);
-    const EFE_TRACTION_PALETTE = {
-        'Eléctrica (EMU)': '#2b5ec9',
-        'Bimodal (160 km/h)': '#1e9952',
-        'Diésel (Locomotora / DMU)': '#64748b',
-        'Diésel Buscarril': '#475569',
-        'Otros': '#e69500'
-    };
-    const bgColors = labels.map((g, i) => EFE_TRACTION_PALETTE[g] || EFE_EXTRA_PALETTE[i % EFE_EXTRA_PALETTE.length]);
+    const serie = S.serie.filter(s => s.taf != null);
+    if (!serie.length) return;
+    const anios = serie.map(s => s.anio);
+    const taf = serie.map(s => s.taf);
+    const fallecidos = serie.map(s => s.fallecidos_operacionales);
+    const fmt = (n, d = 0) => Number(n).toLocaleString('es-CL', { minimumFractionDigits: d, maximumFractionDigits: d });
 
-    if (efeChartTraccionFlotaInstance) {
-        efeChartTraccionFlotaInstance.data.labels = labels;
-        efeChartTraccionFlotaInstance.data.datasets[0].data = dataVals;
-        efeChartTraccionFlotaInstance.data.datasets[0].backgroundColor = bgColors;
-        efeChartTraccionFlotaInstance.options.plugins.tooltip.callbacks = {
-            title: (items) => labels[items[0].dataIndex],
-            label: (c) => [
-                ' Servicios: ' + c.raw,
-                ' Proporción: ' + ((c.raw / (lines.length || 1)) * 100).toFixed(1) + '%'
-            ]
-        };
-        efeChartTraccionFlotaInstance.update();
-    } else {
-        efeChartTraccionFlotaInstance = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: dataVals,
-                    backgroundColor: bgColors,
-                    borderWidth: 1.5,
-                    borderColor: '#ffffff',
-                    hoverOffset: 3
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '65%',
-                animation: {
-                    duration: 450,
-                    easing: 'easeOutQuart'
+    const legendEl = document.getElementById('efeChartSeguridadLegend');
+    if (legendEl) {
+        legendEl.innerHTML = `
+            <span style="display:inline-flex;align-items:center;gap:0.25rem;color:${EFE_SEGURIDAD_COLORS.taf};font-weight:600;">
+                <span style="width:8px;height:8px;border-radius:2px;background:${EFE_SEGURIDAD_COLORS.taf};"></span>Tasa (por 100.000 trenes-km)
+            </span>
+            <span style="display:inline-flex;align-items:center;gap:0.25rem;color:${EFE_SEGURIDAD_COLORS.fallecidos};font-weight:600;">
+                <span style="width:7px;height:7px;border-radius:50%;background:${EFE_SEGURIDAD_COLORS.fallecidos};"></span>Fallecidos operacionales
+            </span>`;
+    }
+
+    efeChartSeguridadInstance = new Chart(ctx, {
+        data: {
+            labels: anios.map(String),
+            datasets: [
+                {
+                    type: 'bar',
+                    label: 'Tasa de accidentabilidad ferroviaria',
+                    data: taf,
+                    backgroundColor: 'rgba(15, 59, 108, 0.85)',
+                    borderColor: EFE_SEGURIDAD_COLORS.taf,
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    maxBarThickness: 34,
+                    yAxisID: 'y',
+                    order: 2
                 },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        enabled: false,
-                        external: efeOperacionExternalTooltip,
-                        callbacks: {
-                            title: (items) => labels[items[0].dataIndex],
-                            label: (c) => [
-                                ' Servicios: ' + c.raw,
-                                ' Proporción: ' + ((c.raw / (lines.length || 1)) * 100).toFixed(1) + '%'
-                            ]
+                {
+                    type: 'line',
+                    label: 'Fallecidos por accidentes operacionales',
+                    data: fallecidos,
+                    borderColor: EFE_SEGURIDAD_COLORS.fallecidos,
+                    backgroundColor: EFE_SEGURIDAD_COLORS.fallecidos,
+                    pointRadius: 3.5,
+                    pointHoverRadius: 5.5,
+                    borderWidth: 2,
+                    tension: 0.2,
+                    yAxisID: 'y1',
+                    order: 1
+                }
+            ]
+        },
+        plugins: [CatlecUtils.groupedBarDataLabelsPlugin],
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 450, easing: 'easeOutQuart' },
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    enabled: false,
+                    external: efeOperacionExternalTooltip,
+                    filter: item => item.raw !== null && item.raw !== undefined,
+                    callbacks: {
+                        label: c => c.datasetIndex === 0
+                            ? ` Tasa: ${fmt(c.raw, 2)} accidentes por 100.000 trenes-km`
+                            : ` Fallecidos por accidentes operacionales: ${fmt(c.raw)}`,
+                        afterBody: items => {
+                            if (!items.length) return [];
+                            const i = items[0].dataIndex;
+                            const s = serie[i];
+                            const lineas = [];
+                            if (i > 0) {
+                                const pct = (s.taf - serie[i - 1].taf) / serie[i - 1].taf * 100;
+                                lineas.push(`Tasa ${pct >= 0 ? '+' : '−'}${fmt(Math.abs(pct), 1)}% respecto de ${serie[i - 1].anio}`);
+                            }
+                            if (s.fallecidos != null) lineas.push(`Fallecidos en total (con suicidios): ${fmt(s.fallecidos)}`);
+                            if (s.accidentes != null) lineas.push(`Accidentes: ${fmt(s.accidentes)} · incidentes: ${fmt(s.incidentes)}`);
+                            const fuentes = [...new Set(Object.values(s.fuentes || {}))];
+                            if (fuentes.length) lineas.push('Fuente: ' + fuentes.join('; '));
+                            return lineas;
                         }
                     }
+                },
+                groupedBarDataLabelsPlugin: {
+                    formatter: v => fmt(v, 2),
+                    color: EFE_SEGURIDAD_COLORS.taf,
+                    offset: 4
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#334155', font: { size: 10, weight: '600' } }
+                },
+                y: {
+                    beginAtZero: true,
+                    suggestedMax: Math.max(...taf) * 1.2,
+                    grid: { color: 'rgba(0,0,0,0.06)' },
+                    ticks: { color: EFE_SEGURIDAD_COLORS.taf, font: { size: 10, weight: '600' }, callback: v => fmt(v, 1) },
+                    title: { display: true, text: 'Accidentes / 100.000 trenes-km', color: EFE_SEGURIDAD_COLORS.taf, font: { size: 9, weight: '600' } }
+                },
+                y1: {
+                    beginAtZero: true,
+                    position: 'right',
+                    suggestedMax: Math.max(0, ...fallecidos.filter(v => v != null)) * 1.25,
+                    grid: { drawOnChartArea: false },
+                    ticks: { color: EFE_SEGURIDAD_COLORS.fallecidos, font: { size: 10, weight: '600' }, precision: 0 },
+                    title: { display: true, text: 'Fallecidos', color: EFE_SEGURIDAD_COLORS.fallecidos, font: { size: 9, weight: '600' } }
                 }
             }
-        });
-    }
-
-    if (legendEl) {
-        legendEl.innerHTML = labels.map((g, i) => {
-            const count = dataVals[i];
-            const pct = ((count / (lines.length || 1)) * 100).toFixed(1);
-            const color = bgColors[i];
-            return `
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:0.35rem;font-size:0.7rem;line-height:1.35;">
-                    <div style="display:flex;align-items:center;gap:0.35rem;min-width:0;">
-                        <span style="width:7px;height:7px;border-radius:50%;background-color:${color};flex-shrink:0;"></span>
-                        <span style="color:var(--text-secondary);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${g}</span>
-                    </div>
-                    <span style="font-weight:700;color:var(--text-primary);flex-shrink:0;">${count} <span style="font-weight:400;color:var(--text-muted);font-size:0.65rem;">(${pct}%)</span></span>
-                </div>
-            `;
-        }).join('');
-    }
+        }
+    });
 }
 
 

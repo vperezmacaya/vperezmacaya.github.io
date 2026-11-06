@@ -1,7 +1,7 @@
 """Lector mínimo de shapefiles (atributos .dbf y geometrías .shp de puntos,
 multipuntos, líneas y polígonos), sin dependencias.
 
-Lo usa export_geo_data.py para la capa Contratos_MOP de la IDE del MOP
+Lo usa mop_mapa.py para la capa Contratos_MOP de la IDE del MOP
 (Mapas vectoriales/MOP/Contratos_MOP). Devuelve las coordenadas tal como vienen
 en el archivo (la capa está en SIRGAS geográfico, que para el mapa equivale a WGS84).
 """

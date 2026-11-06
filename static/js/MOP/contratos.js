@@ -3,10 +3,11 @@
 // región y servicio" (costo de etapa de los proyectos filtrados, de sus fichas
 // IDI) y, con los contratos de esos proyectos, "Contratos y contratistas". Ocupan el lugar del mapa y la tabla (el panel de filtros y
 // Análisis sigue a la izquierda) y usan los proyectos filtrados
-// (mopFilteredProjects de main.js).
+// (mopFilteredProjects de main.js). "Inversión histórica" es de otra base: oculta
+// ese panel (MOP_VIEWS_SIN_PANEL) y usa sus propios filtros.
 //
 // Datos de los contratos: window.MOP_CONTRATOS (static/data/mop_contratos.js, generado por
-// scripts/export_static_data.py desde el mismo Excel mensual que MOP_DATA), un
+// scripts/etl/mop_datos.py desde el mismo Excel mensual que MOP_DATA), un
 // registro por contrato: { bip, cod, nombre, estado, tipo, gasto, an, fl, fa,
 // fi, ft (fechas AAAA-MM-DD), po (presupuesto oficial), mv (monto vigente), ct,
 // rut (contratista; null si es genérico), av (% ejecución), m (12 meses), ar
@@ -14,16 +15,25 @@
 // mes de cierre (MOP_CONTRATOS.mes) son pagos y desde ahí, lo programado. Pesa
 // ~2,4 MB, así que se carga recién al abrir "Contratos y contratistas".
 //
+// La vista "Inversión histórica" (#historica) está en historica.js; sus datos
+// (static/data/mop_historico.js, ~270 KB) también se cargan al abrirla.
+//
 // Navegación: botones del subheader, enlaces del menú "Seleccionar Base de
-// Datos" y hash de la URL (#costos, #contratos) llaman a
+// Datos" y hash de la URL (#costos, #contratos, #historica) llaman a
 // mopSetView.
 
-const MOP_CONTRATOS_SRC = 'static/data/mop_contratos.js?v=20261029_1';
-const MOP_VIEWS = ['resumen', 'costos', 'contratos'];
+const MOP_VIEWS = ['resumen', 'costos', 'contratos', 'historica'];
 // Hash de vistas que ya no existen → vista que las reemplazó
 const MOP_VIEW_ALIASES = { contratistas: 'contratos', ejecucion: 'costos' };
-// Vistas que usan mop_contratos.js (la de costos usa solo MOP_DATA)
-const MOP_CONTRATOS_VIEWS = ['contratos'];
+// Vistas de otra base, sin el panel de filtros y Análisis (que es de la cartera
+// actual): ocupan todo el ancho y traen sus propios filtros
+const MOP_VIEWS_SIN_PANEL = ['historica'];
+// Vistas con datos propios, que se cargan al abrirlas: [variable global, archivo]
+// (la de costos usa solo MOP_DATA)
+const MOP_VIEW_DATA = {
+    contratos: ['MOP_CONTRATOS', 'static/data/mop_contratos.js?v=20261029_1'],
+    historica: ['MOP_HISTORICO', 'static/data/mop_historico.js?v=20261104_1'],
+};
 // Estados en el orden del ciclo del contrato ("Nulo" no se muestra)
 const MOP_ESTADOS = ['Por Licitar', 'En Licitación', 'En Adjudicación', 'Adjudicado', 'En Ejecución', 'Terminado'];
 const MOP_ESTADO_LABELS = {
@@ -50,22 +60,27 @@ const MOP_REGION_CORTA = {
 const MOP_CT_COLORS = { barra: '#0c71c3' };
 
 let mopView = 'resumen';
-let mopContratosPromise = null;
+const mopViewDataPromises = {};
 const mopCtCharts = {};
 
-// ─── Carga diferida de mop_contratos.js ──────────────────────────────────────
-function mopLoadContratos() {
-    if (window.MOP_CONTRATOS) return Promise.resolve();
-    if (!mopContratosPromise) {
-        mopContratosPromise = new Promise((resolve, reject) => {
+// ─── Carga diferida de los datos de una vista ────────────────────────────────
+function mopViewDataReady(view) {
+    return !MOP_VIEW_DATA[view] || !!window[MOP_VIEW_DATA[view][0]];
+}
+
+function mopLoadViewData(view) {
+    if (mopViewDataReady(view)) return Promise.resolve();
+    const [, src] = MOP_VIEW_DATA[view];
+    if (!mopViewDataPromises[view]) {
+        mopViewDataPromises[view] = new Promise((resolve, reject) => {
             const script = document.createElement('script');
-            script.src = MOP_CONTRATOS_SRC;
+            script.src = src;
             script.onload = () => resolve();
-            script.onerror = () => { mopContratosPromise = null; reject(new Error('No se pudo cargar mop_contratos.js')); };
+            script.onerror = () => { delete mopViewDataPromises[view]; reject(new Error(`No se pudo cargar ${src}`)); };
             document.head.appendChild(script);
         });
     }
-    return mopContratosPromise;
+    return mopViewDataPromises[view];
 }
 
 // ─── Cambio de visualización ─────────────────────────────────────────────────
@@ -80,6 +95,7 @@ function mopSetView(view, { updateHash = true } = {}) {
     // El separador mapa ↔ tabla se oculta solo al ocultar la tabla (CatlecPanelResizer)
     document.getElementById('mop-map-panel').style.display = resumen ? '' : 'none';
     document.getElementById('mop-right-panel').style.display = resumen ? '' : 'none';
+    document.getElementById('mop-dashboard-grid').classList.toggle('mop-grid--sin-panel', MOP_VIEWS_SIN_PANEL.includes(view));
     MOP_VIEWS.slice(1).forEach(v => {
         document.getElementById(`mop-view-${v}`).style.display = v === view ? 'flex' : 'none';
     });
@@ -88,28 +104,29 @@ function mopSetView(view, { updateHash = true } = {}) {
     }
     mopTooltip && CatlecTooltip.hide('mop-shared-tooltip');
     if (resumen) {
-        if (typeof mopProjectMap !== 'undefined' && mopProjectMap) requestAnimationFrame(() => mopProjectMap.resize());
+        // Tamaño del mapa y encuadre pendiente de los filtros cambiados con el mapa oculto
+        if (typeof mopMapOnShow === 'function') requestAnimationFrame(mopMapOnShow);
         return;
     }
-    if (!MOP_CONTRATOS_VIEWS.includes(view)) {
+    if (mopViewDataReady(view)) {
         mopRenderView(view);
         return;
     }
-    mopLoadContratos()
+    mopLoadViewData(view)
         .then(() => { if (mopView === view) mopRenderView(view); })
         .catch(err => console.error('[MOP]', err));
 }
 
 // main.js la llama al cambiar los filtros
 function mopContratosOnFilter() {
-    if (mopView === 'resumen') return;
-    if (!MOP_CONTRATOS_VIEWS.includes(mopView) || window.MOP_CONTRATOS) mopRenderView(mopView);
+    if (mopView !== 'resumen' && mopViewDataReady(mopView)) mopRenderView(mopView);
 }
 
 function mopRenderView(view) {
     if (typeof Chart === 'undefined') return;
     if (view === 'costos') mopRenderCostos();
     else if (view === 'contratos') mopRenderContratos();
+    else if (view === 'historica') mopRenderHistorica();
 }
 
 // ─── Utilidades ──────────────────────────────────────────────────────────────

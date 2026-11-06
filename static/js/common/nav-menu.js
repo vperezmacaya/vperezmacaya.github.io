@@ -33,8 +33,8 @@ window.CatlecNav = (function () {
             submenu: [
                 { key: 'map', icon: 'map', label: 'Mapa', hrefSuffix: '' },
                 { key: 'operacion', icon: 'trending-up', label: 'Demanda y Operación', hrefSuffix: '#operacion' },
-                { key: 'timeline', icon: 'clock', label: 'Líneas de Tiempo de Proyectos', hrefSuffix: '#timeline' },
-                { key: 'investment', icon: 'line-chart', label: 'Análisis de Inversión de Proyectos', hrefSuffix: '#inversion' },
+                { key: 'carga', icon: 'container', label: 'Carga Ferroviaria', hrefSuffix: '#carga' },
+                { key: 'timeline', icon: 'gantt-chart', label: 'Portafolio de Proyectos', hrefSuffix: '#proyectos' },
             ],
         },
         {
@@ -58,6 +58,7 @@ window.CatlecNav = (function () {
                 { key: 'resumen', icon: 'layout-dashboard', label: 'Tabla de proyectos', hrefSuffix: '' },
                 { key: 'costos', icon: 'bar-chart-horizontal', label: 'Costo por región y servicio', hrefSuffix: '#costos' },
                 { key: 'contratos', icon: 'clipboard-list', label: 'Contratos y contratistas', hrefSuffix: '#contratos' },
+                { key: 'historica', icon: 'history', label: 'Inversión histórica', hrefSuffix: '#historica' },
             ],
         },
         {

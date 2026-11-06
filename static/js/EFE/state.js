@@ -20,6 +20,7 @@ var efeState = {
     investmentOpen: false,
     timelineOpen: false,
     operacionOpen: false,
+    cargaOpen: false,
     tableMode: 'lines'   // vista inicial: red en operación (Servicios Actuales)
 };
 if (typeof window !== 'undefined') window.efeState = efeState;

@@ -13,7 +13,7 @@
 // país a la vez hacía que el mapa se trabara al moverlo.
 //
 // - Geometría: window.MOP_GEO_DATA (static/data/mop_geo.js, generado por
-//   export_geo_data.py desde Mapas vectoriales/MOP). Una feature por proyecto y
+//   etl/mop_mapa.py desde Mapas vectoriales/MOP). Una feature por proyecto y
 //   tipo, con properties { bip, kind: 'line' | 'point', regions: [codregion] }.
 //   Solo tienen geometría los proyectos de la hoja Base MOP con trazado o
 //   ubicación en proyectos.mop.gob.cl; el resto aparece en la tabla pero no en el mapa.
@@ -87,6 +87,9 @@ MOP_ISLAND_INSETS.forEach(inset => {
 
 let mopProjectMap = null;
 let mopMapReady = false;
+// Con el mapa oculto (otra visualización de MOP.html) su contenedor mide 0 y un
+// encuadre daría otro zoom: queda pendiente hasta volver a mostrarlo (mopMapOnShow)
+let mopMapViewPending = false;
 let mopMapTooltip = null;
 let mopMapIsDragClick = () => false;
 let mopMapHoverKey = null;
@@ -110,7 +113,7 @@ function mopProjectHasGeo(bip) {
 }
 
 // Ubicación referencial: el punto del aeródromo que nombra el proyecto
-// (export_geo_data.py, src 'aerodromo'), no el de la obra
+// (etl/mop_mapa.py, src 'aerodromo'), no el de la obra
 function mopProjectGeoIsAerodromo(bip) {
     return !!(bip && MOP_GEO_INDEX[bip] && MOP_GEO_INDEX[bip].some(f => f.properties.src === 'aerodromo'));
 }
@@ -381,11 +384,38 @@ function mopMapSetRegionFromFilter(regions) {
     return true;
 }
 
-function mopFlyToFeatures(features) {
-    if (!features || !features.length) return;
+// Mapa oculto: el encuadre queda pendiente (devuelve true)
+function mopMapDeferView() {
+    if (mopProjectMap && mopProjectMap.getContainer().offsetWidth > 0) return false;
+    mopMapViewPending = true;
+    return true;
+}
+
+// contratos.js la llama al volver a la tabla de proyectos: ajusta el tamaño del
+// mapa y de los recuadros de islas y hace el encuadre que quedó pendiente (el
+// proyecto seleccionado, la región del filtro o el país), sin animación
+function mopMapOnShow() {
+    if (!mopProjectMap) return;
+    mopProjectMap.resize();
+    mopIslandShown.forEach(inset => {
+        if (!inset.map) return;
+        inset.map.resize();
+        inset.map.fitBounds(inset.view, { padding: 6, duration: 0 });
+    });
+    if (!mopMapViewPending) return;
+    mopMapViewPending = false;
+    const bip = mopMapState.selected;
+    if (bip && mopProjectHasGeo(bip)) mopFlyToFeatures(MOP_GEO_INDEX[bip], { duration: 0 });
+    else if (mopMapState.region) mopFlyToRegion(mopMapState.region, { duration: 0 });
+    else mopApplyDefaultMapView(false);
+}
+
+function mopFlyToFeatures(features, { duration = undefined } = {}) {
+    if (!features || !features.length || mopMapDeferView()) return;
     const bounds = CatlecMapGL.boundsOfFeatures(features);
     CatlecUtils.afterNextPaint(() => CatlecMapGL.flyToBounds(mopProjectMap, bounds, {
-        onDefaultView: () => mopApplyDefaultMapView(true)
+        ...(duration === undefined ? {} : { duration }),
+        onDefaultView: () => mopApplyDefaultMapView(duration !== 0)
     }));
 }
 
@@ -400,17 +430,18 @@ function mopRegionBounds(code) {
     return CatlecMapGL.boundsOfFeatures([{ type: 'Feature', geometry: { type: 'MultiPolygon', coordinates: continental } }]);
 }
 
-function mopFlyToRegion(code) {
+function mopFlyToRegion(code, { duration = 900 } = {}) {
     if (!code) {
         mopApplyDefaultMapView(true);
         return;
     }
+    if (mopMapDeferView()) return;
     const bounds = mopRegionBounds(code);
     if (!bounds) return;
     // Con los recuadros de islas abiertos, la región se encuadra a su derecha
     const insetW = mopIslandControl && mopIslandShown.length ? mopIslandControl.offsetWidth + 20 : 0;
     CatlecUtils.afterNextPaint(() => mopProjectMap.fitBounds(bounds, {
-        padding: { top: 30, bottom: 30, right: 30, left: 30 + insetW }, maxZoom: 9 - CatlecMapGL.ZOOM_OFFSET, duration: 900
+        padding: { top: 30, bottom: 30, right: 30, left: 30 + insetW }, maxZoom: 9 - CatlecMapGL.ZOOM_OFFSET, duration
     }));
 }
 
@@ -924,7 +955,7 @@ function mopOnMapClick(e) {
 
 // ─── Encuadres ───────────────────────────────────────────────────────────────
 function mopApplyDefaultMapView(animate = false) {
-    if (!mopProjectMap) return;
+    if (!mopProjectMap || mopMapDeferView()) return;
     mopProjectMap.fitBounds(MOP_CHILE_CONTINENTAL_BOUNDS, { padding: 20, duration: animate ? 450 : 0 });
 }
 

@@ -12,12 +12,12 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css">
     <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
     <!-- Shared stylesheet (navbar, footer, panel-card, forms, etc.) -->
-    <link rel="stylesheet" href="static/css/styles.css?v=20261023_mopgl">
-    <link rel="stylesheet" href="static/css/mop_addons.css?v=20261029_unif">
+    <link rel="stylesheet" href="static/css/styles.css?v=20261104_foto2">
+    <link rel="stylesheet" href="static/css/mop_addons.css?v=20261106_hilay">
     <!-- Chart.js (gráficos de Análisis del panel izquierdo) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
-    <!-- Proyectos MOP: Excel de Iniciativas programadas y en ejecución más reciente (export_static_data.py) -->
-    <script src="static/data/mop_data.js?v=20261028_sep26"></script>
+    <!-- Proyectos MOP: Excel de Iniciativas programadas y en ejecución más reciente (scripts/actualizar_mop.py) -->
+    <script src="static/data/mop_data.js?v=20261104_foto2"></script>
     <script src="static/data/mop_geo.js?v=20261029_valdivia"></script>
     <!-- Polígonos de las 16 regiones (los del coroplético de SNI): navegación por región del mapa -->
     <script src="static/data/sni_regions_data.js?v=20261028_reg1"></script>
@@ -51,8 +51,8 @@
         </header>
 
         <!-- ═══════════════════════════════ SUBHEADER TABS -->
-        <!-- Visualizaciones: la tabla de proyectos, el costo por región y servicio y los contratos y contratistas (static/js/MOP/contratos.js) -->
-        <div class="view-subheader three-tabs">
+        <!-- Visualizaciones: la tabla de proyectos, el costo por región y servicio y los contratos y contratistas (static/js/MOP/contratos.js) y la inversión histórica (static/js/MOP/historica.js) -->
+        <div class="view-subheader four-tabs">
             <button class="view-tab-btn active" data-mop-view="resumen" id="btn-mop-resumen">
                 <i data-lucide="layout-dashboard" style="width:14px;height:14px;"></i>
                 <span>Tabla de proyectos</span>
@@ -64,6 +64,10 @@
             <button class="view-tab-btn" data-mop-view="contratos" id="btn-mop-contratos">
                 <i data-lucide="clipboard-list" style="width:14px;height:14px;"></i>
                 <span>Contratos y contratistas</span>
+            </button>
+            <button class="view-tab-btn" data-mop-view="historica" id="btn-mop-historica">
+                <i data-lucide="history" style="width:14px;height:14px;"></i>
+                <span>Inversión histórica</span>
             </button>
         </div>
 
@@ -419,6 +423,115 @@
                         </div>
                     </div>
                 </section>
+
+                <!-- ─── INVERSIÓN HISTÓRICA (static/js/MOP/historica.js; pagado por año 1986-2025, sin concesiones) ── -->
+                <section class="mop-view-panel" id="mop-view-historica" style="display: none;">
+                    <!-- Filtros propios: la vista no usa el panel izquierdo, que es de la cartera actual -->
+                    <div class="panel-card mop-hi-filtros">
+                        <h2 class="panel-title">
+                            <i data-lucide="sliders-horizontal" style="width: 14px; height: 14px;"></i>
+                            Filtros
+                        </h2>
+                        <div class="form-group">
+                            <label class="form-label">Servicio MOP</label>
+                            <div class="custom-multiselect" id="mop-hi-servicio-multiselect-container">
+                                <button type="button" class="form-input multiselect-trigger" id="mop-hi-servicio-multiselect-btn">
+                                    <span id="mop-hi-servicio-multiselect-text">Todos los servicios</span>
+                                    <i data-lucide="chevron-down" style="width: 13px; height: 13px; margin-left: 0.35rem; flex-shrink: 0;"></i>
+                                </button>
+                                <div class="multiselect-dropdown" id="mop-hi-servicio-multiselect-dropdown">
+                                    <div class="multiselect-actions">
+                                        <label class="multiselect-option select-all-option" style="padding: 0.2rem 0; font-weight: 700;">
+                                            <input type="checkbox" id="mop-hi-servicio-check-all">
+                                            <span>(Seleccionar Todos)</span>
+                                        </label>
+                                    </div>
+                                    <div class="multiselect-options-list" id="mop-hi-servicio-options-list"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Región</label>
+                            <div class="custom-multiselect" id="mop-hi-region-multiselect-container">
+                                <button type="button" class="form-input multiselect-trigger" id="mop-hi-region-multiselect-btn">
+                                    <span id="mop-hi-region-multiselect-text">Todas las regiones</span>
+                                    <i data-lucide="chevron-down" style="width: 13px; height: 13px; margin-left: 0.35rem; flex-shrink: 0;"></i>
+                                </button>
+                                <div class="multiselect-dropdown" id="mop-hi-region-multiselect-dropdown">
+                                    <div class="multiselect-actions">
+                                        <label class="multiselect-option select-all-option" style="padding: 0.2rem 0; font-weight: 700;">
+                                            <input type="checkbox" id="mop-hi-region-check-all">
+                                            <span>(Seleccionar Todas)</span>
+                                        </label>
+                                    </div>
+                                    <div class="multiselect-options-list" id="mop-hi-region-options-list"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn-reset" id="mop-hi-btn-reset">
+                            <i data-lucide="rotate-ccw" style="width: 12px; height: 12px;"></i>
+                            Restablecer Filtros
+                        </button>
+                    </div>
+                    <div class="mop-kpi-row mop-kpi-row--4" aria-label="Indicadores de la inversión histórica">
+                        <div class="card-kpi">
+                            <div class="kpi-icon"><i data-lucide="landmark"></i></div>
+                            <div class="kpi-val-container">
+                                <span class="kpi-label">Inversión acumulada</span>
+                                <span class="kpi-value" id="mop-hi-kpi-total">—</span>
+                                <span class="mop-kpi-sub" id="mop-hi-kpi-total-sub"></span>
+                            </div>
+                        </div>
+                        <div class="card-kpi">
+                            <div class="kpi-icon"><i data-lucide="calendar-check"></i></div>
+                            <div class="kpi-val-container">
+                                <span class="kpi-label">Inversión del último año</span>
+                                <span class="kpi-value" id="mop-hi-kpi-ultimo">—</span>
+                                <span class="mop-kpi-sub" id="mop-hi-kpi-ultimo-sub"></span>
+                            </div>
+                        </div>
+                        <div class="card-kpi">
+                            <div class="kpi-icon"><i data-lucide="trending-up"></i></div>
+                            <div class="kpi-val-container">
+                                <span class="kpi-label">Promedio anual, últimos 10 años</span>
+                                <span class="kpi-value" id="mop-hi-kpi-promedio">—</span>
+                                <span class="mop-kpi-sub" id="mop-hi-kpi-promedio-sub"></span>
+                            </div>
+                        </div>
+                        <div class="card-kpi">
+                            <div class="kpi-icon"><i data-lucide="award"></i></div>
+                            <div class="kpi-val-container">
+                                <span class="kpi-label">Año de mayor inversión</span>
+                                <span class="kpi-value" id="mop-hi-kpi-max">—</span>
+                                <span class="mop-kpi-sub" id="mop-hi-kpi-max-sub"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mop-layout mop-layout-historica">
+                        <div class="panel-card mop-card mop-hi-anual">
+                            <div class="mop-card-header mop-card-header--wrap">
+                                <h3 class="mop-card-title"><i data-lucide="bar-chart-3" class="mop-title-icon mop-c-blue"></i>Inversión pagada por año y servicio (miles de millones $ de 2026)</h3>
+                                <span class="mop-card-badge" id="mop-hi-nota"></span>
+                                <div class="mop-legend" id="mop-hi-anual-legend"></div>
+                            </div>
+                            <div class="mop-card-body"><canvas id="chart-mop-hi-anual"></canvas></div>
+                        </div>
+                        <div class="panel-card mop-card mop-hi-region">
+                            <div class="mop-card-header">
+                                <h3 class="mop-card-title"><i data-lucide="map" class="mop-title-icon mop-c-blue"></i>Inversión acumulada por región (miles de millones $)</h3>
+                                <span class="mop-card-badge" id="mop-hi-region-badge"></span>
+                            </div>
+                            <div class="mop-card-body"><canvas id="chart-mop-hi-region"></canvas></div>
+                        </div>
+                        <div class="panel-card mop-card mop-hi-obras">
+                            <div class="mop-card-header">
+                                <h3 class="mop-card-title"><i data-lucide="construction" class="mop-title-icon mop-c-petrol"></i>10 mayores obras del período (miles de millones $)</h3>
+                                <span class="mop-card-badge">sin programas ni conservaciones</span>
+                            </div>
+                            <div class="mop-card-body"><canvas id="chart-mop-hi-obras"></canvas></div>
+                        </div>
+                    </div>
+                </section>
             </div>
 
         </main>
@@ -439,17 +552,19 @@
     <!-- MOP logic -->
     <script src="static/js/common/tooltip.js?v=1"></script>
     <script src="static/js/common/utils.js?v=20261029_barlbl"></script>
+    <script src="static/js/common/photo-viewer.js?v=20261104_foto2"></script>
     <script src="static/js/common/map-gl.js?v=20261029_movil"></script>
     <script src="static/js/common/kpi-animate.js?v=20260924_2"></script>
     <script src="static/js/common/table-fade.js?v=20260924_1"></script>
     <script src="static/js/common/panel-resizer.js?v=20260924_gl2"></script>
-    <script src="static/js/MOP/project-map.js?v=20261029_leyenda"></script>
-    <script src="static/js/MOP/ficha.js?v=20261029_aero"></script>
+    <script src="static/js/MOP/project-map.js?v=20261104_zoom"></script>
+    <script src="static/js/MOP/ficha.js?v=20261104_foto2"></script>
     <script src="static/js/MOP/main.js?v=20261029_titulo"></script>
-    <script src="static/js/MOP/contratos.js?v=20261029_unif"></script>
+    <script src="static/js/MOP/contratos.js?v=20261106_hifil"></script>
+    <script src="static/js/MOP/historica.js?v=20261106_hifil"></script>
 
     <!-- Nav Menu JS -->
-    <script src="static/js/common/nav-menu.js?v=20261030_hash"></script>
+    <script src="static/js/common/nav-menu.js?v=20261105_portafolio"></script>
     <script>
         (function () {
             CatlecNav.render();
@@ -457,7 +572,7 @@
             // Ya estamos en MOP: los enlaces del menú cierran el menú y cambian de
             // visualización sin recargar (mopSetView en static/js/MOP/contratos.js)
             [['nav-mop-main-link', 'resumen'], ['nav-mop-sub-resumen', 'resumen'], ['nav-mop-sub-costos', 'costos'],
-             ['nav-mop-sub-contratos', 'contratos']].forEach(function (pair) {
+             ['nav-mop-sub-contratos', 'contratos'], ['nav-mop-sub-historica', 'historica']].forEach(function (pair) {
                 const link = document.getElementById(pair[0]);
                 if (!link) return;
                 link.addEventListener('click', function (e) {
@@ -597,6 +712,15 @@
                             Ficha de cada código BIP con la programación de la inversión de cada etapa postulada. Se usa para estimar la inversión de los proyectos.
                         </p>
                     </div>
+                    <div class="about-source-card" style="background: #f8fafc; padding: 0.9rem 1.1rem; display: flex; flex-direction: column; gap: 0.45rem; margin-top: 0.5rem;">
+                        <span class="about-source-name" style="font-size: 0.82rem; font-weight: 700; color: #0f172a;">
+                            <i data-lucide="history" style="width: 15px; height: 15px; color: #0284c7;"></i>
+                            Inversión Histórica MOP 1986-2025 (Departamento de Gestión Presupuestaria, Dirección de Planeamiento):
+                        </span>
+                        <p style="margin: 0; font-size: 0.73rem; line-height: 1.45; color: #475569;">
+                            Lo pagado cada año por servicio, región y código BIP desde 1986, con los factores de actualización según IPC promedio anual. Se usa en la visualización "Inversión histórica".
+                        </p>
+                    </div>
                 </div>
 
                 <!-- SECCIÓN 3: METODOLOGÍA -->
@@ -620,6 +744,19 @@
                             <li><strong>Ficha del proyecto:</strong> al elegir un proyecto en la tabla o en el mapa se muestra su ficha, con el costo de cada etapa y la justificación y descripción de su ficha IDI más reciente, tal como vienen en ella (la ficha recorta los textos largos; esos terminan en "…").</li>
                             <li><strong>Análisis:</strong> número de proyectos por servicio (los 6 con más proyectos y el resto en "Otros") y por etapa, según los filtros activos. Los proyectos con contratos en más de una etapa se cuentan una sola vez, en "Varias etapas".</li>
                             <li><strong>Mapa:</strong> muestra los proyectos que tienen trazado o punto en la cartera de proyectos.mop.gob.cl; el resto aparece solo en la tabla.</li>
+                        </ul>
+                    </div>
+                    <div class="formula-card">
+                        <div class="formula-card-title">
+                            <i data-lucide="history" style="width: 15px; height: 15px; color: #2563eb;"></i>
+                            Visualización: Inversión histórica
+                        </div>
+                        <ul
+                            style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
+                            <li><strong>Inversión:</strong> lo pagado en el año (no el costo estimado de la tabla de proyectos). Coincide con lo pagado de enero a diciembre en la planilla mensual de diciembre de ese año. Cada año se lleva a pesos de 2026 con el factor de IPC de la misma fuente.</li>
+                            <li><strong>Exclusión:</strong> como en la tabla de proyectos, no se consideran las concesiones (pagos fiscales de cada concesión, no la obra concesionada). Los pagos del Fondo de Emergencia Transitoria (FET) de 2021-2022 van en su servicio; SENDOS, EMOS, ESVAL y la Dirección General de Metro (hasta 1989) conservan su nombre.</li>
+                            <li><strong>Filtros:</strong> se aplican el servicio y la región; la etapa, el ítem y la búsqueda son de la cartera actual y no se aplican. "Interregional" reúne lo no regionalizable. Ñuble es región desde 2018: antes, sus proyectos van en Biobío.</li>
+                            <li><strong>Mayores obras:</strong> suma de lo pagado entre 1986 y 2025 por código BIP, sin los programas y conservaciones (BIP que agrupan muchos contratos sobre una red o un territorio: conservaciones, glosas, planes, emergencias, sistemas de agua potable rural, estudios de varios caminos). Se reconocen por su nombre, así que la clasificación es aproximada; una obra con más de un código BIP aparece por separado.</li>
                         </ul>
                     </div>
                 </div>

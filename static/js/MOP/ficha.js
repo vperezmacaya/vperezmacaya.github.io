@@ -6,7 +6,7 @@
 //
 // Datos: MOP_DATA.projects (nombre, servicio, etapa, región, inversión) y
 // window.MOP_FICHAS (static/data/mop_fichas.js, generado por
-// scripts/export_static_data.py desde las fichas IDI de BIP Consulta):
+// scripts/etl/mop_datos.py desde las fichas IDI de BIP Consulta):
 // { <bip>: { justificacion, descripcion, ficha, etapas: [{etapa, anio, monto}] } }.
 // Ese archivo pesa ~2,5 MB, así que se carga recién al abrir la primera ficha.
 
@@ -145,6 +145,10 @@ function mopRenderProjectDetail(p, ficha) {
             <p class="mop-detail-note">Este proyecto no tiene ficha en BIP Consulta, así que no hay costo, justificación ni descripción.</p>
         </div>`;
 
+    // Fotos de referencia (Fotos/MOP → WebP en static/img/fotos/MOP, cruce por BIP en
+    // el ETL): mismo carrusel y visor que la ficha de DGC (CatlecPhotoViewer)
+    const photos = p.photos || [];
+
     body.classList.add('mop-detail-body');
     body.innerHTML = `
         <div class="mop-detail-head">
@@ -156,6 +160,8 @@ function mopRenderProjectDetail(p, ficha) {
                 <span class="mop-cell-code">${esc(p.bip)}</span> · ${esc(mopShortServicio(p.servicio))} · ${esc(p.region)}
             </div>
         </div>
+
+        ${CatlecPhotoViewer.html(photos, p.nombre)}
 
         ${invSection}
 
@@ -192,6 +198,7 @@ function mopRenderProjectDetail(p, ficha) {
             </a>
         </div>
     `;
+    CatlecPhotoViewer.setup(body.querySelector('.catlec-photo-carousel'), photos, p.nombre);
     body.scrollTop = 0;
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }

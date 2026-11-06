@@ -1,7 +1,7 @@
 """Lectura de la ficha IDI (PDF de BIP Consulta): justificación y descripción (secciones 10 y 11),
 secciones 15 y 16 (montos) y datos de encabezado.
 
-Uso: python scripts/ficha_idi.py <ficha.pdf> [...]  (imprime lo leído en JSON)
+Uso: python scripts/etl/ficha_idi.py <ficha.pdf> [...]  (imprime lo leído en JSON)
 """
 import re
 import pymupdf

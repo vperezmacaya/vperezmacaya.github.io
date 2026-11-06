@@ -73,7 +73,8 @@
     }
 
     .mop-grid .mop-layout-costos,
-    .mop-grid .mop-layout-contratos {
+    .mop-grid .mop-layout-contratos,
+    .mop-grid .mop-layout-historica {
         grid-template-columns: minmax(0, 1fr);
         grid-template-rows: none;
         grid-auto-rows: 340px;
@@ -83,6 +84,34 @@
         grid-column: auto;
         grid-row: auto;
         height: 440px;
+    }
+
+    /* Inversión histórica: en el orden del HTML, el histograma primero y más
+       alto, y su leyenda bajo el título */
+    .mop-grid .mop-layout-historica {
+        grid-template-rows: 420px;
+    }
+
+    .mop-grid .mop-hi-region,
+    .mop-grid .mop-hi-anual,
+    .mop-grid .mop-hi-obras {
+        grid-column: auto;
+        grid-row: auto;
+    }
+
+    .mop-grid .mop-card-header--wrap {
+        flex-wrap: wrap;
+        row-gap: 0.2rem;
+    }
+
+    .mop-grid .mop-card-header--wrap .mop-card-title {
+        flex-basis: 100%;
+    }
+
+    .mop-grid .mop-card-header--wrap .mop-legend {
+        flex: 1 1 100%;
+        flex-wrap: wrap;
+        row-gap: 0.15rem;
     }
 }
 
@@ -610,6 +639,56 @@
     overflow: hidden;
 }
 
+/* Vistas de otra base (Inversión histórica): sin el panel de filtros y Análisis
+   de la cartera actual, a todo el ancho (MOP_VIEWS_SIN_PANEL de contratos.js) */
+.mop-grid--sin-panel > .left-panel {
+    display: none;
+}
+
+.mop-grid--sin-panel > .mop-view-panel {
+    grid-column: 1 / -1;
+}
+
+/* Filtros propios de Inversión histórica, en una fila sobre los KPI */
+.mop-hi-filtros {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.4rem 0.75rem;
+    padding: 0.45rem 0.75rem;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 50;
+    overflow: visible;
+}
+
+.mop-hi-filtros .panel-title {
+    border: none;
+    padding: 0;
+    margin: 0 0.25rem 0.3rem 0;
+    font-size: 0.8rem;
+}
+
+.mop-hi-filtros .form-group {
+    gap: 0.15rem;
+    width: 280px;
+    max-width: 100%;
+}
+
+.mop-hi-filtros .form-label {
+    font-size: 0.7rem;
+}
+
+.mop-hi-filtros .multiselect-trigger {
+    padding: 0.3rem 0.55rem;
+    font-size: 0.76rem;
+}
+
+.mop-hi-filtros .btn-reset {
+    padding: 0.32rem 0.6rem;
+    font-size: 0.72rem;
+}
+
 .mop-kpi-row.mop-kpi-row--4 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -639,6 +718,30 @@
 .mop-ct-top {
     grid-column: 2;
     grid-row: 1 / span 2;
+}
+
+/* Inversión histórica (static/js/MOP/historica.js): regiones en una columna
+   angosta a todo el alto y, a la derecha, el histograma arriba y las mayores
+   obras abajo. Ubicación explícita: en pantallas angostas (@media al inicio del
+   archivo) vuelven al orden del HTML, con el histograma primero */
+.mop-layout-historica {
+    grid-template-columns: minmax(0, 0.42fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.15fr) minmax(0, 1fr);
+}
+
+.mop-hi-region {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+}
+
+.mop-hi-anual {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.mop-hi-obras {
+    grid-column: 2;
+    grid-row: 2;
 }
 
 /* Donut arriba y su leyenda debajo (la tarjeta es angosta) */

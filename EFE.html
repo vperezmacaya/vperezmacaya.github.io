@@ -14,8 +14,8 @@
     <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 
     <!-- CATLEC Global Stylesheet & EFE Addon -->
-    <link rel="stylesheet" href="static/css/styles.css?v=20261023_mopgl">
-    <link rel="stylesheet" href="static/css/efe_addons.css?v=20261030_sinfiltros2">
+    <link rel="stylesheet" href="static/css/styles.css?v=20261104_foto2">
+    <link rel="stylesheet" href="static/css/efe_addons.css?v=20261105_sinfilial">
 
     <!-- SheetJS for Client-Side Excel Export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -24,6 +24,11 @@
     <script src="static/data/efe_data.js?v=20260924_2"></script>
     <script src="static/data/efe_geo.js?v=20261028_sinmetro"></script>
     <script src="static/data/efe_red.js?v=20261030_red1"></script>
+    <script src="static/data/efe_red_nodos.js?v=20261105_mapa1"></script>
+    <script src="static/data/sni_regions_data.js"></script>
+    <script src="static/data/efe_carga.js?v=20261105_1258"></script>
+    <script src="static/data/efe_trenes.js?v=20261105_trenes"></script>
+    <script src="static/data/efe_seguridad.js?v=20261105_seguridad"></script>
 </head>
 
 <body class="light-theme">
@@ -64,13 +69,13 @@
                 <i data-lucide="trending-up" style="width: 14px; height: 14px;"></i>
                 <span>Demanda y Operación</span>
             </button>
-            <button class="view-tab-btn" id="btn-efe-view-timeline">
-                <i data-lucide="clock" style="width: 14px; height: 14px;"></i>
-                <span>Líneas de Tiempo de Proyectos</span>
+            <button class="view-tab-btn" id="btn-efe-view-carga">
+                <i data-lucide="container" style="width: 14px; height: 14px;"></i>
+                <span>Carga Ferroviaria</span>
             </button>
-            <button class="view-tab-btn" id="btn-efe-view-investment">
-                <i data-lucide="line-chart" style="width: 14px; height: 14px;"></i>
-                <span>Análisis de Inversión de Proyectos</span>
+            <button class="view-tab-btn" id="btn-efe-view-timeline">
+                <i data-lucide="gantt-chart" style="width: 14px; height: 14px;"></i>
+                <span>Portafolio de Proyectos</span>
             </button>
         </div>
 
@@ -292,69 +297,66 @@
                     </div>
                 </section>
 
-                <!-- Full-Width EFE Timeline Panel -->
-                <div id="efe-timeline-full-panel" class="timeline-full-panel"
-                    style="display:none; grid-column: 1 / -1;">
+                <!-- Portafolio de Proyectos (#proyectos): líneas de tiempo a la izquierda y análisis de inversión a la
+                     derecha (static/js/EFE/timeline.js y investment.js). Reemplazó a las vistas separadas
+                     "Líneas de Tiempo de Proyectos" e "Análisis de Inversión de Proyectos". -->
+                <div id="efe-portafolio-full-panel" class="efe-portafolio-full-panel" style="display:none;">
+                    <div id="efe-timeline-full-panel" class="timeline-full-panel">
 
-                    <!-- Timeline Header -->
-                    <div class="timeline-header">
-                        <div class="timeline-header-left">
-                            <i data-lucide="gantt-chart" style="width:14px;height:14px;color:var(--primary);"></i>
-                            <h2 class="timeline-header-title">Portafolio de Inversiones Estratégicas 2024-2031</h2>
-                            <span id="efe-timeline-count-badge" class="timeline-count-badge">0 Proyectos</span>
+                        <!-- Timeline Header -->
+                        <div class="timeline-header">
+                            <div class="timeline-header-left">
+                                <i data-lucide="gantt-chart" style="width:14px;height:14px;color:var(--primary);"></i>
+                                <h2 class="timeline-header-title">Portafolio de Inversiones Estratégicas 2024-2031</h2>
+                                <span id="efe-timeline-count-badge" class="timeline-count-badge">0 Proyectos</span>
+                            </div>
+                            <div class="timeline-header-right" id="efe-timeline-header-legend">
+                                <span class="timeline-legend-item">
+                                    <span class="tl-legend-dot"
+                                        style="background:#0f3b6c; width:11px; height:7px; border-radius:2px;"></span>Etapa de Proyecto
+                                </span>
+                                <span class="timeline-legend-item">
+                                    <span class="tl-legend-dot"
+                                        style="background:#1e9952; border-radius:50%; text-align:center; color:#fff; font-size:7px; line-height:10px; width:10px; height:10px;">✓</span>Operativo
+                                </span>
+                                <span class="timeline-legend-item">
+                                    <span class="tl-legend-dot"
+                                        style="background:#1e9952; transform:rotate(45deg); width:7px; height:7px; border-radius:1px;"></span>Puesta
+                                    en Operación
+                                </span>
+                                <span class="timeline-legend-item">
+                                    <span
+                                        style="display:inline-block;width:2px;height:12px;background:#ef4444;border-radius:1px;"></span>Hoy
+                                </span>
+                            </div>
                         </div>
-                        <div class="timeline-header-right" id="efe-timeline-header-legend">
-                            <span class="timeline-legend-item">
-                                <span class="tl-legend-dot"
-                                    style="background:#0f3b6c; width:11px; height:7px; border-radius:2px;"></span>Etapa de Proyecto
-                            </span>
-                            <span class="timeline-legend-item">
-                                <span class="tl-legend-dot"
-                                    style="background:#1e9952; border-radius:50%; text-align:center; color:#fff; font-size:7px; line-height:10px; width:10px; height:10px;">✓</span>Operativo
-                            </span>
-                            <span class="timeline-legend-item">
-                                <span class="tl-legend-dot"
-                                    style="background:#1e9952; transform:rotate(45deg); width:7px; height:7px; border-radius:1px;"></span>Puesta
-                                en Operación
-                            </span>
-                            <span class="timeline-legend-item">
-                                <span
-                                    style="display:inline-block;width:2px;height:12px;background:#ef4444;border-radius:1px;"></span>Hoy
-                            </span>
-                        </div>
-                    </div>
 
-                    <!-- Timeline Year Axis (sticky) -->
-                    <div class="timeline-axis-wrapper">
-                        <div class="timeline-label-col" id="efe-timeline-label-col-header"
-                            style="display: flex; align-items: center; padding-left: 14px; font-family: var(--font-heading); font-weight: 600; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">
-                            PROYECTO FERROVIARIO
+                        <!-- Timeline Year Axis (sticky) -->
+                        <div class="timeline-axis-wrapper">
+                            <div class="timeline-label-col" id="efe-timeline-label-col-header"
+                                style="display: flex; align-items: center; padding-left: 14px; font-family: var(--font-heading); font-weight: 600; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">
+                                PROYECTO FERROVIARIO
+                            </div>
+                            <div class="timeline-axis-scroll" id="efe-timeline-axis-scroll">
+                                <svg id="efe-timeline-axis-svg" style="display:block;"></svg>
+                            </div>
                         </div>
-                        <div class="timeline-axis-scroll" id="efe-timeline-axis-scroll">
-                            <svg id="efe-timeline-axis-svg" style="display:block;"></svg>
-                        </div>
-                    </div>
 
-                    <!-- Timeline Rows (scrollable) -->
-                    <div class="timeline-body" id="efe-timeline-body">
-                        <div class="timeline-rows-wrapper">
-                            <div class="timeline-label-col" id="efe-timeline-label-col"></div>
-                            <div class="timeline-bars-scroll" id="efe-timeline-bars-scroll">
-                                <svg id="efe-timeline-bars-svg" style="display:block;"></svg>
+                        <!-- Timeline Rows (scrollable) -->
+                        <div class="timeline-body" id="efe-timeline-body">
+                            <div class="timeline-rows-wrapper">
+                                <div class="timeline-label-col" id="efe-timeline-label-col"></div>
+                                <div class="timeline-bars-scroll" id="efe-timeline-bars-scroll">
+                                    <svg id="efe-timeline-bars-svg" style="display:block;"></svg>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Full-Width EFE Investment Analytics Panel -->
-                <div id="efe-investment-full-panel" class="efe-investment-full-panel"
-                    style="display:none; grid-column: 1 / -1; flex-direction: column; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; height: 100%; min-height: 0;">
-
-                    <div class="investment-body"
-                        style="flex: 1; overflow: hidden; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.45rem; min-height: 0;">
-
-                        <!-- BANNER KPI SUPERIOR -->
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.4rem; flex-shrink: 0;">
+                    <!-- Columna derecha: KPI, inversión por tipo (gráfico circular) y 5 mayores proyectos -->
+                    <div id="efe-investment-full-panel" class="efe-portafolio-inversion">
+                        <!-- KPI de inversión -->
+                        <div class="efe-portafolio-kpis">
                             <div class="card-kpi" style="min-height: 57.56px;">
                                 <div class="kpi-icon">
                                     <i data-lucide="trending-up"></i>
@@ -370,93 +372,29 @@
                                     <i data-lucide="calculator"></i>
                                 </div>
                                 <div class="kpi-val-container">
-                                    <span class="kpi-label">Promedio inversión / proyecto</span>
+                                    <span class="kpi-label">Promedio por proyecto</span>
                                     <span class="kpi-value" id="efe-kpi-inv-avg" style="font-size: 0.95rem;">-</span>
                                 </div>
                             </div>
 
-                            <div class="card-kpi" style="min-height: 57.56px;">
-                                <div class="kpi-icon">
-                                    <i data-lucide="award"></i>
-                                </div>
-                                <div class="kpi-val-container">
-                                    <span class="kpi-label">Filial con mayor inversión</span>
-                                    <span class="kpi-value" id="efe-kpi-inv-top-filial"
-                                        style="font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</span>
-                                </div>
+                        </div>
+
+                        <div class="panel-card efe-carga-card efe-portafolio-card--tipo">
+                            <div class="efe-carga-card-head">
+                                <h3><i data-lucide="pie-chart"></i><span>Inversión según tipo de proyecto</span></h3>
+                            </div>
+                            <div class="efe-portafolio-pie-body">
+                                <div class="efe-portafolio-pie"><canvas id="efeChartInvByTipo"></canvas></div>
+                                <div class="efe-portafolio-pie-legend" id="efeChartInvByTipoLegend"></div>
                             </div>
                         </div>
 
-                        <!-- CUADRÍCULA PRINCIPAL DE 2 COLUMNAS (Izquierda: Tipo de Proyecto; Derecha: Filiales arriba + Top Proyectos abajo) -->
-                        <div
-                            style="display: grid; grid-template-columns: 42% 58%; gap: 0.5rem; flex: 1; min-height: 0; height: 100%;">
-
-                            <!-- COLUMNA IZQUIERDA: Inversión según Tipo de Proyecto -->
-                            <div class="panel-card"
-                                style="padding: 0.45rem 0.5rem 0.35rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
-                                <div
-                                    style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
-                                    <h3
-                                        style="font-size: 0.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
-                                        <i data-lucide="layers"
-                                            style="width: 13px; height: 13px; color: #0f3b6c;"></i>
-                                        Inversión según Tipo de Proyecto
-                                    </h3>
-                                </div>
-                                <div style="flex: 1; min-height: 0; position: relative;">
-                                    <canvas id="efeChartInvByTipo"></canvas>
-                                </div>
+                        <div class="panel-card efe-carga-card efe-portafolio-card--top">
+                            <div class="efe-carga-card-head">
+                                <h3><i data-lucide="train"></i><span>5 proyectos ferroviarios con mayor inversión</span></h3>
                             </div>
-
-                            <!-- COLUMNA DERECHA: Filiales arriba + Top Proyectos abajo -->
-                            <div
-                                style="display: flex; flex-direction: column; gap: 0.5rem; height: 100%; min-height: 0;">
-
-                                <!-- Gráfico Arriba: Inversión por Filial (%) -->
-                                <div class="panel-card"
-                                    style="padding: 0.35rem 0.5rem 0.25rem; display: flex; flex-direction: column; flex: 0 0 38%; min-height: 0; overflow: hidden;">
-                                    <div
-                                        style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
-                                        <h3
-                                            style="font-size: 0.72rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
-                                            <i data-lucide="pie-chart"
-                                                style="width: 12px; height: 12px; color: #1694b8;"></i>
-                                            Inversión por Filial (%)
-                                        </h3>
-                                    </div>
-                                    <div
-                                        style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; gap: 0.6rem; padding: 0 0.15rem; position: relative;">
-                                        <div
-                                            style="width: 80px; height: 80px; min-width: 80px; flex-shrink: 0; position: relative;">
-                                            <canvas id="efeChartInvByFilial"></canvas>
-                                        </div>
-                                        <div id="efeChartInvByFilialLegend"
-                                            style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.05rem; overflow: hidden; justify-content: center;">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Gráfico Abajo: Top 5 Proyectos con Mayor Inversión -->
-                                <div class="panel-card"
-                                    style="padding: 0.45rem 0.5rem 0.35rem; display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;">
-                                    <div
-                                        style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
-                                        <h3
-                                            style="font-size: 0.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
-                                            <i data-lucide="train"
-                                                style="width: 13px; height: 13px; color: #d92534;"></i>
-                                            5 Proyectos Ferroviarios con Mayor Inversión
-                                        </h3>
-                                    </div>
-                                    <div style="flex: 1; min-height: 0; position: relative;">
-                                        <canvas id="efeChartTopProjects"></canvas>
-                                    </div>
-                                </div>
-
-                            </div>
-
+                            <div class="efe-carga-chart"><canvas id="efeChartTopProjects"></canvas></div>
                         </div>
-
                     </div>
                 </div>
 
@@ -500,7 +438,7 @@
                             </div>
                         </div>
 
-                        <!-- FILA 1 DE GRÁFICOS (2 Columnas: Demanda de Pasajeros, Tracción/Flota) -->
+                        <!-- FILA 1 DE GRÁFICOS (2 Columnas: Demanda de Pasajeros, Seguridad ferroviaria) -->
                         <div style="display: grid; grid-template-columns: 66% 34%; gap: 0.4rem; flex: 1; min-height: 0;">
                             <!-- Gráfico 1: Demanda de Pasajeros -->
                             <div class="panel-card" style="padding: 0.4rem 0.5rem 0.3rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
@@ -519,44 +457,38 @@
                                 </div>
                             </div>
 
-                            <!-- Gráfico 5: Tracción y Flota -->
+                            <!-- Gráfico 5: Seguridad ferroviaria (static/data/efe_seguridad.js, de las Memorias) -->
                             <div class="panel-card" style="padding: 0.4rem 0.5rem 0.3rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
-                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
-                                    <h3 style="font-size: 0.74rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
-                                        <i data-lucide="zap" style="width: 13px; height: 13px; color: #0f3b6c;"></i>
-                                        Tracción y Tecnología de Flota
+                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0; gap: 0.4rem;">
+                                    <h3 style="font-size: 0.74rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary); white-space: nowrap;">
+                                        <i data-lucide="shield-alert" style="width: 13px; height: 13px; color: #0f3b6c;"></i>
+                                        Seguridad ferroviaria
                                     </h3>
+                                    <div id="efeChartSeguridadLegend" style="display: flex; align-items: center; gap: 0.45rem; font-size: 0.6rem; flex-wrap: wrap; justify-content: flex-end;"></div>
                                 </div>
-                                <div style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0 0.15rem; position: relative;">
-                                    <div style="width: 85px; height: 85px; min-width: 85px; flex-shrink: 0; position: relative;">
-                                        <canvas id="efeChartTraccionFlota"></canvas>
-                                    </div>
-                                    <div id="efeChartTraccionFlotaLegend" style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; overflow: hidden; justify-content: center;">
-                                    </div>
+                                <div style="flex: 1; min-height: 0; position: relative;">
+                                    <canvas id="efeChartSeguridad"></canvas>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- FILA 2 DE GRÁFICOS (2 Columnas: Longitud vs Estaciones, Satisfacción Usuaria) -->
+                        <!-- FILA 2 DE GRÁFICOS (2 Columnas: Trenes en operación, Satisfacción Usuaria) -->
                         <div style="display: grid; grid-template-columns: 50% 50%; gap: 0.4rem; flex: 1; min-height: 0;">
-                            <!-- Gráfico 3: Longitud vs Estaciones -->
+                            <!-- Gráfico 3: Trenes en operación por año (static/data/efe_trenes.js, de las Memorias) -->
                             <div class="panel-card" style="padding: 0.4rem 0.5rem 0.3rem; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;">
                                 <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.15rem; margin-bottom: 0.15rem; flex-shrink: 0;">
                                     <h3 style="font-size: 0.74rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.3rem; color: var(--text-primary);">
-                                        <i data-lucide="git-commit" style="width: 13px; height: 13px; color: #0f3b6c;"></i>
-                                        Extensión de Trazado vs N° Estaciones
+                                        <i data-lucide="train-front" style="width: 13px; height: 13px; color: #0f3b6c;"></i>
+                                        Trenes en operación
                                     </h3>
                                     <div style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.63rem;">
                                         <span style="display: flex; align-items: center; gap: 0.25rem; color: #0f3b6c; font-weight: 600;">
-                                            <span style="width: 8px; height: 8px; border-radius: 2px; background: #0f3b6c;"></span> Extensión (km)
-                                        </span>
-                                        <span style="display: flex; align-items: center; gap: 0.25rem; color: #d92534; font-weight: 600;">
-                                            <span style="width: 8px; height: 8px; border-radius: 50%; background: #d92534;"></span> Estaciones
+                                            <span style="width: 8px; height: 8px; border-radius: 2px; background: #0f3b6c;"></span> Trenes de pasajeros
                                         </span>
                                     </div>
                                 </div>
                                 <div style="flex: 1; min-height: 0; position: relative;">
-                                    <canvas id="efeChartLongitudEstaciones"></canvas>
+                                    <canvas id="efeChartTrenes"></canvas>
                                 </div>
                             </div>
 
@@ -589,6 +521,97 @@
                     </div>
                 </div>
 
+                <!-- Carga Ferroviaria (static/js/EFE/carga.js, datos de static/data/efe_carga.js) -->
+                <div id="efe-carga-full-panel" class="efe-carga-panel">
+                    <div class="efe-carga-empty empty-state" id="efe-carga-empty">
+                        No se encontraron los datos de carga (static/data/efe_carga.js). Correr scripts/actualizar_efe.py.
+                    </div>
+                    <div class="efe-carga-body" id="efe-carga-body">
+
+                        <!-- KPI -->
+                        <div class="efe-carga-kpis">
+                            <div class="card-kpi">
+                                <div class="kpi-icon"><i data-lucide="gauge"></i></div>
+                                <div class="kpi-val-container">
+                                    <span class="kpi-label">Carga transportada (<span class="efe-carga-anio"></span>)</span>
+                                    <span class="kpi-value" id="efe-carga-kpi-tkbc">-</span>
+                                    <span class="efe-carga-kpi-sub" id="efe-carga-kpi-tkbc-sub"></span>
+                                </div>
+                            </div>
+                            <div class="card-kpi">
+                                <div class="kpi-icon"><i data-lucide="weight"></i></div>
+                                <div class="kpi-val-container">
+                                    <span class="kpi-label">Toneladas movilizadas (<span class="efe-carga-anio"></span>)</span>
+                                    <span class="kpi-value" id="efe-carga-kpi-ton">-</span>
+                                    <span class="efe-carga-kpi-sub" id="efe-carga-kpi-ton-sub"></span>
+                                </div>
+                            </div>
+                            <div class="card-kpi">
+                                <div class="kpi-icon"><i data-lucide="container"></i></div>
+                                <div class="kpi-val-container">
+                                    <span class="kpi-label">Unidades intermodales (<span class="efe-carga-anio"></span>)</span>
+                                    <span class="kpi-value" id="efe-carga-kpi-teu">-</span>
+                                    <span class="efe-carga-kpi-sub" id="efe-carga-kpi-teu-sub"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fila 1: carga por año, productos y meta 2030 -->
+                        <div class="efe-carga-row">
+                            <div class="panel-card efe-carga-card">
+                                <div class="efe-carga-card-head">
+                                    <h3><i data-lucide="bar-chart-3"></i><span>Carga por año</span></h3>
+                                    <div class="efe-carga-toggle" id="efe-carga-serie-toggle" role="group" aria-label="Métrica del gráfico">
+                                        <button type="button" data-metrica="tkbc" class="is-active" aria-pressed="true">MM TKBC</button>
+                                        <button type="button" data-metrica="teu" aria-pressed="false">TEU</button>
+                                        <button type="button" data-metrica="toneladas" aria-pressed="false">Toneladas</button>
+                                    </div>
+                                </div>
+                                <div class="efe-carga-legend efe-carga-legend--fila" id="efe-carga-serie-legend"></div>
+                                <div class="efe-carga-chart"><canvas id="efeCargaChartSerie"></canvas></div>
+                            </div>
+                            <div class="panel-card efe-carga-card">
+                                <div class="efe-carga-card-head">
+                                    <h3><i data-lucide="package"></i><span>Productos movilizados (<span id="efe-carga-prod-anios"></span>)</span></h3>
+                                    <div class="efe-carga-legend" id="efe-carga-prod-legend"></div>
+                                </div>
+                                <div class="efe-carga-chart"><canvas id="efeCargaChartProductos"></canvas></div>
+                            </div>
+                            <div class="panel-card efe-carga-card efe-carga-card--meta">
+                                <div class="efe-carga-card-head">
+                                    <h3><i data-lucide="flag"></i><span>Meta <span id="efe-carga-meta-anio"></span>: duplicar la carga</span></h3>
+                                </div>
+                                <div class="efe-carga-meta">
+                                    <div class="efe-carga-meta-row">
+                                        <span id="efe-carga-meta-actual"></span>
+                                        <span class="efe-carga-meta-pct" id="efe-carga-meta-pct"></span>
+                                    </div>
+                                    <div class="efe-carga-progress">
+                                        <div class="efe-carga-progress-fill" id="efe-carga-meta-fill"></div>
+                                    </div>
+                                    <div class="efe-carga-facts" id="efe-carga-ritmo"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fila 2: mapa de la Red EFE y sus centros de carga (static/js/EFE/carga-mapa.js) -->
+                        <div class="efe-carga-row efe-carga-row--mapa">
+                            <div class="panel-card efe-carga-card">
+                                <div class="efe-carga-card-head">
+                                    <h3><i data-lucide="route"></i><span>Red de carga EFE</span></h3>
+                                    <div class="efe-carga-legend" id="efe-carga-mapa-legend"></div>
+                                    <button type="button" class="efe-carga-mapa-reset" id="efe-carga-mapa-reset" title="Volver a ver todo Chile">
+                                        <i data-lucide="maximize-2"></i>Restablecer
+                                    </button>
+                                </div>
+                                <div class="efe-carga-mapa" id="efe-carga-mapa" aria-label="Mapa de Chile con la Red EFE"></div>
+                                <div class="efe-carga-src">Fuentes: Transap y Fepasa.</div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
@@ -605,9 +628,13 @@
         </div>
     </footer>
 
+    <!-- Tooltip del mapa de la vista Carga -->
+
     <!-- Timeline Tooltip -->
     <div id="efe-timeline-tooltip" class="timeline-tooltip" style="display:none;"></div>
 
+    <!-- D3 (mapa de la vista Carga, mismo módulo de mapa que SNI) -->
+    <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
     <!-- Lucide Icons -->
@@ -621,16 +648,19 @@
     <script src="static/js/common/table-fade.js?v=20260924_1"></script>
     <script src="static/js/common/panel-resizer.js?v=20260924_gl2"></script>
     <script src="static/js/common/timeline.js?v=20260920_1"></script>
-    <script src="static/js/EFE/state.js?v=20261030_sinfiltros"></script>
-    <script src="static/js/EFE/investment.js?v=20261030_sinfiltros2"></script>
-    <script src="static/js/EFE/timeline.js?v=20261030_sinfiltros2"></script>
-    <script src="static/js/EFE/operacion.js?v=20261030_sinfiltros2"></script>
+    <script src="static/js/EFE/state.js?v=20261105_carga1"></script>
+    <script src="static/js/EFE/investment.js?v=20261105_sinfilial"></script>
+    <script src="static/js/EFE/timeline.js?v=20261106_abierto"></script>
+    <script src="static/js/EFE/operacion.js?v=20261105_portafolio"></script>
+    <script src="static/js/common/choropleth.js?v=20261105_ajuste"></script>
+    <script src="static/js/EFE/carga.js?v=20261105_portafolio"></script>
+    <script src="static/js/EFE/carga-mapa.js?v=20261105_sintooltip"></script>
     <script src="static/js/EFE/map.js?v=20261030_hovsel1"></script>
     <script src="static/js/EFE/filters.js?v=20261030_sinfiltros"></script>
-    <script src="static/js/EFE/ui.js?v=20261030_sinfiltros"></script>
+    <script src="static/js/EFE/ui.js?v=20261104_foto_ia"></script>
 
     <!-- Nav Menu & View Switcher Logic -->
-    <script src="static/js/common/nav-menu.js?v=20261030_hash"></script>
+    <script src="static/js/common/nav-menu.js?v=20261105_portafolio"></script>
     <script>
         (function () {
             CatlecNav.render();
@@ -645,12 +675,15 @@
             const navSubTl = document.getElementById('nav-efe-sub-timeline');
             const navSubInv = document.getElementById('nav-efe-sub-investment');
             const navSubOp = document.getElementById('nav-efe-sub-operacion');
+            const btnCarga = document.getElementById('btn-efe-view-carga');
+            const navSubCarga = document.getElementById('nav-efe-sub-carga');
 
             if (btnMap) {
                 btnMap.addEventListener('click', () => {
                     if (typeof hideEfeInvestmentView === 'function') hideEfeInvestmentView();
                     if (typeof hideEfeTimelineView === 'function') hideEfeTimelineView();
                     if (typeof hideEfeOperacionView === 'function') hideEfeOperacionView();
+                    if (typeof hideEfeCargaView === 'function') hideEfeCargaView();
                 });
             }
             if (btnTl) {
@@ -675,6 +708,7 @@
                     if (typeof hideEfeInvestmentView === 'function') hideEfeInvestmentView();
                     if (typeof hideEfeTimelineView === 'function') hideEfeTimelineView();
                     if (typeof hideEfeOperacionView === 'function') hideEfeOperacionView();
+                    if (typeof hideEfeCargaView === 'function') hideEfeCargaView();
                 });
             }
             if (navSubTl) {
@@ -699,19 +733,33 @@
                 });
             }
 
+            if (btnCarga) {
+                btnCarga.addEventListener('click', () => {
+                    if (typeof showEfeCargaView === 'function') showEfeCargaView();
+                });
+            }
+            if (navSubCarga) {
+                navSubCarga.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    CatlecNav.close();
+                    if (typeof showEfeCargaView === 'function') showEfeCargaView();
+                });
+            }
+
             // Handle URL hash on load and hashchange
             function handleEfeHashRoute() {
                 const hash = window.location.hash;
-                if (hash === '#timeline') {
+                if (hash === '#proyectos' || hash === '#timeline' || hash === '#inversion' || hash === '#investment') {
                     if (typeof showEfeTimelineView === 'function') showEfeTimelineView();
-                } else if (hash === '#inversion' || hash === '#investment') {
-                    if (typeof showEfeInvestmentView === 'function') showEfeInvestmentView();
                 } else if (hash === '#operacion' || hash === '#demanda') {
                     if (typeof showEfeOperacionView === 'function') showEfeOperacionView();
+                } else if (hash === '#carga') {
+                    if (typeof showEfeCargaView === 'function') showEfeCargaView();
                 } else {
                     if (typeof hideEfeInvestmentView === 'function') hideEfeInvestmentView();
                     if (typeof hideEfeTimelineView === 'function') hideEfeTimelineView();
                     if (typeof hideEfeOperacionView === 'function') hideEfeOperacionView();
+                    if (typeof hideEfeCargaView === 'function') hideEfeCargaView();
                 }
             }
 
@@ -952,16 +1000,16 @@
                             </ul>
                         </div>
 
-                        <!-- 2. VISUALIZACIÓN LÍNEAS DE TIEMPO -->
+                        <!-- 2. VISUALIZACIÓN PORTAFOLIO DE PROYECTOS (líneas de tiempo + inversión) -->
                         <div class="formula-card">
                             <div class="formula-card-title">
-                                <i data-lucide="clock" style="width: 15px; height: 15px; color: #7c3aed;"></i>
-                                Visualización: Líneas de Tiempo de Proyectos
+                                <i data-lucide="gantt-chart" style="width: 15px; height: 15px; color: #7c3aed;"></i>
+                                Visualización: Portafolio de Proyectos
                             </div>
 
                             <div class="formula-subtitle">
                                 <i data-lucide="gauge" style="width: 13px; height: 13px; color: #7c3aed;"></i>
-                                Cronograma y Etapas del Ciclo de Vida:
+                                Columna izquierda: cronograma y etapas del ciclo de vida:
                             </div>
                             <ul
                                 style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
@@ -980,45 +1028,22 @@
                                     (ícono de verificación verde)
                                     y la fecha proyectada de inicio de operaciones (marcador de diamante verde).</li>
                             </ul>
-                        </div>
-
-                        <!-- 3. VISUALIZACIÓN ANÁLISIS DE INVERSIÓN DE PROYECTOS -->
-                        <div class="formula-card">
-                            <div class="formula-card-title">
-                                <i data-lucide="line-chart" style="width: 15px; height: 15px; color: #0284c7;"></i>
-                                Visualización: Análisis de Inversión de Proyectos
-                            </div>
 
                             <div class="formula-subtitle">
-                                <i data-lucide="gauge" style="width: 13px; height: 13px; color: #0284c7;"></i>
-                                Indicadores Clave (KPIs superiores):
+                                <i data-lucide="pie-chart" style="width: 13px; height: 13px; color: #0284c7;"></i>
+                                Columna derecha: análisis de inversión:
                             </div>
                             <ul
                                 style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
                                 <li><strong>Inversión total:</strong> Monto consolidado en MM USD de los proyectos
                                     evaluados en el portafolio.</li>
-                                <li><strong>Promedio inversión / proyecto:</strong> Inversión media en millones de
-                                    dólares por cada iniciativa ferroviaria.</li>
-                                <li><strong>Filial con mayor inversión:</strong> Filial operativa que concentra el mayor
-                                    volumen de recursos financieros según los filtros aplicados.</li>
+                                <li><strong>Promedio por proyecto:</strong> Inversión media en millones de
+                                    dólares de los proyectos con monto informado.</li>
+                                <li><strong>Inversión según tipo de proyecto:</strong> gráfico de anillo (donut) con la parte
+                                    de la inversión total de cada tipo (expansión, mejoramiento, ampliación, etc.); la
+                                    leyenda da el monto y el porcentaje, y el tooltip, cuántos proyectos son.</li>
+                                <li><strong>5 proyectos con mayor inversión:</strong> de mayor a menor.</li>
                             </ul>
-
-                            <div class="formula-subtitle">
-                                <i data-lucide="pie-chart" style="width: 13px; height: 13px; color: #0284c7;"></i>
-                                Distribución y Asignación de Inversión por Filial (%):
-                            </div>
-                            <div class="formula-box">
-                                Inversión(Filial f) = &Sigma; [ Inversión_Total(p) / N_filiales(p) ]
-                            </div>
-                            <p class="formula-explanation">
-                                En iniciativas de alcance transversal o a nivel de red nacional sin una filial única
-                                exclusiva
-                                (ej. Control por Señalización Virtual CSV o adquisición general de material rodante), la
-                                inversión en MM USD
-                                se divide de manera equitativa entre las filiales operativas beneficiarias para reflejar
-                                fielmente la participación porcentual en el gráfico.
-                            </p>
-
                         </div>
 
                         <!-- 4. VISUALIZACIÓN DEMANDA Y OPERACIÓN -->
@@ -1037,8 +1062,8 @@
                                 <li><strong>Demanda Histórica y Anual de Pasajeros:</strong> Serie temporal 2018-2025 en millones de pasajeros (MM pasajeros) transportados por filial, basada en los reportes y balances auditados de la CMF (tabla 6.2.iv de las Memorias Integradas EFE 2025, 2024 y Reporte 2020).</li>
                                 <li><strong>Visualización en Barras Apiladas:</strong> El gráfico consolida la demanda anual mediante barras apiladas segmentadas por filial, donde la altura total de cada columna representa la demanda agregada de toda la red para el respectivo año.</li>
                                 <li><strong>Cálculo Dinámico de Totales en Cliente:</strong> Los totales corporativos anuales y de los indicadores superiores no provienen de filas estáticas en la base de datos, sino que se computan dinámicamente sumando en tiempo real las demandas de todas las filiales cargadas. Esto garantiza flexibilidad y escalabilidad ante la adición de nuevas filiales a futuro.</li>
-                                <li><strong>Extensión de Red y N° Estaciones:</strong> Longitud operativa de vías férreas comerciales (km) y cantidad de paradas y terminales activas.</li>
-                                <li><strong>Tecnología y Tracción:</strong> Distribución del parque ferroviario en tracción 100% eléctrica (automotores EMU), diésel (locomotoras / buscarril) y bimodal (trenes rápidos 160 km/h BMU).</li>
+                                <li><strong>Trenes en operación:</strong> trenes de pasajeros en operación que informa cada Memoria o Reporte Integrado de EFE en sus cifras consolidadas (desde 2020: las Memorias 2018 y 2019 no traen la cifra). Al pasar el mouse, cuántos son eléctricos (cantidad o porcentaje, según lo que publique cada documento), la variación respecto del año anterior y el documento y la página de donde sale.</li>
+                                <li><strong>Seguridad ferroviaria:</strong> tasa de accidentabilidad ferroviaria (accidentes por cada 100.000 trenes-km, barras) de 2018 a 2025 y fallecidos por accidentes operacionales, sin suicidios (línea, desde 2021), según las Memorias y Reportes Integrados de EFE. Al pasar el mouse: variación de la tasa, fallecidos en total con suicidios (2019-2023), accidentes e incidentes (2023-2025) y la fuente. Los fallecidos operacionales de 2023 son 33 según la Memoria 2025 (la Memoria 2023 decía 30).</li>
                             </ul>
 
                             <div class="formula-subtitle" style="margin-top: 0.55rem;">
@@ -1062,6 +1087,23 @@
                             <p class="formula-explanation">
                                 Siguiendo la metodología oficial de las Memorias Integradas de EFE Trenes de Chile (donde el total corporativo se define textualmente como <em>"Satisfacción NETA ponderada por afluencia"</em>), la plataforma calcula en tiempo real el índice de cada filial mediante una <strong>media ponderada por volumen de pasajeros transportados (demanda)</strong> de cada servicio. De esta manera, servicios de alta afluencia (como Tren Nos, Tren Limache-Puerto o Biotren) poseen una ponderación representativa respecto a servicios regionales de menor frecuencia.
                             </p>
+                        </div>
+
+                        <!-- 5. VISUALIZACIÓN CARGA FERROVIARIA -->
+                        <div class="formula-card">
+                            <div class="formula-card-title">
+                                <i data-lucide="container" style="width: 15px; height: 15px; color: #0f3b6c;"></i>
+                                Visualización: Carga Ferroviaria
+                            </div>
+                            <ul
+                                style="margin: 0; padding-left: 1.2rem; font-size: 0.73rem; color: #334155; line-height: 1.45; display: flex; flex-direction: column; gap: 0.2rem;">
+                                <li><strong>Fuentes:</strong> Memorias Anuales EFE 2018 y 2019, Reportes Integrados 2020 y 2021 y Memorias Integradas 2022 a 2025 (efe.cl). Los gráficos no llevan pie de fuente: el documento y la página de cada dato se detallan abajo. EFE no transporta la carga: provee la infraestructura a los porteadores privados (Fepasa y Transap) bajo el modelo Open Access.</li>
+                                <li><strong>TKBC:</strong> toneladas-kilómetro brutas completas (peso del tren completo por kilómetro recorrido), la unidad con que EFE mide la carga y fija su meta de 6.000 millones al 2030.</li>
+                                <li><strong>Carga por año</strong> (botones MM TKBC, TEU y Toneladas; el eje muestra siempre 2014 a 2025 y los años sin dato de una métrica quedan vacíos, rotulados "Sin info"): las TKBC van de 2014 a 2025, apiladas por porteador cuando la Memoria las desglosa (2018 a 2024; los demás años en gris). 2014-2017 salen del gráfico por sector de la Memoria 2018 (pág. 26); para 2019 el Reporte 2020 da 3.137 en su resumen (pág. 27) y 3.101 en su tabla (pág. 82), y se usa la tabla. Los TEU van de 2022 a 2025 (para 2024 la Memoria 2024 dice 58.761 y la 2025, 57.948; se usa la más reciente). Las toneladas van de 2019 a 2025 sin 2020, que ninguna Memoria publica: 2019 es la suma de las tres zonas geográficas de la Memoria 2019 (pág. 36), 2021 y 2023 son el promedio mensual por 12 (esas Memorias no dan el total exacto) y 2022, 2024 y 2025 son el total publicado.</li>
+                                <li><strong>Productos:</strong> toneladas netas por producto en 2024 (Memoria 2024, pág. 107, en millones de toneladas redondeados a una décima, por lo que las variaciones respecto de 2025 son aproximadas) y 2025 (Memoria 2025, pág. 69). La Memoria 2023 no desglosa por producto y la 2022 lo hace por industria, que no es comparable.</li>
+                                <li><strong>Meta 2030:</strong> avance de las TKBC del último año hacia la meta de 6.000 millones, con el crecimiento del último año y el crecimiento anual que haría falta hasta 2030 (al pasar el mouse, el cálculo).</li>
+                                <li><strong>Mapa de la Red EFE:</strong> regiones de Chile (la misma capa del mapa de SNI) con el norte a la izquierda, giradas para que Arica y Concepción queden a la misma altura y encuadradas a la red de carga (de La Calera y Puerto Ventanas a Puerto Montt). La Red EFE es la vía de EFE según el diagrama "Red EFE" de la Memoria 2024, un trazo por ramal, toda del mismo color. No se dibujan los ramales Talca – Constitución, San Fernando – Peralillo y Antilhue – Valdivia, ni Santa Fe – Los Ángeles (dado de baja en 1998 y con la vía levantada en 2008), ni Arica – Visviri, por donde no circulan trenes de carga regulares (hubo una prueba en mayo de 2021, tras 16 años sin operación; Reporte Integrado 2021, pág. 45; la Memoria 2025 ubica la red de carga entre La Calera y Puerto Montt). Los puntos marcan los principales lugares de la red de carga: puertos (Valparaíso, Puerto Ventanas, San Antonio, Lirquén, Talcahuano y Coronel), centros de carga (Saladillo, Nueva Aldea y Horcones; la planta Horcones de Arauco, Memoria 2019, pág. 36) ciudades (Alameda, Talca, Temuco y Puerto Montt) y el empalme de Coigüe, donde sale el ramal a Nacimiento. Los puertos van en azul y los demás puntos en azul oscuro. Las etiquetas se acomodan arriba, abajo, a un costado o en diagonal para no taparse.</li>
+                            </ul>
                         </div>
 
                     </div>

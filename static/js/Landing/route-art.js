@@ -1,7 +1,7 @@
 // ─── static/js/Landing/route-art.js ──────────────────────────────────────────
 // Trazados animados de la sección "Proyectos destacados" (featured.js): dibuja
 // en SVG una línea de Metro o un servicio ferroviario a partir de
-// window.LANDING_ROUTES (scripts/export_landing_routes.py), sobre la red
+// window.LANDING_ROUTES (scripts/etl/landing_rutas.py), sobre la red
 // existente en gris tenue, con barra de escala y norte como rótulos de plano.
 //
 // Proyección: Web Mercator en píxeles reales del escenario (viewBox = ancho x

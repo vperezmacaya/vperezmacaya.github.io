@@ -352,7 +352,7 @@ function efeShowProjectDetailView(proj, currentFilteredProjects) {
         </div>
     ` : '';
 
-    // Renderizado de fotografía(s) asociada(s) desde Fotos/EFE (después de la descripción y antes de los datos)
+    // Fotografía(s) de Fotos/EFE (después de la descripción y antes de los datos): imágenes de referencia generadas por IA
     let photoHTML = '';
     const photosList = (proj.photos && proj.photos.length > 0) ? proj.photos : (proj.photo ? [proj.photo] : []);
     if (photosList.length === 1) {
@@ -360,7 +360,7 @@ function efeShowProjectDetailView(proj, currentFilteredProjects) {
         photoHTML = `
         <div class="detail-photo-wrapper">
             <img src="${pUrl}" alt="${proj.name}" class="detail-project-photo" loading="eager" onerror="console.warn('No se pudo cargar la imagen de EFE:', this.src);">
-            <div class="detail-photo-caption">Fuente: EFE</div>
+            <div class="detail-photo-caption">Imagen de referencia generada por IA</div>
         </div>
         `;
     } else if (photosList.length > 1) {
@@ -370,7 +370,7 @@ function efeShowProjectDetailView(proj, currentFilteredProjects) {
                 return `
                 <div class="detail-photo-wrapper" style="margin: 0;">
                     <img src="${pUrl}" alt="${proj.name} - Foto ${pIdx + 1}" class="detail-project-photo" loading="eager" onerror="console.warn('No se pudo cargar la imagen de EFE:', this.src);">
-                    <div class="detail-photo-caption">Fuente: EFE (${pIdx + 1}/${photosList.length})</div>
+                    <div class="detail-photo-caption">Imagen de referencia generada por IA (${pIdx + 1}/${photosList.length})</div>
                 </div>
                 `;
             }).join('')}

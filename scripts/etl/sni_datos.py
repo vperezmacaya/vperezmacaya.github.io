@@ -5,7 +5,7 @@ import unicodedata
 import numpy as np
 import pandas as pd
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DATA_DIR = os.path.join(BASE_DIR, 'Bases de dato', 'SNI')
 EXCEL_PATH = os.path.join(DATA_DIR, 'SNI.xlsx')
 OUT_DIR = os.path.join(BASE_DIR, 'static', 'data')
@@ -277,7 +277,7 @@ def main():
         'communes': agg_comuna_list
     }
 
-    js_content = f"// static/data/sni_data.js - Generado automáticamente por scripts/export_sni_data.py\nwindow.SNI_DATA = {json.dumps(sni_payload, ensure_ascii=False, indent=2)};\n"
+    js_content = f"// static/data/sni_data.js - Generado automáticamente por scripts/actualizar_sni.py\nwindow.SNI_DATA = {json.dumps(sni_payload, ensure_ascii=False, indent=2)};\n"
     
     with open(OUT_JS, 'w', encoding='utf-8') as f:
         f.write(js_content)
@@ -293,6 +293,3 @@ def main():
     
     raw_size_mb = os.path.getsize(OUT_RAW_JSON) / (1024 * 1024)
     print(f"[OK] Generado dataset completo para Excel ({len(raw_records)} filas): {OUT_RAW_JSON} ({raw_size_mb:.2f} MB)")
-
-if __name__ == '__main__':
-    main()
