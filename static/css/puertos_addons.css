@@ -46,10 +46,14 @@
     min-height: 0;
 }
 
-/* Resumen: serie ancha arriba + 2 columnas abajo */
+/* Resumen: mapa de las instalaciones a la izquierda (todo el alto) + los tres gráficos apilados */
 .puertos-layout-resumen {
-    grid-template-columns: 1.45fr 1fr;
-    grid-template-rows: 1.1fr 1fr;
+    grid-template-columns: minmax(0, 38%) minmax(0, 1fr);
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+}
+
+.puertos-layout-resumen > .puertos-map-card {
+    grid-row: 1 / -1;
 }
 
 /* Contenedores: columna alta a la izquierda + columna apilada (patrón DGC 42/58) */
@@ -338,8 +342,168 @@
     box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
+/* ── Mapa de las instalaciones (Resumen de Carga; static/js/Puertos/mapa.js) ── */
+/* Tarjeta del mapa: sin padding, para que el mapa llegue a los bordes izquierdo,
+   derecho e inferior; la cabecera lleva el padding de las demás tarjetas */
+.puertos-map-card {
+    padding: 0;
+}
+
+.puertos-map-card .puertos-chart-header {
+    padding: 0.5rem 0.65rem 0.25rem;
+    margin-bottom: 0;
+}
+
+/* Cuerpo de la tarjeta del mapa: flex en columna; maplibre-gl.css le pone
+   position: relative al contenedor del mapa, así que el alto sale del flex y
+   no de un inset absoluto. "Restablecer Mapa" se ubica sobre este cuerpo. */
+.puertos-map-card .puertos-chart-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.puertos-map {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+}
+
+/* Íconos de instalación y de zona portuaria, y leyenda */
+.puertos-marker.is-hovered .centroid-marker-pulse,
+.puertos-zone-marker.is-hovered .centroid-marker-pulse {
+    transform: scale(1.25);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* Nivel que no corresponde al zoom actual (zonas bajo PUERTOS_ZONE_ZOOM, terminales desde él) */
+.puertos-marker-hidden {
+    display: none !important;
+}
+
+/* Ícono de zona: más grande que el de terminal, con la cantidad de terminales
+   (.marker-cluster-badge global) y el nombre de la zona debajo */
+.puertos-zone-marker {
+    width: 30px;
+    height: 30px;
+}
+
+.puertos-zone-pulse {
+    width: 28px;
+    height: 28px;
+}
+
+.puertos-zone-pulse svg {
+    width: 15px;
+    height: 15px;
+}
+
+.puertos-zone-label {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.66rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    pointer-events: none;
+    text-shadow: 0 0 3px #ffffff, 0 0 3px #ffffff, 0 0 3px #ffffff;
+}
+
+/* Etiqueta a un costado (zonas vecinas: PUERTOS_ZONA_ETIQUETA de mapa.js) */
+.puertos-zone-label--right .puertos-zone-label,
+.puertos-zone-label--left .puertos-zone-label {
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.puertos-zone-label--right .puertos-zone-label {
+    left: calc(100% + 8px);
+}
+
+.puertos-zone-label--left .puertos-zone-label {
+    left: auto;
+    right: calc(100% + 4px);
+}
+
+.puertos-zone-label--top .puertos-zone-label {
+    top: auto;
+    bottom: calc(100% + 6px);
+}
+
+.puertos-map-legend-icon--zona {
+    position: relative;
+}
+
+.puertos-map-legend-badge {
+    position: absolute;
+    top: -5px;
+    right: -6px;
+    min-width: 11px;
+    height: 11px;
+    padding: 0 2px;
+    border-radius: 6px;
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 0.5rem;
+    font-weight: 800;
+    line-height: 11px;
+    text-align: center;
+}
+
+/* Muestra del polígono de una instalación (relleno y borde con el color de su régimen) */
+.puertos-map-legend-area {
+    width: 18px;
+    height: 12px;
+    flex-shrink: 0;
+    border: 1.5px solid var(--text-secondary);
+    border-radius: 2px;
+    background: rgba(92, 113, 133, 0.25);
+}
+
+.puertos-map-legend-sub {
+    margin-top: 0.15rem;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.puertos-map-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.7rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.puertos-map-legend-icon {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid #ffffff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.puertos-map-legend-icon svg {
+    width: 10px;
+    height: 10px;
+}
+
 /* ── Pantallas angostas: una columna con scroll ─────────────────── */
 @media (max-width: 900px) {
+    /* El mapa va primero y a todo el ancho; los gráficos, debajo */
+    .puertos-charts-grid.puertos-layout-resumen > .puertos-map-card {
+        grid-row: auto;
+        min-height: 60vh;
+    }
+
     .puertos-view-wrapper {
         overflow-y: auto;
     }

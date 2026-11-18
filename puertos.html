@@ -11,7 +11,7 @@
 
     <!-- CATLEC Global Stylesheet -->
     <link rel="stylesheet" href="static/css/styles.css?v=20261104_foto2">
-    <link rel="stylesheet" href="static/css/puertos_addons.css?v=20260925_2">
+    <link rel="stylesheet" href="static/css/puertos_addons.css?v=20261117_mapasinmargen">
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
@@ -22,8 +22,13 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@1.48.0/dist/umd/lucide.min.js"></script>
 
+    <!-- MapLibre GL (vista "Mapa de Puertos") -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css">
+    <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+
     <!-- Static Data -->
-    <script src="static/data/puertos_data.js"></script>
+    <script src="static/data/puertos_data.js?v=20261118_1158"></script>
+    <script src="static/data/puertos_geo.js?v=20261118_1158"></script>
 </head>
 
 <body class="light-theme">
@@ -36,8 +41,6 @@
                     <img src="logo/cropped-Logo-CATLEC-horizontal-sin-fondo-1.png" alt="Logo CATLEC" class="top-navbar-logo">
                 </a>
                 <span class="top-navbar-title">Observatorio de Infraestructura - Puertos (Región del Biobío)</span>
-                <span class="top-navbar-divider"></span>
-                <span class="top-navbar-proto">Prototipo en desarrollo</span>
             </div>
             <div class="top-navbar-right" style="display: flex; align-items: center; gap: 0.45rem;">
                 <button class="top-navbar-btn" id="btn-export-excel"
@@ -124,10 +127,28 @@
                     </div>
                 </div>
 
-                <!-- Layout "Tendencia": serie mensual ancha + 2 columnas -->
+                <!-- Mapa de las instalaciones portuarias a la izquierda (static/js/Puertos/mapa.js)
+                     y los tres gráficos apilados a la derecha -->
                 <div class="puertos-charts-grid puertos-layout-resumen">
+                    <!-- Mapa MapLibre: zonas portuarias y, al acercarse, terminales con su área -->
+                    <div class="puertos-chart-card puertos-map-card">
+                        <div class="puertos-chart-header">
+                            <h3 class="puertos-chart-title">
+                                <i data-lucide="map-pin" class="puertos-title-icon puertos-c-ocean"></i>
+                                Puertos mayores de la Región del Biobío
+                            </h3>
+                        </div>
+                        <div class="puertos-chart-body">
+                            <div class="puertos-map" id="puertos-map"></div>
+                            <button class="btn-floating-map" id="btn-puertos-map-reset" title="Volver a la vista inicial">
+                                <i data-lucide="maximize-2" style="width: 13px; height: 13px;"></i>
+                                Restablecer Mapa
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- A: Área mensual con promedio móvil -->
-                    <div class="puertos-chart-card puertos-span-full">
+                    <div class="puertos-chart-card">
                         <div class="puertos-chart-header">
                             <h3 class="puertos-chart-title">
                                 <i data-lucide="trending-up" class="puertos-title-icon puertos-c-ocean"></i>
@@ -563,8 +584,9 @@
                         </div>
                     </div>
 
-                    <p><strong style="color: var(--text-primary);">Fuente Oficial:</strong> Instituto Nacional de Estadísticas (INE) — Encuesta Directa a Puertos de la Región del Biobío.</p>
-                    <p><strong style="color: var(--text-primary);">Cobertura Temporal:</strong> Series históricas mensuales desde Enero de 2019 hasta Julio de 2026 (91 períodos mensuales).</p>
+                    <p><strong style="color: var(--text-primary);">Fuente Oficial:</strong> Instituto Nacional de Estadísticas (INE) — Encuesta Directa a Puertos de la Región del Biobío. <a href="https://regiones.ine.gob.cl/biobio/estadisticas-por-tema/comercio-y-servicios/movimiento-de-carga-portuaria" class="about-source-link" target="_blank" rel="noopener noreferrer" title="Movimiento de carga portuaria, INE Región del Biobío"><i data-lucide="external-link" style="width: 11px; height: 11px;"></i>Ver en ine.gob.cl</a></p>
+                    <p><strong style="color: var(--text-primary);">Cobertura de la Encuesta:</strong> Comprende todos los puertos mayores de la región, es decir, los habilitados por la autoridad marítima para el comercio nacional e internacional, que registran regularmente carga de exportación, importación, cabotaje, tránsito, re-estibas o transbordos: puertos estatales (incluidos los concesionados a privados) y puertos privados de uso público o de uso exclusivo de una empresa. Se excluyen los puertos menores, los de uso militar y los dedicados exclusivamente al desembarque pesquero. Cada mes informa la empresa que administra cada recinto, con la carga efectivamente movilizada; por eso las cifras difieren de las de Aduanas y DIRECTEMAR, que se basan en lo que declaran exportadores e importadores. El INE publica solo el total regional, no las cifras de cada puerto. Referencia: <em>Metodología Encuesta Mensual de Movimiento Portuario</em>, INE Región del Biobío, febrero 2011.</p>
+                    <p><strong style="color: var(--text-primary);">Cobertura Temporal:</strong> Series históricas mensuales <span data-cobertura-temporal>desde Enero de 2019 hasta Septiembre de 2026 (93 períodos mensuales)</span>.</p>
                     <p><strong style="color: var(--text-primary);">Variables y Operaciones:</strong></p>
                     <ul style="padding-left: 1.2rem; margin: 0; display: flex; flex-direction: column; gap: 0.2rem;">
                         <li><strong>Carga Total Movilizada:</strong> Toneladas efectivas embarcadas, desembarcadas, fletes de cabotaje, re-estibas, transbordos y tránsitos internacionales.</li>
@@ -572,6 +594,7 @@
                         <li><strong>Tipología de Carga:</strong> Granel líquido/gaseoso, granel sólido, carga en contenedores y carga general suelta.</li>
                         <li><strong>Conectividad Terrestre:</strong> Conteo vehicular mensual de camiones pesados (2 ejes vs 3 y más ejes) en plazas de peaje de la región.</li>
                     </ul>
+                    <p><strong style="color: var(--text-primary);">Mapa de Puertos (Resumen de Carga):</strong> Instalaciones portuarias de la región para naves de más de 100 m de eslora, según la tabla 8.1 del Boletín Estadístico Marítimo 2025 de DIRECTEMAR, agrupadas en las zonas portuarias de la encuesta del INE; al hacer clic en una zona se ven sus operadores, con un ícono y un área por operador (las terminales de un mismo operador, como los tres muelles de Puerto Coronel o los de Portuaria Cabo Froward, van juntas). La ubicación de cada una sale de su resolución de habilitación (Capitanías de Puerto de Lirquén, Talcahuano, San Vicente y Coronel); la del Muelle N° 2 de Lirquén se ubicó sobre imagen satelital porque la de su resolución cae en el agua. El área de Talcahuano es la parte terrestre del recinto portuario del D.S. 101/2011 (sus bordes en tierra son los del decreto; el área marítima y el canalizo de acceso se recortaron en el borde de los sitios de atraque); en Abastible parte de puntos de su resolución de habilitación, y el resto se dibujó a mano sobre imagen satelital, por lo que es aproximada. El Terminal Marítimo Escuadrón no tiene área: es un terminal multiboyas, sin muelle, donde la nave fondea en el mar amarrada a boyas y descarga por cañerías submarinas. Todas figuran entre los puertos informantes de la encuesta del INE según su metodología de 2011, salvo el Muelle Chollín, así que el mapa y la encuesta cubren las mismas instalaciones.</p>
                 </div>
             </div>
         </div>
@@ -585,18 +608,21 @@
     <script src="static/js/common/tooltip.js"></script>
     <script src="static/js/common/utils.js?v=20261029_barlbl"></script>
     <script src="static/js/common/kpi-animate.js?v=20260924_2"></script>
-    <script src="static/js/common/nav-menu.js?v=20261105_portafolio"></script>
+    <script src="static/js/common/table-fade.js"></script>
+    <script src="static/js/common/map-gl.js"></script>
+    <script src="static/js/common/nav-menu.js?v=20261117_resumenmapa"></script>
     <script src="static/js/common/timeline.js"></script>
     <script>CatlecNav.render();</script>
     <script src="static/js/Puertos/state.js?v=20260925_2"></script>
-    <script src="static/js/Puertos/utils.js?v=20260925_2"></script>
+    <script src="static/js/Puertos/utils.js?v=20261118_cobertura"></script>
     <script src="static/js/Puertos/kpis.js?v=20260925_2"></script>
     <script src="static/js/Puertos/resumen.js?v=20260925_2"></script>
     <script src="static/js/Puertos/contenedores.js?v=20260925_2"></script>
     <script src="static/js/Puertos/tipologia.js?v=20260925_2"></script>
     <script src="static/js/Puertos/terrestre.js?v=20260925_2"></script>
+    <script src="static/js/Puertos/mapa.js?v=20261117_iconooperador"></script>
     <script src="static/js/Puertos/export.js"></script>
-    <script src="static/js/Puertos/ui.js?v=20261030_hash"></script>
+    <script src="static/js/Puertos/ui.js?v=20261117_resumenmapa"></script>
     <!-- Script Controlador del Modal Acerca de -->
     <script src="static/js/common/about-modal.js"></script>
     <script>CatlecAboutModal.init();</script>

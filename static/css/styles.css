@@ -499,38 +499,6 @@ h6 {
     background-clip: text;
 }
 
-.top-navbar-divider {
-    width: 1px;
-    height: 16px;
-    background-color: rgba(255, 255, 255, 0.2);
-    border-radius: 1px;
-}
-
-.top-navbar-proto {
-    font-family: var(--font-sans);
-    font-size: 0.72rem;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.55);
-    letter-spacing: 0.01em;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-}
-
-@keyframes proto-pulse {
-
-    0%,
-    100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-
-    50% {
-        opacity: 0.5;
-        transform: scale(0.8);
-    }
-}
-
 .top-navbar-right {
     display: flex;
     align-items: center;

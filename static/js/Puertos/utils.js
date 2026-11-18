@@ -93,6 +93,15 @@ function fillYearTags() {
     const parcial = ult.meses_registrados < 12 ? ` · ${MESES_CORTOS[0]}–${MESES_CORTOS[ult.meses_registrados - 1]}` : '';
     document.querySelectorAll('[data-ultimo-anio]').forEach(el => { el.textContent = `${ult.anio}${parcial}`; });
     document.querySelectorAll('[data-anio-anterior]').forEach(el => { el.textContent = ult.anio - 1; });
+
+    // Cobertura temporal del modal "Acerca de": primer y último mes de la serie
+    const serie = PUERTOS_DATA.series && PUERTOS_DATA.series.carga_total;
+    if (serie && serie.length) {
+        const MESES_LARGOS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        const ini = serie[0], fin = serie[serie.length - 1];
+        const texto = `desde ${MESES_LARGOS[ini.mes - 1]} de ${ini.anio} hasta ${MESES_LARGOS[fin.mes - 1]} de ${fin.anio} (${serie.length} períodos mensuales)`;
+        document.querySelectorAll('[data-cobertura-temporal]').forEach(el => { el.textContent = texto; });
+    }
 }
 
 // ── Destrucción segura de gráficos ────────────────────────────────────────

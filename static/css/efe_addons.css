@@ -3,11 +3,6 @@
  * Requiere la carga previa de static/css/styles.css (Core Design System).
  * ───────────────────────────────────────────────────────────────────────────── */
 
-/* ─── Top Navbar ──────────────────────────────────────────────────────────── */
-.top-navbar-proto::before {
-    display: none !important;
-}
-
 /* ─── Subheader Rapid View Switcher Bar ──────────────────────────────────── */
 .view-subheader.efe-tabs.four-tabs,
 .view-subheader.four-tabs {

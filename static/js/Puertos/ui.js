@@ -30,6 +30,7 @@ window.switchVisualization = function (viewName) {
     // 5. Renderizar gráficos de la vista seleccionada
     if (viewName === 'resumen') {
         renderVistaResumen();
+        renderVistaMapa();
     } else if (viewName === 'contenedores') {
         renderVistaContenedores();
     } else if (viewName === 'tipologia') {
