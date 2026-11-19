@@ -65,3 +65,9 @@ __pycache__/
 Thumbs.db
 *.log
 
+
+# ------------------------------------------
+# Documentos de Word (no se publican)
+# ------------------------------------------
+*.docx
+*.doc

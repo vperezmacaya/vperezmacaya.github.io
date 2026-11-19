@@ -11,8 +11,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css">
     <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
     <!-- CSS Custom stylesheet -->
-    <link rel="stylesheet" href="static/css/styles.css?v=20261104_foto2">
-    <link rel="stylesheet" href="static/css/dgc_addons.css?v=20261104_foto2">
+    <link rel="stylesheet" href="static/css/styles.css?v=20261120_mop">
+    <link rel="stylesheet" href="static/css/dgc_addons.css?v=20261120_mop">
     <!-- Chart.js for premium chart renders -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
     <!-- SheetJS for Client-Side Excel Export -->
@@ -20,6 +20,7 @@
     <!-- Datos estáticos pre-generados -->
     <script src="static/data/contracts_data.js?v=20261112_1305"></script>
     <script src="static/data/dgc_data.js?v=20260924_1"></script>
+    <script src="static/data/dgc_cmf.js?v=20261119_1706"></script>
 </head>
 
 <body class="light-theme">
@@ -463,7 +464,7 @@
                 <!-- Full-Width Timeline Panel (replaces center + right panels) -->
                 <!-- Full-Width Investment Analytics Panel (replaces center + right panels - Single Page No Scroll) -->
                 <div id="investment-full-panel" class="investment-full-panel"
-                    style="display:none; grid-column: 2 / -1; flex-direction: column; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; height: 100%; min-height: 0;">
+                    style="display:none; flex-direction: column; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden;">
 
                     <!-- Single Page Body Grid (Banner KPI Prominente + 2 filas de gráficos) -->
                     <div class="investment-body"
@@ -616,7 +617,7 @@
 
                 <!-- Full-Width Contracts Analysis Panel (replaces center + right panels - Single Page No Scroll) -->
                 <div id="contracts-analysis-full-panel" class="contracts-analysis-full-panel"
-                    style="display:none; grid-column: 2 / -1; flex-direction: column; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; height: 100%; min-height: 0;">
+                    style="display:none; flex-direction: column; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden;">
 
                     <div class="contracts-body"
                         style="flex: 1; overflow: hidden; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.45rem; min-height: 0;">
@@ -765,7 +766,7 @@
 
                 <!-- Full-Width Bidders Analytics Panel -->
                 <div id="bidders-full-panel"
-                    style="display:none; grid-column: 2 / -1; flex-direction: column; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; height: 100%; min-height: 0;">
+                    style="display:none; flex-direction: column; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden;">
 
                     <div
                         style="flex: 1; overflow: hidden; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.45rem; min-height: 0;">
@@ -912,7 +913,7 @@
                     </div>
                 </div>
 
-                <div id="timeline-full-panel" class="timeline-full-panel" style="display:none; grid-column: 2 / -1;">
+                <div id="timeline-full-panel" class="timeline-full-panel" style="display:none;">
                     <!-- BANNER KPI SUPERIOR (Líneas de Tiempo) -->
                     <div
                         style="padding: 0.5rem 0.5rem 0.35rem 0.5rem; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.4rem; flex-shrink: 0; border-bottom: 1px solid var(--border-color);">
@@ -1022,31 +1023,37 @@
     <!-- Client Application Logic -->
     <!-- Módulos JavaScript de la Aplicación -->
     <script src="static/js/common/tooltip.js"></script>
-    <script src="static/js/common/utils.js?v=20261029_barlbl"></script>
+    <script src="static/js/common/utils.js?v=20261119_etiquetas"></script>
     <script src="static/js/common/photo-viewer.js?v=20261104_foto2"></script>
-    <script src="static/js/common/map-gl.js?v=20260924_4"></script>
+    <script src="static/js/common/map-gl.js?v=20261119_ficha"></script>
     <script src="static/js/common/kpi-animate.js?v=20260924_2"></script>
     <script src="static/js/common/table-fade.js?v=20260924_1"></script>
     <script src="static/js/common/panel-resizer.js?v=20260924_gl2"></script>
     <script src="static/js/common/timeline.js?v=20260920_1"></script>
     <script src="static/js/DGC/state.js?v=20260924_gl1"></script>
     <script src="static/js/DGC/utils.js?v=20260924_1"></script>
-    <script src="static/js/DGC/map.js?v=20260924_gl2"></script>
-    <script src="static/js/DGC/timeline.js?v=20260924_gl1"></script>
-    <script src="static/js/DGC/investment.js?v=20260924_gl1"></script>
-    <script src="static/js/DGC/contracts_analysis.js?v=20260924_gl1"></script>
-    <script src="static/js/DGC/bidders.js?v=20260924_gl1"></script>
-    <script src="static/js/DGC/filters.js?v=20260924_1"></script>
-    <script src="static/js/DGC/subheader.js?v=20261030_hash"></script>
-    <script src="static/js/DGC/table.js?v=20260924_2"></script>
-    <script src="static/js/DGC/project-detail.js?v=20261104_foto2"></script>
+    <script src="static/js/DGC/map.js?v=20261119_pantalla"></script>
+    <script src="static/js/DGC/timeline.js?v=20261119_vistas2"></script>
+    <script src="static/js/DGC/investment.js?v=20261119_movil"></script>
+    <script src="static/js/DGC/contracts_analysis.js?v=20261119_movil"></script>
+    <script src="static/js/DGC/bidders.js?v=20261119_etiquetas"></script>
+    <script src="static/js/DGC/filters.js?v=20261119_lista"></script>
+    <script src="static/js/DGC/subheader.js?v=20261119_lista"></script>
+    <script src="static/js/DGC/table.js?v=20261119_ficha"></script>
+    <script src="static/js/DGC/finanzas.js?v=20261119_cmf"></script>
+    <script src="static/js/DGC/project-detail.js?v=20261120_movil"></script>
+    <script src="static/js/DGC/vista-movil.js?v=20261120_mop"></script>
     <script src="static/js/DGC/export.js"></script>
-    <script src="static/js/DGC/ui.js?v=20260924_gl1"></script>
+    <script src="static/js/DGC/ui.js?v=20261119_tablet"></script>
 
     <div id="timeline-tooltip" class="timeline-tooltip" style="display:none;"></div>
 
     <!-- Nav Menu JS -->
-    <script src="static/js/common/nav-menu.js?v=20261117_resumenmapa"></script>
+    <script src="static/js/common/nav-menu.js?v=20261119_movil2"></script>
+    <script src="static/js/common/view-menu.js?v=20261119_movil2"></script>
+    <script src="static/js/common/sheet.js?v=20261119_pantalla"></script>
+    <script src="static/js/common/movil.js?v=20261120_mop"></script>
+    <script src="static/js/common/filter-drawer.js?v=20261119_pantalla"></script>
     <script>
         (function () {
             CatlecNav.render();
@@ -1367,6 +1374,17 @@
                                 </a>
                                 <span style="color: #64748b; margin-left: 0.25rem;">(base para coordenadas de contratos
                                     concesionados).</span>
+                            </li>
+                            <li style="line-height: 1.45;">
+                                Comisión para el Mercado Financiero (CMF):
+                                <a href="https://www.cmfchile.cl/" target="_blank" rel="noopener noreferrer"
+                                    style="color: #2563eb; font-weight: 600; text-decoration: underline; margin-left: 0.25rem; display: inline-flex; align-items: center; gap: 0.2rem;">
+                                    https://www.cmfchile.cl/
+                                    <i data-lucide="external-link" class="icon-11"></i>
+                                </a>
+                                <span style="color: #64748b; margin-left: 0.25rem;">(estados financieros anuales en XBRL
+                                    de cada sociedad concesionaria, cruzados por su RUT; sección "Estados financieros"
+                                    de la ficha).</span>
                             </li>
                         </ol>
                     </div>

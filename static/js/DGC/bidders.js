@@ -3,10 +3,21 @@ let chartBiddersHistogramInstance = null;
 let chartBiddersPieInstance = null;
 let chartTopCompaniesInstance = null;
 
+// Líneas por nombre en "10 Empresas con mayor cantidad de adjudicaciones",
+// según el alto de cada barra (~12,5 px por línea a 10 px de fuente): con 3
+// líneas fijas los nombres se encimaban en notebooks chicos, donde el gráfico
+// mide ~200 px para 10 empresas. Chart.js vuelve a llamar al callback de las
+// etiquetas al cambiar de tamaño. 46 px: eje x y su título.
+function dgcTopCompaniesMaxLines(chart, n) {
+    const rowPx = ((chart && chart.height) || 0) - 46;
+    return Math.max(1, Math.min(3, Math.floor(rowPx / Math.max(n, 1) / 12.5)));
+}
+
 function showBiddersView() {
     if (typeof leafletMap !== 'undefined' && leafletMap && leafletMap.getCenter) {
         appState.savedMapCenter = leafletMap.getCenter();
         appState.savedMapZoom = leafletMap.getZoom();
+        appState.savedMapDefault = dgcAtDefaultView;
     }
     if (appState.timelineOpen) hideTimelineView();
     if (appState.investmentOpen) hideInvestmentView();
@@ -18,7 +29,7 @@ function showBiddersView() {
     const rightPanel = document.querySelector('.right-panel');
     const biddersPanel = document.getElementById('bidders-full-panel');
 
-    if (grid) grid.style.gridTemplateColumns = '240px 1fr';
+    if (grid) grid.classList.add('dgc-grid--vista-completa');
     if (centerPanel) centerPanel.style.display = 'none';
     if (rightPanel) rightPanel.style.display = 'none';
     if (biddersPanel) biddersPanel.style.display = 'flex';
@@ -38,7 +49,7 @@ function hideBiddersView(skipRestoreCenter) {
     const rightPanel = document.querySelector('.right-panel');
     const biddersPanel = document.getElementById('bidders-full-panel');
 
-    if (grid) grid.style.gridTemplateColumns = '';
+    if (grid) grid.classList.remove('dgc-grid--vista-completa');
     if (centerPanel) centerPanel.style.display = 'flex';
     if (rightPanel) rightPanel.style.display = 'flex';
     if (biddersPanel) biddersPanel.style.display = 'none';
@@ -50,7 +61,7 @@ function hideBiddersView(skipRestoreCenter) {
     if (typeof leafletMap !== 'undefined' && leafletMap) {
         leafletMap.resize();
         if (!skipRestoreCenter && appState.savedMapCenter) {
-            leafletMap.jumpTo({ center: appState.savedMapCenter, zoom: appState.savedMapZoom || 5 });
+            dgcRestoreMapView();
         }
     }
 }
@@ -441,7 +452,7 @@ function renderBiddersAnalytics(contractsList) {
                             callback: function (val, idx) {
                                 const entry = top10rev[idx];
                                 if (!entry) return this.getLabelForValue(val);
-                                return CatlecUtils.wrapTextToLines(entry.name, 20, 3);
+                                return CatlecUtils.wrapTextToLines(entry.name, 20, dgcTopCompaniesMaxLines(this.chart, top10rev.length));
                             }
                         }
                     }

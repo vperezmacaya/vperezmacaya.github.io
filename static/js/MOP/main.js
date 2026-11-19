@@ -215,6 +215,8 @@ function mopApplyFilters() {
     }
     // Vistas de contratos (contratos.js): se redibujan con los proyectos filtrados
     if (typeof mopContratosOnFilter === 'function') mopContratosOnFilter();
+    // Pantallas chicas: barra de filtros, pestaña de tablet y botón "Lista" (MOP/vista-movil.js)
+    if (typeof mopActualizarMovil === 'function') mopActualizarMovil();
 }
 
 function mopResetFilters() {
@@ -490,6 +492,9 @@ function mopInit() {
     document.getElementById('mop-btn-next').addEventListener('click', () => { mopTablePage++; mopRenderTable(); });
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    // Tablet y celular (MOP/vista-movil.js), después de createIcons
+    if (typeof mopSetupVistaMovil === 'function') mopSetupVistaMovil();
 }
 
 if (document.readyState === 'loading') {

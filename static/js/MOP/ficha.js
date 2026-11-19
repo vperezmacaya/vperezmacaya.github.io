@@ -54,7 +54,11 @@ async function mopShowProjectDetail(bip) {
     const project = ((window.MOP_DATA && window.MOP_DATA.projects) || []).find(p => p.bip === bip);
     if (!list || !detail || !body || !project) return;
 
-    if (!mopDetailOpen) {
+    if (typeof mopFicha !== 'undefined' && mopFicha && mopFicha.enMapa()) {
+        // Celular: la ficha sube sobre el mapa; la tabla sigue en "Lista" (MOP/vista-movil.js)
+        if (!mopFicha.abierta()) mopFicha.abrir();
+        mopDetailOpen = true;
+    } else if (!mopDetailOpen) {
         CatlecUtils.swapView(list, detail, { direction: 'forward' });
         mopDetailOpen = true;
     }
@@ -84,6 +88,11 @@ async function mopShowProjectDetail(bip) {
 function mopHideProjectDetail() {
     const { list, detail } = mopDetailViews();
     if (!list || !detail || !mopDetailOpen) return;
+    if (typeof mopFicha !== 'undefined' && mopFicha && mopFicha.enMapa()) {
+        mopFicha.cerrar();
+        mopDetailOpen = false;
+        return;
+    }
     CatlecUtils.swapView(detail, list, { direction: 'back' });
     mopDetailOpen = false;
 }

@@ -34,6 +34,7 @@ window.CatlecMapGL = {
             zoom,
             minZoom,
             maxZoom,
+            locale: this.LOCALE,
             attributionControl: false,
             dragRotate: false,
             pitchWithRotate: false,
@@ -45,6 +46,31 @@ window.CatlecMapGL = {
         map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-left');
         this.addCollapsibleAttribution(map);
         return map;
+    },
+
+    // Textos de MapLibre en español (se suman a los de fábrica)
+    LOCALE: {
+        'NavigationControl.ZoomIn': 'Acercar',
+        'NavigationControl.ZoomOut': 'Alejar',
+        'CooperativeGesturesHandler.WindowsHelpText': 'Usa Ctrl + rueda del mouse para hacer zoom en el mapa',
+        'CooperativeGesturesHandler.MacHelpText': 'Usa ⌘ + rueda del mouse para hacer zoom en el mapa',
+        'CooperativeGesturesHandler.MobileHelpText': 'Usa dos dedos para mover el mapa'
+    },
+
+    // Mapa dentro de una página con scroll (pantallas angostas, donde los
+    // dashboards pasan a una columna): con un dedo se desplaza la página y con
+    // dos se mueve el mapa; con mouse, Ctrl + rueda hace zoom. Sin esto, el
+    // mapa ocupaba casi toda la pantalla y atrapaba el desplazamiento. Se
+    // activa y desactiva solo al cruzar `media`.
+    cooperativeOnNarrow(map, media = '(max-width: 1100px)') {
+        if (!map || !map.cooperativeGestures) return;
+        const mq = window.matchMedia(media);
+        const apply = () => {
+            if (mq.matches) map.cooperativeGestures.enable();
+            else map.cooperativeGestures.disable();
+        };
+        if (mq.addEventListener) mq.addEventListener('change', apply); else mq.addListener(apply);
+        apply();
     },
 
     // Mapa de referencia sin interacción (fondo de los trazados de "Proyectos
@@ -282,6 +308,8 @@ window.CatlecMapGL = {
             getNorthEast: () => ne
         });
         const maxZoom = (maxZoomOverride != null ? maxZoomOverride : adaptive.maxZoom) - this.ZOOM_OFFSET;
+        // paddingOverride puede ser un número o {top, bottom, left, right} (ej.
+        // DGC en celular deja libre la franja que no tapa la ficha)
         const padding = paddingOverride != null ? paddingOverride : adaptive.padding;
         map.fitBounds(bounds, {
             padding: Array.isArray(padding) ? padding[0] : padding,

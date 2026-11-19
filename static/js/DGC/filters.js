@@ -183,6 +183,11 @@ async function fetchData() {
         // 1. Update KPI Values
         if (kpiTotal) kpiTotal.textContent = resData.summary.count_filtered;
 
+        // Barra y panel de filtros de celular (DGC/ui.js)
+        appState.filteredCount = resData.summary.count_filtered;
+        if (window.dgcFilterDrawer) window.dgcFilterDrawer.update();
+        if (typeof dgcActualizarBotonVista === 'function') dgcActualizarBotonVista();
+
         const elTotalSub = document.getElementById('kpi-total-sub');
         if (elTotalSub) elTotalSub.textContent = `Filtrado de ${resData.summary.count_total} total`;
 

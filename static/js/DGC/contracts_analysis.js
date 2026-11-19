@@ -12,6 +12,7 @@ function showContractsView() {
     if (typeof leafletMap !== 'undefined' && leafletMap && leafletMap.getCenter) {
         appState.savedMapCenter = leafletMap.getCenter();
         appState.savedMapZoom = leafletMap.getZoom();
+        appState.savedMapDefault = dgcAtDefaultView;
     }
     if (appState.timelineOpen) hideTimelineView();
     if (appState.investmentOpen) hideInvestmentView();
@@ -23,7 +24,7 @@ function showContractsView() {
     const rightPanel = document.querySelector('.right-panel');
     const cntPanel = document.getElementById('contracts-analysis-full-panel');
 
-    if (grid) grid.style.gridTemplateColumns = '240px 1fr';
+    if (grid) grid.classList.add('dgc-grid--vista-completa');
     if (centerPanel) centerPanel.style.display = 'none';
     if (rightPanel) rightPanel.style.display = 'none';
     if (cntPanel) cntPanel.style.display = 'flex';
@@ -43,7 +44,7 @@ function hideContractsView() {
     const rightPanel = document.querySelector('.right-panel');
     const cntPanel = document.getElementById('contracts-analysis-full-panel');
 
-    if (grid) grid.style.gridTemplateColumns = '';
+    if (grid) grid.classList.remove('dgc-grid--vista-completa');
     if (centerPanel) centerPanel.style.display = 'flex';
     if (rightPanel) rightPanel.style.display = 'flex';
     if (cntPanel) cntPanel.style.display = 'none';
@@ -55,12 +56,12 @@ function hideContractsView() {
     if (typeof leafletMap !== 'undefined' && leafletMap) {
         leafletMap.resize();
         if (appState.savedMapCenter) {
-            leafletMap.jumpTo({ center: appState.savedMapCenter, zoom: appState.savedMapZoom || 5 });
+            dgcRestoreMapView();
         }
         setTimeout(() => {
             leafletMap.resize();
             if (appState.savedMapCenter) {
-                leafletMap.jumpTo({ center: appState.savedMapCenter, zoom: appState.savedMapZoom || 5 });
+                dgcRestoreMapView();
             }
         }, 0);
     }

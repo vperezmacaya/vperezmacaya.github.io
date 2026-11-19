@@ -12,6 +12,24 @@
     grid-template-columns: minmax(0, 1fr) var(--catlec-table-width, 640px);
 }
 
+/* Tablet (769-1100 px): la tabla mide como mínimo 590 px y dejaba al mapa en
+   ~120-240 px. Aquí ocupa a lo sumo el 55% del ancho y se desplaza en
+   horizontal (encabezado y filas juntos) para no apretar sus columnas. */
+@media (min-width: 769px) and (max-width: 1100px) {
+    #metro-dashboard-grid {
+        grid-template-columns: minmax(0, 1fr) min(var(--catlec-table-width, 640px), 55%);
+    }
+
+    #metro-dashboard-grid .table-responsive {
+        overflow-x: auto;
+    }
+
+    #metro-dashboard-grid .table-header-wrapper,
+    #metro-dashboard-grid .table-body-wrapper {
+        min-width: 590px;
+    }
+}
+
 /* ─── Metro Comuna Name Tooltip & Click Popup ────────────────────────────── */
 .metro-comuna-name-tooltip {
     background: #1e293b !important;
@@ -125,5 +143,147 @@
     }
     .metro-inversion-card {
         height: 320px;
+    }
+}
+
+/* ─── Metro en celular (≤ 768 px): una sola pantalla (Metro/vista-movil.js) ────
+   Como DGC y EFE: la visualización ocupa todo el alto bajo el header y el menú
+   ☰, sin scroll de página y de borde a borde; la tabla, los KPI y la ficha se
+   abren encima (common/movil.js; estilos .catlec-movil-* en styles.css). */
+.metro-movil-modo {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    body:has(#metro-dashboard-grid) .app-footer {
+        display: none;
+    }
+
+    body:has(#metro-dashboard-grid) .dashboard-content {
+        padding: 0;
+    }
+
+    #metro-dashboard-grid {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+        gap: 0;
+        overflow: hidden;
+    }
+
+    /* !important: las vistas les ponen display inline al volver al mapa */
+    #metro-dashboard-grid > .right-panel,
+    #metro-dashboard-grid > .catlec-panel-resizer {
+        display: none !important;
+    }
+
+    #metro-dashboard-grid > .map-panel {
+        height: 100%;
+        min-height: 0;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    #metro-dashboard-grid > .map-panel > #metro-map {
+        border: none;
+        border-radius: 0;
+    }
+
+    /* Vistas de pantalla completa: todo el alto, de borde a borde (el
+       cronograma ya va en una columna con scroll desde 1100 px) */
+    #metro-cronograma-full-panel,
+    #metro-comunas-full-panel,
+    #metro-demanda-full-panel {
+        grid-column: 1 / -1;
+        height: 100% !important;
+        min-height: 0;
+        border: none !important;
+        border-radius: 0 !important;
+    }
+
+    /* Espacio al final para que el botón flotante "Resumen" no tape lo último */
+    #metro-cronograma-full-panel {
+        padding-bottom: 72px;
+    }
+
+    /* Estadísticas Comunales: el gráfico panorámico (con scroll horizontal)
+       llena la pantalla; la cabecera de controles baja en varias filas */
+    #metro-comunas-full-panel .panel-card > div:first-child {
+        flex-wrap: wrap;
+        row-gap: 0.35rem;
+    }
+
+    #metro-comunas-full-panel > div:last-child {
+        padding-bottom: 64px !important;
+    }
+
+    /* Demanda y Operación en una columna: las filas de 3 y 2 gráficos pasan a
+       una, cada tarjeta con alto propio (sus KPI van en "Resumen") */
+    /* max-content: con filas automáticas la grilla (de alto fijo, con scroll)
+       aplastaba las tarjetas para que cupieran en la pantalla */
+    #metro-demanda-full-panel > div[style*="grid-template-rows"] {
+        grid-template-rows: none !important;
+        grid-auto-rows: max-content !important;
+        padding-bottom: 72px !important;
+    }
+
+    #metro-demanda-full-panel [style*="grid-template-columns"]:not(:has(> .card-kpi)) {
+        grid-template-columns: minmax(0, 1fr) !important;
+        grid-auto-rows: max-content !important;
+    }
+
+    #metro-demanda-full-panel .panel-card > div:first-child h3 {
+        white-space: normal !important;
+        overflow: visible !important;
+    }
+
+    #metro-demanda-full-panel .panel-card {
+        height: auto !important;
+        flex: none !important;
+        min-width: 0;
+    }
+
+    #metro-demanda-full-panel div:has(> canvas):not([style*="width: 85px"]) {
+        flex: none !important;
+        height: 260px !important;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    #metro-demanda-full-panel .panel-card > div:first-child {
+        flex-wrap: wrap;
+        row-gap: 0.2rem;
+    }
+
+    /* Selector "Líneas Actuales | Proyectos | Comunas" como barra bajo el menú
+       ☰, solo en la visualización Mapa (CatlecMovil pone .catlec-movil-en-mapa) */
+    body.catlec-movil-en-mapa .metro-movil-modo {
+        display: block;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 140;
+        background: var(--bg-card);
+        border-bottom: 1px solid var(--border-color);
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+    }
+
+    .metro-movil-modo .metro-table-mode-switch {
+        border-bottom: none !important;
+        padding: 0.4rem 0.75rem !important;
+    }
+
+    .metro-movil-modo .metro-mode-btn {
+        min-height: 36px;
+        font-size: 0.78rem !important;
+    }
+
+    /* Ancho mínimo de las tablas en el panel de la lista (el de escritorio) */
+    #metro-hoja-lista .table-header-wrapper,
+    #metro-hoja-lista .table-body-wrapper {
+        min-width: 590px;
+    }
+
+    #metro-hoja-lista .metro-export-toolbar {
+        flex-shrink: 0;
     }
 }

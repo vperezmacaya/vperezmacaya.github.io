@@ -7,6 +7,7 @@ function showInvestmentView() {
     if (typeof leafletMap !== 'undefined' && leafletMap && leafletMap.getCenter) {
         appState.savedMapCenter = leafletMap.getCenter();
         appState.savedMapZoom = leafletMap.getZoom();
+        appState.savedMapDefault = dgcAtDefaultView;
     }
     if (appState.timelineOpen) hideTimelineView();
     if (appState.contractsOpen) hideContractsView();
@@ -17,7 +18,7 @@ function showInvestmentView() {
     const rightPanel = document.querySelector('.right-panel');
     const invPanel = document.getElementById('investment-full-panel');
 
-    if (grid) grid.style.gridTemplateColumns = '240px 1fr';
+    if (grid) grid.classList.add('dgc-grid--vista-completa');
     if (centerPanel) centerPanel.style.display = 'none';
     if (rightPanel) rightPanel.style.display = 'none';
     if (invPanel) invPanel.style.display = 'flex';
@@ -38,7 +39,7 @@ function hideInvestmentView() {
     const rightPanel = document.querySelector('.right-panel');
     const invPanel = document.getElementById('investment-full-panel');
 
-    if (grid) grid.style.gridTemplateColumns = '';
+    if (grid) grid.classList.remove('dgc-grid--vista-completa');
     if (centerPanel) centerPanel.style.display = 'flex';
     if (rightPanel) rightPanel.style.display = 'flex';
     if (invPanel) invPanel.style.display = 'none';
@@ -48,12 +49,12 @@ function hideInvestmentView() {
     if (typeof leafletMap !== 'undefined' && leafletMap) {
         leafletMap.resize();
         if (appState.savedMapCenter) {
-            leafletMap.jumpTo({ center: appState.savedMapCenter, zoom: appState.savedMapZoom || 5 });
+            dgcRestoreMapView();
         }
         setTimeout(() => {
             leafletMap.resize();
             if (appState.savedMapCenter) {
-                leafletMap.jumpTo({ center: appState.savedMapCenter, zoom: appState.savedMapZoom || 5 });
+                dgcRestoreMapView();
             }
         }, 0);
     }

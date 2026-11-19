@@ -875,6 +875,8 @@ function metroAddMapLegend() {
     CatlecMapGL.addLegendControl(metroMap, {
         html,
         storageKey: 'catlec.metro.legendCollapsed',
+        // En celular parte plegada (como DGC, EFE y MOP): desplegada tapa el mapa
+        collapsedByDefault: window.matchMedia('(max-width: 600px)').matches,
         onMount: (div) => {
             const chkMetro = div.querySelector('#metro-toggle-metro-lines');
             if (chkMetro) {
@@ -926,11 +928,54 @@ let metroTooltip = null;              // tooltip único del mapa (CatlecMapGL.cr
 let metroIsDragClick = () => false;   // click que el navegador dispara al soltar un arrastre
 let metroMapHover = null;             // { kind, item } bajo el cursor (no íconos)
 
+// Vista inicial: encuadre de la red (líneas en operación y proyectos de
+// expansión) según el tamaño real del mapa, no un centro y zoom fijos, que
+// solo calzaban con la pantalla de escritorio (en celular o tablet la red
+// quedaba cortada o muy chica). Se vuelve a encuadrar al cambiar el tamaño del
+// mapa mientras la cámara siga siendo la del encuadre por defecto
+// (metroDefaultCam); centro y zoom fijos solo si no hay geometrías.
+let metroDefaultBounds;        // LngLatBounds (o null), calculado una vez
+let metroDefaultCam = null;    // { lng, lat, zoom } del último encuadre por defecto
+
+function metroGetDefaultBounds() {
+    if (metroDefaultBounds !== undefined) return metroDefaultBounds;
+    const feats = [window.METRO_EXISTING_LINES, window.METRO_GEO_DATA]
+        .flatMap(fc => (fc && fc.features) ? fc.features : [])
+        .filter(f => f && f.geometry);
+    metroDefaultBounds = CatlecMapGL.boundsOfFeatures(feats);
+    return metroDefaultBounds;
+}
+
+// Margen del encuadre: en celular, más abajo para los botones "Lista" y "Resumen"
+function metroDefaultPadding() {
+    return window.matchMedia('(max-width: 768px)').matches
+        ? { top: 16, left: 16, right: 16, bottom: 96 }
+        : { top: 24, left: 24, right: 24, bottom: 24 };
+}
+
 function metroApplyDefaultMapView(animate = false) {
     if (!metroMap) return;
-    const view = { center: METRO_DEFAULT_CENTER, zoom: METRO_DEFAULT_ZOOM };
-    if (animate) metroMap.easeTo(Object.assign(view, { duration: 450 }));
+    const container = metroMap.getContainer();
+    // Mapa oculto (otra visualización): se encuadra al volver a verse
+    if (container.clientWidth < 60 || container.clientHeight < 60) return;
+    const bounds = metroGetDefaultBounds();
+    const cam = bounds ? metroMap.cameraForBounds(bounds, { padding: metroDefaultPadding() }) : null;
+    const view = cam
+        ? { center: cam.center, zoom: cam.zoom }
+        : { center: METRO_DEFAULT_CENTER, zoom: METRO_DEFAULT_ZOOM };
+    if (animate) metroMap.easeTo(Object.assign({}, view, { duration: 450 }));
     else metroMap.jumpTo(view);
+    const c = maplibregl.LngLat.convert(view.center);
+    metroDefaultCam = { lng: c.lng, lat: c.lat, zoom: view.zoom };
+}
+
+// ¿La cámara sigue en el encuadre por defecto? (no se arrastró ni se voló a algo)
+function metroEnVistaPorDefecto() {
+    if (!metroMap || !metroDefaultCam) return false;
+    const c = metroMap.getCenter();
+    return Math.abs(c.lng - metroDefaultCam.lng) < 1e-6
+        && Math.abs(c.lat - metroDefaultCam.lat) < 1e-6
+        && Math.abs(metroMap.getZoom() - metroDefaultCam.zoom) < 1e-3;
 }
 
 function metroCloseAllTooltips() {
@@ -1029,6 +1074,14 @@ function metroInitLeafletMap() {
     metroMap = CatlecMapGL.createMap('metro-map', { center: METRO_DEFAULT_CENTER, zoom: METRO_DEFAULT_ZOOM });
     metroTooltip = CatlecMapGL.createTooltip(metroMap);
     metroIsDragClick = CatlecMapGL.trackDragClick(metroMap);
+
+    // Encuadre de la red desde el primer cuadro, y de nuevo al cambiar el
+    // tamaño del mapa (ventana, separador, celular girado, otra visualización)
+    // si nadie lo movió
+    metroApplyDefaultMapView(false);
+    metroMap.on('resize', () => {
+        if (metroEnVistaPorDefecto()) metroApplyDefaultMapView(false);
+    });
 
     metroMap.on('mousemove', metroOnMapMouseMove);
     metroMap.on('click', metroOnMapClick);
@@ -1855,9 +1908,12 @@ function metroZoomToProject(proj) {
 
     // Se inicia tras el repintado: metroSelectProject aún debe restilizar el mapa
     // y refrescar tabla/panel, y ese trabajo no debe comerse los primeros cuadros.
-    CatlecUtils.afterNextPaint(() => CatlecMapGL.flyToBounds(metroMap, bounds, {
-        duration: 0.9,
-        onDefaultView: () => metroApplyDefaultMapView(true)
-    }));
+    CatlecUtils.afterNextPaint(() => {
+        const opts = { duration: 0.9, onDefaultView: () => metroApplyDefaultMapView(true) };
+        // Celular con la ficha abierta: encuadrar en la franja que no tapa (Metro/vista-movil.js)
+        const padding = typeof metroFichaMovilPadding === 'function' ? metroFichaMovilPadding() : null;
+        if (padding) opts.paddingOverride = padding;
+        CatlecMapGL.flyToBounds(metroMap, bounds, opts);
+    });
 }
 window.metroZoomToProject = metroZoomToProject;

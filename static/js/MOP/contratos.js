@@ -103,6 +103,8 @@ function mopSetView(view, { updateHash = true } = {}) {
         history.replaceState(null, '', resumen ? location.pathname + location.search : `#${view}`);
     }
     mopTooltip && CatlecTooltip.hide('mop-shared-tooltip');
+    // Pantallas chicas: KPI de "Resumen", botones y pestaña según la vista (MOP/vista-movil.js)
+    if (typeof mopActualizarMovil === 'function') mopActualizarMovil();
     if (resumen) {
         // Tamaño del mapa y encuadre pendiente de los filtros cambiados con el mapa oculto
         if (typeof mopMapOnShow === 'function') requestAnimationFrame(mopMapOnShow);

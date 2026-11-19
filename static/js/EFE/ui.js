@@ -80,7 +80,11 @@ function efeShowTableListView() {
     const otherView = efeState.tableMode === 'lines' ? efeTableContainerView : linesContainer;
     const wasDetailOpen = efeProjectDetailView && efeProjectDetailView.style.display === 'flex';
 
-    if (wasDetailOpen && targetView && typeof CatlecUtils !== 'undefined') {
+    if (typeof efeFicha !== 'undefined' && efeFicha && efeFicha.enMapa()) {
+        // Celular: la ficha está sobre el mapa y la tabla en el panel "Lista"
+        efeFicha.cerrar();
+        if (targetView) targetView.style.display = 'flex';
+    } else if (wasDetailOpen && targetView && typeof CatlecUtils !== 'undefined') {
         CatlecUtils.swapView(efeProjectDetailView, targetView, { direction: 'back' });
     } else {
         if (efeProjectDetailView) efeProjectDetailView.style.display = 'none';
@@ -172,6 +176,9 @@ function setEfeTableMode(mode) {
     if (window.lucide && typeof window.lucide.createIcons === 'function') {
         window.lucide.createIcons();
     }
+
+    // Celular: etiqueta del botón de la lista ("Servicios" / "Proyectos")
+    if (typeof efeMovil !== 'undefined' && efeMovil) efeMovil.actualizar();
 }
 window.setEfeTableMode = setEfeTableMode;
 
@@ -293,7 +300,10 @@ function efeShowProjectDetailView(proj, currentFilteredProjects) {
         : (efeTableContainerView && efeTableContainerView.style.display !== 'none') ? efeTableContainerView
         : null;
 
-    if (!alreadyOpen && visibleListView && efeProjectDetailView && typeof CatlecUtils !== 'undefined') {
+    if (typeof efeFicha !== 'undefined' && efeFicha && efeFicha.enMapa()) {
+        // Celular: la ficha sube sobre el mapa (EFE/vista-movil.js)
+        if (!efeFicha.abierta()) efeFicha.abrir();
+    } else if (!alreadyOpen && visibleListView && efeProjectDetailView && typeof CatlecUtils !== 'undefined') {
         CatlecUtils.swapView(visibleListView, efeProjectDetailView, { direction: 'forward' });
         if (linesContainer && linesContainer !== visibleListView) linesContainer.style.display = 'none';
         if (efeTableContainerView && efeTableContainerView !== visibleListView) efeTableContainerView.style.display = 'none';
@@ -558,4 +568,7 @@ document.addEventListener('DOMContentLoaded', () => {
             efeResetMap();
         });
     }
+
+    // Celular (≤ 768 px): pantalla única con Lista y Resumen (EFE/vista-movil.js)
+    if (typeof efeSetupVistaMovil === 'function') efeSetupVistaMovil();
 });

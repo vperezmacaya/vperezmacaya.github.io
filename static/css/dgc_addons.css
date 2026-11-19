@@ -17,6 +17,217 @@
     }
 }
 
+/* Vistas de pantalla completa (líneas de tiempo, inversión, contratos,
+   oferentes): filtros a la izquierda y la vista en el resto; el mapa y la
+   tabla se ocultan. La clase la ponen show*View / hide*View. */
+.dashboard-grid.catlec-resizable-grid.dgc-grid--vista-completa {
+    grid-template-columns: 240px minmax(0, 1fr);
+}
+
+#investment-full-panel,
+#contracts-analysis-full-panel,
+#bidders-full-panel,
+#timeline-full-panel {
+    grid-column: 2 / -1;
+    height: 100%;
+    min-height: 0;
+}
+
+/* Celular (≤ 768 px): la ficha sobre el mapa, los botones "Lista" / "Resumen"
+   y sus paneles son de common/movil.js (estilos .catlec-ficha-movil,
+   .catlec-movil-* en styles.css). Aquí, lo propio de DGC: */
+
+/* Ancho mínimo de la tabla en el panel "Lista": sus 4 columnas */
+#dgc-hoja-lista .table-header-wrapper,
+#dgc-hoja-lista .table-body-wrapper {
+    min-width: 500px;
+}
+
+/* Los gráficos de "Análisis" se reparten el alto en el panel izquierdo; en el
+   panel tienen alto propio */
+#dgc-hoja-resumen .panel-card-analytics {
+    gap: 0.6rem !important;
+}
+
+#dgc-hoja-resumen #statusChart {
+    min-height: 0;
+}
+
+#dgc-hoja-resumen .panel-card-analytics .chart-container {
+    height: 170px;
+    flex: none !important;
+}
+
+/* Tablet (769-1100 px): mapa a la izquierda y KPI + tabla a la derecha (con
+   el separador arrastrable, como en escritorio). El panel izquierdo (filtros,
+   búsqueda y "Análisis") se despliega sobre el mapa con la pestaña de
+   CatlecMovil.crearPanelLateral (estilos .catlec-panel-* en styles.css). Las
+   vistas de pantalla completa ocupan todo el ancho y conservan su armado de
+   escritorio. */
+@media (min-width: 769px) and (max-width: 1100px) {
+    .dashboard-grid.catlec-resizable-grid {
+        position: relative;
+        grid-template-columns: minmax(0, 1fr) var(--catlec-table-width, 500px);
+    }
+
+    .dashboard-grid.catlec-resizable-grid.dgc-grid--vista-completa {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    #investment-full-panel,
+    #contracts-analysis-full-panel,
+    #bidders-full-panel,
+    #timeline-full-panel {
+        grid-column: 1 / -1;
+    }
+
+}
+
+
+/* Celular (≤ 768 px): una sola pantalla, como en escritorio.
+   La visualización ocupa todo el alto bajo el header, el menú de
+   visualizaciones y la barra de filtros, sin scroll de página: el mapa (o la
+   vista de pantalla completa, con scroll interno). Lo demás se abre encima:
+   filtros (CatlecFilterDrawer), lista y resumen (CatlecSheet, DGC/vista-movil.js)
+   y la ficha del proyecto (sobre el mapa, DGC/project-detail.js). Los paneles
+   izquierdo y derecho quedan vacíos (sus tarjetas se mueven a los paneles) y
+   se ocultan; el pie de página también. */
+@media (max-width: 768px) {
+    .app-footer {
+        display: none;
+    }
+
+    .dashboard-grid.catlec-resizable-grid,
+    .dashboard-grid.catlec-resizable-grid.dgc-grid--vista-completa {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+        overflow: hidden;
+    }
+
+    /* !important: las vistas les ponen display: flex inline al volver al mapa */
+    .dashboard-grid > .left-panel,
+    .dashboard-grid > .right-panel,
+    .dashboard-grid > .catlec-panel-resizer {
+        display: none !important;
+    }
+
+    /* De borde a borde: sin el margen de la página ni el borde, el radio y la
+       sombra de tarjeta del mapa (el canvas toca los bordes de la pantalla) */
+    .dashboard-content {
+        padding: 0;
+    }
+
+    .dashboard-grid > .map-panel {
+        height: 100%;
+        min-height: 0;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .dashboard-grid > .map-panel > #leaflet-map {
+        border: none;
+        border-radius: 0;
+    }
+
+    /* Vistas de pantalla completa: todo el alto, con scroll interno
+       (!important: traen overflow: hidden inline) */
+    #investment-full-panel,
+    #contracts-analysis-full-panel,
+    #bidders-full-panel,
+    #timeline-full-panel {
+        grid-column: 1 / -1;
+        height: 100%;
+        min-height: 0;
+        overflow-y: auto !important;
+        /* De borde a borde, como el mapa (!important: el radio y el borde van inline) */
+        border: none !important;
+        border-radius: 0 !important;
+    }
+
+    /* ── Interior de Inversión, Contratos y Oferentes en una columna ──────────
+       En escritorio cada vista llena la pantalla con grillas de 2 o 3 columnas
+       y alturas en % (estilos inline). Aquí cada tarjeta va una bajo otra con
+       alto propio y la vista se desplaza por dentro. !important: los estilos
+       que se reemplazan van inline en DGC.html. */
+    /* padding-bottom: que el botón flotante "Resumen" no tape la última tarjeta */
+    :is(#investment-full-panel, #contracts-analysis-full-panel, #bidders-full-panel) > div {
+        flex: none !important;
+        overflow: visible !important;
+        padding-bottom: 72px !important;
+    }
+
+    /* (las filas de KPI conservan sus 3 columnas; en celular pasan a 2, abajo) */
+    :is(#investment-full-panel, #contracts-analysis-full-panel, #bidders-full-panel) [style*="grid-template-columns"]:not(:has(> .card-kpi)) {
+        grid-template-columns: minmax(0, 1fr) !important;
+        height: auto !important;
+        flex: none !important;
+    }
+
+    /* Columnas que repartían el alto entre tarjetas. min-width: 0: sin él, el
+       lienzo de un gráfico ya dibujado más ancho (al angostar la ventana o
+       girar el celular) fija el ancho mínimo de su tarjeta y Chart.js no lo
+       achica. */
+    :is(#investment-full-panel, #contracts-analysis-full-panel, #bidders-full-panel) [style*="height: 100%"]:not(:has(> canvas)),
+    :is(#investment-full-panel, #contracts-analysis-full-panel, #bidders-full-panel) [style*="flex: 0 0"],
+    :is(#investment-full-panel, #contracts-analysis-full-panel, #bidders-full-panel) .panel-card {
+        height: auto !important;
+        flex: none !important;
+        min-width: 0;
+    }
+
+    /* Gráficos de barras y líneas: alto propio (los donuts conservan su
+       tamaño: .pie-canvas-wrap y el de Oferentes, de 90 px inline) */
+    :is(#investment-full-panel, #contracts-analysis-full-panel, #bidders-full-panel) div:has(> canvas):not(.pie-canvas-wrap):not([style*="width: 90px"]) {
+        flex: none !important;
+        height: 260px !important;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    /* Las 16 regiones y el ranking de empresas necesitan más alto (el id del
+       panel delante, para ganarle en especificidad a la regla anterior) */
+    #investment-full-panel div:has(> #chartInvByRegion),
+    #contracts-analysis-full-panel div:has(> #chartContractsByRegion) {
+        height: 440px !important;
+    }
+
+    #bidders-full-panel div:has(> #chartTopCompanies) {
+        height: 380px !important;
+    }
+
+    #timeline-full-panel .timeline-rows-wrapper {
+        padding-bottom: 64px;
+    }
+
+    /* Cabeceras de tarjeta: título completo y la leyenda o el botón debajo si
+       no caben en una fila (en escritorio el título se corta con "…") */
+    :is(#investment-full-panel, #contracts-analysis-full-panel, #bidders-full-panel) .panel-card > div:first-child {
+        flex-wrap: wrap;
+        row-gap: 0.2rem;
+    }
+
+    :is(#investment-full-panel, #contracts-analysis-full-panel, #bidders-full-panel) .panel-card > div:first-child h3 {
+        white-space: normal !important;
+        overflow: visible !important;
+    }
+
+    /* Línea de tiempo: la cabecera (título y leyenda) baja en dos filas */
+    #timeline-full-panel .timeline-header {
+        flex-wrap: wrap;
+        row-gap: 0.35rem;
+    }
+}
+
+@media (max-width: 600px) {
+    /* Columna de nombres más angosta (DGC/timeline.js usa DGC_TL_LABEL_W_MOVIL) */
+    #timeline-full-panel .timeline-label-col,
+    #timeline-full-panel #timeline-label-col {
+        width: 120px;
+        min-width: 120px;
+    }
+}
+
 /* ─── Íconos de proyecto en el mapa MapLibre ────────────────────────────────
    DGC usa íconos de 24 px (EFE y Metro: 26 px, en .catlec-gl-marker de styles.css) */
 .catlec-gl-marker {
@@ -416,4 +627,107 @@
 .dgc-bidders-title .badge {
     font-size: 0.68rem;
     padding: 0.1rem 0.4rem;
+}
+
+/* ─── Estados financieros (CMF) de la ficha: static/js/DGC/finanzas.js ─────── */
+.dgc-fin {
+    gap: 0.4rem;
+}
+
+.dgc-fin-chart-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.dgc-fin-legend {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.63rem;
+    flex-shrink: 0;
+}
+
+.dgc-fin-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-weight: 600;
+}
+
+.dgc-fin-legend-swatch {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+.dgc-fin-chart {
+    position: relative;
+    height: 150px;
+    min-height: 0;
+}
+
+.dgc-fin-table-wrap {
+    overflow-x: auto;
+}
+
+.dgc-fin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.72rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.dgc-fin-table th,
+.dgc-fin-table td {
+    padding: 0.28rem 0.4rem;
+    border-bottom: 1px solid var(--border-color);
+    text-align: right;
+    white-space: nowrap;
+}
+
+.dgc-fin-table thead th {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.dgc-fin-table thead th:first-child,
+.dgc-fin-table tbody th {
+    text-align: left;
+}
+
+.dgc-fin-table tbody th {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.dgc-fin-table td {
+    color: var(--text-primary);
+}
+
+.dgc-fin-table td.dgc-fin-neg {
+    color: var(--danger, #dc2626);
+}
+
+.dgc-fin-meta,
+.dgc-fin-note {
+    margin: 0;
+    font-size: 0.68rem;
+    line-height: 1.45;
+    color: var(--text-secondary);
+}
+
+.dgc-fin-note {
+    color: var(--text-muted);
+}
+
+.dgc-fin-meta a,
+.dgc-detail-notice a {
+    color: var(--primary);
+    font-weight: 600;
+    text-decoration: underline;
 }

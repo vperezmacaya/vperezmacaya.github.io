@@ -221,6 +221,593 @@ h6 {
     box-shadow: inset 0 -3px 0 #60a5fa, 0 2px 8px rgba(37, 99, 235, 0.4);
 }
 
+/* ─── Menú de visualizaciones en pantallas angostas (common/view-menu.js) ─────
+   En escritorio la lista es transparente para la grilla del subheader y el
+   botón de tres barras no se ve. Hasta 768 px el subheader es solo ese botón
+   (con el nombre de la visualización abierta) y la lista se despliega debajo. */
+.view-menu-list {
+    display: contents;
+}
+
+.view-menu-toggle {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .view-subheader {
+        display: block;
+        position: relative;
+        height: 42px;
+        min-height: 42px;
+        z-index: 2400; /* sobre mapas y gráficos; bajo el header (2500) y su menú */
+    }
+
+    .view-menu-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        width: 100%;
+        height: 100%;
+        padding: 0 0.9rem;
+        border: none;
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        color: #ffffff;
+        font-family: var(--font-heading);
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .view-menu-bars {
+        width: 20px;
+        height: 20px;
+        flex-shrink: 0;
+    }
+
+    .view-menu-current {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .view-menu-count {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #bfdbfe;
+    }
+
+    .view-menu-chevron {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        transition: transform 0.2s ease;
+    }
+
+    .view-subheader.is-open .view-menu-chevron {
+        transform: rotate(180deg);
+    }
+
+    .view-menu-list {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        max-height: calc(100dvh - 110px);
+        overflow-y: auto;
+        background: #0f1d3d;
+        border-bottom: 2px solid #2563eb;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+        visibility: hidden;
+        opacity: 0;
+        transform: translateY(-6px);
+        transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s;
+    }
+
+    .view-subheader.is-open .view-menu-list {
+        visibility: visible;
+        opacity: 1;
+        transform: none;
+        transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s;
+    }
+
+    .view-menu-list .view-tab-btn {
+        justify-content: flex-start;
+        gap: 0.7rem;
+        height: 48px;
+        min-height: 48px;
+        padding: 0 1.1rem;
+        border-right: none;
+        border-bottom: 1px solid rgba(59, 130, 246, 0.18);
+        font-size: 0.85rem;
+        text-align: left;
+    }
+
+    .view-menu-list .view-tab-btn:last-child {
+        border-bottom: none;
+    }
+
+    .view-menu-list .view-tab-btn.active {
+        box-shadow: inset 4px 0 0 #93c5fd;
+    }
+}
+
+@media (max-width: 768px) and (prefers-reduced-motion: reduce) {
+    .view-menu-chevron,
+    .view-menu-list,
+    .view-subheader.is-open .view-menu-list {
+        transition: none;
+    }
+}
+
+/* Sin transición al cruzar el corte de 768 px (view-menu.js) */
+.view-subheader.view-menu-instant .view-menu-list {
+    transition: none !important;
+}
+
+/* ─── Filtros en panel inferior (common/filter-drawer.js) ─────────────────────
+   Solo en pantallas angostas (el módulo muestra la barra y mueve la tarjeta de
+   filtros al panel). Barra bajo el subheader: botón "Filtros" con la cantidad
+   activa, resumen y "Limpiar". */
+.catlec-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 44px;
+    padding: 0.35rem 0.75rem;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 140;
+}
+
+.catlec-filter-bar[hidden] {
+    display: none;
+}
+
+.catlec-filter-bar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-family: var(--font-heading);
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.catlec-filter-bar-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.catlec-filter-bar.has-active .catlec-filter-bar-btn {
+    border-color: #2563eb;
+    color: #1d4ed8;
+    background: rgba(37, 99, 235, 0.08);
+}
+
+.catlec-filter-bar-count {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 0.7rem;
+    line-height: 18px;
+    text-align: center;
+}
+
+.catlec-filter-bar-count[hidden] {
+    display: none;
+}
+
+.catlec-filter-bar-summary {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.76rem;
+    color: var(--text-secondary);
+}
+
+.catlec-filter-bar.has-active .catlec-filter-bar-summary {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.catlec-filter-bar-clear {
+    flex-shrink: 0;
+    padding: 0.35rem 0.25rem;
+    border: none;
+    background: none;
+    color: #2563eb;
+    font-size: 0.76rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.catlec-filter-bar-clear[hidden] {
+    display: none;
+}
+
+/* ─── Paneles inferiores (common/sheet.js, CatlecSheet) ────────────────────────
+   Suben desde abajo sobre todo el dashboard (filtros, y en DGC lista y
+   resumen). .catlec-sheet--fill: alto fijo y cuerpo flex sin scroll propio. */
+.catlec-sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 3100;
+    background: rgba(15, 23, 42, 0.45);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.22s ease, visibility 0s linear 0.22s;
+}
+
+.catlec-sheet-backdrop.is-open {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.22s ease, visibility 0s;
+}
+
+.catlec-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 3110;
+    display: flex;
+    flex-direction: column;
+    max-height: 88dvh;
+    max-width: 640px;
+    margin: 0 auto;
+    background: var(--bg-card);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.25);
+    transform: translateY(100%);
+    visibility: hidden;
+    transition: transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s linear 0.26s;
+}
+
+.catlec-sheet.is-open {
+    transform: none;
+    visibility: visible;
+    transition: transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s;
+}
+
+.catlec-sheet.catlec-sheet--fill {
+    height: 88dvh;
+}
+
+.catlec-sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 0.75rem 0.5rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.catlec-sheet-title {
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.catlec-sheet-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    background: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.catlec-sheet-close svg {
+    width: 20px;
+    height: 20px;
+}
+
+.catlec-sheet-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0.5rem 0.75rem 0.75rem;
+}
+
+.catlec-sheet--fill .catlec-sheet-body {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Tarjetas movidas al panel: sin borde ni sombra de tarjeta */
+.catlec-sheet-body > .panel-card {
+    border: none;
+    box-shadow: none;
+    padding: 0 !important;
+    background: transparent;
+    backdrop-filter: none;
+}
+
+/* Filtros: título de la tarjeta oculto (el panel tiene el suyo; !important:
+   en DGC esa cabecera trae display: flex inline) y controles más altos */
+.catlec-sheet--filters .catlec-sheet-body > .panel-card > :first-child:has(.panel-title) {
+    display: none !important;
+}
+
+.catlec-sheet--filters .form-input,
+.catlec-sheet--filters .btn-reset {
+    min-height: 40px;
+    font-size: 0.85rem !important;
+}
+
+.catlec-sheet--filters .form-label {
+    font-size: 0.78rem !important;
+}
+
+.catlec-sheet-footer {
+    padding: 0.6rem 0.75rem calc(0.6rem + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--border-color);
+}
+
+.catlec-sheet-btn-primary {
+    width: 100%;
+    min-height: 44px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #ffffff;
+    font-family: var(--font-heading);
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .catlec-sheet-backdrop,
+    .catlec-sheet-backdrop.is-open,
+    .catlec-sheet,
+    .catlec-sheet.is-open {
+        transition: none;
+    }
+}
+
+/* ─── Tablet: panel izquierdo plegable (CatlecMovil.crearPanelLateral) ───────
+   En 769-1100 px el panel izquierdo (filtros, búsqueda, "Análisis") sale de la
+   grilla y se despliega sobre el mapa desde el borde izquierdo. La grilla de
+   cada módulo define sus columnas (mapa + tabla). */
+.catlec-con-panel-lateral {
+    --catlec-panel-izq-w: 300px;
+}
+
+@media (min-width: 769px) and (max-width: 1100px) {
+    .catlec-con-panel-lateral {
+        position: relative;
+    }
+
+    .catlec-con-panel-lateral > .catlec-panel-lateral {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: var(--catlec-panel-izq-w);
+        height: auto;
+        z-index: 1200; /* sobre los controles del mapa y "Restablecer Mapa" (1000) */
+        padding: 0 0.5rem 0.5rem 0;
+        background: var(--bg-app);
+        box-shadow: 8px 0 24px rgba(15, 23, 42, 0.18);
+        transform: translateX(-105%);
+        visibility: hidden;
+        transition: transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s linear 0.26s;
+    }
+
+    .catlec-con-panel-lateral.catlec-panel-izq-abierto > .catlec-panel-lateral {
+        transform: none;
+        visibility: visible;
+        transition: transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s;
+    }
+}
+
+/* Pestaña vertical; top: bajo los botones de zoom del mapa y sobre la leyenda
+   (cada módulo puede moverla con --catlec-panel-tab-top) */
+.catlec-panel-tab {
+    position: absolute;
+    top: var(--catlec-panel-tab-top, 92px);
+    left: 0;
+    z-index: 1201;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.7rem 0.35rem;
+    border: none;
+    border-radius: 0 10px 10px 0;
+    background: #1e3a6e;
+    color: #ffffff;
+    font-family: var(--font-heading);
+    font-size: 0.78rem;
+    font-weight: 700;
+    box-shadow: 4px 4px 14px rgba(15, 23, 42, 0.3);
+    cursor: pointer;
+    transition: left 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.catlec-panel-tab[hidden],
+.catlec-panel-tab-count[hidden] {
+    display: none;
+}
+
+.catlec-panel-izq-abierto > .catlec-panel-tab {
+    left: var(--catlec-panel-izq-w);
+}
+
+.catlec-panel-tab svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+/* Texto en vertical, de abajo hacia arriba */
+.catlec-panel-tab-label {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    white-space: nowrap;
+}
+
+.catlec-panel-tab-count {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: #60a5fa;
+    color: #0f1d3d;
+    font-size: 0.7rem;
+    line-height: 18px;
+    text-align: center;
+}
+
+.catlec-panel-izq-abierto .catlec-panel-tab-chevron {
+    transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .catlec-con-panel-lateral > .catlec-panel-lateral,
+    .catlec-con-panel-lateral.catlec-panel-izq-abierto > .catlec-panel-lateral,
+    .catlec-panel-tab {
+        transition: none !important;
+    }
+}
+
+/* ─── Celular: pantalla única (common/movil.js, CatlecMovil) ──────────────────
+   Las clases las ponen los módulos solo en celular (≤ 768 px). */
+
+/* Ficha del proyecto sobre el mapa: .is-open la sube. Cubre ~72% del mapa y
+   deja arriba una franja con el proyecto encuadrado (padding() de crearFicha). */
+.project-detail-view.catlec-ficha-movil {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 72%;
+    z-index: 1100; /* sobre los controles del mapa y "Restablecer Mapa" (1000) */
+    border: none;
+    border-top: 1px solid var(--border-color);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.22);
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.project-detail-view.catlec-ficha-movil.is-open {
+    transform: none;
+}
+
+/* Botones flotantes "Lista" y "Resumen", abajo al centro sobre la fila de la
+   leyenda y los créditos del mapa */
+.catlec-movil-btns {
+    position: fixed;
+    left: 50%;
+    bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    z-index: 1500; /* bajo los paneles inferiores (3100) y los menús del header */
+    display: flex;
+    gap: 0.5rem;
+}
+
+.catlec-movil-btns[hidden],
+.catlec-movil-btn[hidden] {
+    display: none;
+}
+
+.catlec-movil-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.6rem 1rem;
+    border: none;
+    border-radius: 999px;
+    background: #1e3a6e;
+    color: #ffffff;
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    font-weight: 700;
+    white-space: nowrap;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.35);
+    cursor: pointer;
+}
+
+.catlec-movil-btn svg {
+    width: 17px;
+    height: 17px;
+}
+
+.catlec-movil-btn-count {
+    padding: 0 0.45rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 0.75rem;
+    line-height: 1.5;
+}
+
+/* Panel "Lista": la tabla con encabezado fijo y scroll propio; se desplaza en
+   horizontal (encabezado y filas juntos). El ancho mínimo de la tabla lo pone
+   cada módulo (#<prefijo>-hoja-lista .table-header-wrapper / -body-wrapper). */
+.catlec-sheet--fill.catlec-movil-lista .catlec-sheet-body {
+    padding: 0;
+}
+
+.catlec-movil-lista .table-responsive {
+    overflow-x: auto;
+}
+
+/* Panel "Resumen": KPI de la visualización abierta (las demás filas llevan
+   .catlec-kpi-oculto). Las filas de las vistas traen 3 columnas, relleno y
+   borde propios: aquí van en 2 columnas, sin ellos, y una tercera tarjeta
+   suelta ocupa la fila completa. */
+.catlec-movil-kpis {
+    margin-bottom: 0.75rem;
+}
+
+.catlec-movil-kpis > :not(.kpi-grid):not(.catlec-kpi-oculto) {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.4rem !important;
+    padding: 0 !important;
+    border: none !important;
+}
+
+.catlec-movil-kpis > .catlec-kpi-oculto {
+    display: none !important;
+}
+
+.catlec-movil-kpis > * > .card-kpi:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .project-detail-view.catlec-ficha-movil {
+        transition: none;
+    }
+}
+
 /* Nav Menu (Seleccionar Base de Datos) */
 .nav-menu {
     position: relative;
@@ -511,6 +1098,143 @@ h6 {
     color: rgba(255, 255, 255, 0.4);
     letter-spacing: 0.01em;
     font-style: italic;
+}
+
+/* ─── Header en pantallas angostas ───────────────────────────────────────────
+   El título no se corta (nowrap) y en pantallas angostas empujaba "Acerca de"
+   y "Seleccionar Base de Datos" fuera de la pantalla. Ahora:
+   - siempre: los botones de la derecha no se encogen y el título cede con "…";
+   - ≤ 900 px: el título baja a una segunda fila, completo y en varias líneas
+     si hace falta (.top-navbar-left con display: contents deja a logos,
+     título y botones como hijos directos del flex con wrap);
+   - ≤ 640 px: botones solo con ícono (el title sigue como nombre accesible),
+     etiqueta corta del menú y submenús en acordeón hacia abajo (los laterales
+     se salían por la izquierda). */
+.top-navbar-left {
+    min-width: 0;
+}
+
+.top-navbar-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.top-navbar-right {
+    flex-shrink: 0;
+}
+
+.nav-menu-btn-label-short {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    .top-navbar {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 0.35rem 0.75rem 0.4rem;
+        row-gap: 0.25rem;
+    }
+
+    .top-navbar-left {
+        display: contents;
+    }
+
+    .top-navbar-right {
+        margin-left: auto;
+    }
+
+    .top-navbar-title {
+        order: 3;
+        flex-basis: 100%;
+        white-space: normal;
+        overflow: visible;
+        font-size: 0.74rem;
+        line-height: 1.3;
+    }
+}
+
+@media (max-width: 640px) {
+    .top-navbar-home {
+        gap: 0.5rem;
+    }
+
+    .top-navbar-logo,
+    .top-navbar-logo-udec {
+        height: 22px !important;
+        max-height: 22px !important;
+    }
+
+    .top-navbar-right {
+        gap: 0.35rem !important;
+    }
+
+    .top-navbar-btn {
+        padding: 0.32rem 0.45rem;
+    }
+
+    .top-navbar-btn > span,
+    .nav-menu-btn-label {
+        display: none;
+    }
+
+    .nav-menu-btn-label-short {
+        display: inline;
+    }
+
+    .nav-menu {
+        margin-right: 0;
+    }
+
+    .nav-menu-btn {
+        padding: 0.3rem 0.55rem;
+    }
+
+    .nav-menu-dropdown {
+        width: min(300px, calc(100vw - 1.5rem));
+        max-width: none;
+        max-height: calc(100dvh - 90px);
+        overflow-y: auto;
+    }
+
+    /* Submenús en acordeón bajo su fila; solo el chevron los abre */
+    .nav-submenu,
+    .nav-menu-group:hover .nav-submenu,
+    .nav-menu-group:focus-within .nav-submenu {
+        position: static;
+        display: none;
+        visibility: visible;
+        opacity: 1;
+        clip-path: none;
+        min-width: 0;
+        padding: 0 0 0.3rem 1.4rem;
+        background: transparent;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        transition: none;
+    }
+
+    .nav-menu-group.open .nav-submenu {
+        display: block;
+    }
+
+    .nav-menu-group::after,
+    .nav-submenu::after {
+        display: none;
+    }
+
+    .nav-submenu-trigger-icon {
+        width: 26px !important;
+        height: 26px !important;
+        padding: 6px !important;
+        margin: -6px -4px -6px 0;
+        transition: transform 0.2s ease;
+    }
+
+    .nav-menu-group.open .nav-submenu-trigger-icon {
+        transform: rotate(-90deg);
+    }
 }
 
 /* Dashboard Body Wrapper */

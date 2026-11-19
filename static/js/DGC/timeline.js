@@ -1,7 +1,13 @@
 const BAR_COLORS = ['#2563eb', '#059669', '#d97706', '#7c3aed', '#0891b2'];
 const ROW_H = 38;       // px per project row
 const AXIS_H = 36;      // px for year axis
-const LABEL_W = 210;    // px for label column
+// Columna de nombres: 210 px (27 caracteres por línea); en celular (≤ 600 px)
+// 120 px y 16 caracteres, para que las barras tengan espacio (el ancho del
+// gráfico es el del contenedor menos esta columna). Mismo ancho en dgc_addons.css.
+const DGC_TL_MOVIL_MQ = window.matchMedia('(max-width: 600px)');
+const DGC_TL_LABEL_W_MOVIL = 120;
+let LABEL_W = 210;      // px for label column (se fija en cada renderTimeline)
+let LABEL_CHARS = 27;   // caracteres por línea del nombre
 const BAR_PAD = 7;      // vertical padding inside row
 const MILESTONE_R = 6.5; // radius of milestone icons (larger hit area)
 
@@ -12,6 +18,7 @@ function showTimelineView() {
     if (typeof leafletMap !== 'undefined' && leafletMap && leafletMap.getCenter) {
         appState.savedMapCenter = leafletMap.getCenter();
         appState.savedMapZoom = leafletMap.getZoom();
+        appState.savedMapDefault = dgcAtDefaultView;
     }
     if (appState.investmentOpen) hideInvestmentView();
     if (appState.contractsOpen) hideContractsView();
@@ -21,7 +28,7 @@ function showTimelineView() {
     const centerPanel = document.querySelector('.center-panel');
     const rightPanel = document.querySelector('.right-panel');
     const tlPanel = document.getElementById('timeline-full-panel');
-    if (grid) { grid.style.gridTemplateColumns = '240px 1fr'; }
+    if (grid) { grid.classList.add('dgc-grid--vista-completa'); }
     if (centerPanel) { centerPanel.style.display = 'none'; }
     if (rightPanel) { rightPanel.style.display = 'none'; }
     if (tlPanel) { tlPanel.style.display = 'flex'; }
@@ -42,7 +49,7 @@ function hideTimelineView(skipRestoreCenter) {
     const centerPanel = document.querySelector('.center-panel');
     const rightPanel = document.querySelector('.right-panel');
     const tlPanel = document.getElementById('timeline-full-panel');
-    if (grid) { grid.style.gridTemplateColumns = ''; }
+    if (grid) { grid.classList.remove('dgc-grid--vista-completa'); }
     if (centerPanel) { centerPanel.style.display = ''; }
     if (rightPanel) { rightPanel.style.display = ''; }
     if (tlPanel) { tlPanel.style.display = 'none'; }
@@ -51,7 +58,7 @@ function hideTimelineView(skipRestoreCenter) {
     if (typeof leafletMap !== 'undefined' && leafletMap) {
         leafletMap.resize();
         if (!skipRestoreCenter && appState.savedMapCenter) {
-            leafletMap.jumpTo({ center: appState.savedMapCenter, zoom: appState.savedMapZoom || 5 });
+            dgcRestoreMapView();
         }
     }
 }
@@ -113,6 +120,9 @@ function buildTimelineGroups(data) {
 // ── SVG helper: create element with attributes ────────────────────────
 
 function renderTimeline(data, highlightCode = null) {
+    const movil = DGC_TL_MOVIL_MQ.matches;
+    LABEL_W = movil ? DGC_TL_LABEL_W_MOVIL : 210;
+    LABEL_CHARS = movil ? 16 : 27;
     const groups = buildTimelineGroups(data);
     const badge = document.getElementById('timeline-count-badge');
     if (badge) badge.textContent = `${groups.length} proyecto${groups.length !== 1 ? 's' : ''}`;
@@ -176,7 +186,7 @@ function renderTimeline(data, highlightCode = null) {
     // Per-group row metrics (variable heights with multiline text wrapping)
     const rowMetrics = groups.map(g => {
         const n = g.segments.length;
-        const lines = CatlecUtils.wrapText(g.name, 27);
+        const lines = CatlecUtils.wrapText(g.name, LABEL_CHARS);
         const textH = lines.length * 13;
         const barLanesH = n * SUBLANE_H + Math.max(0, n - 1) * SUBLANE_GAP;
         const height = Math.max(ROW_PAD_V * 2 + barLanesH, textH + ROW_PAD_V * 2);
@@ -316,12 +326,17 @@ function renderTimeline(data, highlightCode = null) {
         x: 0, y: 0, width: chartW, height: AXIS_H, fill: labelBg
     }));
 
-    for (let yr = minYear; yr <= maxYear; yr += 5) {
+    // Marca cada 5 años; rótulo solo cada `labelEvery` marcas, para que los años
+    // queden a 34 px o más (en celular el eje mide ~250 px; en escritorio, 1)
+    const pxPer5 = chartW * 5 / yearRange;
+    const labelEvery = Math.max(1, Math.ceil(34 / pxPer5));
+    for (let yr = minYear, tick = 0; yr <= maxYear; yr += 5, tick++) {
         const x = toPx(yr);
         axisSvg.appendChild(svgEl('line', {
             x1: x, y1: AXIS_H - 8, x2: x, y2: AXIS_H,
             stroke: '#cbd5e1', 'stroke-width': 1
         }));
+        if (tick % labelEvery !== 0) continue;
         const lbl = svgEl('text', {
             x: x, y: AXIS_H - 12, 'text-anchor': 'middle',
             fill: textColor,

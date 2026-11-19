@@ -413,10 +413,15 @@ function mopMapOnShow() {
 function mopFlyToFeatures(features, { duration = undefined } = {}) {
     if (!features || !features.length || mopMapDeferView()) return;
     const bounds = CatlecMapGL.boundsOfFeatures(features);
-    CatlecUtils.afterNextPaint(() => CatlecMapGL.flyToBounds(mopProjectMap, bounds, {
-        ...(duration === undefined ? {} : { duration }),
-        onDefaultView: () => mopApplyDefaultMapView(duration !== 0)
-    }));
+    CatlecUtils.afterNextPaint(() => {
+        // Celular con la ficha abierta: encuadrar en la franja que no tapa (MOP/vista-movil.js)
+        const padding = typeof mopFichaMovilPadding === 'function' ? mopFichaMovilPadding() : null;
+        CatlecMapGL.flyToBounds(mopProjectMap, bounds, {
+            ...(duration === undefined ? {} : { duration }),
+            ...(padding ? { paddingOverride: padding } : {}),
+            onDefaultView: () => mopApplyDefaultMapView(duration !== 0)
+        });
+    });
 }
 
 // Encuadre de una región sin sus islas oceánicas (Valparaíso: Juan Fernández e Isla de Pascua)

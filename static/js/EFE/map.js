@@ -1255,7 +1255,13 @@ window.efeApplyDefaultMapView = efeApplyDefaultMapView;
 // mapa y refrescar tabla/KPIs, y ese trabajo no debe comerse los primeros cuadros
 function efeFlyToFeatures(features) {
     const bounds = CatlecMapGL.boundsOfFeatures(features);
-    CatlecUtils.afterNextPaint(() => CatlecMapGL.flyToBounds(efeMap, bounds, { onDefaultView: () => efeApplyDefaultMapView(true) }));
+    CatlecUtils.afterNextPaint(() => {
+        // Celular con la ficha abierta: encuadrar en la franja que no tapa (EFE/vista-movil.js)
+        const padding = typeof efeFichaMovilPadding === 'function' ? efeFichaMovilPadding() : null;
+        const opts = { onDefaultView: () => efeApplyDefaultMapView(true) };
+        if (padding && efeProjectDetailView && efeProjectDetailView.classList.contains('is-open')) opts.paddingOverride = padding;
+        CatlecMapGL.flyToBounds(efeMap, bounds, opts);
+    });
 }
 
 function efeZoomToProject(proj) {
@@ -1329,6 +1335,8 @@ function efeAddMapLegend() {
     CatlecMapGL.addLegendControl(efeMap, {
         html,
         storageKey: 'catlec.efe.legendCollapsed',
+        // En celular parte plegada (como DGC y MOP): desplegada tapa el mapa
+        collapsedByDefault: window.matchMedia('(max-width: 600px)').matches,
         onMount: (div) => {
             div.querySelector('#efe-toggle-efe-lines').addEventListener('change', (e) => efeToggleEfeLines(e.target.checked));
             div.querySelector('#efe-toggle-projects').addEventListener('change', (e) => efeToggleProjects(e.target.checked));

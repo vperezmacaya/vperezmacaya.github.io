@@ -16,55 +16,26 @@
     overflow: hidden;
 }
 
-/* Pantallas angostas (celular, tablet): filtros, mapa y tabla en una columna
-   con scroll. Con 3 columnas, los 260 px de filtros y los 769 px mínimos de la
-   tabla dejaban al mapa sin ancho. La tabla conserva su ancho mínimo y se
-   desplaza en horizontal (encabezado y filas juntos). */
+/* Pantallas chicas, como DGC (MOP/vista-movil.js):
+   - Tablet (769-1100 px): mapa y tabla lado a lado; el panel de filtros y
+     "Análisis" se despliega sobre el mapa con la pestaña de
+     CatlecMovil.crearPanelLateral. La tabla ocupa a lo sumo el 55% del ancho
+     y se desplaza en horizontal (con sus 769 px mínimos dejaba al mapa sin ancho).
+   - Celular (≤ 768 px): una sola pantalla (CatlecMovil): el mapa a todo el
+     alto y, encima, filtros (CatlecFilterDrawer), "Lista", "Resumen" y la ficha.
+   - En ambos, las vistas de costos, contratos e histórica van en una columna
+     con scroll interno y a todo el ancho. */
 @media (max-width: 1100px) {
-    .mop-grid {
-        grid-template-columns: minmax(0, 1fr);
-        grid-auto-rows: auto;
-        overflow-x: hidden;
-        overflow-y: auto;
-    }
-
-    /* Sin scroll propio y con el alto de su contenido (con min-height: 0 la
-       grilla, más baja que la suma de las filas, la reducía a 0) */
-    .mop-grid > .left-panel {
-        height: auto;
-        min-height: auto;
-        overflow: visible;
-    }
-
-    .mop-grid > .map-panel {
-        height: 70vh;
-        min-height: 360px;
-    }
-
-    .mop-grid > .right-panel {
-        height: 85vh;
-        min-height: 520px;
-    }
-
     .mop-grid > .catlec-panel-resizer {
         display: none;
     }
 
-    .mop-grid .table-responsive {
-        overflow-x: auto;
-    }
-
-    .mop-grid .table-header-wrapper,
-    .mop-grid .table-body-wrapper {
-        min-width: 769px;
-    }
-
-    /* Vistas de contratos: una columna, cada tarjeta con alto propio */
-    .mop-grid > .mop-view-panel {
+    .mop-grid > .mop-view-panel,
+    .mop-grid--sin-panel > .mop-view-panel {
         grid-column: 1 / -1;
-        height: auto;
-        min-height: auto;
-        overflow: visible;
+        height: 100%;
+        min-height: 0;
+        overflow-y: auto;
     }
 
     /* .mop-grid delante: las reglas generales de estos layouts van después en el archivo */
@@ -112,6 +83,79 @@
         flex: 1 1 100%;
         flex-wrap: wrap;
         row-gap: 0.15rem;
+    }
+
+    .mop-grid .table-responsive {
+        overflow-x: auto;
+    }
+
+    .mop-grid .table-header-wrapper,
+    .mop-grid .table-body-wrapper,
+    #mop-hoja-lista .table-header-wrapper,
+    #mop-hoja-lista .table-body-wrapper {
+        min-width: 769px;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1100px) {
+    .mop-grid {
+        grid-template-columns: minmax(0, 1fr) min(var(--catlec-table-width, 774px), 55%);
+    }
+
+    /* La pestaña del panel izquierdo, a media altura: arriba a la izquierda
+       están los recuadros de islas */
+    .mop-grid.catlec-con-panel-lateral {
+        --catlec-panel-tab-top: calc(50% - 70px);
+    }
+}
+
+@media (max-width: 768px) {
+    body:has(#mop-dashboard-grid) .app-footer {
+        display: none;
+    }
+
+    body:has(#mop-dashboard-grid) .dashboard-content {
+        padding: 0;
+    }
+
+    .mop-grid,
+    .mop-grid.mop-grid--sin-panel {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+        gap: 0;
+    }
+
+    /* !important: mopSetView les pone display inline */
+    .mop-grid > .left-panel,
+    .mop-grid > .right-panel {
+        display: none !important;
+    }
+
+    .mop-grid > .map-panel {
+        height: 100%;
+        min-height: 0;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .mop-grid > .mop-view-panel {
+        padding-bottom: 72px;
+    }
+
+    /* Inversión histórica tiene filtros propios: sin la barra de los filtros
+       de la cartera (MOP/vista-movil.js pone la clase). Su tarjeta de
+       filtros, en una fila en escritorio, pasa a una columna: título arriba
+       y cada filtro a todo el ancho. */
+    body.mop-vista-historica .catlec-filter-bar {
+        display: none;
+    }
+
+    /* .mop-grid delante: las reglas de .mop-hi-filtros van después en el archivo */
+    .mop-grid .mop-hi-filtros .panel-title,
+    .mop-grid .mop-hi-filtros .form-group {
+        flex: 1 1 100%;
+        max-width: none;
     }
 }
 

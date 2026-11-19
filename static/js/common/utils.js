@@ -107,7 +107,10 @@ window.CatlecUtils = {
             lines.push(cur);
         }
 
-        return lines.length > 1 ? lines : str;
+        // Una sola línea: esa línea (ya cortada con "…"), no el texto original
+        // completo, que con maxLines = 1 se salía de su espacio
+        if (lines.length > 1) return lines;
+        return lines.length === 1 ? lines[0] : str;
     },
 
     // Plugin de Chart.js: dibuja el valor de cada barra horizontal, adentro si

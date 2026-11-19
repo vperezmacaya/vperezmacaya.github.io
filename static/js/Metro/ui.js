@@ -112,7 +112,11 @@ function metroShowTableListView() {
     const otherViews = [tableProjectsContainer, tableLinesContainer, tableComunasContainer].filter(v => v && v !== targetView);
     const wasDetailOpen = detailContainer && detailContainer.style.display === 'flex';
 
-    if (wasDetailOpen && targetView && typeof CatlecUtils !== 'undefined') {
+    if (typeof metroFicha !== 'undefined' && metroFicha && metroFicha.enMapa()) {
+        // Celular: la ficha está sobre el mapa y la tabla en el panel de la lista
+        metroFicha.cerrar();
+        if (targetView) targetView.style.display = 'flex';
+    } else if (wasDetailOpen && targetView && typeof CatlecUtils !== 'undefined') {
         CatlecUtils.swapView(detailContainer, targetView, { direction: 'back' });
     } else {
         if (detailContainer) detailContainer.style.display = 'none';
@@ -259,6 +263,9 @@ function setMetroTableMode(mode) {
     metroState.selectedProjectName = null;
     metroState.selectedProjectId = null;
     metroShowTableListView();
+
+    // Celular: etiqueta del botón de la lista ("Líneas" / "Proyectos" / "Comunas")
+    if (typeof metroMovil !== 'undefined' && metroMovil) metroMovil.actualizar();
 }
 window.setMetroTableMode = setMetroTableMode;
 
@@ -773,7 +780,10 @@ function metroShowProjectDetailView(proj) {
     const visibleListView = [tableProjectsContainer, tableLinesContainer, tableComunasContainer]
         .find(v => v && v.style.display !== 'none') || null;
 
-    if (!alreadyOpen && visibleListView && typeof CatlecUtils !== 'undefined') {
+    if (typeof metroFicha !== 'undefined' && metroFicha && metroFicha.enMapa()) {
+        // Celular: la ficha sube sobre el mapa (Metro/vista-movil.js)
+        if (!metroFicha.abierta()) metroFicha.abrir();
+    } else if (!alreadyOpen && visibleListView && typeof CatlecUtils !== 'undefined') {
         CatlecUtils.swapView(visibleListView, detailContainer, { direction: 'forward' });
         [tableProjectsContainer, tableLinesContainer, tableComunasContainer].forEach(v => {
             if (v && v !== visibleListView) v.style.display = 'none';
@@ -1139,6 +1149,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof metroLoadFilters === 'function') metroLoadFilters();
     if (typeof metroInitLeafletMap === 'function') metroInitLeafletMap();
     if (typeof metroFetchData === 'function') metroFetchData();
+
+    // Celular (≤ 768 px): pantalla única con Lista y Resumen (Metro/vista-movil.js)
+    if (typeof metroSetupVistaMovil === 'function') metroSetupVistaMovil();
 });
 
 /**

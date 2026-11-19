@@ -49,6 +49,12 @@ function renderTable(contracts) {
 }
 
 function showTableListView() {
+    // Celular: la ficha está sobre el mapa y la tabla nunca se ocultó
+    if (typeof dgcFichaEnMapa === 'function' && dgcFichaEnMapa()) {
+        dgcCerrarFichaMovil();
+        if (detailViewBody) detailViewBody.scrollTop = 0;
+        return;
+    }
     const wasDetailOpen = projectDetailView && projectDetailView.style.display === 'flex';
     if (wasDetailOpen && tableContainerView && typeof CatlecUtils !== 'undefined') {
         CatlecUtils.swapView(projectDetailView, tableContainerView, { direction: 'back' });

@@ -4,7 +4,8 @@ Hace lo mismo que correr cada actualizar_<modulo>.py, con un solo resumen al fin
 trazados del landing regenerados una sola vez.
 
 Uso:  python scripts/actualizar_todo.py [--sin-descargas]
-      --sin-descargas  no descarga fichas IDI de BIP Consulta ni geometrías del ArcGIS del MOP
+      --sin-descargas  no consulta la CMF (DGC) ni descarga fichas IDI de BIP Consulta ni
+                       geometrías del ArcGIS del MOP
 """
 import etl
 import actualizar_dgc

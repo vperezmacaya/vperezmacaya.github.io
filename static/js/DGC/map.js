@@ -10,9 +10,19 @@
 // - Íconos de proyecto = marcadores HTML de MapLibre (.polygon-centroid-marker).
 // - DGC no tiene tooltips en el mapa.
 
-// Vista inicial (zoom Leaflet 4 → MapLibre 3; ver CatlecMapGL.ZOOM_OFFSET)
+// Vista inicial: encuadre de todas las concesiones (Arica a Punta Arenas),
+// no un centro y zoom fijos, que solo calzaban con un alto de pantalla: en un
+// notebook chico el norte y el sur quedaban fuera. El encuadre se recalcula
+// al cambiar el tamaño del mapa mientras el usuario no lo haya movido.
+// Centro y zoom fijos solo como respaldo si no hay geometrías.
 const DGC_DEFAULT_CENTER = [-71.5430, -37.6751];
 const DGC_DEFAULT_ZOOM = 4 - CatlecMapGL.ZOOM_OFFSET;
+// Como en MOP: las islas oceánicas (al oeste de -76°) no entran al encuadre,
+// porque achicarían todo el continente.
+const DGC_EXTENT_MIN_LNG = -76;
+const DGC_DEFAULT_PADDING = 24;
+let dgcDefaultBounds;               // LngLatBounds (o null), calculado una vez
+let dgcAtDefaultView = true;        // el usuario aún no movió el mapa
 
 // Capas invisibles usadas para detectar hover/click sobre las shapes
 const DGC_HIT_LAYERS = ['dgc-lines-hit', 'dgc-fill-hit'];
@@ -31,11 +41,58 @@ function initLeafletMap() {
         maxZoom: 18 - CatlecMapGL.ZOOM_OFFSET
     });
     dgcIsDragClick = CatlecMapGL.trackDragClick(leafletMap);
+    dgcApplyDefaultMapView(false);
+
+    // Un arrastre o zoom del usuario (o un vuelo a un proyecto, en
+    // zoomToProjectCode) deja de seguir el tamaño del mapa. Solo se miran los
+    // eventos con originalEvent: map.resize() también dispara 'movestart'.
+    leafletMap.on('movestart', (e) => { if (e.originalEvent) dgcAtDefaultView = false; });
+    leafletMap.on('resize', () => { if (dgcAtDefaultView) dgcApplyDefaultMapView(false); });
 
     leafletMap.on('mousemove', dgcOnMapMouseMove);
     leafletMap.getCanvas().addEventListener('mouseleave', () => dgcSetMapHover(null));
     leafletMap.on('click', dgcOnMapClick);
     leafletMap.on('load', loadMapLayers);
+}
+
+// Límites de todas las geometrías de DGC_DATA (sin islas oceánicas)
+function dgcGetDefaultBounds() {
+    if (dgcDefaultBounds !== undefined) return dgcDefaultBounds;
+    const features = ((window.DGC_DATA && window.DGC_DATA.features) || []).filter(f => {
+        const b = CatlecMapGL.boundsOfFeatures([f]);
+        return b && b.getWest() >= DGC_EXTENT_MIN_LNG;
+    });
+    dgcDefaultBounds = CatlecMapGL.boundsOfFeatures(features);
+    return dgcDefaultBounds;
+}
+
+// Vista del país: encuadra las concesiones según el tamaño actual del mapa.
+// (Lo usan la carga inicial, el cambio de tamaño y "Restablecer Mapa".)
+function dgcApplyDefaultMapView(animate = false) {
+    if (!leafletMap) return;
+    const container = leafletMap.getContainer();
+    // Mapa oculto (otra visualización): se encuadra al volver a verse
+    if (container.clientWidth < 60 || container.clientHeight < 60) return;
+    const eventData = { dgcDefaultView: true };
+    const bounds = dgcGetDefaultBounds();
+    if (bounds) {
+        leafletMap.fitBounds(bounds, { padding: DGC_DEFAULT_PADDING, duration: animate ? 450 : 0 }, eventData);
+    } else {
+        leafletMap.jumpTo({ center: DGC_DEFAULT_CENTER, zoom: DGC_DEFAULT_ZOOM }, eventData);
+    }
+    dgcAtDefaultView = true;
+}
+
+// Al volver de una visualización que ocultó el mapa (líneas de tiempo,
+// inversión, contratos, licitantes): si estaba en la vista del país se vuelve
+// a encuadrar con el tamaño actual; si no, se repone el centro y zoom guardados.
+function dgcRestoreMapView() {
+    if (!leafletMap) return;
+    if (appState.savedMapDefault) {
+        dgcApplyDefaultMapView(false);
+    } else if (appState.savedMapCenter) {
+        leafletMap.jumpTo({ center: appState.savedMapCenter, zoom: appState.savedMapZoom || 5 });
+    }
 }
 
 function getFeatureStyle(feature, sector) {
@@ -206,7 +263,12 @@ function loadMapLayers() {
 
     const legendEl = document.getElementById('map-legend');
     if (legendEl) {
-        CatlecMapGL.addLegendControl(leafletMap, { element: legendEl, storageKey: 'catlec.dgc.legendCollapsed' });
+        // En celular parte plegada (como MOP): desplegada tapa el sur de Chile
+        CatlecMapGL.addLegendControl(leafletMap, {
+            element: legendEl,
+            storageKey: 'catlec.dgc.legendCollapsed',
+            collapsedByDefault: window.matchMedia('(max-width: 600px)').matches
+        });
     }
 
     updateMapStyles();
@@ -535,6 +597,7 @@ function zoomToProjectCode(code) {
     }
     const bounds = CatlecMapGL.boundsOfFeatures(features);
     if (!bounds) return;
+    dgcAtDefaultView = false;
 
     // Zoom hardcodeado para "Estaciones de Transbordo para Transantiago": sus
     // estaciones se dispersan por 22 comunas de Santiago, lo que hace que el
@@ -543,6 +606,9 @@ function zoomToProjectCode(code) {
     if (cleanCode === '050_ETTT1') {
         zoomOptions.maxZoomOverride = 12.5;
     }
+    // Celular: encuadrar en la franja que no tapa la ficha (DGC/project-detail.js)
+    const fichaPadding = typeof dgcFichaMovilPadding === 'function' ? dgcFichaMovilPadding() : null;
+    if (fichaPadding) zoomOptions.paddingOverride = fichaPadding;
     // El vuelo se inicia tras el repintado, para que el render del panel de
     // detalle no se coma los primeros cuadros de la animación.
     CatlecUtils.afterNextPaint(() => CatlecMapGL.flyToBounds(leafletMap, bounds, zoomOptions));

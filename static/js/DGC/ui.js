@@ -1,5 +1,21 @@
 // Bootstrap de la interfaz: conecta filtros, tabla, paginación, mapa y exportaciones al cargar el DOM
 
+// Filtros activos para la barra de celular (CatlecFilterDrawer): un filtro por
+// campo; con 1 o 2 valores se nombran y con más se cuentan.
+function dgcFilterSummary() {
+    const labels = [];
+    const search = (appState.search || '').trim();
+    if (search) labels.push(`"${search}"`);
+    const group = (values, plural) => {
+        if (!values || !values.length) return;
+        labels.push(values.length <= 2 ? values.join(', ') : `${values.length} ${plural}`);
+    };
+    group(appState.selectedRegions, 'regiones');
+    group(appState.selectedSectors, 'sectores');
+    group(appState.selectedStatuses, 'estados');
+    return { count: labels.length, labels };
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initDOMReferences();
     initSubheaderViewSwitcher();
@@ -67,6 +83,23 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchData();
     });
 
+    // Celular (≤ 768 px): la tarjeta de filtros pasa a un panel inferior con
+    // una barra "Filtros" bajo el subheader. En tablet (769-1100 px) sigue en
+    // el panel izquierdo, que se despliega con su pestaña (DGC/vista-movil.js).
+    // fetchData llama a update().
+    window.dgcFilterDrawer = CatlecFilterDrawer.init({
+        panel: '.panel-card-filters',
+        after: '.view-subheader',
+        media: '(max-width: 768px)',
+        getSummary: dgcFilterSummary,
+        getResultLabel: () => {
+            const n = appState.filteredCount;
+            if (n == null) return 'Ver resultados';
+            return n === 1 ? 'Ver 1 contrato' : `Ver ${n.toLocaleString('es-CL')} contratos`;
+        },
+        onReset: () => btnReset.click()
+    });
+
     const btnExportExcel = document.getElementById('btn-export-excel');
     if (btnExportExcel) {
         btnExportExcel.addEventListener('click', () => {
@@ -83,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnResetMap.addEventListener('click', () => {
         if (leafletMap) {
-            leafletMap.easeTo({ center: DGC_DEFAULT_CENTER, zoom: DGC_DEFAULT_ZOOM, duration: 450 });
+            dgcApplyDefaultMapView(true);
         }
         appState.selectedProjectCode = null;
         showTableListView();
@@ -130,6 +163,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Setup initial icons
     lucide.createIcons();
+
+    // Celular: la ficha del proyecto se abre sobre el mapa (DGC/project-detail.js).
+    // Después de createIcons, para guardar el botón "Volver a la Lista" con su ícono.
+    dgcSetupFichaMovil();
+    // Celular: botón flotante Mapa / Lista (DGC/vista-movil.js)
+    dgcSetupVistaMovil();
 
     // Initialize Timeline view events
     initTimelineEvents();

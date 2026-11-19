@@ -787,3 +787,132 @@
         grid-template-columns: minmax(0, 1fr);
     }
 }
+
+/* ─── EFE en celular (≤ 768 px): una sola pantalla (EFE/vista-movil.js) ───────
+   Como DGC: la visualización ocupa todo el alto bajo el header y el menú ☰,
+   sin scroll de página y de borde a borde; la tabla, los KPI y la ficha se
+   abren encima (common/movil.js; estilos .catlec-movil-* en styles.css). Todo
+   acotado a EFE (#efe-dashboard-grid y sus vistas): Metro carga este archivo. */
+.efe-movil-modo {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    body:has(#efe-dashboard-grid) .app-footer {
+        display: none;
+    }
+
+    body:has(#efe-dashboard-grid) .dashboard-content {
+        padding: 0;
+    }
+
+    #efe-dashboard-grid {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+        gap: 0;
+        overflow: hidden;
+    }
+
+    /* !important: las vistas les ponen display inline al volver al mapa */
+    #efe-dashboard-grid > .right-panel,
+    #efe-dashboard-grid > .catlec-panel-resizer {
+        display: none !important;
+    }
+
+    #efe-dashboard-grid > .map-panel {
+        height: 100%;
+        min-height: 0;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    #efe-dashboard-grid > .map-panel > #efe-map {
+        border: none;
+        border-radius: 0;
+    }
+
+    /* Vistas de pantalla completa: todo el alto, de borde a borde, con scroll
+       interno (Carga y Portafolio ya van en una columna desde 1100 px) */
+    #efe-portafolio-full-panel,
+    #efe-operacion-full-panel,
+    #efe-carga-full-panel {
+        grid-column: 1 / -1;
+        height: 100% !important;
+        min-height: 0;
+        overflow-y: auto !important;
+        border: none !important;
+        border-radius: 0 !important;
+    }
+
+    /* Espacio al final para que el botón flotante "Resumen" no tape lo último */
+    #efe-portafolio-full-panel,
+    #efe-carga-body {
+        padding-bottom: 72px;
+    }
+
+    /* Demanda y Operación en una columna: las grillas inline de 2 columnas
+       pasan a una, cada tarjeta con alto propio (sus KPI van en "Resumen") */
+    #efe-operacion-full-panel > div {
+        flex: none !important;
+        height: auto !important;
+        overflow: visible !important;
+        padding-bottom: 72px !important;
+    }
+
+    #efe-operacion-full-panel [style*="grid-template-columns"]:not(:has(> .card-kpi)) {
+        grid-template-columns: minmax(0, 1fr) !important;
+        height: auto !important;
+        flex: none !important;
+    }
+
+    #efe-operacion-full-panel .panel-card {
+        height: auto !important;
+        flex: none !important;
+        min-width: 0;
+    }
+
+    #efe-operacion-full-panel div:has(> canvas) {
+        flex: none !important;
+        height: 260px !important;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    #efe-operacion-full-panel .panel-card > div:first-child {
+        flex-wrap: wrap;
+        row-gap: 0.2rem;
+    }
+
+    /* Selector "Servicios Actuales | Proyectos" como barra bajo el menú ☰,
+       solo en la visualización Mapa (CatlecMovil pone .catlec-movil-en-mapa) */
+    body.catlec-movil-en-mapa .efe-movil-modo {
+        display: block;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 140;
+        background: var(--bg-card);
+        border-bottom: 1px solid var(--border-color);
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+    }
+
+    .efe-movil-modo .efe-table-mode-switch {
+        border-bottom: none !important;
+        padding: 0.4rem 0.75rem !important;
+    }
+
+    .efe-movil-modo .efe-mode-btn {
+        min-height: 36px;
+        font-size: 0.8rem !important;
+    }
+
+    /* Ancho mínimo de las tablas en el panel de la lista (el de escritorio) */
+    #efe-hoja-lista .table-header-wrapper,
+    #efe-hoja-lista .table-body-wrapper {
+        min-width: 520px;
+    }
+
+    #efe-hoja-lista .efe-export-toolbar {
+        flex-shrink: 0;
+    }
+}

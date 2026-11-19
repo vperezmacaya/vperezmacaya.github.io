@@ -12,6 +12,9 @@ function setActiveSubheaderTab(activeId) {
     if (btnCnt) btnCnt.classList.toggle('active', activeId === 'contracts');
     if (btnBid) btnBid.classList.toggle('active', activeId === 'bidders');
 
+    // Botón Mapa / Lista de celular: solo en la visualización Mapa (DGC/vista-movil.js)
+    if (typeof dgcActualizarBotonVista === 'function') dgcActualizarBotonVista();
+
     // La vista abierta queda en el # de la URL (recargar o compartir el enlace
     // vuelve a ella), como en Metro y EFE; el mapa va sin #. replaceState no
     // dispara hashchange ni agrega entradas al historial.

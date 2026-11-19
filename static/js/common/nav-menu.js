@@ -148,7 +148,8 @@ window.CatlecNav = (function () {
 
         return `<button class="nav-menu-btn" id="nav-menu-btn" aria-haspopup="true" aria-expanded="false">
                 ${buttonIcon}
-                Seleccionar Base de Datos
+                <span class="nav-menu-btn-label">Seleccionar Base de Datos</span>
+                <span class="nav-menu-btn-label-short">Bases de datos</span>
                 <i data-lucide="chevron-down" class="nav-menu-chevron" style="width:12px;height:12px;"></i>
             </button>
             <div class="nav-menu-dropdown" id="nav-menu-dropdown">
@@ -164,6 +165,9 @@ window.CatlecNav = (function () {
     let navDropdown = null;
     let endTimer = null;
     const ANIM_FALLBACK_MS = 300;
+
+    // Mismo corte que el header compacto de styles.css (submenús en acordeón)
+    const NARROW_MQ = window.matchMedia('(max-width: 640px)');
 
     const prefersReducedMotion = () =>
         window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -231,16 +235,22 @@ window.CatlecNav = (function () {
         NAV_MODULES.forEach(m => {
             const group = document.getElementById(`nav-${m.id}-group`);
             if (!group) return;
-            const trigger = group.querySelector('.nav-submenu-trigger-icon');
-            if (trigger) {
-                trigger.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    group.classList.toggle('open');
-                });
-            }
-            group.addEventListener('mouseenter', () => group.classList.add('open'));
-            group.addEventListener('mouseleave', () => group.classList.remove('open'));
+            // Delegado en el grupo: lucide.createIcons() reemplaza el <i> del
+            // chevron por un <svg> después de este punto, y un listener puesto
+            // en el <i> se perdía (en escritorio no se notaba: abre el hover).
+            group.addEventListener('click', (e) => {
+                if (!e.target.closest('.nav-submenu-trigger-icon')) return;
+                e.stopPropagation();
+                e.preventDefault();
+                group.classList.toggle('open');
+            });
+            // Hover solo con mouse y en pantallas anchas. En celular los
+            // submenús se despliegan hacia abajo (acordeón, ver styles.css) y
+            // solo con el chevron: un toque dispara pointerenter y luego click,
+            // y el click volvía a cerrar lo que el hover acababa de abrir.
+            const hoverEnabled = (e) => e.pointerType === 'mouse' && !NARROW_MQ.matches;
+            group.addEventListener('pointerenter', (e) => { if (hoverEnabled(e)) group.classList.add('open'); });
+            group.addEventListener('pointerleave', (e) => { if (hoverEnabled(e)) group.classList.remove('open'); });
         });
     }
 

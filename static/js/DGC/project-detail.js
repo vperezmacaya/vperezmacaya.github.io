@@ -50,9 +50,61 @@ function updateDetailNavButtons(code) {
     }
 }
 
+// ─── Ficha sobre el mapa en celular (common/movil.js) ─────────────────────────
+// En escritorio y tablet la ficha reemplaza a la tabla en el panel derecho. En
+// celular (≤ 768 px) el mapa ocupa toda la pantalla y la tabla está en el
+// panel "Lista" (DGC/vista-movil.js): CatlecMovil.crearFicha mueve la ficha
+// dentro del mapa como un panel que sube desde abajo (como Google Maps), y
+// zoomToProjectCode encuadra el proyecto en la franja libre (dgcFichaMovilPadding).
+let dgcFicha = null;
+
+function dgcFichaEnMapa() {
+    return !!dgcFicha && dgcFicha.enMapa();
+}
+
+function dgcFichaMovilAbierta() {
+    return !!dgcFicha && dgcFicha.abierta();
+}
+
+function dgcFichaMovilPadding() {
+    return dgcFicha ? dgcFicha.padding() : null;
+}
+
+function dgcAbrirFichaMovil() {
+    if (tableContainerView) tableContainerView.style.display = 'flex';
+    dgcFicha.abrir();
+}
+
+function dgcCerrarFichaMovil() {
+    dgcFicha.cerrar();
+    if (tableContainerView) tableContainerView.style.display = 'flex';
+}
+
+// Se llama una vez después de lucide.createIcons() (DGC/ui.js), así el botón
+// "Volver a la Lista" guarda su ícono para devolverlo en pantallas anchas.
+function dgcSetupFichaMovil() {
+    if (dgcFicha || !projectDetailView || typeof CatlecMovil === 'undefined') return;
+    dgcFicha = CatlecMovil.crearFicha({
+        view: projectDetailView,
+        mapPanel: document.querySelector('.center-panel'),
+        backBtn: btnBackToList,
+        // En celular la tabla (en el panel "Lista") nunca se oculta; en
+        // pantalla ancha, la ficha abierta la reemplaza
+        alCambiarAncho: (enCelular, abierta) => {
+            if (tableContainerView) tableContainerView.style.display = (enCelular || !abierta) ? 'flex' : 'none';
+        }
+    });
+}
+
 async function showProjectDetailView(code) {
     if (!code) return;
     const cleanCode = code.toString().trim();
+
+    if (dgcFichaEnMapa()) {
+        dgcAbrirFichaMovil();
+        if (detailViewBody) detailViewBody.scrollTop = 0;
+        return dgcRenderDetailContent(cleanCode);
+    }
 
     const alreadyOpen = projectDetailView && projectDetailView.style.display === 'flex';
     const visibleListView = (tableContainerView && tableContainerView.style.display !== 'none') ? tableContainerView : null;
@@ -68,6 +120,12 @@ async function showProjectDetailView(code) {
         detailViewBody.scrollTop = 0;
     }
 
+    return dgcRenderDetailContent(cleanCode);
+}
+
+// Botones Anterior/Siguiente y contenido de la ficha (en el panel derecho o
+// sobre el mapa en celular)
+async function dgcRenderDetailContent(cleanCode) {
     updateDetailNavButtons(cleanCode);
 
     let item = allLoadedContractsMap[cleanCode];
@@ -327,6 +385,8 @@ function renderProjectDetailBody(cleanCode, item) {
                 </div>
             </div>
 
+            ${dgcFinanzasHTML(item, status)}
+
             <div class="detail-actions" style="margin-top: 0.5rem; gap: 0.4rem;">
                 ${linkMap}
                 ${linkCMF}
@@ -347,6 +407,8 @@ function renderProjectDetailBody(cleanCode, item) {
             renderTimeline(appState.lastMapProjects || [], cleanCode);
         });
     }
+
+    dgcFinanzasSetup(item);
 
     const photoCarousel = detailViewBody && detailViewBody.querySelector('.catlec-photo-carousel');
     if (photoCarousel) {
