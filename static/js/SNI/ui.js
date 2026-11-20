@@ -36,6 +36,9 @@ function initSNIPlatform() {
 
     // 8. Primera sincronización de datos
     updateSNIDashboard();
+
+    // 9. Tablet y celular (SNI/vista-movil.js), después de createIcons
+    if (typeof sniSetupVistaMovil === 'function') sniSetupVistaMovil();
 }
 
 /**
@@ -140,6 +143,9 @@ function switchViewContainer(viewName) {
     setTimeout(() => {
         updateSNICharts();
     }, 60);
+
+    // Pantallas chicas: "Resumen" y pestaña de filtros según la vista (SNI/vista-movil.js)
+    if (typeof sniActualizarMovil === 'function') sniActualizarMovil();
 }
 
 /**
@@ -154,6 +160,9 @@ function updateSNIDashboard() {
 
     // 3. Actualizar Mapa
     updateSNIMapChoropleth();
+
+    // 4. Pantallas chicas: barra de filtros y pestaña de tablet (SNI/vista-movil.js)
+    if (typeof sniActualizarMovil === 'function') sniActualizarMovil();
 }
 
 /**

@@ -20,6 +20,7 @@ let appState = {
     investmentOpen: false,
     contractsOpen: false,      // contracts analytics panel visibility flag
     biddersOpen: false,        // bidders analytics panel visibility flag
+    finanzasOpen: false,       // Estados Financieros de las Concesionarias (finanzas-vista.js)
     topCompaniesMode: 'participaciones' // 'participaciones' | 'adjudicaciones'
 };
 

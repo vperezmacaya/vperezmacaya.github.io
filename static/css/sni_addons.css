@@ -537,3 +537,131 @@
     color: var(--text-secondary);
     align-self: center;
 }
+
+/* ─── Pantallas chicas (SNI/vista-movil.js, common/movil.js) ──────────────────
+   - Tablet (769-1100 px): la barra lateral de filtros se despliega sobre el
+     contenido con la pestaña de CatlecMovil.crearPanelLateral; el contenido
+     ocupa todo el ancho y, en Mapa Regional, el mapa toma el 40% (con el 22%
+     de escritorio quedaba muy angosto).
+   - Celular (≤ 768 px): una sola pantalla. Filtros en la barra de
+     CatlecFilterDrawer; los KPI y el ranking del Mapa Regional, en "Resumen";
+     la visualización ocupa todo el alto, de borde a borde, con scroll interno. */
+@media (min-width: 769px) and (max-width: 1100px) {
+    .sni-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .sni-layout > .sni-sidebar.catlec-panel-lateral {
+        padding: 0.5rem 0.5rem 0.5rem 0.75rem;
+    }
+
+    /* !important: la grilla del Mapa Regional va inline */
+    #view-map {
+        grid-template-columns: minmax(0, 1fr) 40% !important;
+    }
+
+    .sni-kpi-row {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    /* La pestaña, bajo la fila de KPI */
+    .sni-layout.catlec-con-panel-lateral {
+        --catlec-panel-tab-top: 50%;
+    }
+}
+
+@media (max-width: 768px) {
+    body:has(.sni-layout) .app-footer {
+        display: none;
+    }
+
+    .sni-layout {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 0;
+        gap: 0;
+    }
+
+    .sni-layout > .sni-sidebar {
+        display: none !important;
+    }
+
+    .sni-main-area {
+        gap: 0;
+    }
+
+    /* De borde a borde, con scroll interno y espacio al final para el botón "Resumen" */
+    .sni-viewport {
+        overflow-y: auto;
+    }
+
+    .sni-view-container {
+        height: auto;
+        min-height: 100%;
+        padding-bottom: 72px;
+    }
+
+    .sni-viewport .sni-card {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        box-shadow: none;
+    }
+
+    /* Mapa Regional: solo el mapa, a todo el alto (el ranking está en "Resumen") */
+    #view-map {
+        grid-template-columns: minmax(0, 1fr) !important;
+        height: 100% !important;
+        padding-bottom: 0;
+    }
+
+    #view-map > .sni-card {
+        height: 100% !important;
+    }
+
+    /* Las demás vistas, en una columna con tarjetas de alto propio */
+    #view-territorial,
+    #view-ministries,
+    #view-temporal {
+        flex-direction: column !important;
+    }
+
+    .sni-viewport .sni-grid-1x2,
+    .sni-viewport .sni-grid-1x3 {
+        grid-template-columns: minmax(0, 1fr);
+        grid-auto-rows: 380px;
+        height: auto;
+    }
+
+    #view-territorial > .sni-card,
+    #view-temporal > .sni-card {
+        flex: none !important;
+        height: 420px !important;
+    }
+
+    /* "Resumen": el ranking del Mapa Regional con alto propio */
+    #sni-hoja-resumen .sni-card {
+        height: 460px !important;
+        border: none;
+        box-shadow: none;
+        padding: 0;
+    }
+
+    /* Filtros en el panel inferior: la tarjeta sin su título (el panel tiene
+       el suyo; el botón de restablecer queda en "Limpiar" de la barra) ni
+       alto fijo ni scroll propio */
+    .catlec-sheet--filters .sni-sidebar-card {
+        height: auto;
+        border: none;
+        padding: 0;
+        overflow: visible;
+    }
+
+    .catlec-sheet--filters .sni-sidebar-header {
+        display: none;
+    }
+
+    .catlec-sheet--filters .sni-sidebar-scroll {
+        overflow: visible;
+        flex: none;
+    }
+}

@@ -129,7 +129,7 @@ window.CatlecMovil = (function () {
         const p = o.prefijo || 'catlec';
         const lista = o.lista || { nodos: [] };
         const resumen = o.resumen || { kpis: {}, extra: [] };
-        const filasKpi = () => Object.values(resumen.kpis || {}).filter(Boolean);
+        const filasKpi = () => [...new Set(Object.values(resumen.kpis || {}).filter(Boolean))];
 
         const hojaLista = CatlecSheet.create({ id: `${p}-hoja-lista`, title: '', className: 'catlec-sheet--fill catlec-movil-lista' });
         const hojaResumen = CatlecSheet.create({ id: `${p}-hoja-resumen`, title: 'Resumen' });
@@ -174,9 +174,9 @@ window.CatlecMovil = (function () {
             const vista = typeof o.vistaActiva === 'function' ? o.vistaActiva() : 'map';
             document.body.classList.toggle('catlec-movil-en-mapa', mq.matches && vista === 'map');
             if (mq.matches) {
-                Object.entries(resumen.kpis || {}).forEach(([clave, fila]) => {
-                    if (fila) fila.classList.toggle('catlec-kpi-oculto', clave !== vista);
-                });
+                // Por elemento: una misma fila puede servir a varias visualizaciones (SNI)
+                const visible = (resumen.kpis || {})[vista] || null;
+                filasKpi().forEach(fila => fila.classList.toggle('catlec-kpi-oculto', fila !== visible));
             }
             botones.hidden = !mq.matches || !!(ficha && ficha.abierta());
             btnLista.hidden = typeof lista.visible === 'function' ? !lista.visible(vista) : vista !== 'map';

@@ -187,6 +187,10 @@ h6 {
     grid-template-columns: repeat(5, 1fr);
 }
 
+.view-subheader.six-tabs {
+    grid-template-columns: repeat(6, 1fr);
+}
+
 .view-tab-btn {
     display: flex;
     align-items: center;

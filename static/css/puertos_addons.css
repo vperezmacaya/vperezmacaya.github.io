@@ -496,47 +496,134 @@
     height: 10px;
 }
 
-/* ── Pantallas angostas: una columna con scroll ─────────────────── */
-@media (max-width: 900px) {
-    /* El mapa va primero y a todo el ancho; los gráficos, debajo */
-    .puertos-charts-grid.puertos-layout-resumen > .puertos-map-card {
-        grid-row: auto;
-        min-height: 60vh;
+/* ── Tablet (769-1100 px): mismo armado de escritorio ───────────────
+   Puertos no tiene panel de filtros que plegar: cada visualización conserva
+   su grilla. Los KPI siguen en una fila (así los gráficos no pierden alto),
+   sin su ícono para que quepan las cifras. */
+@media (min-width: 769px) and (max-width: 1100px) {
+    .puertos-kpi-row .kpi-icon {
+        display: none;
     }
 
+    /* Resumen de Carga: algo más de ancho para el mapa */
+    .puertos-layout-resumen {
+        grid-template-columns: minmax(0, 45%) minmax(0, 1fr);
+    }
+
+    /* Las micro-leyendas de cabecera bajan a una segunda línea */
+    .puertos-chart-header {
+        flex-wrap: wrap;
+        row-gap: 0.15rem;
+    }
+
+    .puertos-legend {
+        flex-wrap: wrap;
+        row-gap: 0.1rem;
+    }
+
+    /* El título no cede todo su ancho a la leyenda */
+    .puertos-chart-title {
+        min-width: min(100%, 13rem);
+    }
+}
+
+/* ── Celular (≤ 768 px): una sola pantalla (Puertos/vista-movil.js) ──
+   La visualización ocupa todo el alto, de borde a borde. Resumen de Carga
+   muestra solo el mapa; sus KPI y gráficos están en "Resumen". Las demás
+   vistas van en una columna con scroll interno y sus KPI, en "Resumen". */
+@media (max-width: 768px) {
     .puertos-view-wrapper {
+        padding: 0;
+        gap: 0;
         overflow-y: auto;
     }
 
-    .puertos-kpi-row,
-    .puertos-kpi-row-4 {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .puertos-layout-resumen,
-    .puertos-layout-contenedores,
-    .puertos-layout-tipologia,
-    .puertos-layout-terrestre {
+    .puertos-view-wrapper .puertos-charts-grid {
         grid-template-columns: minmax(0, 1fr);
         grid-template-rows: none;
+        gap: 0;
         flex: none;
+        /* Espacio al final para el botón "Resumen" */
+        padding-bottom: 72px;
     }
 
-    .puertos-charts-grid > .puertos-chart-card,
-    .puertos-stack > .puertos-chart-card {
-        min-height: 280px;
+    .puertos-view-wrapper .puertos-chart-card {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        box-shadow: none;
+        min-height: 300px;
     }
 
-    .puertos-stack > .puertos-stack-compact,
-    .puertos-pie-row > .puertos-chart-card {
-        min-height: 170px;
+    .puertos-chart-header {
+        flex-wrap: wrap;
+        row-gap: 0.15rem;
+    }
+
+    /* Título en su propia línea y la leyenda debajo */
+    .puertos-chart-title {
+        white-space: normal;
+        flex-basis: 100%;
+    }
+
+    .puertos-legend {
+        flex-wrap: wrap;
+        row-gap: 0.1rem;
+    }
+
+    /* Resumen de Carga: solo el mapa, a todo el alto y sin cabecera */
+    #vis-container-resumen {
+        overflow: hidden;
+    }
+
+    #vis-container-resumen .puertos-layout-resumen {
+        flex: 1;
+        grid-template-rows: minmax(0, 1fr);
+        padding-bottom: 0;
+    }
+
+    .puertos-view-wrapper .puertos-map-card {
+        border: none;
+        min-height: 0;
+    }
+
+    .puertos-map-card > .puertos-chart-header {
+        display: none;
+    }
+
+    /* Contenedores y Conectividad: la columna apilada, también en una columna */
+    .puertos-stack {
+        gap: 0;
+    }
+
+    .puertos-stack > .puertos-stack-compact {
+        flex: none;
     }
 
     .puertos-pie-row {
         grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+    }
+
+    .puertos-view-wrapper .puertos-stack-compact,
+    .puertos-pie-row > .puertos-chart-card {
+        min-height: 170px;
     }
 
     .puertos-heatmap {
         grid-auto-rows: 26px;
+    }
+
+    /* "Resumen" de Resumen de Carga: los tres gráficos con alto propio */
+    #puertos-hoja-resumen .puertos-chart-card {
+        height: 280px;
+        padding: 0.5rem 0 0.4rem;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    #puertos-hoja-resumen .puertos-chart-card + .puertos-chart-card {
+        border-top: 1px solid var(--border-color);
     }
 }

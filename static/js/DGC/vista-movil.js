@@ -27,6 +27,7 @@ function dgcVistaActiva() {
     if (appState.investmentOpen) return 'investment';
     if (appState.contractsOpen) return 'contracts';
     if (appState.biddersOpen) return 'bidders';
+    if (appState.finanzasOpen) return 'finanzas';
     return 'map';
 }
 
@@ -88,7 +89,8 @@ function dgcSetupVistaMovil() {
                 timeline: filaKpi('timeline-full-panel'),
                 investment: filaKpi('investment-full-panel'),
                 contracts: filaKpi('contracts-analysis-full-panel'),
-                bidders: filaKpi('bidders-full-panel')
+                bidders: filaKpi('bidders-full-panel'),
+                finanzas: document.querySelector('#finanzas-full-panel .dgc-fv-kpis')
             },
             extra: [document.querySelector('.panel-card-analytics')]
         },

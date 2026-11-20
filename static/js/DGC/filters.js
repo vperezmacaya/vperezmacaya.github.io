@@ -180,6 +180,11 @@ async function fetchData() {
             renderBiddersAnalytics(resData.full_filtered || resData.data);
         }
 
+        // Estados Financieros de las Concesionarias (finanzas-vista.js)
+        if (appState.finanzasOpen && typeof renderFinanzasVista === 'function') {
+            renderFinanzasVista(resData.full_filtered || resData.data);
+        }
+
         // 1. Update KPI Values
         if (kpiTotal) kpiTotal.textContent = resData.summary.count_filtered;
 

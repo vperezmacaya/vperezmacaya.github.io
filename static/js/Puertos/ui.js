@@ -49,6 +49,9 @@ window.switchVisualization = function (viewName) {
     if (window.lucide) {
         lucide.createIcons();
     }
+
+    // 8. Celular: KPI y gráficos de "Resumen" según la vista (Puertos/vista-movil.js)
+    if (typeof puertosActualizarMovil === 'function') puertosActualizarMovil();
 };
 
 // ── Inicialización al cargar DOM ──────────────────────────────────────────
@@ -108,4 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.lucide) {
         lucide.createIcons();
     }
+
+    // Celular: una sola pantalla (Puertos/vista-movil.js)
+    if (typeof puertosSetupVistaMovil === 'function') puertosSetupVistaMovil();
 });

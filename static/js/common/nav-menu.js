@@ -23,6 +23,7 @@ window.CatlecNav = (function () {
                 { key: 'investment', icon: 'line-chart', label: 'Análisis de Inversión', hrefSuffix: '#investment' },
                 { key: 'contracts', icon: 'layers', label: 'Análisis de Contratos', hrefSuffix: '#contracts' },
                 { key: 'bidders', icon: 'users', label: 'Análisis de Oferentes', hrefSuffix: '#bidders' },
+                { key: 'finanzas', icon: 'landmark', label: 'Estados Financieros de las Concesionarias', hrefSuffix: '#finanzas' },
             ],
         },
         {

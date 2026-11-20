@@ -11,6 +11,14 @@ function setActiveSubheaderTab(activeId) {
     if (btnInv) btnInv.classList.toggle('active', activeId === 'investment');
     if (btnCnt) btnCnt.classList.toggle('active', activeId === 'contracts');
     if (btnBid) btnBid.classList.toggle('active', activeId === 'bidders');
+    const btnFin = document.getElementById('btn-view-finanzas');
+    if (btnFin) btnFin.classList.toggle('active', activeId === 'finanzas');
+
+    // Otra pestaña activa con Estados Financieros abierta: se cierra (todas las
+    // show*View y las rutas al mapa pasan por aquí); al ir al mapa, restaura mapa y tabla.
+    if (activeId !== 'finanzas' && appState.finanzasOpen && typeof hideFinanzasView === 'function') {
+        hideFinanzasView(activeId === 'map');
+    }
 
     // Botón Mapa / Lista de celular: solo en la visualización Mapa (DGC/vista-movil.js)
     if (typeof dgcActualizarBotonVista === 'function') dgcActualizarBotonVista();
@@ -78,6 +86,15 @@ function initSubheaderViewSwitcher() {
             if (typeof hideContractsView === 'function') hideContractsView();
             if (typeof showBiddersView === 'function') showBiddersView();
             setActiveSubheaderTab('bidders');
+        });
+    }
+
+    // Estados Financieros de las Concesionarias (finanzas-vista.js): showFinanzasView
+    // cierra la vista que esté abierta y marca la pestaña
+    const btnFin = document.getElementById('btn-view-finanzas');
+    if (btnFin) {
+        btnFin.addEventListener('click', () => {
+            if (typeof showFinanzasView === 'function') showFinanzasView();
         });
     }
 }

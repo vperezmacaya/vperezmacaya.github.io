@@ -34,9 +34,12 @@ CONTRACTS_JS = os.path.join(ROOT, 'static', 'data', 'contracts_data.js')
 OUT_JS = os.path.join(ROOT, 'static', 'data', 'dgc_cmf.js')
 CMF_DIR = os.path.join(ROOT, 'Bases de dato', 'DGC', 'CMF')
 ENTIDADES_JSON = os.path.join(CMF_DIR, '_entidades.json')
+UF_JSON = os.path.join(CMF_DIR, '_uf.json')
+# Valores diarios de la UF publicados por el SII (una tabla por año: día × mes)
+UF_URL = 'https://www.sii.cl/valores_y_fechas/uf/uf{anio}.htm'
 LOG_PATH = os.path.join(CMF_DIR, '_registro.jsonl')
 
-ANIO_INI = 2021                      # primer año que se muestra en la ficha
+ANIO_INI = 2015                      # primer año que se muestra en la ficha
 ANIO_FIN = date.today().year - 1     # último año cerrado (sus EEFF anuales salen en marzo-abril)
 PAUSA = 0.5                          # segundos entre pedidos a la CMF
 REINTENTOS = 3
@@ -113,6 +116,7 @@ def bajar_entidades():
         for vig in ('VI', 'NV'):
             h = _get(CMF_LISTADO.format(tipo=tipo, vig=vig)).decode('latin-1')
             for m in re.finditer(r'rut=(\d+)[^"]*"[^>]*>([^<]+)<', h):
+                # cada entidad trae dos enlaces (RUT y razón social): se guardan ambos y nombre_entidad elige
                 fila = [tipo, vig, html.unescape(m.group(2)).strip()]
                 if fila not in out.setdefault(m.group(1), []):
                     out[m.group(1)].append(fila)
@@ -136,6 +140,17 @@ def registro_preferido(filas):
     return next(r for r in REGISTROS if r in regs)
 
 
+def es_rut(texto):
+    return bool(re.fullmatch(r'[\d.\s]+-?\s*[\dkK]?', (texto or '').strip()))
+
+
+def nombre_entidad(filas, tipo_ent, vig):
+    """Razón social del listado (cada fila del listado trae dos enlaces: el RUT y el nombre)."""
+    nombres = [n for t, v, n in filas if not es_rut(n)]
+    propios = [n for t, v, n in filas if (t, v) == (tipo_ent, vig) and not es_rut(n)]
+    return (propios or nombres or [None])[0]
+
+
 def _leer_log():
     ultimo = {}
     if os.path.exists(LOG_PATH):
@@ -151,17 +166,22 @@ def _anotar(**e):
         f.write(json.dumps(e, ensure_ascii=False) + '\n')
 
 
-def pendientes(entidades=None):
-    """[(rut, año)] por pedir a la CMF según _registro.jsonl."""
+def pendientes(entidades=None, solo_faltantes=False):
+    """[(rut, año)] por pedir a la CMF según _registro.jsonl: los nunca pedidos, los con error y, en las
+    sociedades con inscripción vigente, el último año sin XBRL (sus EEFF anuales salen en marzo-abril).
+    Con solo_faltantes=True, solo los nunca pedidos o con error (para el aviso de --sin-descargas)."""
     entidades = entidades if entidades is not None else leer_entidades()
     log = _leer_log()
     out = []
     for rut in sorted(sociedades_dgc()):
         if rut not in entidades:
             continue
+        vigente = any(v == 'VI' for _, v, _ in entidades[rut])
         for anio in range(ANIO_INI, ANIO_FIN + 1):
             e = log.get((rut, anio))
-            if e is None or e['estado'] == 'error' or (e['estado'] == 'sin_xbrl' and anio == ANIO_FIN):
+            reintentar_ultimo = (not solo_faltantes and vigente and anio == ANIO_FIN
+                                 and e is not None and e['estado'] == 'sin_xbrl')
+            if e is None or e['estado'] == 'error' or reintentar_ultimo:
                 out.append((rut, anio))
     return out
 
@@ -195,7 +215,48 @@ def bajar_xbrl(rut, anio, tipo_ent, vig):
     return ('sin_xbrl' if sin_dato else 'error'), None
 
 
+def leer_uf():
+    return json.load(open(UF_JSON, encoding='utf-8')) if os.path.exists(UF_JSON) else {}
+
+
+def bajar_uf():
+    """UF de cada año de ANIO_INI a ANIO_FIN desde las tablas del SII → _uf.json:
+    {año: {promedio, cierre, dias}}: promedio de los valores diarios (para llevar a UF las cifras
+    del año, como ingresos) y valor al 31 de diciembre (para los saldos, como deuda y patrimonio).
+    Un año cerrado no cambia, así que solo se baja si falta o le faltaba el 31 de diciembre."""
+    uf = leer_uf()
+    for anio in range(ANIO_INI, ANIO_FIN + 1):
+        if str(anio) in uf and uf[str(anio)].get('cierre'):
+            continue
+        h = _get(UF_URL.format(anio=anio)).decode('latin-1')
+        tabla = re.search(r'<table[^>]*id="table_export".*?</table>', h, re.S)
+        if not tabla:
+            raise RuntimeError(f'La página de la UF {anio} del SII no trae la tabla esperada')
+        valores, cierre = [], None
+        for fila in re.findall(r'<tr.*?</tr>', tabla.group(0), re.S):
+            # el día va en <th> y los 12 meses en <td>
+            celdas = [re.sub(r'<[^>]+>|&nbsp;|\s', '', c) for c in re.findall(r'<t[hd][^>]*>.*?</t[hd]>', fila, re.S)]
+            if not celdas or not celdas[0].isdigit():
+                continue
+            for mes, c in enumerate(celdas[1:13], 1):
+                if c:
+                    v = float(c.replace('.', '').replace(',', '.'))
+                    valores.append(v)
+                    if mes == 12 and celdas[0] == '31':
+                        cierre = v
+        if len(valores) < 360:
+            raise RuntimeError(f'La UF {anio} del SII trae solo {len(valores)} días')
+        uf[str(anio)] = {'promedio': round(sum(valores) / len(valores), 2), 'cierre': cierre, 'dias': len(valores)}
+        print(f'UF {anio}: promedio {uf[str(anio)]["promedio"]:,.2f}; 31-dic {cierre:,.2f} ({len(valores)} días)')
+        time.sleep(PAUSA)
+    os.makedirs(CMF_DIR, exist_ok=True)
+    with open(UF_JSON, 'w', encoding='utf-8') as f:
+        json.dump(uf, f, ensure_ascii=False, indent=1)
+    return uf
+
+
 def descargar():
+    bajar_uf()
     entidades = bajar_entidades()
     print(f'Listados de la CMF: {len(entidades)} entidades')
     pend = pendientes(entidades)
@@ -310,7 +371,7 @@ def escribir():
             sin_cmf.append(f"{s['rut']} ({', '.join(c for c in s['codigos'] if c)})")
             continue
         tipo_ent, vig = registro_preferido(entidades[rut])
-        nombre_cmf = next(n for t, v, n in entidades[rut] if (t, v) == (tipo_ent, vig))
+        nombre_cmf = nombre_entidad(entidades[rut], tipo_ent, vig) or s['nombre']
         leidos = {}
         for path in glob.glob(os.path.join(CMF_DIR, rut, '*')):
             m = re.match(r'(\d{4})_([IC])\.(zip|xbrl)$', os.path.basename(path))
@@ -361,14 +422,22 @@ def escribir():
           f'RUT que no figuran en la CMF: {len(sin_cmf)}')
     for x in sin_cmf:
         print(f'  sin registro en la CMF: {x}')
-    pend = pendientes(entidades)
+    pend = pendientes(entidades, solo_faltantes=True)
     if pend:
-        print(f'[AVISO] {len(pend)} (sociedad, año) sin pedir o con error a la CMF: correr sin --sin-descargas')
+        print(f'[AVISO] {len(pend)} (sociedad, año) sin pedir o con error a la CMF: volver a correr actualizar_dgc.py '
+              f'(sin --sin-descargas) para pedirlos: {", ".join(f"{r} {a}" for r, a in pend[:8])}')
+    uf = {a: v for a, v in leer_uf().items() if ANIO_INI <= int(a) <= ANIO_FIN}
+    faltan_uf = [a for a in range(ANIO_INI, ANIO_FIN + 1) if str(a) not in uf or not uf[str(a)].get('cierre')]
+    if faltan_uf:
+        print(f'[AVISO] Falta la UF del SII de {faltan_uf}: la vista "Estados Financieros de las Concesionarias" '
+              f'no podrá llevar esos años a UF (correr sin --sin-descargas)')
     payload = {
         'fuente': 'Comisión para el Mercado Financiero (CMF), estados financieros anuales en XBRL',
         'generado': date.today().isoformat(),
         'anio_ini': ANIO_INI,
         'anio_fin': ANIO_FIN,
+        # UF del SII por año: promedio (flujos del año) y cierre al 31-dic (saldos)
+        'uf': {a: {'promedio': v['promedio'], 'cierre': v['cierre']} for a, v in sorted(uf.items())},
         'sociedades': sociedades,
     }
     with open(OUT_JS, 'w', encoding='utf-8') as f:

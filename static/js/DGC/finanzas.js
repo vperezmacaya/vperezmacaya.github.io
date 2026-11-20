@@ -130,6 +130,10 @@ function dgcFinanzasSetup(item) {
         dgcFinChartInstance.destroy();   // el canvas anterior ya no existe: la ficha se redibujó
         dgcFinChartInstance = null;
     }
+    // Si los años no caben, la tabla parte mostrando los más recientes (se desliza hacia los anteriores).
+    const wrap = document.querySelector('.dgc-fin-table-wrap');
+    if (wrap) wrap.scrollLeft = wrap.scrollWidth;
+
     const canvas = document.getElementById('dgc-fin-chart');
     const soc = dgcFinSociedad(item);
     if (!canvas || !soc || typeof Chart === 'undefined') return;

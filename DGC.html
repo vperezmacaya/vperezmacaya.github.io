@@ -11,16 +11,16 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css">
     <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
     <!-- CSS Custom stylesheet -->
-    <link rel="stylesheet" href="static/css/styles.css?v=20261120_mop">
-    <link rel="stylesheet" href="static/css/dgc_addons.css?v=20261120_mop">
+    <link rel="stylesheet" href="static/css/styles.css?v=20261120_finanzas">
+    <link rel="stylesheet" href="static/css/dgc_addons.css?v=20261120_finanzas">
     <!-- Chart.js for premium chart renders -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
     <!-- SheetJS for Client-Side Excel Export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Datos estáticos pre-generados -->
-    <script src="static/data/contracts_data.js?v=20261112_1305"></script>
+    <script src="static/data/contracts_data.js?v=20261120_0938"></script>
     <script src="static/data/dgc_data.js?v=20260924_1"></script>
-    <script src="static/data/dgc_cmf.js?v=20261119_1706"></script>
+    <script src="static/data/dgc_cmf.js?v=20261120_finanzas"></script>
 </head>
 
 <body class="light-theme">
@@ -48,7 +48,7 @@
         </header>
 
         <!-- Subheader: Rapid View Switcher Bar -->
-        <div class="view-subheader">
+        <div class="view-subheader six-tabs">
             <button class="view-tab-btn active" id="btn-view-map">
                 <i data-lucide="map" class="icon-14"></i>
                 <span>Mapa</span>
@@ -68,6 +68,10 @@
             <button class="view-tab-btn" id="btn-view-bidders">
                 <i data-lucide="users" class="icon-14"></i>
                 <span>Análisis de Oferentes</span>
+            </button>
+            <button class="view-tab-btn" id="btn-view-finanzas">
+                <i data-lucide="landmark" class="icon-14"></i>
+                <span>Estados Financieros de las Concesionarias</span>
             </button>
         </div>
 
@@ -913,6 +917,94 @@
                     </div>
                 </div>
 
+                <!-- Estados Financieros de las Concesionarias (static/js/DGC/finanzas-vista.js; datos CMF de dgc_cmf.js) -->
+                <div id="finanzas-full-panel" class="dgc-fv-panel" style="display:none;">
+                    <div class="dgc-fv-body">
+                        <div class="dgc-fv-kpis">
+                            <div class="card-kpi">
+                                <div class="kpi-icon"><i data-lucide="trending-up"></i></div>
+                                <div class="kpi-val-container">
+                                    <span class="kpi-label" id="kpi-fv-ingresos-label">Ingresos</span>
+                                    <span class="kpi-value dgc-fv-kpi-value" id="kpi-fv-ingresos">-</span>
+                                </div>
+                            </div>
+                            <div class="card-kpi">
+                                <div class="kpi-icon"><i data-lucide="piggy-bank"></i></div>
+                                <div class="kpi-val-container">
+                                    <span class="kpi-label" id="kpi-fv-utilidad-label">Utilidad</span>
+                                    <span class="kpi-value dgc-fv-kpi-value" id="kpi-fv-utilidad">-</span>
+                                </div>
+                            </div>
+                            <div class="card-kpi">
+                                <div class="kpi-icon"><i data-lucide="landmark"></i></div>
+                                <div class="kpi-val-container">
+                                    <span class="kpi-label" id="kpi-fv-deuda-label">Deuda financiera</span>
+                                    <span class="kpi-value dgc-fv-kpi-value" id="kpi-fv-deuda">-</span>
+                                </div>
+                            </div>
+                            <div class="card-kpi">
+                                <div class="kpi-icon"><i data-lucide="building-2"></i></div>
+                                <div class="kpi-val-container">
+                                    <span class="kpi-label" id="kpi-fv-sociedades-label">Sociedades con EEFF</span>
+                                    <span class="kpi-value dgc-fv-kpi-value" id="kpi-fv-sociedades">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dgc-fv-grid">
+                            <div class="panel-card dgc-fv-card dgc-fv-card--evolucion">
+                                <div class="dgc-fv-card-head">
+                                    <h3 class="dgc-fv-card-title">
+                                        <i data-lucide="bar-chart-3" class="icon-13 icon-color-primary"></i>
+                                        Ingresos por sector (MM UF)
+                                    </h3>
+                                    <div class="dgc-fin-legend dgc-fv-legend" id="fv-legend-evolucion"></div>
+                                </div>
+                                <div class="dgc-fv-chart"><canvas id="chartFvEvolucion"></canvas></div>
+                            </div>
+
+                            <div class="panel-card dgc-fv-card dgc-fv-card--ranking">
+                                <div class="dgc-fv-card-head">
+                                    <h3 class="dgc-fv-card-title">
+                                        <i data-lucide="list-ordered" class="icon-13 icon-color-primary"></i>
+                                        <span id="fv-ranking-title">Concesionarias con mayores ingresos</span>
+                                    </h3>
+                                </div>
+                                <div class="dgc-fv-chart"><canvas id="chartFvRanking"></canvas></div>
+                            </div>
+
+                            <div class="panel-card dgc-fv-card dgc-fv-card--margen">
+                                <div class="dgc-fv-card-head">
+                                    <h3 class="dgc-fv-card-title">
+                                        <i data-lucide="percent" class="icon-13 icon-color-primary"></i>
+                                        <span id="fv-margen-title">Margen operacional por sector</span>
+                                    </h3>
+                                </div>
+                                <div class="dgc-fv-chart"><canvas id="chartFvMargen"></canvas></div>
+                            </div>
+
+                            <div class="panel-card dgc-fv-card dgc-fv-card--deuda">
+                                <div class="dgc-fv-card-head">
+                                    <h3 class="dgc-fv-card-title">
+                                        <i data-lucide="scale" class="icon-13 icon-color-primary"></i>
+                                        <span id="fv-deuda-title">Deuda financiera frente a ingresos</span>
+                                    </h3>
+                                    <span class="dgc-fv-card-note">Escala logarítmica · millones de UF</span>
+                                </div>
+                                <div class="dgc-fv-chart"><canvas id="chartFvDeuda"></canvas></div>
+                            </div>
+                        </div>
+
+                        <p class="dgc-fv-nota" id="fv-nota">
+                            Fuente: estados financieros anuales que cada sociedad concesionaria presenta a la CMF (XBRL),
+                            llevados a UF con el valor del SII (promedio del año para ingresos y resultados; 31 de diciembre
+                            para la deuda). Los ingresos son contables: en contratos con pagos del Estado (subsidios,
+                            ingresos mínimos garantizados), parte de lo que se recibe se registra como cuenta por cobrar y
+                            no como ingreso. Cada año suma las sociedades que informaron.
+                        </p>
+                    </div>
+                </div>
+
                 <div id="timeline-full-panel" class="timeline-full-panel" style="display:none;">
                     <!-- BANNER KPI SUPERIOR (Líneas de Tiempo) -->
                     <div
@@ -1030,29 +1122,30 @@
     <script src="static/js/common/table-fade.js?v=20260924_1"></script>
     <script src="static/js/common/panel-resizer.js?v=20260924_gl2"></script>
     <script src="static/js/common/timeline.js?v=20260920_1"></script>
-    <script src="static/js/DGC/state.js?v=20260924_gl1"></script>
+    <script src="static/js/DGC/state.js?v=20261120_finanzas"></script>
     <script src="static/js/DGC/utils.js?v=20260924_1"></script>
     <script src="static/js/DGC/map.js?v=20261119_pantalla"></script>
     <script src="static/js/DGC/timeline.js?v=20261119_vistas2"></script>
     <script src="static/js/DGC/investment.js?v=20261119_movil"></script>
     <script src="static/js/DGC/contracts_analysis.js?v=20261119_movil"></script>
     <script src="static/js/DGC/bidders.js?v=20261119_etiquetas"></script>
-    <script src="static/js/DGC/filters.js?v=20261119_lista"></script>
-    <script src="static/js/DGC/subheader.js?v=20261119_lista"></script>
+    <script src="static/js/DGC/filters.js?v=20261120_finanzas"></script>
+    <script src="static/js/DGC/subheader.js?v=20261120_finanzas"></script>
     <script src="static/js/DGC/table.js?v=20261119_ficha"></script>
-    <script src="static/js/DGC/finanzas.js?v=20261119_cmf"></script>
+    <script src="static/js/DGC/finanzas.js?v=20261120_cmf2015"></script>
+    <script src="static/js/DGC/finanzas-vista.js?v=20261120_finanzas"></script>
     <script src="static/js/DGC/project-detail.js?v=20261120_movil"></script>
-    <script src="static/js/DGC/vista-movil.js?v=20261120_mop"></script>
-    <script src="static/js/DGC/export.js"></script>
+    <script src="static/js/DGC/vista-movil.js?v=20261120_finanzas"></script>
+    <script src="static/js/DGC/export.js?v=20261120_eeff"></script>
     <script src="static/js/DGC/ui.js?v=20261119_tablet"></script>
 
     <div id="timeline-tooltip" class="timeline-tooltip" style="display:none;"></div>
 
     <!-- Nav Menu JS -->
-    <script src="static/js/common/nav-menu.js?v=20261119_movil2"></script>
+    <script src="static/js/common/nav-menu.js?v=20261120_finanzas"></script>
     <script src="static/js/common/view-menu.js?v=20261119_movil2"></script>
     <script src="static/js/common/sheet.js?v=20261119_pantalla"></script>
-    <script src="static/js/common/movil.js?v=20261120_mop"></script>
+    <script src="static/js/common/movil.js?v=20261120_sni"></script>
     <script src="static/js/common/filter-drawer.js?v=20261119_pantalla"></script>
     <script>
         (function () {
@@ -1133,6 +1226,14 @@
                     CatlecNav.close();
                 });
             }
+            const subFin = document.getElementById('nav-dgc-sub-finanzas');
+            if (subFin) {
+                subFin.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    if (typeof showFinanzasView === 'function') showFinanzasView();
+                    CatlecNav.close();
+                });
+            }
 
             // Check URL hash on page load and on hash change
             function handleHashRoute() {
@@ -1145,6 +1246,8 @@
                     if (typeof showContractsView === 'function') showContractsView();
                 } else if (hash === '#bidders') {
                     if (typeof showBiddersView === 'function') showBiddersView();
+                } else if (hash === '#finanzas') {
+                    if (typeof showFinanzasView === 'function') showFinanzasView();
                 } else if (hash === '#map' || !hash || hash === '#') {
                     if (typeof hideTimelineView === 'function') hideTimelineView();
                     if (typeof hideInvestmentView === 'function') hideInvestmentView();
@@ -1572,6 +1675,30 @@
                                 adjudicatario al momento de la adjudicación.
                             </p>
 
+                        </div>
+
+                        <!-- 6. VISUALIZACIÓN ESTADOS FINANCIEROS DE LAS CONCESIONARIAS -->
+                        <div class="formula-card">
+                            <div class="formula-card-title">
+                                <i data-lucide="landmark" class="icon-15 icon-color-primary"></i>
+                                Visualización: Estados Financieros de las Concesionarias
+                            </div>
+                            <ul class="formula-explanation">
+                                <li><strong>Fuente:</strong> estados financieros anuales (al 31 de diciembre) que cada
+                                    sociedad concesionaria presenta a la CMF en formato XBRL, cruzados con los contratos
+                                    por el RUT de la sociedad. Solo entran las sociedades inscritas en la CMF.</li>
+                                <li><strong>Unidad:</strong> millones de UF. Ingresos, resultado operacional y utilidad
+                                    se dividen por la UF promedio de cada año; la deuda financiera, por la UF del 31 de
+                                    diciembre (valores del SII). Así se pueden sumar y comparar años.</li>
+                                <li><strong>Deuda financiera:</strong> otros pasivos financieros corrientes y no
+                                    corrientes (bonos y préstamos).</li>
+                                <li><strong>Margen operacional por sector:</strong> suma del resultado operacional
+                                    dividida por la suma de los ingresos de las sociedades del sector.</li>
+                                <li><strong>Precauciones:</strong> los ingresos son contables; en contratos con pagos del
+                                    Estado (subsidios, ingresos mínimos garantizados), parte de lo recibido queda como
+                                    cuenta por cobrar y no como ingreso. Cada año suma las sociedades que informaron, que
+                                    cambian de un año a otro.</li>
+                            </ul>
                         </div>
 
                     </div>

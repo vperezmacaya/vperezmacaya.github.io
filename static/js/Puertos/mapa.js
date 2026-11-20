@@ -31,6 +31,10 @@ const PUERTOS_LOCALIDADES_RE = /^place_(city|capital|town|villages|suburbs|hamle
 // (bahía de Concepción a Coronel, en el nivel de zonas porque queda bajo PUERTOS_ZONE_ZOOM)
 const PUERTOS_MAP_DEFAULT_CENTER = [-73.1183, -36.8481];
 const PUERTOS_MAP_DEFAULT_ZOOM = 9.42;
+// Ese zoom es para un mapa de este ancho o más (escritorio); en uno más angosto
+// (tablet, celular) se aleja en proporción para que quepan las mismas zonas y
+// sus nombres (con 9,42 a 350 px el de Lirquén queda cortado en el borde)
+const PUERTOS_MAP_DEFAULT_WIDTH = 460;
 // Encuadre al abrir una zona: sus terminales con margen, sin pasar de este zoom (MapLibre)
 const PUERTOS_ZONE_PADDING = 70;
 const PUERTOS_ZONE_MAX_ZOOM = 14;
@@ -427,15 +431,32 @@ function puertosSelect(id) {
     }
 }
 
+function puertosDefaultZoom() {
+    const w = puertosMap ? puertosMap.getContainer().clientWidth : 0;
+    if (!w) return PUERTOS_MAP_DEFAULT_ZOOM;
+    return PUERTOS_MAP_DEFAULT_ZOOM + Math.min(0, Math.log2(w / PUERTOS_MAP_DEFAULT_WIDTH));
+}
+
+// ¿La cámara sigue en la vista inicial? (para reencuadrarla al cambiar el tamaño)
+let puertosDefaultCam = null;
+function puertosEnVistaInicial() {
+    if (!puertosMap || !puertosDefaultCam) return false;
+    const c = puertosMap.getCenter();
+    return Math.abs(c.lng - puertosDefaultCam.lng) < 1e-5 && Math.abs(c.lat - puertosDefaultCam.lat) < 1e-5
+        && Math.abs(puertosMap.getZoom() - puertosDefaultCam.zoom) < 1e-4;
+}
+
 function puertosResetMap({ animate = true } = {}) {
     puertosSetHover(null);
     puertosSetZoneHover(null);
     puertosSelect(null);
     if (puertosMapTip) puertosMapTip.hide();
     if (puertosMap) {
+        const zoom = puertosDefaultZoom();
+        puertosDefaultCam = { lng: PUERTOS_MAP_DEFAULT_CENTER[0], lat: PUERTOS_MAP_DEFAULT_CENTER[1], zoom };
         puertosMap.easeTo({
             center: PUERTOS_MAP_DEFAULT_CENTER,
-            zoom: PUERTOS_MAP_DEFAULT_ZOOM,
+            zoom,
             bearing: 0,
             pitch: 0,
             duration: animate ? 450 : 0
@@ -477,11 +498,19 @@ function puertosInitMap() {
         puertosUpdateMarkers();
         CatlecMapGL.addLegendControl(puertosMap, {
             html: puertosLegendHtml(),
-            storageKey: 'catlec.puertos.legendCollapsed'
+            storageKey: 'catlec.puertos.legendCollapsed',
+            // En tablet y celular parte plegada: en un mapa angosto tapa Coronel
+            collapsedByDefault: window.matchMedia('(max-width: 1100px)').matches
         });
     });
 
     puertosMap.on('zoom', puertosSyncZoneMode);
+
+    // Si el mapa cambia de ancho (ventana, giro del celular) y nadie lo movió,
+    // la vista inicial se recalcula para el ancho nuevo
+    puertosMap.on('resize', () => {
+        if (puertosEnVistaInicial()) puertosResetMap({ animate: false });
+    });
 
     // Hover sobre un polígono: resalta el operador (ícono y polígono) y muestra su tooltip
     puertosMap.on('mousemove', (e) => {

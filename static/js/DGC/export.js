@@ -150,9 +150,94 @@ function exportDGCToExcel() {
         XLSX.utils.book_append_sheet(wb, wsEmpty, "Oferentes_Licitaciones");
     }
 
-    // 3. Descargar archivo
+    // 3. Hoja 3: estados financieros de las sociedades concesionarias (CMF) y sus notas
+    dgcExportEstadosFinancieros(wb, contracts);
+
+    // 4. Descargar archivo
     const today = new Date().toISOString().slice(0, 10);
     XLSX.writeFile(wb, `CATLEC_DGC_Concesiones_${today}.xlsx`);
+}
+
+/**
+ * Agrega al libro las hojas "Estados_Financieros" (una fila por concesión y año con
+ * estados financieros en la CMF, de static/data/dgc_cmf.js) y "Notas_EEFF" (fuente y
+ * definiciones). Se cruza por el RUT de la sociedad con dgcFinRutCuerpo (finanzas.js).
+ */
+function dgcExportEstadosFinancieros(wb, contracts) {
+    const data = window.DGC_CMF;
+    if (!data || typeof dgcFinRutCuerpo !== 'function') return;
+
+    const rows = [];
+    contracts.forEach(p => {
+        const cuerpo = dgcFinRutCuerpo(p["Rut sociedad Concesionaria"]);
+        const soc = cuerpo && data.sociedades[cuerpo];
+        if (!soc) return;
+        Object.keys(soc.anios).map(Number).sort((a, b) => a - b).forEach(anio => {
+            const c = soc.anios[anio];
+            const uf = (data.uf && data.uf[anio]) || {};
+            rows.push({
+                "Código Proyecto": p["Código proyecto"] || "",
+                "Nombre Concesión": p["Nombre de uso común"] || p["Nombre de la Concesión "] || "",
+                "Sector del Proyecto": p["Sector del proyecto"] || "",
+                "Región Geográfica": p["Región geográfica"] || "",
+                "Estado Concesión": p["ESTADO"] || "",
+                "RUT Sociedad": soc.rut || "",
+                "Sociedad Concesionaria (CMF)": soc.nombre || "",
+                "Registro CMF": soc.registro || "",
+                "Inscripción Vigente": soc.vigente ? "Sí" : "No",
+                "Año": anio,
+                "Estados": c.tipo === 'C' ? "Consolidados" : "Individuales",
+                "Ingresos Ordinarios (MM$)": c.ingresos,
+                "Resultado Operacional (MM$)": c.resultado_operacional,
+                "Utilidad (Pérdida) (MM$)": c.utilidad,
+                "Flujo Operacional (MM$)": c.flujo_operacional,
+                "Activos (MM$)": c.activos,
+                "Pasivos (MM$)": c.pasivos,
+                "Patrimonio (MM$)": c.patrimonio,
+                "Caja y Equivalentes (MM$)": c.caja,
+                "Deuda Financiera (MM$)": c.deuda_financiera,
+                "UF Promedio del Año ($)": uf.promedio != null ? uf.promedio : null,
+                "UF al 31-dic ($)": uf.cierre != null ? uf.cierre : null,
+                "XBRL de Origen (año)": c.archivo,
+                "Auditor (último año)": soc.auditor || "",
+                "Opinión del Auditor (último año)": soc.opinion || "",
+                "Link CMF (Información Financiera)": soc.url || ""
+            });
+        });
+    });
+
+    if (rows.length > 0) {
+        const ws = XLSX.utils.json_to_sheet(rows);
+        ws['!cols'] = Object.keys(rows[0]).map(key => {
+            let maxLen = key.length;
+            for (let i = 0; i < Math.min(rows.length, 60); i++) {
+                const val = rows[i][key];
+                if (val != null && String(val).length > maxLen) maxLen = String(val).length;
+            }
+            return { wch: Math.min(Math.max(maxLen + 2, 10), 48) };
+        });
+        XLSX.utils.book_append_sheet(wb, ws, "Estados_Financieros");
+    } else {
+        const wsEmpty = XLSX.utils.json_to_sheet([{ "Mensaje": "Ninguna de las concesiones seleccionadas tiene estados financieros en la CMF" }]);
+        XLSX.utils.book_append_sheet(wb, wsEmpty, "Estados_Financieros");
+    }
+
+    const notas = [
+        ["Fuente", `Estados financieros anuales (al 31 de diciembre) que cada sociedad concesionaria presenta a la Comisión para el Mercado Financiero (CMF) en formato XBRL, de ${data.anio_ini} a ${data.anio_fin}. Generado el ${data.generado || ''}.`],
+        ["Cruce", "Por el RUT de la sociedad concesionaria del contrato (columna \"Rut sociedad Concesionaria\" de la base DGC). Solo aparecen las concesiones cuya sociedad está inscrita en la CMF y tiene estados financieros en el periodo; si una sociedad tiene varios contratos, sus cifras se repiten en cada uno."],
+        ["Unidad", "Millones de pesos nominales de cada año (MM$), tal como los informa la sociedad. Para pasarlos a millones de UF: dividir los flujos (ingresos, resultados, flujo operacional) por la UF promedio del año y los saldos (activos, pasivos, patrimonio, caja, deuda) por la UF al 31-dic. Valores de la UF: Servicio de Impuestos Internos (SII)."],
+        ["Estados", "Individuales o consolidados, los que presentó la sociedad (casi todas son individuales)."],
+        ["Ingresos Ordinarios", "Concepto IFRS Revenue. Son contables: según el modelo del contrato (CINIIF 12), parte de lo que paga el Estado (subsidios, ingresos mínimos garantizados) se registra como cuenta por cobrar y no como ingreso."],
+        ["Resultado Operacional", "ProfitLossFromOperatingActivities: ingresos menos costos de operación, mantención, amortización de la concesión y gastos de administración. Cada sociedad clasifica algunas partidas a su criterio."],
+        ["Utilidad (Pérdida)", "ProfitLoss: resultado del año después de ingresos y costos financieros, reajustes de la deuda en UF e impuestos."],
+        ["Flujo Operacional", "CashFlowsFromUsedInOperatingActivities: flujo de efectivo de las actividades de operación."],
+        ["Deuda Financiera", "Otros pasivos financieros corrientes + no corrientes (OtherCurrentFinancialLiabilities + OtherNoncurrentFinancialLiabilities): bonos y préstamos. Vacía si la sociedad no informa esos conceptos."],
+        ["XBRL de Origen", "Año del archivo XBRL del que salen las cifras: el del mismo año o, si no hay, la columna comparativa del archivo del año siguiente."],
+        ["Celdas vacías", "La sociedad no informó ese concepto en su XBRL."]
+    ].map(([campo, descripcion]) => ({ "Campo": campo, "Descripción": descripcion }));
+    const wsNotas = XLSX.utils.json_to_sheet(notas);
+    wsNotas['!cols'] = [{ wch: 22 }, { wch: 140 }];
+    XLSX.utils.book_append_sheet(wb, wsNotas, "Notas_EEFF");
 }
 
 /**
